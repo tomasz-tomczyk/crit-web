@@ -645,6 +645,17 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 }
 .crit-prompt-actions { display: flex; gap: 8px; justify-content: center; margin-top: 4px; }
 
+/* ===== Split Button (prompt dropdown) ===== */
+.crit-split-btn { position: relative; display: inline-flex; }
+.crit-split-btn-main { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
+.crit-split-btn-caret { border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 8px; display: flex; align-items: center; border-left: 1px solid rgba(255,255,255,0.2); }
+.crit-split-dropdown { position: absolute; top: 100%; right: 0; margin-top: 4px; background: var(--crit-bg-secondary); border: 1px solid var(--crit-border); border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); min-width: 260px; z-index: 100; overflow: hidden; }
+.crit-split-dropdown-item { display: block; width: 100%; padding: 10px 14px; border: none; background: none; cursor: pointer; text-align: left; color: var(--crit-fg-primary); transition: background 0.1s; }
+.crit-split-dropdown-item:hover { background: var(--crit-bg-hover); }
+.crit-split-dropdown-item + .crit-split-dropdown-item { border-top: 1px solid var(--crit-border); }
+.crit-split-dropdown-title { display: block; font-size: 13px; font-weight: 600; }
+.crit-split-dropdown-desc { display: block; font-size: 12px; color: var(--crit-fg-secondary); margin-top: 2px; }
+
 /* ===== highlight.js Dark Theme ===== */
 [data-theme="dark"] .hljs,html:not([data-theme]) .hljs{color:#adbac7;background:#22272e}
 [data-theme="dark"] .hljs-keyword,[data-theme="dark"] .hljs-type,[data-theme="dark"] .hljs-variable.language_,html:not([data-theme]) .hljs-keyword,html:not([data-theme]) .hljs-type,html:not([data-theme]) .hljs-variable.language_{color:#f47067}

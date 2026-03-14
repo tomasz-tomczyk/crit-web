@@ -41,8 +41,20 @@ defmodule CritWeb.ReviewLive do
             socket
           end
 
+        comments_url = CritWeb.Endpoint.url() <> ~p"/api/export/#{review.token}/comments"
+
+        local_prompt_text =
+          "Please fetch #{comments_url} — these are review comments from crit. " <>
+            "Comments are grouped per file with start_line/end_line referencing the source. " <>
+            "Read each comment, address it in the relevant file and location, " <>
+            "then run `crit go <port>` to signal the review is ready for the next round " <>
+            "(check for a running crit server, or skip if none is running)."
+
         export_url = CritWeb.Endpoint.url() <> ~p"/api/export/#{review.token}/review"
-        prompt_text = "Please fetch #{export_url} and implement all the review comments."
+
+        full_export_prompt_text =
+          "Please fetch #{export_url} — this contains the full plan with review comments " <>
+            "interjected inline. Implement the plan while addressing each review comment."
 
         {:ok,
          socket
@@ -50,7 +62,9 @@ defmodule CritWeb.ReviewLive do
          |> assign(:identity, identity)
          |> assign(:display_name, display_name)
          |> assign(:demo?, demo?)
-         |> assign(:prompt_text, prompt_text)
+         |> assign(:local_prompt_text, local_prompt_text)
+         |> assign(:full_export_prompt_text, full_export_prompt_text)
+         |> assign(:prompt_mode, "local")
          |> assign(:page_title, display_filename(review))
          |> assign(
            :meta_description,
@@ -61,6 +75,11 @@ defmodule CritWeb.ReviewLive do
          |> assign(:og_url, CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"),
          layout: {CritWeb.Layouts, :review}}
     end
+  end
+
+  def handle_event("set_prompt_mode", %{"mode" => mode}, socket)
+      when mode in ["local", "full_export"] do
+    {:noreply, assign(socket, :prompt_mode, mode)}
   end
 
   @impl true

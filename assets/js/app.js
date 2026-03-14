@@ -44,9 +44,20 @@ liveSocket.connect()
 window.addEventListener("clipboard:copy", e => {
   navigator.clipboard.writeText(e.detail.text).catch(() => {})
   const btn = e.target
+  const originalText = btn.textContent
   btn.textContent = "✓ Copied"
-  setTimeout(() => { btn.textContent = "Copy" }, 2000)
+  setTimeout(() => { btn.textContent = originalText }, 2000)
 })
+
+// Close prompt dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('prompt-dropdown');
+  const splitBtn = document.getElementById('prompt-split-btn');
+  if (!dropdown || !splitBtn) return;
+  if (!splitBtn.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
