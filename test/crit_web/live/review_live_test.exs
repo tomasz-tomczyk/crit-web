@@ -280,7 +280,6 @@ defmodule CritWeb.ReviewLiveTest do
       assert html =~ "/api/export/#{review.token}/comments"
       assert html =~ "Act on comments"
     end
-
   end
 
   describe "PubSub" do
