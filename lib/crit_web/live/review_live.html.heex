@@ -122,7 +122,10 @@
         <div class="crit-split-btn" id="prompt-split-btn">
           <button
             class="btn btn-primary crit-split-btn-main"
-            phx-click={JS.push("set_prompt_mode", value: %{mode: "local"}) |> JS.show(to: "#crit-prompt-panel", display: "flex")}
+            phx-click={
+              JS.push("set_prompt_mode", value: %{mode: "local"})
+              |> JS.show(to: "#crit-prompt-panel", display: "flex")
+            }
           >
             Get prompt
           </button>
@@ -131,23 +134,41 @@
             phx-click={JS.toggle(to: "#prompt-dropdown")}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path
+                d="M3 5l3 3 3-3"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
           <div id="prompt-dropdown" class="crit-split-dropdown" style="display:none">
             <button
               class="crit-split-dropdown-item"
-              phx-click={JS.push("set_prompt_mode", value: %{mode: "local"}) |> JS.hide(to: "#prompt-dropdown") |> JS.show(to: "#crit-prompt-panel", display: "flex")}
+              phx-click={
+                JS.push("set_prompt_mode", value: %{mode: "local"})
+                |> JS.hide(to: "#prompt-dropdown")
+                |> JS.show(to: "#crit-prompt-panel", display: "flex")
+              }
             >
               <span class="crit-split-dropdown-title">Act on comments</span>
-              <span class="crit-split-dropdown-desc">Agent fetches comments, addresses each one, and signals your local crit</span>
+              <span class="crit-split-dropdown-desc">
+                Agent fetches comments, addresses each one, and signals your local crit
+              </span>
             </button>
             <button
               class="crit-split-dropdown-item"
-              phx-click={JS.push("set_prompt_mode", value: %{mode: "full_export"}) |> JS.hide(to: "#prompt-dropdown") |> JS.show(to: "#crit-prompt-panel", display: "flex")}
+              phx-click={
+                JS.push("set_prompt_mode", value: %{mode: "full_export"})
+                |> JS.hide(to: "#prompt-dropdown")
+                |> JS.show(to: "#crit-prompt-panel", display: "flex")
+              }
             >
               <span class="crit-split-dropdown-title">Full plan + comments</span>
-              <span class="crit-split-dropdown-desc">Fetches full files with comments interjected — no local crit needed</span>
+              <span class="crit-split-dropdown-desc">
+                Fetches full files with comments interjected — no local crit needed
+              </span>
             </button>
           </div>
         </div>
