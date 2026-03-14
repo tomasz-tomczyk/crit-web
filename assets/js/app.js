@@ -54,6 +54,61 @@ window.addEventListener("clipboard:copy", e => {
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
+// Home page: copy buttons
+document.querySelectorAll(".copy-btn").forEach(btn => {
+  const defaultIcon = btn.querySelector(".icon-default")
+  const copiedIcon = btn.querySelector(".icon-copied")
+  btn.addEventListener("click", () => {
+    const raw = btn.previousElementSibling.textContent.trim()
+    const text = raw.replace(/^\$\s+/, "")
+    navigator.clipboard.writeText(text).then(() => {
+      btn.style.color = "var(--crit-green)"
+      defaultIcon.classList.add("hidden")
+      copiedIcon.classList.remove("hidden")
+      setTimeout(() => {
+        btn.style.color = ""
+        defaultIcon.classList.remove("hidden")
+        copiedIcon.classList.add("hidden")
+      }, 2000)
+    })
+  })
+})
+
+// Home page: feature cards scroll-triggered reveal
+const featuresGrid = document.getElementById("features-grid")
+if (featuresGrid) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const cards = featuresGrid.querySelectorAll(".feature-card")
+        cards.forEach((card, i) => {
+          setTimeout(() => card.classList.add("revealed"), i * 80)
+        })
+        const selfHosting = document.querySelector("#self-hosting-card .feature-card")
+        if (selfHosting) {
+          setTimeout(() => selfHosting.classList.add("revealed"), cards.length * 80)
+        }
+        observer.unobserve(entry.target)
+      }
+    })
+  }, { threshold: 0.05 })
+  observer.observe(featuresGrid)
+}
+
+// Home page: install tab switcher
+document.querySelectorAll(".install-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".install-tab").forEach(t => {
+      t.classList.remove("border-(--crit-accent)", "text-(--crit-accent)")
+      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
+    })
+    document.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"))
+    tab.classList.add("border-(--crit-accent)", "text-(--crit-accent)")
+    tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
+    document.getElementById(tab.dataset.target).classList.remove("hidden")
+  })
+})
+
 // The lines below enable quality of life phoenix_live_reload
 // development features:
 //
