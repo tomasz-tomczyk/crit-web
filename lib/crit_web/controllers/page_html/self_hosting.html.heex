@@ -22,8 +22,12 @@ curl -o .env https://raw.githubusercontent.com/tomasz-tomczyk/crit-web/main/.env
       </p>
       <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>openssl rand -base64 64</code></pre>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-3">
-        Update <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">SECRET_KEY_BASE</code> and
-        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">PHX_HOST</code> in <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>,
+        Update
+        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
+          SECRET_KEY_BASE
+        </code>
+        and <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">PHX_HOST</code>
+        in <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>,
         then start the services:
       </p>
       <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>docker compose up -d</code></pre>
