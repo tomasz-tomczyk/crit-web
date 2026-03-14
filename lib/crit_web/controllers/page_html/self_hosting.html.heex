@@ -5,13 +5,6 @@
       <h1 class="text-3xl font-bold tracking-tight mb-2">Self-Hosting</h1>
       <p class="text-sm text-(--crit-fg-muted) mb-4">Run your own instance of Crit Web</p>
 
-      <div class="border border-(--crit-accent) rounded-lg bg-(--crit-accent-subtle) px-5 py-4 mb-10">
-        <p class="text-sm font-semibold text-(--crit-accent) mb-1">Coming Soon</p>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-          Self-hosting support is not yet available. The documentation below is a preview of what's planned.
-        </p>
-      </div>
-
       <h2 class="text-base font-semibold mt-8 mb-2">Prerequisites</h2>
       <ul class="text-sm leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
         <li class="mb-1">Docker (with Compose)</li>
@@ -20,30 +13,20 @@
 
       <h2 class="text-base font-semibold mt-8 mb-2">Quick start with Docker Compose</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
-        Clone the repository and start the services:
+        Download the example files and configure your environment:
       </p>
-      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>git clone https://github.com/tomasz-tomczyk/crit-web.git
-cd crit-web
-docker compose up -d</code></pre>
+      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>curl -o docker-compose.yml https://raw.githubusercontent.com/tomasz-tomczyk/crit-web/main/contrib/docker-compose.example.yml
+curl -o .env https://raw.githubusercontent.com/tomasz-tomczyk/crit-web/main/.env.example</code></pre>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-3">
-        Before starting, generate a secret key and update <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">docker-compose.yml</code>:
+        Generate a secret key and set it in <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>:
       </p>
-      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>docker run --rm ghcr.io/tomasz-tomczyk/crit-web:latest \
-  /app/bin/crit eval "IO.puts(:crypto.strong_rand_bytes(64) |> Base.encode64)"</code></pre>
+      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>openssl rand -base64 64</code></pre>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-3">
-        Replace
-        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
-          generate-a-secret-see-readme
-        </code>
-        in
-        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
-          docker-compose.yml
-        </code>
-        with the generated value.
-        Update
-        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">PHX_HOST</code>
-        if serving on a real domain.
+        Update <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">SECRET_KEY_BASE</code> and
+        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">PHX_HOST</code> in <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>,
+        then start the services:
       </p>
+      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>docker compose up -d</code></pre>
 
       <h2 class="text-base font-semibold mt-8 mb-2">Environment Variables</h2>
       <div class="overflow-x-auto mt-3">
