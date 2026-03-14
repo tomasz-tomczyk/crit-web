@@ -1260,7 +1260,7 @@ function renderDocument(ctx) {
 
   for (let bi = 0; bi < ctx.lineBlocks.length; bi++) {
     const block = ctx.lineBlocks[bi]
-    container.appendChild(renderBlock(ctx, block, bi, commentsMap, commentedLineSet, null))
+    container.appendChild(renderBlock(ctx, block, bi, commentsMap, commentedLineSet, ctx.singleFilePath || null))
   }
 
   renderMermaidBlocks(container)
@@ -1899,6 +1899,7 @@ export const DocumentRenderer = {
     ctx.reviewRound = parseInt(ctx.el.dataset.reviewRound || "0", 10)
     ctx.multiFile = ctx.el.dataset.multiFile === 'true'
     ctx.files = []
+    ctx.singleFilePath = null
     ctx.focusedFilePath = null
     ctx.treeFolderState = {}
 
@@ -2050,6 +2051,7 @@ export const DocumentRenderer = {
       } else if (files && files.length === 1) {
         const f = files[0]
         ctx.rawContent = f.content
+        ctx.singleFilePath = f.path
         ctx.lineBlocks = isCodeFile(f.path)
           ? buildCodeLineBlocks(f.content, f.path)
           : buildLineBlocks(md, f.content)
