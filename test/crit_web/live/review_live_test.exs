@@ -230,6 +230,59 @@ defmodule CritWeb.ReviewLiveTest do
     end
   end
 
+  describe "prompt mode" do
+    test "renders split button with dropdown", %{conn: conn, review: review} do
+      {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
+      assert html =~ "Get prompt"
+      assert html =~ "crit-split-btn"
+      assert html =~ "Act on comments"
+      assert html =~ "Full plan + comments"
+    end
+
+    test "defaults to local prompt mode", %{conn: conn, review: review} do
+      {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
+      assert html =~ "Act on comments"
+      assert html =~ "/api/export/#{review.token}/comments"
+    end
+
+    test "switches to full_export mode", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      html =
+        view
+        |> element("#crit-prompt-panel")
+        |> render()
+
+      assert html =~ "/api/export/#{review.token}/comments"
+
+      render_click(view, "set_prompt_mode", %{"mode" => "full_export"})
+
+      html =
+        view
+        |> element("#crit-prompt-panel")
+        |> render()
+
+      assert html =~ "/api/export/#{review.token}/review"
+      assert html =~ "Full plan + comments"
+    end
+
+    test "switches back to local mode", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      render_click(view, "set_prompt_mode", %{"mode" => "full_export"})
+      render_click(view, "set_prompt_mode", %{"mode" => "local"})
+
+      html =
+        view
+        |> element("#crit-prompt-panel")
+        |> render()
+
+      assert html =~ "/api/export/#{review.token}/comments"
+      assert html =~ "Act on comments"
+    end
+
+  end
+
   describe "PubSub" do
     test "receiving comments_updated broadcast does not crash", %{conn: conn, review: review} do
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
