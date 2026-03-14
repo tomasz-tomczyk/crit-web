@@ -1,5 +1,5 @@
 defmodule CritWeb.DashboardLiveTest do
-  use CritWeb.ConnCase, async: true
+  use CritWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Crit.ReviewsFixtures
