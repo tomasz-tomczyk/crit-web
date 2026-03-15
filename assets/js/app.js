@@ -38,6 +38,28 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+// Theme switching
+function setTheme(theme) {
+  if (theme === "system") {
+    localStorage.removeItem("phx:theme");
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    localStorage.setItem("phx:theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+  document.querySelectorAll("[data-phx-theme]").forEach(btn => {
+    btn.setAttribute("aria-checked", btn.dataset.phxTheme === theme ? "true" : "false");
+  });
+}
+
+window.addEventListener("phx:set-theme", e => setTheme(e.target.dataset.phxTheme));
+window.addEventListener("storage", e => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+// Mobile hamburger menu
+document.getElementById("mobile-nav-toggle")?.addEventListener("click", () => {
+  document.getElementById("mobile-nav")?.classList.toggle("hidden");
+});
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
