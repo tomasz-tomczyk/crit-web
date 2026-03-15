@@ -635,7 +635,7 @@ function buildLineBlocks(md, rawContent) {
       if (lang && hljs.getLanguage(lang)) {
         try { highlighted = hljs.highlight(code, { language: lang }).value } catch (_) { highlighted = escapeHtml(code) }
       } else {
-        try { highlighted = hljs.highlightAuto(code).value } catch (_) { highlighted = escapeHtml(code) }
+        highlighted = escapeHtml(code)
       }
 
       const codeLines = splitHighlightedCode(highlighted)
@@ -1916,7 +1916,6 @@ export const DocumentRenderer = {
         if (lang && hljs.getLanguage(lang)) {
           try { return hljs.highlight(str, { language: lang }).value } catch (_) {}
         }
-        try { return hljs.highlightAuto(str).value } catch (_) {}
         return ""
       },
     })
