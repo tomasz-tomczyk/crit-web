@@ -17,8 +17,8 @@
         </h1>
         <p class="text-lg max-sm:text-base leading-relaxed text-(--crit-fg-secondary) max-w-[480px] mb-8">
           Review plans before your agent writes code. Review code before you ship it.
-          Leave inline comments in a browser-based UI, click Finish Review, and a structured
-          prompt goes to your clipboard. Your agent iterates. You review the diff. Repeat.
+          Leave inline comments in a browser-based UI, click Finish Review, and your agent
+          picks up the feedback automatically. It iterates. You review the diff. Repeat.
         </p>
         <div class="flex gap-3 flex-wrap">
           <%= if @demo_token do %>
@@ -177,9 +177,9 @@
         <div class="rounded-md border border-(--crit-border) bg-(--crit-code-bg) p-2.5 text-[10px] font-mono leading-5 text-(--crit-fg-secondary) select-none">
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            Prompt copied <span class="text-(--crit-green)">&check;</span>
+            Agent notified <span class="text-(--crit-green)">&check;</span>
           </div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Paste into your agent</div>
+          <div class="text-(--crit-fg-muted)">&nbsp; Waiting for updates&hellip;</div>
         </div>
       </div>
 
@@ -381,7 +381,7 @@
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">AI Review Loop</h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-            Leave comments, click finish, paste the prompt into your agent. It edits the file. Crit detects the change, reloads, and shows what moved. Previous comments stay visible so nothing gets skipped.
+            Leave comments, click finish, and your agent picks up the feedback automatically. It edits the file. Crit reloads with a diff of what changed. Previous comments stay visible so nothing gets skipped.
           </p>
         </div>
         <div
@@ -397,10 +397,10 @@
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            Finish review - prompt copied <span class="text-(--crit-green)">&check;</span>
+            Finish review - agent notified <span class="text-(--crit-green)">&check;</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-muted)">&rarr;</span> Waiting for agent&hellip;
+            <span class="text-(--crit-fg-muted)">&rarr;</span> Agent working&hellip;
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
