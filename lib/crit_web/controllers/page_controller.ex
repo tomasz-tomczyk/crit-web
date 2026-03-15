@@ -30,10 +30,10 @@ defmodule CritWeb.PageController do
       title: "AI Review Loop",
       tagline: "Review, hand off to your agent, iterate",
       description:
-        "Leave comments, click Finish Review, paste the prompt into your agent. The prompt points the agent to `.crit.json` and tells it to run `crit go <port>` when done. Crit detects the signal, reloads with a diff, and you review again.",
+        "Leave comments, click Finish Review, and your agent is notified automatically via `crit listen`. The agent reads `.crit.json`, makes edits, and runs `crit go <port>` when done. Crit reloads with a diff, and you review again.",
       details: [
-        "When you click \"Finish Review\", Crit writes `.crit.json` - structured comment data with per-file sections. A prompt is copied to your clipboard.",
-        "The prompt tells the agent to read `.crit.json`, address unresolved comments, and run `crit go <port>` when done. Paste it into any agent.",
+        "When you click \"Finish Review\", Crit writes `.crit.json` - structured comment data with per-file sections. Your agent is notified automatically if it was listening via `crit listen`.",
+        "The prompt tells the agent to read `.crit.json`, address unresolved comments, and run `crit go <port>` when done. No copy-paste needed — `crit listen` delivers it directly.",
         "When the agent runs `crit go`, the browser starts a new round with a diff of what changed. Previous comments show as resolved or still open.",
         "Add new comments on the updated version and repeat. When all comments are resolved, Crit detects it and generates a clean confirmation prompt — the loop ends when you're satisfied."
       ]
@@ -56,10 +56,10 @@ defmodule CritWeb.PageController do
       description:
         "Generate a public link with one click. Anyone with the link can view the document and add their own comments. Unpublish anytime to revoke access.",
       details: [
-        "Click the Share button in Crit and a unique URL is generated instantly. The link is copied to your clipboard, ready to paste into Slack, email, or a GitHub issue.",
+        "Click the Share button in Crit and a unique URL is generated instantly. Or share directly from the CLI with `crit share plan.md` — no browser needed.",
         "Anyone who opens the link sees the full document with all comments. They can add their own feedback without installing anything - it works in any browser.",
         "Each reviewer's comments are color-coded by a unique hue, making it easy to track who said what in a multi-person review.",
-        "Unpublish at any time to revoke the link. Shared reviews are automatically deleted after 30 days of inactivity."
+        "Use `crit share --qr` to print a QR code in the terminal for quick mobile access. Unpublish anytime with `crit unpublish`. Shared reviews auto-expire after 30 days of inactivity."
       ]
     },
     "syntax-highlighting" => %{
