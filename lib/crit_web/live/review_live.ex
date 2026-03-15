@@ -143,14 +143,17 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("set_display_name", %{"name" => name}, socket) do
-    # This event updates the in-memory assign only. LiveView cannot write to
-    # the cookie session after mount, so the JS hook also POSTs to /set-name
-    # (the controller endpoint) which persists the name to the session.
+    # Updates the in-memory assign only. The DB update and cross-review
+    # broadcast happen in the controller's POST /set-name handler (the JS
+    # hook fires both this event and the POST). We broadcast the current
+    # review here for immediate feedback to other viewers on this page.
     case Crit.DisplayName.normalize(name) do
       nil ->
         {:noreply, socket}
 
       name ->
+        broadcast_comments(socket.assigns.review)
+
         {:noreply,
          socket
          |> assign(:display_name, name)

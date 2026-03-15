@@ -206,6 +206,19 @@ defmodule CritWeb.ReviewLiveTest do
       assert comment.author_display_name == "Alice"
     end
 
+    test "broadcasts comments when display name is set", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      # Subscribe to verify broadcast fires
+      Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("set_display_name", %{"name" => "Alice"})
+
+      assert_receive {:comments_updated, _comments}, 500
+    end
+
     test "ignores blank names", %{conn: conn, review: review} do
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
 
