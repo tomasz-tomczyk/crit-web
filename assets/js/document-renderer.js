@@ -1318,7 +1318,7 @@ function handleGutterMouseDown(e, ctx) {
 
   // Shift+click: extend selection from previous anchor
   if (e.shiftKey && ctx.selectionStart !== null) {
-    const lineBlocks = filePath ? (ctx.files.find(f => f.path === filePath)?.lineBlocks || []) : ctx.lineBlocks
+    const lineBlocks = filePath ? (ctx.files.find(f => f.path === filePath)?.lineBlocks || ctx.lineBlocks) : ctx.lineBlocks
     const rangeStart = Math.min(ctx.selectionStart, startLine)
     const rangeEnd = Math.max(ctx.selectionEnd, endLine)
     let lastBlockIndex = 0
@@ -1384,7 +1384,7 @@ function handleDragEnd(_e, ctx, onMove, onUp) {
   const rangeEnd = Math.max(ctx.dragState.anchorEndLine, ctx.dragState.currentEndLine)
   const filePath = ctx.dragState.filePath || null
 
-  const lineBlocks = filePath ? (ctx.files.find(f => f.path === filePath)?.lineBlocks || []) : ctx.lineBlocks
+  const lineBlocks = filePath ? (ctx.files.find(f => f.path === filePath)?.lineBlocks || ctx.lineBlocks) : ctx.lineBlocks
   let lastBlockIndex = 0
   for (let i = 0; i < lineBlocks.length; i++) {
     if (lineBlocks[i].startLine >= rangeStart && lineBlocks[i].endLine <= rangeEnd) {
