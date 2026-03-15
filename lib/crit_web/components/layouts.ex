@@ -131,7 +131,7 @@ defmodule CritWeb.Layouts do
         <div class="flex items-center gap-3 sm:hidden">
           <.theme_toggle />
           <button
-            onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
+            id="mobile-nav-toggle"
             class="p-1 text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] cursor-pointer"
             aria-label="Toggle menu"
           >
