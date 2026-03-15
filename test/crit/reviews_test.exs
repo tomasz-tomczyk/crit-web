@@ -464,6 +464,140 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "update_display_name/2" do
+    test "updates display name on all comments by the given identity" do
+      review = review_fixture()
+      identity = Ecto.UUID.generate()
+
+      {:ok, _c1} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "First"},
+          identity,
+          "OldName"
+        )
+
+      {:ok, _c2} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 2, "end_line" => 2, "body" => "Second"},
+          identity,
+          "OldName"
+        )
+
+      {2, _} = Reviews.update_display_name(identity, "NewName")
+
+      comments = Reviews.list_comments(review)
+      assert Enum.all?(comments, &(&1.author_display_name == "NewName"))
+    end
+
+    test "does not affect comments by other identities" do
+      review = review_fixture()
+      identity_a = Ecto.UUID.generate()
+      identity_b = Ecto.UUID.generate()
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "A's comment"},
+          identity_a,
+          "Alice"
+        )
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 2, "end_line" => 2, "body" => "B's comment"},
+          identity_b,
+          "Bob"
+        )
+
+      Reviews.update_display_name(identity_a, "Alicia")
+
+      comments = Reviews.list_comments(review)
+      a_comment = Enum.find(comments, &(&1.author_identity == identity_a))
+      b_comment = Enum.find(comments, &(&1.author_identity == identity_b))
+
+      assert a_comment.author_display_name == "Alicia"
+      assert b_comment.author_display_name == "Bob"
+    end
+
+    test "updates comments across multiple reviews" do
+      review1 = review_fixture()
+
+      review2 =
+        review_fixture(%{files: [%{"path" => "other.md", "content" => "# Other"}]})
+
+      identity = Ecto.UUID.generate()
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review1,
+          %{"start_line" => 1, "end_line" => 1, "body" => "On review 1"},
+          identity,
+          "Old"
+        )
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review2,
+          %{"start_line" => 1, "end_line" => 1, "body" => "On review 2"},
+          identity,
+          "Old"
+        )
+
+      {2, _} = Reviews.update_display_name(identity, "New")
+
+      assert hd(Reviews.list_comments(review1)).author_display_name == "New"
+      assert hd(Reviews.list_comments(review2)).author_display_name == "New"
+    end
+
+    test "returns {0, nil} when identity has no comments" do
+      assert {0, _} = Reviews.update_display_name(Ecto.UUID.generate(), "Nobody")
+    end
+  end
+
+  describe "reviews_for_identity/1" do
+    test "returns review id and token pairs" do
+      review = review_fixture()
+      identity = Ecto.UUID.generate()
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "hi"},
+          identity
+        )
+
+      assert [{review.id, review.token}] == Reviews.reviews_for_identity(identity)
+    end
+
+    test "returns distinct reviews even with multiple comments" do
+      review = review_fixture()
+      identity = Ecto.UUID.generate()
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "one"},
+          identity
+        )
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 2, "end_line" => 2, "body" => "two"},
+          identity
+        )
+
+      assert [{review.id, review.token}] == Reviews.reviews_for_identity(identity)
+    end
+
+    test "returns empty list for identity with no comments" do
+      assert [] == Reviews.reviews_for_identity(Ecto.UUID.generate())
+    end
+  end
+
   describe "delete_review/1" do
     test "deletes a review by id" do
       review = review_fixture()

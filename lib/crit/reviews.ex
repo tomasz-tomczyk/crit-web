@@ -34,9 +34,13 @@ defmodule Crit.Reviews do
   end
 
   @doc "List all comments for a review, ordered by start_line."
-  def list_comments(%Review{id: id}) do
+  def list_comments(%Review{id: id}), do: list_comments(id)
+
+  def list_comments(review_id) when is_binary(review_id) do
     Repo.all(
-      from c in Comment, where: c.review_id == ^id, order_by: [asc: c.start_line, asc: c.end_line]
+      from c in Comment,
+        where: c.review_id == ^review_id,
+        order_by: [asc: c.start_line, asc: c.end_line]
     )
   end
 
@@ -284,6 +288,27 @@ defmodule Crit.Reviews do
           {:error, _} -> {:error, :delete_failed}
         end
     end
+  end
+
+  @doc "Update the display name on all comments by a given identity. Returns {count, nil}."
+  def update_display_name(identity, display_name) do
+    from(c in Comment, where: c.author_identity == ^identity)
+    |> Repo.update_all(set: [author_display_name: display_name])
+  end
+
+  @doc """
+  Returns {id, token} pairs for all reviews that have comments by the given identity.
+  Used to broadcast display name changes to affected live review pages.
+  """
+  def reviews_for_identity(identity) do
+    from(c in Comment,
+      where: c.author_identity == ^identity,
+      join: r in Review,
+      on: r.id == c.review_id,
+      distinct: true,
+      select: {r.id, r.token}
+    )
+    |> Repo.all()
   end
 
   @doc "Serialize a comment to the API JSON shape."
