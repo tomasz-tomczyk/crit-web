@@ -15,9 +15,10 @@
       name="keywords"
       content="code review, AI plan review, inline comments, markdown review, AI coding agent, Claude Code, Cursor, plan-then-code"
     />
-    <%= if assigns[:noindex] do %>
+    <%= if assigns[:noindex] || Application.get_env(:crit, :selfhosted) do %>
       <meta name="robots" content="noindex, nofollow" />
     <% end %>
+    <link :if={assigns[:canonical_url]} rel="canonical" href={@canonical_url} />
 
     <meta property="og:type" content={assigns[:og_type] || "website"} />
     <meta property="og:site_name" content="Crit" />
@@ -32,7 +33,7 @@
           "Review AI-generated plans before implementation. Inline comments, multi-round diffs, and a structured feedback loop for any AI coding agent."
       }
     />
-    <meta property="og:url" content={assigns[:og_url] || "https://crit.live"} />
+    <meta property="og:url" content={assigns[:canonical_url] || "https://crit.live"} />
 
     <meta name="twitter:card" content="summary" />
     <meta
@@ -50,6 +51,9 @@
     <.live_title default="Crit — Review AI plans before they become code">
       {assigns[:page_title]}
     </.live_title>
+    <script :if={assigns[:json_ld]} type="application/ld+json">
+      {raw(JSON.encode!(assigns[:json_ld]))}
+    </script>
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script phx-track-static type="module" src={~p"/assets/js/app.js"}>
     </script>

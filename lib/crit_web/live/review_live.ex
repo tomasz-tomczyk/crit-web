@@ -72,7 +72,7 @@ defmodule CritWeb.ReviewLive do
          )
          |> assign(:noindex, true)
          |> assign(:og_type, "article")
-         |> assign(:og_url, CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"),
+         |> assign(:canonical_url, CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"),
          layout: {CritWeb.Layouts, :review}}
     end
   end
