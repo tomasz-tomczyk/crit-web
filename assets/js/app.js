@@ -24,13 +24,19 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/crit"
 import topbar from "../vendor/topbar"
-import {DocumentRenderer} from "./document-renderer"
+// Load document-renderer (markdown-it + hljs + mermaid) only on review pages.
+// Top-level await is valid in ES modules — it blocks module evaluation so the
+// hook is ready synchronously when LiveView calls mounted().
+const isReviewPage = window.location.pathname.startsWith('/r/')
+const DocumentRendererHook = isReviewPage
+  ? (await import("./document-renderer")).DocumentRenderer
+  : { mounted() {} }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, "CritWeb.ReviewLive.DocumentRenderer": DocumentRenderer},
+  hooks: {...colocatedHooks, "CritWeb.ReviewLive.DocumentRenderer": DocumentRendererHook},
 })
 
 // Show progress bar on live navigation and form submits
@@ -106,6 +112,24 @@ document.querySelectorAll(".copy-btn").forEach(btn => {
     })
   })
 })
+
+// Home page: YouTube lite facade — load iframe on click
+const ytFacade = document.getElementById("yt-facade")
+if (ytFacade) {
+  const activate = () => {
+    const iframe = document.createElement("iframe")
+    iframe.src = "https://www.youtube.com/embed/w_Dswm2Ft-o?autoplay=1"
+    iframe.title = "Crit demo"
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    iframe.allowFullscreen = true
+    iframe.className = "absolute inset-0 w-full h-full"
+    iframe.style.border = "0"
+    ytFacade.replaceChildren(iframe)
+    ytFacade.classList.remove("cursor-pointer", "group")
+  }
+  ytFacade.addEventListener("click", activate)
+  ytFacade.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate() }})
+}
 
 // Home page: feature cards scroll-triggered reveal
 const featuresGrid = document.getElementById("features-grid")
