@@ -16,6 +16,7 @@ defmodule Crit.Application do
         {Crit.RateLimit, clean_period: :timer.minutes(10)}
       ] ++
         review_cleaner() ++
+        changelog() ++
         [
           CritWeb.Endpoint
         ]
@@ -29,6 +30,14 @@ defmodule Crit.Application do
   defp review_cleaner do
     if Application.get_env(:crit, :start_review_cleaner, true) do
       [Crit.ReviewCleaner]
+    else
+      []
+    end
+  end
+
+  defp changelog do
+    if Application.get_env(:crit, :start_changelog, true) do
+      [Crit.Changelog]
     else
       []
     end

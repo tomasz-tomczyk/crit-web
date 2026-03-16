@@ -36,3 +36,4 @@ config :phoenix,
 
 # Don't start the background cleaner in tests — tests start their own supervised instance
 config :crit, start_review_cleaner: false
+config :crit, start_changelog: false
