@@ -61,6 +61,8 @@
   --crit-table-stripe: rgba(122, 162, 247, 0.04);
   --crit-blockquote-border: #3d59a1;
   --crit-blockquote-bg: rgba(61, 89, 161, 0.08);
+  --crit-diff-add-bg: rgba(158, 206, 106, 0.08);
+  --crit-diff-del-bg: rgba(247, 118, 142, 0.06);
 }
 
 [data-theme="dark"] {
@@ -95,6 +97,8 @@
   --crit-table-stripe: rgba(122, 162, 247, 0.04);
   --crit-blockquote-border: #3d59a1;
   --crit-blockquote-bg: rgba(61, 89, 161, 0.08);
+  --crit-diff-add-bg: rgba(158, 206, 106, 0.08);
+  --crit-diff-del-bg: rgba(247, 118, 142, 0.06);
 }
 
 [data-theme="light"] {
@@ -129,6 +133,8 @@
   --crit-table-stripe: rgba(0, 0, 0, 0.02);
   --crit-blockquote-border: #0969da;
   --crit-blockquote-bg: rgba(9, 105, 218, 0.04);
+  --crit-diff-add-bg: rgba(26, 127, 55, 0.06);
+  --crit-diff-del-bg: rgba(207, 34, 46, 0.04);
 }
 
 /* System preference: light — overrides dark :root defaults when OS is light */
@@ -165,6 +171,8 @@
     --crit-table-stripe: rgba(0, 0, 0, 0.02);
     --crit-blockquote-border: #0969da;
     --crit-blockquote-bg: rgba(9, 105, 218, 0.04);
+    --crit-diff-add-bg: rgba(26, 127, 55, 0.06);
+    --crit-diff-del-bg: rgba(207, 34, 46, 0.04);
   }
 }
 
@@ -516,6 +524,53 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 .comment-body code { background: var(--crit-bg-tertiary); padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
 .comment-body pre { background: var(--crit-bg-tertiary); padding: 8px 10px; border-radius: 4px; overflow-x: auto; margin: 0.5em 0; }
 .comment-body pre code { background: none; padding: 0; }
+
+/* Suggestion diff inside comments */
+.suggestion-diff {
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 8px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+}
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--crit-bg-secondary);
+  border-bottom: 1px solid var(--crit-border);
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--crit-fg-dimmed);
+}
+.suggestion-line {
+  display: flex;
+  padding: 0 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.suggestion-line-del {
+  background: var(--crit-diff-del-bg);
+}
+.suggestion-line-add {
+  background: var(--crit-diff-add-bg);
+}
+.suggestion-line-sign {
+  display: inline-block;
+  width: 20px;
+  flex-shrink: 0;
+  user-select: none;
+  text-align: center;
+}
+.suggestion-line-del .suggestion-line-sign { color: var(--crit-red); }
+.suggestion-line-add .suggestion-line-sign { color: var(--crit-green); }
+.suggestion-line-content {
+  flex: 1;
+  min-width: 0;
+}
 .comment-body a { color: var(--crit-accent); text-decoration: none; border-bottom: 1px solid var(--crit-accent-subtle); }
 .comment-body a:hover { color: var(--crit-accent-hover); }
 .comment-time { font-size: 11px; color: hsl(var(--comment-hue, 220) var(--comment-time-s) var(--comment-time-l)); }

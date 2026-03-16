@@ -61,6 +61,51 @@ const commentMd = markdownit({
   },
 })
 
+// ===== Suggestion Diff Renderer =====
+function renderSuggestionDiff(suggestionContent, originalLines) {
+  let sugLines = suggestionContent.replace(/\n$/, '').split('\n')
+  let html = '<div class="suggestion-diff">'
+  html += '<div class="suggestion-header">Suggested change</div>'
+
+  if (originalLines && originalLines.length > 0) {
+    for (let i = 0; i < originalLines.length; i++) {
+      html += '<div class="suggestion-line suggestion-line-del">'
+        + '<span class="suggestion-line-sign">\u2212</span>'
+        + '<span class="suggestion-line-content">' + escapeHtml(originalLines[i]) + '</span>'
+        + '</div>'
+    }
+  }
+
+  if (sugLines.length === 1 && sugLines[0] === '' && originalLines && originalLines.length > 0) {
+    // Pure deletion — no add lines
+  } else {
+    for (let j = 0; j < sugLines.length; j++) {
+      html += '<div class="suggestion-line suggestion-line-add">'
+        + '<span class="suggestion-line-sign">+</span>'
+        + '<span class="suggestion-line-content">' + escapeHtml(sugLines[j]) + '</span>'
+        + '</div>'
+    }
+  }
+
+  html += '</div>'
+  return html
+}
+
+;(function() {
+  const defaultFence = commentMd.renderer.rules.fence
+  commentMd.renderer.rules.fence = function(tokens, idx, options, env, self) {
+    const token = tokens[idx]
+    const info = token.info ? token.info.trim() : ''
+    if (info === 'suggestion') {
+      return renderSuggestionDiff(token.content, env && env.originalLines)
+    }
+    if (defaultFence) {
+      return defaultFence(tokens, idx, options, env, self)
+    }
+    return self.renderToken(tokens, idx, options)
+  }
+})()
+
 function showToast(message, duration = 3000) {
   const toast = document.createElement('div')
   toast.className = 'mini-toast'
@@ -1484,7 +1529,11 @@ function createCommentElement(comment, ctx) {
 
   const body = document.createElement("div")
   body.className = "comment-body"
-  body.innerHTML = commentMd.render(comment.body)
+  const env = {}
+  if (ctx && ctx.rawContent && comment.start_line && comment.end_line && !comment.side) {
+    env.originalLines = ctx.rawContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+  }
+  body.innerHTML = commentMd.render(comment.body, env)
 
   card.appendChild(header)
   card.appendChild(body)
