@@ -117,6 +117,12 @@ defmodule CritWeb.Layouts do
             Self-Hosting
           </a>
           <a
+            href={~p"/changelog"}
+            class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors"
+          >
+            Changelog
+          </a>
+          <a
             href="https://github.com/tomasz-tomczyk/crit"
             class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors flex items-center gap-1.5"
           >
@@ -159,6 +165,12 @@ defmodule CritWeb.Layouts do
             class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-1.5"
           >
             Self-Hosting
+          </a>
+          <a
+            href={~p"/changelog"}
+            class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-1.5"
+          >
+            Changelog
           </a>
           <a
             href="https://github.com/tomasz-tomczyk/crit"

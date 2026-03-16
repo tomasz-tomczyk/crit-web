@@ -13,7 +13,8 @@ defmodule Crit.Changelog do
   @refresh_interval :timer.hours(1)
 
   @repos [
-    {:cli, "tomasz-tomczyk/crit"}
+    {:cli, "tomasz-tomczyk/crit"},
+    {:web, "tomasz-tomczyk/crit-web"}
   ]
 
   # Client API
@@ -116,9 +117,9 @@ defmodule Crit.Changelog do
 
   defp shorten_pr_links(html) do
     Regex.replace(
-      ~r{<a href="https://github\.com/[^"]+/pull/(\d+)"[^>]*>https://github\.com/[^<]+</a>},
+      ~r{<a href="(https://github\.com/[^"]+/pull/(\d+))"[^>]*>https://github\.com/[^<]+</a>},
       html,
-      fn _, num -> ~s(<a href="https://github.com/tomasz-tomczyk/crit/pull/#{num}">##{num}</a>) end
+      fn _, url, num -> ~s(<a href="#{url}">##{num}</a>) end
     )
   end
 
