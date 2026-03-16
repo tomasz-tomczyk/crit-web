@@ -1555,7 +1555,7 @@ function createCommentForm(formObj, ctx) {
 
   const saveTemplateBtn = document.createElement('button')
   saveTemplateBtn.className = 'btn btn-sm'
-  saveTemplateBtn.textContent = '+ Save as template'
+  saveTemplateBtn.textContent = '+ Template'
   saveTemplateBtn.addEventListener('click', (e) => {
     e.preventDefault()
     showSaveTemplateDialog(textarea, templateBar)
@@ -1569,7 +1569,7 @@ function createCommentForm(formObj, ctx) {
 
   const submitBtn = document.createElement("button")
   submitBtn.className = "btn btn-sm btn-primary"
-  submitBtn.textContent = "Add Comment"
+  submitBtn.textContent = "Submit"
   submitBtn.addEventListener("click", () => submitNewComment(textarea.value, formObj, ctx))
 
   actions.appendChild(leftGroup)
@@ -1633,7 +1633,7 @@ function createInlineEditor(comment, formObj, ctx) {
 
   const submitBtn = document.createElement("button")
   submitBtn.className = "btn btn-sm btn-primary"
-  submitBtn.textContent = "Update Comment"
+  submitBtn.textContent = "Update"
   submitBtn.addEventListener("click", () => submitEditComment(comment.id, textarea.value, formObj, ctx))
 
   actions.appendChild(suggestBtn)
