@@ -61,6 +61,180 @@ const commentMd = markdownit({
   },
 })
 
+// ===== Word-Level Diff =====
+
+// Split a line into tokens: words (alphanumeric + underscore) and individual non-word characters.
+function tokenize(line) {
+  var tokens = []
+  var re = /[\w]+|[^\w]/g
+  var match
+  while ((match = re.exec(line)) !== null) {
+    tokens.push(match[0])
+  }
+  return tokens
+}
+
+// Compute LCS membership for two token arrays.
+// Returns { oldKeep: boolean[], newKeep: boolean[] } where true = token is in LCS (unchanged).
+function computeTokenLCS(oldTokens, newTokens) {
+  var m = oldTokens.length
+  var n = newTokens.length
+
+  // Build DP table
+  var dp = []
+  for (var i = 0; i <= m; i++) {
+    dp[i] = new Array(n + 1).fill(0)
+  }
+  for (var i = 1; i <= m; i++) {
+    for (var j = 1; j <= n; j++) {
+      if (oldTokens[i - 1] === newTokens[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
+      }
+    }
+  }
+
+  // Backtrack to mark LCS membership
+  var oldKeep = new Array(m).fill(false)
+  var newKeep = new Array(n).fill(false)
+  var i = m, j = n
+  while (i > 0 && j > 0) {
+    if (oldTokens[i - 1] === newTokens[j - 1]) {
+      oldKeep[i - 1] = true
+      newKeep[j - 1] = true
+      i--; j--
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      i--
+    } else {
+      j--
+    }
+  }
+
+  return { oldKeep: oldKeep, newKeep: newKeep }
+}
+
+// Compute word-level diff between two lines.
+// Returns { oldRanges, newRanges } where each range is [startCharIdx, endCharIdx] in the raw text.
+// Returns null if lines are too long, identical, or completely different.
+function wordDiff(oldLine, newLine) {
+  // Skip for very long lines (perf guard: LCS is O(m*n) on token count)
+  if (oldLine.length > 500 || newLine.length > 500) return null
+  // Skip for lines with no spaces and >200 chars (likely minified/binary)
+  if (oldLine.length > 200 && !oldLine.includes(' ')) return null
+  if (newLine.length > 200 && !newLine.includes(' ')) return null
+
+  var oldTokens = tokenize(oldLine)
+  var newTokens = tokenize(newLine)
+
+  // Skip if token counts are huge
+  if (oldTokens.length > 200 || newTokens.length > 200) return null
+
+  var result = computeTokenLCS(oldTokens, newTokens)
+  var oldKeep = result.oldKeep
+  var newKeep = result.newKeep
+
+  // If everything changed, don't bother with word-level highlights
+  var oldUnchanged = oldKeep.filter(Boolean).length
+  var newUnchanged = newKeep.filter(Boolean).length
+  if (oldUnchanged === 0 && newUnchanged === 0) return null
+
+  // If nothing changed (lines are identical), skip
+  if (oldUnchanged === oldTokens.length && newUnchanged === newTokens.length) return null
+
+  // Build character ranges for changed tokens
+  function buildRanges(tokens, keep) {
+    var ranges = []
+    var charIdx = 0
+    var rangeStart = -1
+    for (var i = 0; i < tokens.length; i++) {
+      if (!keep[i]) {
+        if (rangeStart === -1) rangeStart = charIdx
+      } else {
+        if (rangeStart !== -1) {
+          ranges.push([rangeStart, charIdx])
+          rangeStart = -1
+        }
+      }
+      charIdx += tokens[i].length
+    }
+    if (rangeStart !== -1) ranges.push([rangeStart, charIdx])
+    return ranges
+  }
+
+  return {
+    oldRanges: buildRanges(oldTokens, oldKeep),
+    newRanges: buildRanges(newTokens, newKeep),
+  }
+}
+
+// Overlay word-diff highlight ranges onto syntax-highlighted HTML.
+// Walks the HTML string, tracking visible character position (skipping HTML tags),
+// and inserts <span class="cssClass"> wrappers around the character ranges.
+function applyWordDiffToHtml(html, ranges, cssClass) {
+  if (!ranges || ranges.length === 0) return html
+
+  var result = ''
+  var charIdx = 0       // visible character index
+  var rangeIdx = 0      // which range we're processing
+  var inRange = false   // currently inside a word-diff span
+  var i = 0             // position in html string
+
+  while (i < html.length) {
+    // Skip HTML tags (don't count them as visible characters)
+    if (html[i] === '<') {
+      // If we're in a word-diff range, close it before the tag, reopen after
+      if (inRange) result += '</span>'
+      var tagEnd = html.indexOf('>', i)
+      if (tagEnd === -1) { result += html.slice(i); break }
+      result += html.slice(i, tagEnd + 1)
+      i = tagEnd + 1
+      if (inRange) result += '<span class="' + cssClass + '">'
+      continue
+    }
+
+    // Handle HTML entities (e.g., &amp; &lt; &gt; &quot;) as single visible characters
+    var visibleChar
+    if (html[i] === '&') {
+      var semiIdx = html.indexOf(';', i)
+      if (semiIdx !== -1 && semiIdx - i < 10) {
+        visibleChar = html.slice(i, semiIdx + 1)
+        i = semiIdx + 1
+      } else {
+        visibleChar = html[i]
+        i++
+      }
+    } else {
+      visibleChar = html[i]
+      i++
+    }
+
+    // Check if we need to open a word-diff span
+    if (!inRange && rangeIdx < ranges.length && charIdx >= ranges[rangeIdx][0]) {
+      result += '<span class="' + cssClass + '">'
+      inRange = true
+    }
+
+    result += visibleChar
+    charIdx++
+
+    // Check if we need to close a word-diff span
+    if (inRange && rangeIdx < ranges.length && charIdx >= ranges[rangeIdx][1]) {
+      result += '</span>'
+      inRange = false
+      rangeIdx++
+      // Check if immediately entering next range
+      if (rangeIdx < ranges.length && charIdx >= ranges[rangeIdx][0]) {
+        result += '<span class="' + cssClass + '">'
+        inRange = true
+      }
+    }
+  }
+
+  if (inRange) result += '</span>'
+  return result
+}
+
 // ===== Suggestion Diff Renderer =====
 function renderSuggestionDiff(suggestionContent, originalLines) {
   let sugLines = suggestionContent.replace(/\n$/, '').split('\n')
@@ -71,13 +245,11 @@ function renderSuggestionDiff(suggestionContent, originalLines) {
   const isEmptySuggestion = sugLines.length === 1 && sugLines[0] === '' && origLen > 0
   const sugLen = isEmptySuggestion ? 0 : sugLines.length
   const pairedLen = Math.min(origLen, sugLen)
-  const hasWordDiff = typeof wordDiff === 'function' && typeof applyWordDiffToHtml === 'function'
-
   // Compute word-level diffs for paired lines
   const delContents = []
   const addContents = []
   for (let i = 0; i < pairedLen; i++) {
-    const wd = hasWordDiff ? wordDiff(originalLines[i], sugLines[i]) : null
+    const wd = wordDiff(originalLines[i], sugLines[i])
     if (wd) {
       delContents.push(applyWordDiffToHtml(escapeHtml(originalLines[i]), wd.oldRanges, 'diff-word-del'))
       addContents.push(applyWordDiffToHtml(escapeHtml(sugLines[i]), wd.newRanges, 'diff-word-add'))

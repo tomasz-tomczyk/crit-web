@@ -65,6 +65,8 @@
   --crit-diff-del-bg: rgba(247, 118, 142, 0.06);
   --crit-diff-add-line-bg: rgba(158, 206, 106, 0.18);
   --crit-diff-del-line-bg: rgba(247, 118, 142, 0.14);
+  --crit-diff-word-add-bg: rgba(63, 185, 80, 0.4);
+  --crit-diff-word-del-bg: rgba(248, 81, 73, 0.4);
 }
 
 [data-theme="dark"] {
@@ -103,6 +105,8 @@
   --crit-diff-del-bg: rgba(247, 118, 142, 0.06);
   --crit-diff-add-line-bg: rgba(158, 206, 106, 0.18);
   --crit-diff-del-line-bg: rgba(247, 118, 142, 0.14);
+  --crit-diff-word-add-bg: rgba(63, 185, 80, 0.4);
+  --crit-diff-word-del-bg: rgba(248, 81, 73, 0.4);
 }
 
 [data-theme="light"] {
@@ -141,6 +145,8 @@
   --crit-diff-del-bg: rgba(207, 34, 46, 0.04);
   --crit-diff-add-line-bg: rgba(26, 127, 55, 0.14);
   --crit-diff-del-line-bg: rgba(207, 34, 46, 0.1);
+  --crit-diff-word-add-bg: rgba(26, 127, 55, 0.25);
+  --crit-diff-word-del-bg: rgba(207, 34, 46, 0.25);
 }
 
 /* System preference: light — overrides dark :root defaults when OS is light */
@@ -181,6 +187,8 @@
     --crit-diff-del-bg: rgba(207, 34, 46, 0.04);
     --crit-diff-add-line-bg: rgba(26, 127, 55, 0.14);
     --crit-diff-del-line-bg: rgba(207, 34, 46, 0.1);
+    --crit-diff-word-add-bg: rgba(26, 127, 55, 0.25);
+    --crit-diff-word-del-bg: rgba(207, 34, 46, 0.25);
   }
 }
 
@@ -579,6 +587,8 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   flex: 1;
   min-width: 0;
 }
+.diff-word-add { background: var(--crit-diff-word-add-bg); border-radius: 2px; padding: 0 1px; }
+.diff-word-del { background: var(--crit-diff-word-del-bg); border-radius: 2px; padding: 0 1px; }
 .comment-body a { color: var(--crit-accent); text-decoration: none; border-bottom: 1px solid var(--crit-accent-subtle); }
 .comment-body a:hover { color: var(--crit-accent-hover); }
 .comment-time { font-size: 11px; color: hsl(var(--comment-hue, 220) var(--comment-time-s) var(--comment-time-l)); }
