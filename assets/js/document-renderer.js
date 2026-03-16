@@ -1871,7 +1871,18 @@ function renderCommentsPanel(ctx) {
 
     const bodyEl = document.createElement('div')
     bodyEl.className = 'comments-panel-card-body'
-    bodyEl.textContent = comment.body
+    const env = {}
+    if (comment.start_line && comment.end_line && !comment.side) {
+      let fileContent = ctx.rawContent
+      if (ctx.multiFile && filePath) {
+        const file = ctx.files.find(f => f.path === filePath)
+        if (file) fileContent = file.content
+      }
+      if (fileContent) {
+        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+      }
+    }
+    bodyEl.innerHTML = commentMd.render(comment.body, env)
 
     card.appendChild(header)
     card.appendChild(bodyEl)
