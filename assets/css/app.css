@@ -63,6 +63,8 @@
   --crit-blockquote-bg: rgba(61, 89, 161, 0.08);
   --crit-diff-add-bg: rgba(158, 206, 106, 0.08);
   --crit-diff-del-bg: rgba(247, 118, 142, 0.06);
+  --crit-diff-add-line-bg: rgba(158, 206, 106, 0.18);
+  --crit-diff-del-line-bg: rgba(247, 118, 142, 0.14);
 }
 
 [data-theme="dark"] {
@@ -99,6 +101,8 @@
   --crit-blockquote-bg: rgba(61, 89, 161, 0.08);
   --crit-diff-add-bg: rgba(158, 206, 106, 0.08);
   --crit-diff-del-bg: rgba(247, 118, 142, 0.06);
+  --crit-diff-add-line-bg: rgba(158, 206, 106, 0.18);
+  --crit-diff-del-line-bg: rgba(247, 118, 142, 0.14);
 }
 
 [data-theme="light"] {
@@ -135,6 +139,8 @@
   --crit-blockquote-bg: rgba(9, 105, 218, 0.04);
   --crit-diff-add-bg: rgba(26, 127, 55, 0.06);
   --crit-diff-del-bg: rgba(207, 34, 46, 0.04);
+  --crit-diff-add-line-bg: rgba(26, 127, 55, 0.14);
+  --crit-diff-del-line-bg: rgba(207, 34, 46, 0.1);
 }
 
 /* System preference: light — overrides dark :root defaults when OS is light */
@@ -173,6 +179,8 @@
     --crit-blockquote-bg: rgba(9, 105, 218, 0.04);
     --crit-diff-add-bg: rgba(26, 127, 55, 0.06);
     --crit-diff-del-bg: rgba(207, 34, 46, 0.04);
+    --crit-diff-add-line-bg: rgba(26, 127, 55, 0.14);
+    --crit-diff-del-line-bg: rgba(207, 34, 46, 0.1);
   }
 }
 
@@ -540,7 +548,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   align-items: center;
   gap: 6px;
   padding: 4px 12px;
-  background: var(--crit-bg-secondary);
+  background: var(--crit-accent-subtle);
   border-bottom: 1px solid var(--crit-border);
   font-family: var(--font-body);
   font-size: 12px;
@@ -553,10 +561,10 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   word-break: break-all;
 }
 .suggestion-line-del {
-  background: var(--crit-diff-del-bg);
+  background: var(--crit-diff-del-line-bg);
 }
 .suggestion-line-add {
-  background: var(--crit-diff-add-bg);
+  background: var(--crit-diff-add-line-bg);
 }
 .suggestion-line-sign {
   display: inline-block;
