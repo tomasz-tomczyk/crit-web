@@ -158,9 +158,25 @@ defmodule CritWeb.PageController do
     else
       render(conn, :home,
         demo_token: Application.get_env(:crit, :demo_review_token),
+        canonical_url: canonical_url(conn),
         page_title: "Crit - Inline code review for AI coding agents",
         meta_description:
-          "Review AI-generated plans before coding. Review code changes before merging. Inline comments, multi-round diffs, and a structured feedback loop for any AI coding agent. Single binary, works locally."
+          "Review AI-generated plans before coding. Review code changes before merging. Inline comments, multi-round diffs, and a structured feedback loop for any AI coding agent. Single binary, works locally.",
+        json_ld: %{
+          "@context" => "https://schema.org",
+          "@type" => "SoftwareApplication",
+          "name" => "Crit",
+          "applicationCategory" => "DeveloperApplication",
+          "operatingSystem" => "macOS, Linux, Windows",
+          "description" =>
+            "Review AI-generated plans before coding. Inline comments, multi-round diffs, and a structured feedback loop for any AI coding agent.",
+          "url" => "https://crit.live",
+          "offers" => %{
+            "@type" => "Offer",
+            "price" => "0",
+            "priceCurrency" => "USD"
+          }
+        }
       )
     end
   end
@@ -169,6 +185,7 @@ defmodule CritWeb.PageController do
     render(conn, :features,
       feature_order: @feature_order,
       features: @features,
+      canonical_url: canonical_url(conn),
       page_title: "Features - Crit",
       meta_description:
         "Inline comments, multi-round diffs, git diff viewer, vim keybindings, shared reviews, syntax highlighting, and more. Built for reviewing AI agent output at every stage."
@@ -184,8 +201,33 @@ defmodule CritWeb.PageController do
           demo_token: Application.get_env(:crit, :demo_review_token),
           feature_order: @feature_order,
           features: @features,
+          canonical_url: canonical_url(conn),
           page_title: "#{feature.title} - Crit",
-          meta_description: "#{feature.tagline}. #{feature.description}"
+          meta_description: "#{feature.tagline}. #{feature.description}",
+          json_ld: %{
+            "@context" => "https://schema.org",
+            "@type" => "BreadcrumbList",
+            "itemListElement" => [
+              %{
+                "@type" => "ListItem",
+                "position" => 1,
+                "name" => "Home",
+                "item" => "https://crit.live/"
+              },
+              %{
+                "@type" => "ListItem",
+                "position" => 2,
+                "name" => "Features",
+                "item" => "https://crit.live/features"
+              },
+              %{
+                "@type" => "ListItem",
+                "position" => 3,
+                "name" => feature.title,
+                "item" => "https://crit.live/features/#{slug}"
+              }
+            ]
+          }
         )
 
       :error ->
@@ -199,6 +241,7 @@ defmodule CritWeb.PageController do
   def integrations(conn, _params) do
     render(conn, :integrations,
       integrations: @integrations,
+      canonical_url: canonical_url(conn),
       page_title: "Integrations - Crit",
       meta_description:
         "Set up Crit with Claude Code, Cursor, GitHub Copilot, Windsurf, Aider, or Cline. Drop-in config files for each agent."
@@ -207,6 +250,7 @@ defmodule CritWeb.PageController do
 
   def terms(conn, _params) do
     render(conn, :terms,
+      canonical_url: canonical_url(conn),
       page_title: "Terms of Service - Crit",
       meta_description:
         "Terms of service for Crit, the markdown review tool for AI coding agents."
@@ -215,6 +259,7 @@ defmodule CritWeb.PageController do
 
   def privacy(conn, _params) do
     render(conn, :privacy,
+      canonical_url: canonical_url(conn),
       page_title: "Privacy Policy - Crit",
       meta_description:
         "Privacy policy for Crit. Local-first by default - your files never leave your machine unless you explicitly share."
@@ -223,9 +268,14 @@ defmodule CritWeb.PageController do
 
   def self_hosting(conn, _params) do
     render(conn, :self_hosting,
+      canonical_url: canonical_url(conn),
       page_title: "Self-Hosting - Crit",
       meta_description:
         "Run your own instance of Crit Web with Docker. Full guide with docker-compose, environment variables, and setup instructions."
     )
+  end
+
+  defp canonical_url(conn) do
+    "#{CritWeb.Endpoint.url()}#{conn.request_path}"
   end
 end
