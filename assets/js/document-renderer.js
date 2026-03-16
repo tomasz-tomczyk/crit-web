@@ -73,37 +73,34 @@ function renderSuggestionDiff(suggestionContent, originalLines) {
   const pairedLen = Math.min(origLen, sugLen)
   const hasWordDiff = typeof wordDiff === 'function' && typeof applyWordDiffToHtml === 'function'
 
-  // Paired lines: show with word-level diff when available
+  // Compute word-level diffs for paired lines
+  const delContents = []
+  const addContents = []
   for (let i = 0; i < pairedLen; i++) {
-    let delContent, addContent
     const wd = hasWordDiff ? wordDiff(originalLines[i], sugLines[i]) : null
     if (wd) {
-      delContent = applyWordDiffToHtml(escapeHtml(originalLines[i]), wd.oldRanges, 'diff-word-del')
-      addContent = applyWordDiffToHtml(escapeHtml(sugLines[i]), wd.newRanges, 'diff-word-add')
+      delContents.push(applyWordDiffToHtml(escapeHtml(originalLines[i]), wd.oldRanges, 'diff-word-del'))
+      addContents.push(applyWordDiffToHtml(escapeHtml(sugLines[i]), wd.newRanges, 'diff-word-add'))
     } else {
-      delContent = escapeHtml(originalLines[i])
-      addContent = escapeHtml(sugLines[i])
+      delContents.push(escapeHtml(originalLines[i]))
+      addContents.push(escapeHtml(sugLines[i]))
     }
-    html += '<div class="suggestion-line suggestion-line-del">'
-      + '<span class="suggestion-line-sign">\u2212</span>'
-      + '<span class="suggestion-line-content">' + delContent + '</span></div>'
-    html += '<div class="suggestion-line suggestion-line-add">'
-      + '<span class="suggestion-line-sign">+</span>'
-      + '<span class="suggestion-line-content">' + addContent + '</span></div>'
   }
 
-  // Remaining original lines (unpaired deletions)
-  for (let j = pairedLen; j < origLen; j++) {
+  // All deletion lines first (paired + unpaired)
+  for (let j = 0; j < origLen; j++) {
+    const dc = j < pairedLen ? delContents[j] : escapeHtml(originalLines[j])
     html += '<div class="suggestion-line suggestion-line-del">'
       + '<span class="suggestion-line-sign">\u2212</span>'
-      + '<span class="suggestion-line-content">' + escapeHtml(originalLines[j]) + '</span></div>'
+      + '<span class="suggestion-line-content">' + dc + '</span></div>'
   }
 
-  // Remaining suggestion lines (unpaired additions)
-  for (let k = pairedLen; k < sugLen; k++) {
+  // All addition lines (paired + unpaired)
+  for (let k = 0; k < sugLen; k++) {
+    const ac = k < pairedLen ? addContents[k] : escapeHtml(sugLines[k])
     html += '<div class="suggestion-line suggestion-line-add">'
       + '<span class="suggestion-line-sign">+</span>'
-      + '<span class="suggestion-line-content">' + escapeHtml(sugLines[k]) + '</span></div>'
+      + '<span class="suggestion-line-content">' + ac + '</span></div>'
   }
 
   html += '</div>'
