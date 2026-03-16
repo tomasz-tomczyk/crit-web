@@ -1,57 +1,66 @@
-<Layouts.app flash={@flash}>
-  <div class="max-w-3xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 mb-2">
-      Changelog
-    </h1>
-    <p class="text-gray-500 dark:text-gray-400 mb-10 text-sm">
-      Release notes from
-      <a
-        href="https://github.com/tomasz-tomczyk/crit/releases"
-        class="underline hover:text-gray-700 dark:hover:text-gray-300"
-        target="_blank"
-        rel="noopener"
-      >
-        GitHub
-      </a>
-    </p>
+<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
+  <Layouts.site_header />
+  <div class="max-w-[900px] mx-auto px-10 pb-20 max-sm:px-5 max-sm:pb-10">
+    <header class="mt-14 mb-12 max-sm:mt-10 max-sm:mb-8">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-3">
+        Releases
+      </p>
+      <h1 class="text-4xl font-bold tracking-tight max-sm:text-3xl">
+        Changelog<span class="text-(--crit-accent)">.</span>
+      </h1>
+      <p class="text-(--crit-fg-secondary) mt-3 text-sm leading-relaxed max-w-md">
+        What's new in Crit. Release notes pulled automatically from
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/releases"
+          class="text-(--crit-accent) hover:underline"
+          target="_blank"
+          rel="noopener"
+        >GitHub</a>.
+      </p>
+    </header>
 
-    <div :if={@releases == []} class="text-gray-500 dark:text-gray-400 text-sm">
-      No releases available yet.
+    <div :if={@releases == []} class="text-(--crit-fg-muted) text-sm py-12 text-center">
+      No releases yet.
     </div>
 
-    <div class="space-y-12">
-      <article :for={release <- @releases} class="relative">
-        <div class="flex items-baseline gap-3 mb-3">
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            <a
-              href={release.url}
-              class="hover:underline"
-              target="_blank"
-              rel="noopener"
-            >
-              {release.version}
-            </a>
-          </h2>
-          <span
-            :if={release.source == :web}
-            class={[
-              "text-xs font-medium px-2 py-0.5 rounded-full",
-              "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-            ]}
+    <div class="space-y-0">
+      <article
+        :for={{release, idx} <- Enum.with_index(@releases)}
+        class={[
+          "relative grid grid-cols-[140px_1fr] gap-8 max-sm:grid-cols-1 max-sm:gap-2",
+          idx > 0 && "border-t border-(--crit-border)",
+          "py-10 max-sm:py-8 first:pt-0"
+        ]}
+      >
+        <%!-- Left column: version + date --%>
+        <div class="max-sm:flex max-sm:items-baseline max-sm:gap-3">
+          <a
+            href={release.url}
+            class="font-mono text-base font-semibold text-(--crit-accent) hover:underline block"
+            target="_blank"
+            rel="noopener"
           >
-            Web
-          </span>
+            {release.version}
+          </a>
           <time
             datetime={DateTime.to_iso8601(release.published_at)}
-            class="text-sm text-gray-500 dark:text-gray-400"
+            class="font-mono text-xs text-(--crit-fg-muted) mt-1 block max-sm:mt-0"
           >
             {Crit.Changelog.format_date(release.published_at)}
           </time>
+          <span
+            :if={release.source == :web}
+            class="inline-flex mt-2 max-sm:mt-0 px-2 py-0.5 border border-(--crit-border) rounded-full text-xs text-(--crit-fg-muted)"
+          >
+            Web
+          </span>
         </div>
-        <div class="prose prose-sm dark:prose-invert max-w-none prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-code:text-sm">
+
+        <%!-- Right column: release body --%>
+        <div class="changelog-body text-sm leading-relaxed text-(--crit-fg-secondary)">
           {Phoenix.HTML.raw(release.body_html)}
         </div>
       </article>
     </div>
   </div>
-</Layouts.app>
+</div>

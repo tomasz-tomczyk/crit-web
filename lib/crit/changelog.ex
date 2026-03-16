@@ -41,7 +41,7 @@ defmodule Crit.Changelog do
 
     body_html =
       case Earmark.as_html(release["body"] || "") do
-        {:ok, html, _} -> html
+        {:ok, html, _} -> sanitize_html(html)
         {:error, _, _} -> "<p>#{release["body"]}</p>"
       end
 
@@ -102,6 +102,24 @@ defmodule Crit.Changelog do
         Logger.warning("[Changelog] Failed to fetch releases for #{repo}: #{inspect(reason)}")
         []
     end
+  end
+
+  defp sanitize_html(html) do
+    html
+    |> strip_images()
+    |> shorten_pr_links()
+  end
+
+  defp strip_images(html) do
+    Regex.replace(~r/<img[^>]*>/, html, "")
+  end
+
+  defp shorten_pr_links(html) do
+    Regex.replace(
+      ~r{<a href="https://github\.com/[^"]+/pull/(\d+)"[^>]*>https://github\.com/[^<]+</a>},
+      html,
+      fn _, num -> ~s(<a href="https://github.com/tomasz-tomczyk/crit/pull/#{num}">##{num}</a>) end
+    )
   end
 
   defp schedule_refresh do
