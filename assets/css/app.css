@@ -1550,7 +1550,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 
 .changelog-body code {
   font-family: var(--font-mono);
-  font-size: 0.8em;
+  font-size: 0.875em;
   background: var(--crit-bg-tertiary);
   padding: 0.15em 0.4em;
   border-radius: 4px;
@@ -1563,7 +1563,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   padding: 0.75em 1em;
   overflow-x: auto;
   margin: 0.75em 0;
-  font-size: 0.8em;
+  font-size: 0.9em;
 }
 
 .changelog-body pre code {
