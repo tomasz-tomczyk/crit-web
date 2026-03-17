@@ -105,10 +105,10 @@ defmodule CritWeb.Layouts do
             Features
           </a>
           <a
-            href={~p"/#install"}
+            href={~p"/getting-started"}
             class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors"
           >
-            Install
+            Get Started
           </a>
           <a
             href={~p"/self-hosting"}
@@ -155,10 +155,10 @@ defmodule CritWeb.Layouts do
             Features
           </a>
           <a
-            href={~p"/#install"}
+            href={~p"/getting-started"}
             class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-1.5"
           >
-            Install
+            Get Started
           </a>
           <a
             href={~p"/self-hosting"}

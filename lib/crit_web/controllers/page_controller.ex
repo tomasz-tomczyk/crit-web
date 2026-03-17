@@ -335,6 +335,15 @@ defmodule CritWeb.PageController do
     )
   end
 
+  def getting_started(conn, _params) do
+    render(conn, :getting_started,
+      canonical_url: canonical_url(conn),
+      page_title: "Getting Started - Crit",
+      meta_description:
+        "Install Crit and run your first review in under a minute. Single binary, zero dependencies. Works with Claude Code, Cursor, GitHub Copilot, and any AI coding agent."
+    )
+  end
+
   def changelog(conn, _params) do
     releases = Crit.Changelog.list_releases()
     cli_releases = Enum.filter(releases, &(&1.source == :cli))
