@@ -55,8 +55,32 @@
               {Crit.Changelog.format_date(release.published_at)}
             </time>
           </div>
-          <div class="changelog-body text-(--crit-fg-secondary)">
-            {Phoenix.HTML.raw(release.body_html)}
+          <div>
+            <div class="changelog-body text-(--crit-fg-secondary)">
+              {Phoenix.HTML.raw(release.body_html)}
+            </div>
+            <div :if={release.contributors != []} class="mt-6 pt-5 border-t border-(--crit-border)">
+              <p class="font-mono text-xs tracking-wide uppercase text-(--crit-fg-muted) mb-3">
+                Contributors
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <a
+                  :for={username <- release.contributors}
+                  href={"https://github.com/#{username}"}
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-secondary) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <img
+                    src={"https://avatars.githubusercontent.com/#{username}?s=32"}
+                    alt={username}
+                    class="size-4 rounded-full"
+                    loading="lazy"
+                  />
+                  {username}
+                </a>
+              </div>
+            </div>
           </div>
         </article>
       </div>
@@ -104,8 +128,32 @@
               {Crit.Changelog.format_date(release.published_at)}
             </time>
           </div>
-          <div class="changelog-body text-(--crit-fg-secondary)">
-            {Phoenix.HTML.raw(release.body_html)}
+          <div>
+            <div class="changelog-body text-(--crit-fg-secondary)">
+              {Phoenix.HTML.raw(release.body_html)}
+            </div>
+            <div :if={release.contributors != []} class="mt-6 pt-5 border-t border-(--crit-border)">
+              <p class="font-mono text-xs tracking-wide uppercase text-(--crit-fg-muted) mb-3">
+                Contributors
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <a
+                  :for={username <- release.contributors}
+                  href={"https://github.com/#{username}"}
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-secondary) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <img
+                    src={"https://avatars.githubusercontent.com/#{username}?s=32"}
+                    alt={username}
+                    class="size-4 rounded-full"
+                    loading="lazy"
+                  />
+                  {username}
+                </a>
+              </div>
+            </div>
           </div>
         </article>
       </div>

@@ -23,6 +23,7 @@ defmodule Crit.ChangelogTest do
       assert release.published_at == ~U[2026-03-10 12:00:00Z]
       assert release.url == "https://github.com/tomasz-tomczyk/crit/releases/tag/v0.5.1"
       assert release.source == :cli
+      assert release.contributors == ["user"]
     end
 
     test "returns :skip for draft releases" do
@@ -51,6 +52,23 @@ defmodule Crit.ChangelogTest do
       }
 
       assert Changelog.parse_release(prerelease, :cli) == :skip
+    end
+  end
+
+  describe "extract_contributors/1" do
+    test "extracts unique @mentions excluding repo owner" do
+      body = """
+      * feat: add thing by @alice in #1
+      * fix: bug by @bob in #2
+      * docs: update by @alice in #3
+      * chore: cleanup by @tomasz-tomczyk in #4
+      """
+
+      assert Changelog.extract_contributors(body) == ["alice", "bob"]
+    end
+
+    test "returns empty list when no mentions" do
+      assert Changelog.extract_contributors("Just a plain release") == []
     end
   end
 

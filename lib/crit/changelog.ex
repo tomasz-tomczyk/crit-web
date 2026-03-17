@@ -37,19 +37,25 @@ defmodule Crit.Changelog do
   def parse_release(%{"draft" => true}, _source), do: :skip
   def parse_release(%{"prerelease" => true}, _source), do: :skip
 
+  @excluded_contributors ["tomasz-tomczyk"]
+
   def parse_release(release, source) do
     {:ok, published_at, _} = DateTime.from_iso8601(release["published_at"])
+    raw_body = release["body"] || ""
+    contributors = extract_contributors(raw_body)
+    cleaned_body = strip_contributors_section(raw_body)
 
     body_html =
-      case Earmark.as_html(release["body"] || "") do
+      case Earmark.as_html(cleaned_body) do
         {:ok, html, _} -> sanitize_html(html)
-        {:error, _, _} -> "<p>#{release["body"]}</p>"
+        {:error, _, _} -> "<p>#{cleaned_body}</p>"
       end
 
     %{
       version: release["tag_name"],
       name: release["name"] || release["tag_name"],
       body_html: body_html,
+      contributors: contributors,
       published_at: published_at,
       url: release["html_url"],
       source: source
@@ -103,6 +109,23 @@ defmodule Crit.Changelog do
         Logger.warning("[Changelog] Failed to fetch releases for #{repo}: #{inspect(reason)}")
         []
     end
+  end
+
+  @doc false
+  def extract_contributors(body) do
+    Regex.scan(~r/@([a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38})/, body)
+    |> Enum.map(fn [_, username] -> username end)
+    |> Enum.uniq()
+    |> Enum.reject(&(&1 in @excluded_contributors))
+    |> Enum.sort_by(&String.downcase/1)
+  end
+
+  defp strip_contributors_section(body) do
+    # Remove "## New Contributors" section and everything after it
+    body
+    |> String.split(~r/\n##\s+New Contributors/i, parts: 2)
+    |> List.first()
+    |> String.trim_trailing()
   end
 
   defp sanitize_html(html) do
