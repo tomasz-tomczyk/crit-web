@@ -21,10 +21,16 @@
           picks up the feedback automatically. It iterates. You review the diff. Repeat.
         </p>
         <div class="flex gap-3 flex-wrap">
+          <a
+            href={~p"/getting-started"}
+            class="inline-flex items-center px-6 py-2.5 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold no-underline hover:bg-(--crit-accent-hover) transition-colors"
+          >
+            Get started
+          </a>
           <%= if @demo_token do %>
             <a
               href={~p"/r/#{@demo_token}"}
-              class="inline-flex items-center px-6 py-2.5 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold no-underline hover:bg-(--crit-accent-hover) transition-colors"
+              class="inline-flex items-center px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
             >
               See demo
             </a>
