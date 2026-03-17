@@ -59,7 +59,10 @@
             <div class="changelog-body text-(--crit-fg-secondary)">
               {Phoenix.HTML.raw(release.body_html)}
             </div>
-            <div :if={release.contributors != []} class="mt-6 pt-5 border-t border-(--crit-border)">
+            <div
+              :if={release.contributors != []}
+              class="mt-6 pt-5 border-t border-(--crit-border)"
+            >
               <p class="font-mono text-xs tracking-wide uppercase text-(--crit-fg-muted) mb-3">
                 Contributors
               </p>
@@ -132,7 +135,10 @@
             <div class="changelog-body text-(--crit-fg-secondary)">
               {Phoenix.HTML.raw(release.body_html)}
             </div>
-            <div :if={release.contributors != []} class="mt-6 pt-5 border-t border-(--crit-border)">
+            <div
+              :if={release.contributors != []}
+              class="mt-6 pt-5 border-t border-(--crit-border)"
+            >
               <p class="font-mono text-xs tracking-wide uppercase text-(--crit-fg-muted) mb-3">
                 Contributors
               </p>
