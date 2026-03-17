@@ -132,6 +132,7 @@ defmodule Crit.Changelog do
     html
     |> strip_images()
     |> shorten_pr_links()
+    |> linkify_usernames()
   end
 
   defp strip_images(html) do
@@ -143,6 +144,15 @@ defmodule Crit.Changelog do
       ~r{<a href="(https://github\.com/[^"]+/pull/(\d+))"[^>]*>https://github\.com/[^<]+</a>},
       html,
       fn _, url, num -> ~s(<a href="#{url}">##{num}</a>) end
+    )
+  end
+
+  defp linkify_usernames(html) do
+    # Match @username that isn't already inside an href or anchor tag
+    Regex.replace(
+      ~r/(?<!["\/\w])@([a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38})/,
+      html,
+      fn _, username -> ~s(<a href="https://github.com/#{username}">@#{username}</a>) end
     )
   end
 
