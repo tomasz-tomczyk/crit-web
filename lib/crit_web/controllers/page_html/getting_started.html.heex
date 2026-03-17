@@ -38,7 +38,9 @@
         <div>
           <h2 class="text-lg font-semibold tracking-tight">Open a file for review</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Pass any file, or run <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">crit</code> with no args to auto-detect changes in your repo.
+            Pass any file, or run
+            <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">crit</code>
+            with no args to auto-detect changes in your repo.
           </p>
         </div>
       </div>
@@ -59,22 +61,22 @@
             <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit plan.md</span>
           </div>
           <div class="mt-1">
-            <span class="text-(--crit-fg-muted)">  Opening </span><span class="text-(--crit-accent)">plan.md</span><span class="text-(--crit-fg-muted)"> for review...</span>
+            <span class="text-(--crit-fg-muted)"> Opening </span><span class="text-(--crit-accent)">plan.md</span><span class="text-(--crit-fg-muted)"> for review...</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-muted)">  Listening on </span><span class="text-(--crit-fg-primary)">http://localhost:3247</span>
+            <span class="text-(--crit-fg-muted)"> Listening on </span><span class="text-(--crit-fg-primary)">http://localhost:3247</span>
           </div>
           <div class="mt-2 text-(--crit-fg-muted) text-xs">
             <%!-- Separator --%>
           </div>
           <div class="mt-1">
-            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit</span><span class="text-(--crit-fg-muted)">                    # auto-detect changed files</span>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit</span><span class="text-(--crit-fg-muted)"> # auto-detect changed files</span>
           </div>
           <div class="mt-1">
-            <span class="text-(--crit-fg-muted)">  Found </span><span class="text-(--crit-accent)">3</span><span class="text-(--crit-fg-muted)"> changed files on branch </span><span class="text-(--crit-fg-primary)">feat/auth</span>
+            <span class="text-(--crit-fg-muted)"> Found </span><span class="text-(--crit-accent)">3</span><span class="text-(--crit-fg-muted)"> changed files on branch </span><span class="text-(--crit-fg-primary)">feat/auth</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-muted)">  Listening on </span><span class="text-(--crit-fg-primary)">http://localhost:3247</span>
+            <span class="text-(--crit-fg-muted)"> Listening on </span><span class="text-(--crit-fg-primary)">http://localhost:3247</span>
           </div>
         </div>
       </div>
@@ -169,15 +171,21 @@
 
       <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-sm text-(--crit-fg-muted)">
         <span class="flex items-center gap-1.5">
-          <kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">j</kbd><kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">k</kbd>
+          <kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">
+            j
+          </kbd><kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">k</kbd>
           navigate
         </span>
         <span class="flex items-center gap-1.5">
-          <kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">c</kbd>
+          <kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">
+            c
+          </kbd>
           comment
         </span>
         <span class="flex items-center gap-1.5">
-          <kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">?</kbd>
+          <kbd class="inline-flex items-center justify-center font-mono text-[10px] min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">
+            ?
+          </kbd>
           all shortcuts
         </span>
       </div>
@@ -209,13 +217,16 @@
         <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
           <div>
             <span class="text-(--crit-accent)">&rarr;</span>
-            Round 1: <span class="text-(--crit-accent)">2</span> comments added
+            Round 1: <span class="text-(--crit-accent)">2</span>
+            comments added
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
             Finish review &mdash; prompt copied <span class="text-(--crit-green)">&check;</span>
           </div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Paste into your agent, it reads .crit.json&hellip;</div>
+          <div class="text-(--crit-fg-muted)">
+            &nbsp; Paste into your agent, it reads .crit.json&hellip;
+          </div>
           <div class="mt-2">
             <span class="text-(--crit-green)">&rarr;</span>
             File updated (<span class="text-(--crit-accent)">5</span> edits detected)
@@ -224,15 +235,22 @@
             <span class="text-(--crit-accent)">&rarr;</span>
             Round 2: diff ready &mdash; <span class="text-(--crit-green)">2 resolved</span>
           </div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Review the diff, leave more comments, or approve.</div>
+          <div class="text-(--crit-fg-muted)">
+            &nbsp; Review the diff, leave more comments, or approve.
+          </div>
         </div>
       </div>
 
       <p class="text-sm text-(--crit-fg-muted) mt-4 leading-relaxed">
-        The agent reads <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.crit.json</code>, addresses your comments, and runs <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">crit go</code> when done. Crit reloads with a diff of what changed. Repeat until you're satisfied.
+        The agent reads <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.crit.json</code>, addresses your comments, and runs
+        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">crit go</code>
+        when done. Crit reloads with a diff of what changed. Repeat until you're satisfied.
       </p>
       <p class="text-sm text-(--crit-fg-muted) mt-2 leading-relaxed">
-        With an <a href={~p"/integrations"} class="text-(--crit-accent) no-underline hover:underline">agent integration</a>, this loop is fully automatic &mdash; the agent listens for your review and iterates without manual copy-paste.
+        With an <a
+          href={~p"/integrations"}
+          class="text-(--crit-accent) no-underline hover:underline"
+        >agent integration</a>, this loop is fully automatic &mdash; the agent listens for your review and iterates without manual copy-paste.
       </p>
     </section>
 
@@ -293,8 +311,7 @@
           </div>
           <div class="text-(--crit-fg-muted)">&nbsp; Running crit go&hellip;</div>
           <div>
-            <span class="text-(--crit-accent)">&rarr;</span>
-            Round 2 ready for review
+            <span class="text-(--crit-accent)">&rarr;</span> Round 2 ready for review
           </div>
         </div>
       </div>
@@ -321,8 +338,7 @@
       </div>
 
       <p class="text-sm text-(--crit-fg-muted) mt-3">
-        See all config files and setup instructions on the
-        <a
+        See all config files and setup instructions on the <a
           href={~p"/integrations"}
           class="text-(--crit-accent) no-underline hover:underline"
         >integrations page</a>.
