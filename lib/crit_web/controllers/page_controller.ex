@@ -324,6 +324,20 @@ defmodule CritWeb.PageController do
     )
   end
 
+  def changelog(conn, _params) do
+    releases = Crit.Changelog.list_releases()
+    cli_releases = Enum.filter(releases, &(&1.source == :cli))
+    web_releases = Enum.filter(releases, &(&1.source == :web))
+
+    render(conn, :changelog,
+      cli_releases: cli_releases,
+      web_releases: web_releases,
+      canonical_url: canonical_url(conn),
+      page_title: "Changelog - Crit",
+      meta_description: "What's new in Crit. Release notes for the Crit CLI and crit.live."
+    )
+  end
+
   defp canonical_url(conn) do
     "#{CritWeb.Endpoint.url()}#{conn.request_path}"
   end

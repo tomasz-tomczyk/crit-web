@@ -36,6 +36,7 @@ defmodule CritWeb.Router do
     get "/terms", PageController, :terms
     get "/privacy", PageController, :privacy
     get "/self-hosting", PageController, :self_hosting
+    get "/changelog", PageController, :changelog
 
     post "/set-name", ReviewController, :set_name
     post "/auth/login", AuthController, :login

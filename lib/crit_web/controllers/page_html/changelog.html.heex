@@ -1,0 +1,175 @@
+<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
+  <Layouts.site_header />
+  <div class="max-w-[1100px] mx-auto w-full px-10 pb-20 max-sm:px-5 max-sm:pb-10">
+    <header class="mt-14 mb-14 max-sm:mt-10 max-sm:mb-10">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-3">
+        Releases
+      </p>
+      <h1 class="text-4xl font-bold tracking-tight max-sm:text-3xl">
+        Changelog<span class="text-(--crit-accent)">.</span>
+      </h1>
+      <p class="text-(--crit-fg-secondary) mt-3 leading-relaxed max-w-lg">
+        What's new in Crit. Release notes pulled automatically from GitHub.
+      </p>
+    </header>
+
+    <%!-- CLI Releases --%>
+    <section :if={@cli_releases != []}>
+      <div class="flex items-center gap-3 mb-8">
+        <h2 class="font-mono text-sm font-semibold tracking-wide uppercase text-(--crit-fg-primary)">
+          CLI
+        </h2>
+        <div class="flex-1 h-px bg-(--crit-border)"></div>
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/releases"
+          class="font-mono text-xs text-(--crit-fg-muted) hover:text-(--crit-accent) transition-colors"
+          target="_blank"
+          rel="noopener"
+        >
+          GitHub &rarr;
+        </a>
+      </div>
+
+      <div class="space-y-0">
+        <article
+          :for={{release, idx} <- Enum.with_index(@cli_releases)}
+          class={[
+            "relative grid grid-cols-[160px_1fr] gap-10 max-sm:grid-cols-1 max-sm:gap-2",
+            idx > 0 && "border-t border-(--crit-border)",
+            "py-10 max-sm:py-8 first:pt-0"
+          ]}
+        >
+          <div class="max-sm:flex max-sm:items-baseline max-sm:gap-3">
+            <a
+              href={release.url}
+              class="font-mono text-lg font-semibold text-(--crit-accent) hover:underline block"
+              target="_blank"
+              rel="noopener"
+            >
+              {release.version}
+            </a>
+            <time
+              datetime={DateTime.to_iso8601(release.published_at)}
+              class="font-mono text-xs text-(--crit-fg-muted) mt-1 block max-sm:mt-0"
+            >
+              {Crit.Changelog.format_date(release.published_at)}
+            </time>
+          </div>
+          <div>
+            <div class="changelog-body text-(--crit-fg-secondary)">
+              {Phoenix.HTML.raw(release.body_html)}
+            </div>
+            <div
+              :if={release.contributors != []}
+              class="mt-6 pt-5 border-t border-(--crit-border)"
+            >
+              <p class="font-mono text-xs tracking-wide uppercase text-(--crit-fg-muted) mb-3">
+                Contributors
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <a
+                  :for={username <- release.contributors}
+                  href={"https://github.com/#{username}"}
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-secondary) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <img
+                    src={"https://avatars.githubusercontent.com/#{username}?s=32"}
+                    alt={username}
+                    class="size-4 rounded-full"
+                    loading="lazy"
+                  />
+                  {username}
+                </a>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <%!-- Web Releases --%>
+    <section :if={@web_releases != []} class="mt-16">
+      <div class="flex items-center gap-3 mb-8">
+        <h2 class="font-mono text-sm font-semibold tracking-wide uppercase text-(--crit-fg-primary)">
+          Web
+        </h2>
+        <div class="flex-1 h-px bg-(--crit-border)"></div>
+        <a
+          href="https://github.com/tomasz-tomczyk/crit-web/releases"
+          class="font-mono text-xs text-(--crit-fg-muted) hover:text-(--crit-accent) transition-colors"
+          target="_blank"
+          rel="noopener"
+        >
+          GitHub &rarr;
+        </a>
+      </div>
+
+      <div class="space-y-0">
+        <article
+          :for={{release, idx} <- Enum.with_index(@web_releases)}
+          class={[
+            "relative grid grid-cols-[160px_1fr] gap-10 max-sm:grid-cols-1 max-sm:gap-2",
+            idx > 0 && "border-t border-(--crit-border)",
+            "py-10 max-sm:py-8 first:pt-0"
+          ]}
+        >
+          <div class="max-sm:flex max-sm:items-baseline max-sm:gap-3">
+            <a
+              href={release.url}
+              class="font-mono text-lg font-semibold text-(--crit-accent) hover:underline block"
+              target="_blank"
+              rel="noopener"
+            >
+              {release.version}
+            </a>
+            <time
+              datetime={DateTime.to_iso8601(release.published_at)}
+              class="font-mono text-xs text-(--crit-fg-muted) mt-1 block max-sm:mt-0"
+            >
+              {Crit.Changelog.format_date(release.published_at)}
+            </time>
+          </div>
+          <div>
+            <div class="changelog-body text-(--crit-fg-secondary)">
+              {Phoenix.HTML.raw(release.body_html)}
+            </div>
+            <div
+              :if={release.contributors != []}
+              class="mt-6 pt-5 border-t border-(--crit-border)"
+            >
+              <p class="font-mono text-xs tracking-wide uppercase text-(--crit-fg-muted) mb-3">
+                Contributors
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <a
+                  :for={username <- release.contributors}
+                  href={"https://github.com/#{username}"}
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-secondary) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <img
+                    src={"https://avatars.githubusercontent.com/#{username}?s=32"}
+                    alt={username}
+                    class="size-4 rounded-full"
+                    loading="lazy"
+                  />
+                  {username}
+                </a>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div
+      :if={@cli_releases == [] and @web_releases == []}
+      class="text-(--crit-fg-muted) py-12 text-center"
+    >
+      No releases yet.
+    </div>
+  </div>
+</div>
