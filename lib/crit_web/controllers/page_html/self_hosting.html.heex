@@ -1,145 +1,490 @@
 <div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header />
-  <div class="max-w-[1100px] mx-auto px-10 pb-15 max-sm:px-5 max-sm:pb-10">
-    <main class="mt-12">
-      <h1 class="text-3xl font-bold tracking-tight mb-2">Self-Hosting</h1>
-      <p class="text-sm text-(--crit-fg-muted) mb-4">Run your own instance of Crit Web</p>
-
-      <h2 class="text-base font-semibold mt-8 mb-2">Prerequisites</h2>
-      <ul class="text-sm leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
-        <li class="mb-1">Docker (with Compose)</li>
-        <li class="mb-1">PostgreSQL 17 (or use the bundled one in docker-compose)</li>
-      </ul>
-
-      <h2 class="text-base font-semibold mt-8 mb-2">Quick start with Docker Compose</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
-        Download the example files and configure your environment:
+  <div class="max-w-[1100px] mx-auto px-10 pb-20 max-sm:px-5 max-sm:pb-12">
+    <%!-- Hero --%>
+    <section class="mt-16 mb-14 max-sm:mt-10 max-sm:mb-10">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+        Self-Hosting
       </p>
-      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>curl -o docker-compose.yml https://raw.githubusercontent.com/tomasz-tomczyk/crit-web/main/contrib/docker-compose.example.yml
-curl -o .env https://raw.githubusercontent.com/tomasz-tomczyk/crit-web/main/.env.example</code></pre>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-3">
-        Generate a secret key and set it in <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>:
+      <h1 class="text-4xl font-bold leading-[1.1] tracking-tight mb-4 max-sm:text-3xl">
+        Your infrastructure,<br />your reviews<span class="text-(--crit-accent)">.</span>
+      </h1>
+      <p class="text-base leading-relaxed text-(--crit-fg-secondary) max-w-[520px]">
+        Run Crit Web on your own server with Docker. Share reviews within your
+        team without sending data to a third party.
       </p>
-      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>openssl rand -base64 64</code></pre>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-3">
-        Update
+    </section>
+
+    <%!-- GitHub banner --%>
+    <a
+      href="https://github.com/tomasz-tomczyk/crit-web"
+      class="flex items-center gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) px-6 py-4 mb-14 max-sm:mb-10 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 group"
+    >
+      <svg
+        viewBox="0 0 16 16"
+        fill="currentColor"
+        class="w-6 h-6 shrink-0 text-(--crit-fg-secondary)"
+      >
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+      </svg>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold">tomasz-tomczyk/crit-web</p>
+        <p class="text-xs text-(--crit-fg-muted) mt-0.5">
+          Source code, Dockerfile, example configs, and issue tracker.
+        </p>
+      </div>
+      <span class="text-xs font-mono text-(--crit-accent) shrink-0">
+        View on GitHub &rarr;
+      </span>
+    </a>
+
+    <%!-- Prerequisites --%>
+    <section class="mb-16 max-sm:mb-12">
+      <div class="flex items-baseline gap-4 mb-5">
+        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+          01
+        </span>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">Prerequisites</h2>
+          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
+            Docker with Compose. That's it.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex items-start gap-4">
+          <span class="text-(--crit-accent) text-lg leading-none mt-0.5 select-none">
+            &#9654;
+          </span>
+          <div>
+            <h3 class="text-sm font-semibold mb-1">Docker</h3>
+            <p class="text-xs text-(--crit-fg-muted) leading-relaxed">
+              With Compose plugin (included in Docker Desktop and most server installs).
+            </p>
+          </div>
+        </div>
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex items-start gap-4">
+          <span class="text-(--crit-accent) text-lg leading-none mt-0.5 select-none">
+            &#9654;
+          </span>
+          <div>
+            <h3 class="text-sm font-semibold mb-1">PostgreSQL 17</h3>
+            <p class="text-xs text-(--crit-fg-muted) leading-relaxed">
+              Bundled in the docker-compose file, or bring your own.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Quick start --%>
+    <section class="mb-16 max-sm:mb-12">
+      <div class="flex items-baseline gap-4 mb-5">
+        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+          02
+        </span>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">Download and configure</h2>
+          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
+            Grab the example files and generate a secret key.
+          </p>
+        </div>
+      </div>
+
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+          <div class="flex gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+          </div>
+          <span class="font-mono text-[11px] text-(--crit-fg-muted) ml-2">Terminal</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div class="text-(--crit-fg-muted) text-xs mb-2 select-none">
+            # Download config files
+          </div>
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">curl -o docker-compose.yml \</span>
+          </div>
+          <div class="pl-4">
+            <span class="text-(--crit-fg-primary)">
+              https://raw.githubusercontent.com/tomasz-tomczyk/crit-web/main/contrib/docker-compose.example.yml
+            </span>
+          </div>
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">curl -o .env \</span>
+          </div>
+          <div class="pl-4">
+            <span class="text-(--crit-fg-primary)">
+              https://raw.githubusercontent.com/tomasz-tomczyk/crit-web/main/.env.example
+            </span>
+          </div>
+          <div class="mt-3 text-(--crit-fg-muted) text-xs select-none">
+            # Generate a secret key
+          </div>
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">openssl rand -base64 64</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm text-(--crit-fg-muted) mt-3 leading-relaxed">
+        Set
         <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
           SECRET_KEY_BASE
         </code>
         and <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">PHX_HOST</code>
-        in <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>,
-        then start the services:
+        in your <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>
+        file.
       </p>
-      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>docker compose up -d</code></pre>
+    </section>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Environment Variables</h2>
-      <div class="overflow-x-auto mt-3">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b border-(--crit-border-primary)">
-              <th class="text-left py-2 pr-4 font-semibold">Variable</th>
-              <th class="text-left py-2 pr-4 font-semibold">Required</th>
-              <th class="text-left py-2 font-semibold">Description</th>
-            </tr>
-          </thead>
-          <tbody class="text-(--crit-fg-secondary)">
-            <tr class="border-b border-(--crit-border-primary)">
-              <td class="py-2 pr-4">
-                <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
-                  DATABASE_URL
-                </code>
-              </td>
-              <td class="py-2 pr-4">Yes</td>
-              <td class="py-2">PostgreSQL connection URL</td>
-            </tr>
-            <tr class="border-b border-(--crit-border-primary)">
-              <td class="py-2 pr-4">
-                <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
-                  SECRET_KEY_BASE
-                </code>
-              </td>
-              <td class="py-2 pr-4">Yes</td>
-              <td class="py-2">64+ byte secret for signing cookies</td>
-            </tr>
-            <tr class="border-b border-(--crit-border-primary)">
-              <td class="py-2 pr-4">
-                <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
-                  PHX_HOST
-                </code>
-              </td>
-              <td class="py-2 pr-4">Yes</td>
-              <td class="py-2">Hostname where crit-web is served</td>
-            </tr>
-            <tr class="border-b border-(--crit-border-primary)">
-              <td class="py-2 pr-4">
-                <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
-                  PHX_SERVER
-                </code>
-              </td>
-              <td class="py-2 pr-4">Yes</td>
-              <td class="py-2">
-                Set to <code class="text-[0.9em]">true</code> to start the web server
-              </td>
-            </tr>
-            <tr>
-              <td class="py-2 pr-4">
-                <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">PORT</code>
-              </td>
-              <td class="py-2 pr-4">No</td>
-              <td class="py-2">HTTP port (default: 4000)</td>
-            </tr>
-          </tbody>
-        </table>
+    <%!-- Start --%>
+    <section class="mb-16 max-sm:mb-12">
+      <div class="flex items-baseline gap-4 mb-5">
+        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+          03
+        </span>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">Start the services</h2>
+          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
+            One command. Database migrations run automatically.
+          </p>
+        </div>
       </div>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Running with your own Postgres</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
-        If you already have a PostgreSQL instance, skip the
-        <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">db</code>
-        service
-        and run the app container directly:
-      </p>
-      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>docker run -d \
-  --name crit-web \
-  --restart unless-stopped \
-  -e DATABASE_URL="postgres://user:pass@your-host:5432/crit" \
-  -e SECRET_KEY_BASE="your-generated-secret" \
-  -e PHX_HOST="crit.example.com" \
-  -e PHX_SERVER=true \
-  -e PORT=4000 \
-  -p 4000:4000 \
-  ghcr.io/tomasz-tomczyk/crit-web:latest \
-  sh -c "/app/bin/migrate && /app/bin/server"</code></pre>
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+          <div class="flex gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+          </div>
+          <span class="font-mono text-[11px] text-(--crit-fg-muted) ml-2">Terminal</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker compose up -d</span>
+          </div>
+          <div class="mt-1">
+            <span class="text-(--crit-green)">&check;</span>
+            <span class="text-(--crit-fg-muted)"> Container</span>
+            crit-db <span class="text-(--crit-green)">Started</span>
+          </div>
+          <div>
+            <span class="text-(--crit-green)">&check;</span>
+            <span class="text-(--crit-fg-muted)"> Container</span>
+            crit-web <span class="text-(--crit-green)">Started</span>
+          </div>
+          <div class="mt-2">
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-muted)"># Ready at</span>
+            <span class="text-(--crit-fg-primary)">https://crit.example.com</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Updating</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
-        Pull the latest image and restart:
-      </p>
-      <pre class="text-sm bg-(--crit-bg-tertiary) rounded-lg p-4 mt-3 overflow-x-auto"><code>docker compose pull
-docker compose up -d</code></pre>
+    <%!-- Environment variables --%>
+    <section class="mb-16 max-sm:mb-12">
+      <div class="flex items-baseline gap-4 mb-5">
+        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+          04
+        </span>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">Environment variables</h2>
+          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
+            All configuration lives in <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>.
+          </p>
+        </div>
+      </div>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Docker image</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="divide-y divide-(--crit-border)">
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              DATABASE_URL
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">PostgreSQL connection URL</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              SECRET_KEY_BASE
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                64+ byte secret for signing cookies
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              SELFHOSTED
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                Set to <code class="text-[0.9em]">true</code>
+                to enable self-hosted mode (dashboard, no marketing pages)
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              PHX_HOST
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">Hostname where crit-web is served</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              PHX_SERVER
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                Set to <code class="text-[0.9em]">true</code> to start the web server
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              ADMIN_PASSWORD
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                Password for the admin dashboard (if unset, dashboard is open)
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              PORT
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">HTTP port (default: 4000)</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              PHX_SCHEME
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                URL scheme for generated links (default: https)
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              FORCE_SSL
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                Set to <code class="text-[0.9em]">true</code>
+                to force HTTPS redirects (not needed behind a reverse proxy)
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              POOL_SIZE
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                Database connection pool size (default: 10)
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Bring your own Postgres --%>
+    <section class="mb-16 max-sm:mb-12">
+      <div class="flex items-baseline gap-4 mb-5">
+        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+          05
+        </span>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">Using your own Postgres</h2>
+          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
+            Skip the bundled database and point to an existing instance.
+          </p>
+        </div>
+      </div>
+
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+          <div class="flex gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+          </div>
+          <span class="font-mono text-[11px] text-(--crit-fg-muted) ml-2">Terminal</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker run -d \</span>
+          </div>
+          <div class="pl-4 text-(--crit-fg-primary)">--name crit-web \</div>
+          <div class="pl-4 text-(--crit-fg-primary)">--restart unless-stopped \</div>
+          <div class="pl-4 text-(--crit-fg-primary)">
+            -e DATABASE_URL=<span class="text-(--crit-fg-muted)">"postgres://user:pass@your-host:5432/crit"</span> \
+          </div>
+          <div class="pl-4 text-(--crit-fg-primary)">
+            -e SECRET_KEY_BASE=<span class="text-(--crit-fg-muted)">"your-generated-secret"</span> \
+          </div>
+          <div class="pl-4 text-(--crit-fg-primary)">
+            -e PHX_HOST=<span class="text-(--crit-fg-muted)">"crit.example.com"</span> \
+          </div>
+          <div class="pl-4 text-(--crit-fg-primary)">-e SELFHOSTED=true \</div>
+          <div class="pl-4 text-(--crit-fg-primary)">-e PHX_SERVER=true \</div>
+          <div class="pl-4 text-(--crit-fg-primary)">-e PORT=4000 \</div>
+          <div class="pl-4 text-(--crit-fg-primary)">-p 4000:4000 \</div>
+          <div class="pl-4 text-(--crit-fg-primary)">
+            ghcr.io/tomasz-tomczyk/crit-web:latest \
+          </div>
+          <div class="pl-4 text-(--crit-fg-primary)">
+            sh -c
+            <span class="text-(--crit-fg-muted)">"/app/bin/migrate && /app/bin/server"</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Updating --%>
+    <section class="mb-16 max-sm:mb-12">
+      <div class="flex items-baseline gap-4 mb-5">
+        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+          06
+        </span>
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">Updating</h2>
+          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
+            Pull the latest image and restart.
+          </p>
+        </div>
+      </div>
+
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+          <div class="flex gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+          </div>
+          <span class="font-mono text-[11px] text-(--crit-fg-muted) ml-2">Terminal</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker compose pull</span>
+          </div>
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker compose up -d</span>
+          </div>
+          <div class="mt-1">
+            <span class="text-(--crit-green)">&check;</span>
+            <span class="text-(--crit-fg-muted)"> Updated to latest</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Docker image tags --%>
+    <section class="mb-16 max-sm:mb-12">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+        Docker Image
+      </p>
+      <h2 class="text-2xl font-bold tracking-tight mb-2 max-sm:text-xl">
+        Available tags<span class="text-(--crit-accent)">.</span>
+      </h2>
+      <p class="text-sm text-(--crit-fg-muted) mb-6 leading-relaxed">
         Images are published to <a
           href="https://github.com/tomasz-tomczyk/crit-web/pkgs/container/crit-web"
-          class="underline hover:text-(--crit-fg-primary)"
+          class="text-(--crit-accent) no-underline hover:underline"
         >GitHub Container Registry</a>.
-        Available tags:
       </p>
-      <ul class="text-sm leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
-        <li class="mb-1">
-          <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">latest</code>
-          — latest stable release
-        </li>
-        <li class="mb-1">
-          <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">main</code>
-          — bleeding edge (built from main branch)
-        </li>
-        <li class="mb-1">
-          <code class="text-[0.9em] bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">1.2.3</code>
-          — specific version
-        </li>
-      </ul>
-    </main>
+
+      <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
+          <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">
+            latest
+          </code>
+          <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
+            Latest stable release. Recommended for production.
+          </p>
+        </div>
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
+          <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">main</code>
+          <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
+            Bleeding edge. Built from the main branch on every push.
+          </p>
+        </div>
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
+          <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">1.2.3</code>
+          <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
+            Pin a specific version. Use for reproducible deployments.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <%!-- What's next --%>
+    <section>
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+        What's next
+      </p>
+      <h2 class="text-2xl font-bold tracking-tight mb-6 max-sm:text-xl">
+        Keep going<span class="text-(--crit-accent)">.</span>
+      </h2>
+
+      <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
+        <a
+          href={~p"/getting-started"}
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+        >
+          <h3 class="text-sm font-semibold mb-1.5">Getting started</h3>
+          <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
+            Install the CLI and leave your first inline review in under a minute.
+          </p>
+          <span class="text-xs text-(--crit-accent) mt-3">Start &rarr;</span>
+        </a>
+
+        <a
+          href={~p"/integrations"}
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+        >
+          <h3 class="text-sm font-semibold mb-1.5">Integrations</h3>
+          <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
+            Connect Crit to Claude Code, Cursor, Copilot, and more.
+          </p>
+          <span class="text-xs text-(--crit-accent) mt-3">Set up &rarr;</span>
+        </a>
+
+        <a
+          href={~p"/features"}
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+        >
+          <h3 class="text-sm font-semibold mb-1.5">All features</h3>
+          <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
+            Diffs, vim keybindings, mermaid diagrams, syntax highlighting, and more.
+          </p>
+          <span class="text-xs text-(--crit-accent) mt-3">Explore &rarr;</span>
+        </a>
+      </div>
+    </section>
   </div>
 </div>
