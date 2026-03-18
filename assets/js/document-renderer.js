@@ -61,6 +61,28 @@ const commentMd = markdownit({
   },
 })
 
+// ===== File Reference Inline Rule =====
+commentMd.inline.ruler.push('file_ref', function(state, silent) {
+  var start = state.pos
+  var max = state.posMax
+  if (state.src.charCodeAt(start) !== 0x40 /* @ */) return false
+  if (start > 0 && !/\s/.test(state.src[start - 1])) return false
+  var end = start + 1
+  while (end < max && /[a-zA-Z0-9._\-\/]/.test(state.src[end])) end++
+  var path = state.src.substring(start + 1, end)
+  if (path.length === 0 || (path.indexOf('.') === -1 && path.indexOf('/') === -1)) return false
+  if (!silent) {
+    var token = state.push('file_ref', '', 0)
+    token.content = path
+  }
+  state.pos = end
+  return true
+})
+commentMd.renderer.rules.file_ref = function(tokens, idx) {
+  var path = tokens[idx].content
+  return '<span class="file-ref">' + escapeHtml(path) + '</span>'
+}
+
 // ===== Word-Level Diff =====
 
 // Split a line into tokens: words (alphanumeric + underscore) and individual non-word characters.
