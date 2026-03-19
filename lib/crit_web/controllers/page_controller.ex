@@ -99,11 +99,11 @@ defmodule CritWeb.PageController do
     },
     "syntax-highlighting" => %{
       title: "Syntax Highlighting",
-      tagline: "13+ languages with per-line commenting",
+      tagline: "190+ languages with per-line commenting",
       description:
         "Fenced code blocks are syntax-highlighted with highlight.js and split into individual lines so you can comment on specific lines inside code - not just the block as a whole.",
       details: [
-        "Supports Go, Python, JavaScript, TypeScript, Rust, Ruby, Java, C, C++, Shell, SQL, YAML, JSON, and more via highlight.js.",
+        "Supports 190+ languages via highlight.js — Go, Python, JavaScript, TypeScript, Rust, Ruby, Java, C, C++, Shell, SQL, YAML, and many more.",
         "Each line inside a fenced code block is a separate commentable element. Select line 3 of a code block and leave a review note right there.",
         "Highlighting respects your current theme - dark and light palettes are both fully styled.",
         "Code blocks preserve whitespace and formatting exactly as written. Long lines wrap so nothing is hidden off-screen."
