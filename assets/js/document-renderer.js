@@ -2590,31 +2590,29 @@ function renderCommentsPanel(ctx) {
     const card = document.createElement('div')
     card.className = 'comments-panel-card' + (comment.resolved ? ' comments-panel-card-resolved' : '')
 
-    const isOwn = comment.author_identity === ctx.identity
-    const authorLabel = comment.author_display_name
-      ? '@' + comment.author_display_name
-      : (isOwn ? 'You' : (comment.author_identity || '?').slice(0, 6))
-    const lineRef = comment.start_line === comment.end_line
-      ? `Line ${comment.start_line}`
-      : `Lines ${comment.start_line}\u2013${comment.end_line}`
-
-    const header = document.createElement('div')
-    header.className = 'comments-panel-card-header'
-    header.textContent = `${authorLabel} \u00b7 ${lineRef}`
+    const lineRef = document.createElement('div')
+    lineRef.className = 'comments-panel-card-line'
+    lineRef.textContent = comment.start_line === comment.end_line
+      ? 'Line ' + comment.start_line
+      : 'Lines ' + comment.start_line + '\u2013' + comment.end_line
     if (comment.resolved) {
-      const resolvedBadge = document.createElement('span')
-      resolvedBadge.className = 'resolved-badge'
-      resolvedBadge.textContent = 'Resolved'
-      header.appendChild(document.createTextNode(' '))
-      header.appendChild(resolvedBadge)
+      const badge = document.createElement('span')
+      badge.className = 'comments-panel-badge comments-panel-badge-resolved'
+      badge.textContent = 'Resolved'
+      lineRef.appendChild(badge)
     }
     if (comment.review_round >= 1) {
       const roundBadge = document.createElement('span')
       const rc = comment.review_round === ctx.reviewRound ? ' round-current' : comment.review_round === ctx.reviewRound - 1 ? ' round-latest' : ''
       roundBadge.className = 'comment-round-badge' + rc
       roundBadge.textContent = 'R' + comment.review_round
-      header.appendChild(document.createTextNode(' '))
-      header.appendChild(roundBadge)
+      lineRef.appendChild(roundBadge)
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      const replyBadge = document.createElement('span')
+      replyBadge.className = 'comments-panel-badge-replies'
+      replyBadge.textContent = comment.replies.length + (comment.replies.length === 1 ? ' reply' : ' replies')
+      lineRef.appendChild(replyBadge)
     }
 
     const bodyEl = document.createElement('div')
@@ -2632,15 +2630,30 @@ function renderCommentsPanel(ctx) {
     }
     bodyEl.innerHTML = commentMd.render(comment.body, env)
 
-    card.appendChild(header)
+    card.appendChild(lineRef)
     card.appendChild(bodyEl)
 
-    // Reply preview
+    // Reply preview — show last reply with author + truncated body
     if (comment.replies && comment.replies.length > 0) {
-      const replyPreview = document.createElement('div')
-      replyPreview.className = 'comments-panel-card-replies'
-      replyPreview.textContent = comment.replies.length + ' repl' + (comment.replies.length === 1 ? 'y' : 'ies')
-      card.appendChild(replyPreview)
+      const lastReply = comment.replies[comment.replies.length - 1]
+      const preview = document.createElement('div')
+      preview.className = 'comments-panel-reply-preview'
+
+      const previewAuthor = document.createElement('span')
+      previewAuthor.className = 'reply-preview-author'
+      previewAuthor.textContent = lastReply.author || lastReply.author_display_name || 'anonymous'
+
+      const previewBody = document.createElement('span')
+      previewBody.className = 'reply-preview-body'
+      const maxLen = 80
+      previewBody.textContent = lastReply.body.length > maxLen
+        ? lastReply.body.substring(0, maxLen) + '\u2026'
+        : lastReply.body
+
+      preview.appendChild(previewAuthor)
+      preview.appendChild(document.createTextNode(': '))
+      preview.appendChild(previewBody)
+      card.appendChild(preview)
     }
 
     card.addEventListener('click', () => {
