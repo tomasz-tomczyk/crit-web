@@ -139,79 +139,6 @@ defmodule CritWeb.PageController do
 
   @feature_order ~w(inline-comments split-unified-diff ai-review-loop vim-keybindings share-reviews syntax-highlighting mermaid-diagrams)
 
-  @integration_meta [
-    %{
-      id: "claude-code",
-      name: "Claude Code",
-      file_path: ".claude/commands/crit.md",
-      source: "claude-code/commands/crit.md",
-      description:
-        "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
-      secondary_file_path: ".claude/skills/crit-cli/SKILL.md",
-      secondary_source: "claude-code/skills/crit-cli/SKILL.md"
-    },
-    %{
-      id: "cursor",
-      name: "Cursor",
-      file_path: ".cursor/commands/crit.md",
-      source: "cursor/commands/crit.md",
-      description:
-        "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
-      secondary_file_path: ".cursor/skills/crit-cli/SKILL.md",
-      secondary_source: "cursor/skills/crit-cli/SKILL.md"
-    },
-    %{
-      id: "github-copilot",
-      name: "GitHub Copilot",
-      file_path: ".github/prompts/crit.prompt.md",
-      source: "github-copilot/commands/crit.prompt.md",
-      description:
-        "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
-      secondary_file_path: ".github/skills/crit-cli/SKILL.md",
-      secondary_source: "github-copilot/skills/crit-cli/SKILL.md"
-    },
-    %{
-      id: "opencode",
-      name: "OpenCode",
-      file_path: ".opencode/agents/crit.md",
-      source: "opencode/crit.md",
-      description:
-        "Add a Crit agent. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
-      secondary_file_path: ".opencode/skills/crit-cli/SKILL.md",
-      secondary_source: "opencode/SKILL.md"
-    },
-    %{
-      id: "windsurf",
-      name: "Windsurf",
-      file_path: ".windsurf/rules/crit.md",
-      source: "windsurf/crit.md",
-      description:
-        "Add a Windsurf rule that teaches the agent to use Crit for reviewing plans and code changes."
-    },
-    %{
-      id: "aider",
-      name: "Aider",
-      file_path: "CONVENTIONS.md",
-      source: "aider/CONVENTIONS.md",
-      description:
-        "Append to your Aider conventions file to teach the agent to use Crit for reviewing plans and code changes."
-    },
-    %{
-      id: "cline",
-      name: "Cline",
-      file_path: ".clinerules/crit.md",
-      source: "cline/crit.md",
-      description:
-        "Add a Cline rule that teaches the agent to use Crit for reviewing plans and code changes."
-    }
-  ]
-
-  @integrations Crit.Integrations.load(@integration_meta)
-
   def home(conn, _params) do
     if Application.get_env(:crit, :selfhosted) do
       redirect(conn, to: "/dashboard")
@@ -300,7 +227,7 @@ defmodule CritWeb.PageController do
 
   def integrations(conn, _params) do
     render(conn, :integrations,
-      integrations: @integrations,
+      integrations: Crit.Integrations.list(),
       canonical_url: canonical_url(conn),
       page_title: "Integrations - Crit",
       meta_description:

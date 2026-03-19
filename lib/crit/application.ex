@@ -17,6 +17,7 @@ defmodule Crit.Application do
       ] ++
         review_cleaner() ++
         changelog() ++
+        integrations() ++
         [
           CritWeb.Endpoint
         ]
@@ -38,6 +39,14 @@ defmodule Crit.Application do
   defp changelog do
     if Application.get_env(:crit, :start_changelog, true) do
       [Crit.Changelog]
+    else
+      []
+    end
+  end
+
+  defp integrations do
+    if Application.get_env(:crit, :start_integrations, true) do
+      [Crit.Integrations]
     else
       []
     end
