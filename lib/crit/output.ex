@@ -62,6 +62,8 @@ defmodule Crit.Output do
 
   @doc "Serialize multi-file comments to .crit.json shape."
   def multi_file_comments_json(files, comments) do
+    alias Crit.Reviews
+
     comments_by_file =
       comments
       |> Enum.filter(& &1.file_path)
@@ -71,23 +73,7 @@ defmodule Crit.Output do
       files
       |> Enum.map(fn file ->
         file_comments = Map.get(comments_by_file, file.path, [])
-
-        {file.path,
-         %{
-           comments:
-             Enum.map(file_comments, fn c ->
-               %{
-                 id: c.id,
-                 start_line: c.start_line,
-                 end_line: c.end_line,
-                 body: c.body,
-                 quote: c.quote,
-                 resolved: false,
-                 created_at: DateTime.to_iso8601(c.inserted_at),
-                 updated_at: DateTime.to_iso8601(c.updated_at)
-               }
-             end)
-         }}
+        {file.path, %{comments: Enum.map(file_comments, &Reviews.serialize_comment/1)}}
       end)
       |> Map.new()
 

@@ -153,6 +153,79 @@ defmodule CritWeb.ApiControllerTest do
       conn = get(conn, ~p"/api/export/nonexistent_token/comments")
       assert json_response(conn, 404)
     end
+
+    test "includes replies, author, and resolved status", %{conn: conn} do
+      # Create a review with a resolved comment that has replies and author info
+      payload = %{
+        "files" => [
+          %{"path" => "main.go", "content" => "package main\n\nfunc main() {}"}
+        ],
+        "comments" => [
+          %{
+            "file" => "main.go",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "add copyright header",
+            "author_display_name" => "Alice",
+            "author_identity" => "alice-123",
+            "resolved" => true,
+            "replies" => [
+              %{
+                "body" => "done, added MIT license",
+                "author_display_name" => "Bob",
+                "author_identity" => "bob-456"
+              },
+              %{
+                "body" => "looks good now",
+                "author_display_name" => "Alice",
+                "author_identity" => "alice-123"
+              }
+            ]
+          },
+          %{
+            "file" => "main.go",
+            "start_line" => 3,
+            "end_line" => 3,
+            "body" => "needs error handling",
+            "author_display_name" => "Alice",
+            "author_identity" => "alice-123",
+            "resolved" => false
+          }
+        ]
+      }
+
+      conn = post(conn, ~p"/api/reviews", payload)
+      assert %{"url" => url} = json_response(conn, 201)
+      token = url |> String.split("/") |> List.last()
+
+      export_conn = get(build_conn(), ~p"/api/export/#{token}/comments")
+      result = json_response(export_conn, 200)
+
+      assert Map.has_key?(result["files"], "main.go")
+      comments = result["files"]["main.go"]["comments"]
+      assert length(comments) == 2
+
+      # First comment: resolved with replies and author
+      resolved_comment = Enum.find(comments, &(&1["body"] == "add copyright header"))
+      assert resolved_comment["resolved"] == true
+      assert resolved_comment["author_display_name"] == "Alice"
+      assert resolved_comment["start_line"] == 1
+      assert resolved_comment["end_line"] == 1
+
+      # Replies are included
+      replies = resolved_comment["replies"]
+      assert length(replies) == 2
+      assert Enum.at(replies, 0)["body"] == "done, added MIT license"
+      assert Enum.at(replies, 0)["author_display_name"] == "Bob"
+      assert Enum.at(replies, 1)["body"] == "looks good now"
+      assert Enum.at(replies, 1)["author_display_name"] == "Alice"
+
+      # Second comment: unresolved, no replies
+      unresolved_comment = Enum.find(comments, &(&1["body"] == "needs error handling"))
+      assert unresolved_comment["resolved"] == false
+      assert unresolved_comment["author_display_name"] == "Alice"
+      assert unresolved_comment["replies"] == []
+    end
   end
 
   describe "POST /api/reviews multi-file" do
