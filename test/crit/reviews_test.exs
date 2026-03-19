@@ -598,6 +598,60 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "resolve_comment/2" do
+    test "resolves an existing comment" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+      {:ok, comment} = Reviews.create_comment(review, %{"start_line" => 1, "end_line" => 1, "body" => "fix"}, "id1")
+      assert {:ok, updated} = Reviews.resolve_comment(comment.id, true)
+      assert updated.resolved == true
+    end
+
+    test "unresolves a resolved comment" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+      {:ok, comment} = Reviews.create_comment(review, %{"start_line" => 1, "end_line" => 1, "body" => "fix"}, "id1")
+      {:ok, _} = Reviews.resolve_comment(comment.id, true)
+      assert {:ok, updated} = Reviews.resolve_comment(comment.id, false)
+      assert updated.resolved == false
+    end
+  end
+
+  describe "reply CRUD" do
+    setup do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+      {:ok, comment} = Reviews.create_comment(review, %{"start_line" => 1, "end_line" => 1, "body" => "fix"}, "id1")
+      %{review: review, comment: comment}
+    end
+
+    test "create_reply/4 adds a reply", %{comment: comment} do
+      assert {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+      assert reply.body == "done"
+      assert reply.author_identity == "id2"
+      assert reply.author_display_name == "Bob"
+      assert reply.parent_id == comment.id
+    end
+
+    test "update_reply/3 updates own reply", %{comment: comment} do
+      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+      assert {:ok, updated} = Reviews.update_reply(reply.id, "actually not done", "id2")
+      assert updated.body == "actually not done"
+    end
+
+    test "update_reply/3 rejects other's reply", %{comment: comment} do
+      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+      assert {:error, :unauthorized} = Reviews.update_reply(reply.id, "hacked", "id3")
+    end
+
+    test "delete_reply/2 deletes own reply", %{comment: comment} do
+      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+      assert {:ok, _} = Reviews.delete_reply(reply.id, "id2")
+    end
+
+    test "delete_reply/2 rejects other's reply", %{comment: comment} do
+      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+      assert {:error, :unauthorized} = Reviews.delete_reply(reply.id, "id3")
+    end
+  end
+
   describe "delete_review/1" do
     test "deletes a review by id" do
       review = review_fixture()

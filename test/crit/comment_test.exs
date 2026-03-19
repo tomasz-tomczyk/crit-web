@@ -23,16 +23,16 @@ defmodule Crit.CommentTest do
       assert %{body: ["can't be blank"]} = errors_on(changeset)
     end
 
-    test "start_line is required" do
+    test "start_line is optional (nullable for replies)" do
       attrs = Map.delete(@valid_attrs, :start_line)
       changeset = Comment.create_changeset(%Comment{}, attrs)
-      assert %{start_line: _} = errors_on(changeset)
+      assert changeset.valid?
     end
 
-    test "end_line is required" do
+    test "end_line is optional (nullable for replies)" do
       attrs = Map.delete(@valid_attrs, :end_line)
       changeset = Comment.create_changeset(%Comment{}, attrs)
-      assert %{end_line: _} = errors_on(changeset)
+      assert changeset.valid?
     end
 
     test "start_line must be greater than 0" do
