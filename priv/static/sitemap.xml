@@ -1,77 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://crit.live/</loc>
+    <loc>https://crit.md/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://crit.live/features</loc>
+    <loc>https://crit.md/features</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://crit.live/features/inline-comments</loc>
+    <loc>https://crit.md/features/inline-comments</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/features/split-unified-diff</loc>
+    <loc>https://crit.md/features/split-unified-diff</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/features/ai-review-loop</loc>
+    <loc>https://crit.md/features/ai-review-loop</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/features/vim-keybindings</loc>
+    <loc>https://crit.md/features/vim-keybindings</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/features/share-reviews</loc>
+    <loc>https://crit.md/features/share-reviews</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/features/syntax-highlighting</loc>
+    <loc>https://crit.md/features/syntax-highlighting</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/features/mermaid-diagrams</loc>
+    <loc>https://crit.md/features/mermaid-diagrams</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/integrations</loc>
+    <loc>https://crit.md/integrations</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://crit.live/getting-started</loc>
+    <loc>https://crit.md/getting-started</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://crit.live/self-hosting</loc>
+    <loc>https://crit.md/self-hosting</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://crit.live/changelog</loc>
+    <loc>https://crit.md/changelog</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://crit.live/terms</loc>
+    <loc>https://crit.md/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://crit.live/privacy</loc>
+    <loc>https://crit.md/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>

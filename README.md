@@ -8,7 +8,7 @@ The hosted share target for [Crit](https://github.com/tomasz-tomczyk/crit) — a
 
 When you click **Share** in the crit CLI, your review (document + comments) is uploaded here and a public link is generated. Recipients see the full review page with inline comments, keyboard navigation, and theme switching — no install required.
 
-**Hosted version:** [crit.live](https://crit.live)
+**Hosted version:** [crit.md](https://crit.md)
 
 ## How it works
 
