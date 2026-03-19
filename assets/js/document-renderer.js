@@ -391,6 +391,7 @@ function saveOpenFormContent(ctx) {
 
 // ---- Draft autosave ---------------------------------------------------------
 
+let commentCollapseOverrides = {}
 let draftTimers = {}
 
 function getDraftKey(reviewToken, formObj) {
@@ -668,6 +669,16 @@ function formatTime(isoStr) {
   if (!isoStr) return ""
   const d = new Date(isoStr)
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+}
+
+function authorColorIndex(author) {
+  if (!author) return 0
+  let hash = 0
+  for (let i = 0; i < author.length; i++) {
+    hash = ((hash << 5) - hash) + author.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash) % 6
 }
 
 // Split highlighted code HTML into per-line chunks,
@@ -1183,7 +1194,7 @@ function renderTreeNode(ctx, container, node, depth, pathPrefix) {
     if (f.viewed) {
       innerHtml += '<span class="tree-viewed-check" title="Viewed">&#10003;</span>'
     }
-    const unresolvedCount = f.comments.length
+    const unresolvedCount = f.comments.filter(c => !c.resolved).length
     if (unresolvedCount > 0) {
       innerHtml += '<span class="tree-comment-badge">' + unresolvedCount + '</span>'
     }
@@ -1345,7 +1356,7 @@ function renderFileSection(ctx, file) {
     file.collapsed = !section.open
   })
 
-  const unresolvedCount = file.comments.length
+  const unresolvedCount = file.comments.filter(c => !c.resolved).length
   const dirParts = file.path.split('/')
   const fileName = dirParts.pop()
   const dirPath = dirParts.length > 0 ? dirParts.join('/') + '/' : ''
@@ -1547,16 +1558,24 @@ function replaceBrokenImages(container) {
 function updateCommentCount(ctx) {
   const el = document.getElementById('comment-count')
   if (!el) return
-  const total = ctx.comments.length
   const numEl = document.getElementById('commentCountNumber')
+  const unresolvedCount = ctx.comments.filter(c => !c.resolved).length
+  const resolvedCount = ctx.comments.filter(c => c.resolved).length
+  const total = unresolvedCount + resolvedCount
   if (total === 0) {
     el.style.display = 'none'
     el.title = 'Toggle comments panel'
-  } else {
+    if (numEl) numEl.textContent = ''
+  } else if (unresolvedCount > 0) {
     el.style.display = ''
     el.classList.remove('comment-count-resolved')
-    el.title = total + ' comment' + (total === 1 ? '' : 's') + ' — toggle panel'
-    if (numEl) numEl.textContent = total
+    el.title = unresolvedCount + ' unresolved comment' + (unresolvedCount === 1 ? '' : 's') + ' — toggle panel'
+    if (numEl) numEl.textContent = unresolvedCount
+  } else {
+    el.style.display = ''
+    el.classList.add('comment-count-resolved')
+    el.title = resolvedCount + ' resolved comment' + (resolvedCount === 1 ? '' : 's') + ' — toggle panel'
+    if (numEl) numEl.textContent = '\u2713'
   }
 }
 
@@ -1654,6 +1673,11 @@ function handleDragEnd(_e, ctx, onMove, onUp) {
 // ---- Comment elements -------------------------------------------------------
 
 function createCommentElement(comment, ctx) {
+  // Dispatch resolved comments to their own renderer
+  if (comment.resolved) {
+    return createResolvedElement(comment, ctx)
+  }
+
   const editForm = findFormForEdit(ctx, comment.id)
   if (editForm) {
     return createInlineEditor(comment, editForm, ctx)
@@ -1669,6 +1693,9 @@ function createCommentElement(comment, ctx) {
   card.dataset.commentId = comment.id
   card.style.setProperty("--comment-hue", identityHue(comment.author_identity))
 
+  // Apply saved collapse state (unresolved defaults to expanded)
+  if (commentCollapseOverrides[comment.id] === true) card.classList.add('collapsed')
+
   const header = document.createElement("div")
   header.className = "comment-header"
 
@@ -1682,43 +1709,63 @@ function createCommentElement(comment, ctx) {
   time.className = "comment-time"
   time.textContent = formatTime(comment.created_at)
 
-  const author = document.createElement("span")
-  author.className = "comment-author" + (isOwn ? " comment-author-you" : "")
-  author.innerHTML =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="comment-author-icon"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd"/></svg>` +
-    (isOwn ? (ctx.displayName || "You") : (comment.author_display_name || comment.author_identity || "?").slice(0, 20))
-
-  const sep = () => {
-    const s = document.createElement("span")
-    s.className = "comment-header-sep"
-    s.textContent = "·"
-    return s
-  }
+  const collapseBtn = document.createElement('button')
+  collapseBtn.className = 'comment-collapse-btn'
+  collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
+  collapseBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg>'
+  collapseBtn.addEventListener('click', function(e) {
+    e.stopPropagation()
+    card.classList.toggle('collapsed')
+    commentCollapseOverrides[comment.id] = card.classList.contains('collapsed')
+    collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
+  })
 
   const headerLeft = document.createElement("div")
-  headerLeft.style.cssText = "display:flex;align-items:center;gap:6px"
-  headerLeft.appendChild(author)
+  headerLeft.className = "comment-header-left"
+  headerLeft.appendChild(collapseBtn)
+
+  if (comment.author_display_name) {
+    const authorBadge = document.createElement('span')
+    authorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(comment.author_display_name)
+    authorBadge.textContent = '@' + comment.author_display_name
+    headerLeft.appendChild(authorBadge)
+  } else {
+    const author = document.createElement("span")
+    author.className = "comment-author" + (isOwn ? " comment-author-you" : "")
+    author.innerHTML =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="comment-author-icon"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd"/></svg>` +
+      (isOwn ? (ctx.displayName || "You") : (comment.author_identity || "?").slice(0, 20))
+    headerLeft.appendChild(author)
+  }
+
   if (comment.review_round >= 1) {
-    headerLeft.appendChild(sep())
     const roundBadge = document.createElement("span")
     const rc = comment.review_round === ctx.reviewRound ? " round-current" : comment.review_round === ctx.reviewRound - 1 ? " round-latest" : ""
     roundBadge.className = "comment-round-badge" + rc
     roundBadge.textContent = "R" + comment.review_round
     headerLeft.appendChild(roundBadge)
   }
-  headerLeft.appendChild(sep())
   headerLeft.appendChild(lineRef)
-  headerLeft.appendChild(sep())
   headerLeft.appendChild(time)
 
   header.appendChild(headerLeft)
 
-  if (isOwn) {
-    const actions = document.createElement("div")
-    actions.className = "comment-actions"
+  const actions = document.createElement("div")
+  actions.className = "comment-actions"
 
+  // Resolve button — available for all users
+  const resolveBtn = document.createElement('button')
+  resolveBtn.title = 'Resolve'
+  resolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+  resolveBtn.addEventListener('click', function() {
+    ctx.pushEvent("resolve_comment", { id: comment.id, resolved: true })
+  })
+  actions.appendChild(resolveBtn)
+
+  if (isOwn) {
     const editBtn = document.createElement("button")
-    editBtn.textContent = "Edit"
+    editBtn.title = "Edit"
+    editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>'
     editBtn.addEventListener("click", () => {
       const editFormObj = { afterBlockIndex: null, startLine: comment.start_line, endLine: comment.end_line, editingId: comment.id, filePath: comment.file_path || null }
       addForm(ctx, editFormObj)
@@ -1727,15 +1774,17 @@ function createCommentElement(comment, ctx) {
 
     const deleteBtn = document.createElement("button")
     deleteBtn.className = "delete-btn"
-    deleteBtn.textContent = "Delete"
+    deleteBtn.title = "Delete"
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
     deleteBtn.addEventListener("click", () => {
       ctx.pushEvent("delete_comment", { id: comment.id })
     })
 
     actions.appendChild(editBtn)
     actions.appendChild(deleteBtn)
-    header.appendChild(actions)
   }
+
+  header.appendChild(actions)
 
   const body = document.createElement("div")
   body.className = "comment-body"
@@ -1747,6 +1796,15 @@ function createCommentElement(comment, ctx) {
 
   card.appendChild(header)
   card.appendChild(body)
+
+  // Render replies (threading)
+  if (comment.replies && comment.replies.length > 0) {
+    card.appendChild(renderReplyList(comment, ctx))
+  }
+
+  // Inline reply input (GitHub-style: compact, expands on focus)
+  card.appendChild(createReplyInput(comment.id, ctx))
+
   wrapper.appendChild(card)
   return wrapper
 }
@@ -1959,6 +2017,316 @@ function insertSuggestion(textarea, formObj, ctx) {
   textarea.focus()
 }
 
+// ---- Threading: replies & resolved ------------------------------------------
+
+function renderReplyList(comment, ctx) {
+  const repliesContainer = document.createElement('div')
+  repliesContainer.className = 'comment-replies'
+  comment.replies.forEach(function(reply) {
+    const replyEl = document.createElement('div')
+    replyEl.className = 'comment-reply'
+    replyEl.dataset.replyId = reply.id
+
+    const replyHeader = document.createElement('div')
+    replyHeader.className = 'reply-header'
+
+    const replyMeta = document.createElement('div')
+    replyMeta.className = 'reply-meta'
+    if (reply.author_display_name) {
+      const replyAuthorBadge = document.createElement('span')
+      replyAuthorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(reply.author_display_name)
+      replyAuthorBadge.textContent = '@' + reply.author_display_name
+      replyMeta.appendChild(replyAuthorBadge)
+    }
+    const replyTime = document.createElement('span')
+    replyTime.className = 'reply-time'
+    replyTime.textContent = formatTime(reply.created_at)
+    replyMeta.appendChild(replyTime)
+    replyHeader.appendChild(replyMeta)
+
+    const isOwnReply = reply.author_identity === ctx.identity
+    if (isOwnReply) {
+      const replyActions = document.createElement('div')
+      replyActions.className = 'reply-actions'
+
+      const replyEditBtn = document.createElement('button')
+      replyEditBtn.title = 'Edit'
+      replyEditBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>'
+      replyEditBtn.addEventListener('click', function(e) { e.stopPropagation(); editReply(comment.id, reply, ctx) })
+
+      const replyDeleteBtn = document.createElement('button')
+      replyDeleteBtn.className = 'delete-btn'
+      replyDeleteBtn.title = 'Delete'
+      replyDeleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+      replyDeleteBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        ctx.pushEvent("delete_reply", { id: reply.id })
+      })
+
+      replyActions.appendChild(replyEditBtn)
+      replyActions.appendChild(replyDeleteBtn)
+      replyHeader.appendChild(replyActions)
+    }
+
+    replyEl.appendChild(replyHeader)
+
+    const replyBody = document.createElement('div')
+    replyBody.className = 'reply-body'
+    replyBody.dataset.rawBody = reply.body
+    replyBody.innerHTML = commentMd.render(reply.body)
+    replyEl.appendChild(replyBody)
+
+    repliesContainer.appendChild(replyEl)
+  })
+  return repliesContainer
+}
+
+function createReplyInput(commentId, ctx) {
+  const form = document.createElement('div')
+  form.className = 'reply-form'
+
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.className = 'reply-input'
+  input.placeholder = 'Write a reply\u2026'
+  form.appendChild(input)
+
+  // Expanded state elements (hidden initially)
+  const textarea = document.createElement('textarea')
+  textarea.className = 'reply-textarea'
+  textarea.placeholder = 'Write a reply\u2026'
+  textarea.rows = 3
+
+  const buttons = document.createElement('div')
+  buttons.className = 'reply-form-buttons'
+
+  const cancelBtn = document.createElement('button')
+  cancelBtn.className = 'btn btn-sm'
+  cancelBtn.textContent = 'Cancel'
+
+  const submitBtn = document.createElement('button')
+  submitBtn.className = 'btn btn-sm btn-primary'
+  submitBtn.textContent = 'Reply'
+
+  buttons.appendChild(cancelBtn)
+  buttons.appendChild(submitBtn)
+
+  function expand() {
+    if (form.classList.contains('expanded')) return
+    form.classList.add('expanded')
+    textarea.value = input.value
+    input.replaceWith(textarea)
+    form.appendChild(buttons)
+    textarea.focus()
+  }
+
+  function collapse() {
+    if (!form.classList.contains('expanded')) return
+    form.classList.remove('expanded')
+    textarea.replaceWith(input)
+    input.value = ''
+    if (buttons.parentNode) buttons.remove()
+  }
+
+  input.addEventListener('focus', expand)
+  cancelBtn.addEventListener('click', collapse)
+
+  // Collapse on blur if empty (with delay to allow button clicks)
+  textarea.addEventListener('blur', function() {
+    setTimeout(function() {
+      if (form.classList.contains('expanded') && !textarea.value.trim() && !form.contains(document.activeElement)) {
+        collapse()
+      }
+    }, 150)
+  })
+
+  submitBtn.addEventListener('click', function() {
+    const body = textarea.value.trim()
+    if (!body) return
+    submitBtn.disabled = true
+    ctx.pushEvent("add_reply", { comment_id: commentId, body: body })
+    collapse()
+    submitBtn.disabled = false
+  })
+
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      e.stopPropagation()
+      submitBtn.click()
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!textarea.value.trim()) {
+        collapse()
+      }
+    }
+  })
+
+  return form
+}
+
+function editReply(commentId, reply, ctx) {
+  const replyEl = document.querySelector('[data-reply-id="' + reply.id + '"]')
+  if (!replyEl) return
+  const bodyEl = replyEl.querySelector('.reply-body')
+  if (!bodyEl) return
+  const currentText = bodyEl.dataset.rawBody || bodyEl.textContent
+
+  const textarea = document.createElement('textarea')
+  textarea.className = 'comment-textarea'
+  textarea.value = currentText
+  textarea.rows = 3
+  bodyEl.replaceWith(textarea)
+  textarea.focus()
+
+  const saveBtn = document.createElement('button')
+  saveBtn.className = 'btn btn-sm btn-primary'
+  saveBtn.textContent = 'Save'
+  const cancelBtn = document.createElement('button')
+  cancelBtn.className = 'btn btn-sm'
+  cancelBtn.textContent = 'Cancel'
+
+  const btnRow = document.createElement('div')
+  btnRow.className = 'reply-edit-actions'
+  btnRow.appendChild(saveBtn)
+  btnRow.appendChild(cancelBtn)
+  replyEl.appendChild(btnRow)
+
+  cancelBtn.addEventListener('click', () => {
+    // Re-render to restore the original state
+    render(ctx)
+  })
+
+  saveBtn.addEventListener('click', () => {
+    const newBody = textarea.value.trim()
+    if (!newBody) return
+    ctx.pushEvent("edit_reply", { id: reply.id, body: newBody })
+  })
+
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      e.stopPropagation()
+      saveBtn.click()
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      cancelBtn.click()
+    }
+  })
+}
+
+function createResolvedElement(comment, ctx) {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'comment-block'
+
+  const card = document.createElement('div')
+  // Apply saved collapse state (resolved defaults to collapsed)
+  const isCollapsed = commentCollapseOverrides[comment.id] !== undefined ? commentCollapseOverrides[comment.id] : true
+  card.className = 'comment-card resolved-card' + (isCollapsed ? ' collapsed' : '')
+  card.dataset.commentId = comment.id
+  card.style.setProperty("--comment-hue", identityHue(comment.author_identity))
+
+  const header = document.createElement('div')
+  header.className = 'comment-header'
+
+  const collapseBtn = document.createElement('button')
+  collapseBtn.className = 'comment-collapse-btn'
+  collapseBtn.title = isCollapsed ? 'Expand comment' : 'Collapse comment'
+  collapseBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg>'
+  collapseBtn.addEventListener('click', function(e) {
+    e.stopPropagation()
+    card.classList.toggle('collapsed')
+    commentCollapseOverrides[comment.id] = card.classList.contains('collapsed')
+    collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
+  })
+
+  const lineRef = document.createElement('span')
+  lineRef.className = 'comment-line-ref'
+  lineRef.textContent = comment.start_line === comment.end_line
+    ? 'Line ' + comment.start_line
+    : 'Lines ' + comment.start_line + '\u2013' + comment.end_line
+
+  const time = document.createElement('span')
+  time.className = 'comment-time'
+  time.textContent = formatTime(comment.created_at)
+
+  const headerLeft = document.createElement('div')
+  headerLeft.className = 'comment-header-left'
+  headerLeft.appendChild(collapseBtn)
+
+  if (comment.author_display_name) {
+    const authorBadge = document.createElement('span')
+    authorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(comment.author_display_name)
+    authorBadge.textContent = '@' + comment.author_display_name
+    headerLeft.appendChild(authorBadge)
+  }
+  if (comment.review_round >= 1) {
+    const roundBadge = document.createElement('span')
+    const rc = comment.review_round === ctx.reviewRound ? ' round-current' : comment.review_round === ctx.reviewRound - 1 ? ' round-latest' : ''
+    roundBadge.className = 'comment-round-badge' + rc
+    roundBadge.textContent = 'R' + comment.review_round
+    headerLeft.appendChild(roundBadge)
+  }
+  headerLeft.appendChild(lineRef)
+  headerLeft.appendChild(time)
+
+  const actions = document.createElement('div')
+  actions.className = 'comment-actions'
+
+  const badge = document.createElement('span')
+  badge.className = 'resolved-badge'
+  badge.textContent = 'Resolved'
+
+  const unresolveBtn = document.createElement('button')
+  unresolveBtn.title = 'Unresolve'
+  unresolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>'
+  unresolveBtn.addEventListener('click', function() {
+    ctx.pushEvent("resolve_comment", { id: comment.id, resolved: false })
+  })
+
+  const isOwn = comment.author_identity === ctx.identity
+  const deleteBtn = document.createElement('button')
+  deleteBtn.className = 'delete-btn'
+  deleteBtn.title = 'Delete'
+  deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+  deleteBtn.addEventListener('click', function() {
+    ctx.pushEvent("delete_comment", { id: comment.id })
+  })
+
+  actions.appendChild(badge)
+  actions.appendChild(unresolveBtn)
+  if (isOwn) actions.appendChild(deleteBtn)
+
+  header.appendChild(headerLeft)
+  header.appendChild(actions)
+
+  const body = document.createElement('div')
+  body.className = 'comment-body'
+  const env = {}
+  if (ctx && ctx.rawContent && comment.start_line && comment.end_line && !comment.side) {
+    env.originalLines = ctx.rawContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+  }
+  body.innerHTML = commentMd.render(comment.body, env)
+
+  card.appendChild(header)
+  card.appendChild(body)
+
+  // Render replies
+  if (comment.replies && comment.replies.length > 0) {
+    card.appendChild(renderReplyList(comment, ctx))
+  }
+
+  // Reply input
+  card.appendChild(createReplyInput(comment.id, ctx))
+
+  wrapper.appendChild(card)
+  return wrapper
+}
+
 // ---- Table of Contents ------------------------------------------------------
 
 function extractTocItems(md, rawContent) {
@@ -2043,10 +2411,12 @@ function renderCommentsPanel(ctx) {
 
   function renderCommentCard(comment, filePath) {
     const card = document.createElement('div')
-    card.className = 'comments-panel-card'
+    card.className = 'comments-panel-card' + (comment.resolved ? ' comments-panel-card-resolved' : '')
 
     const isOwn = comment.author_identity === ctx.identity
-    const authorLabel = isOwn ? 'You' : (comment.author_identity || '?').slice(0, 6)
+    const authorLabel = comment.author_display_name
+      ? '@' + comment.author_display_name
+      : (isOwn ? 'You' : (comment.author_identity || '?').slice(0, 6))
     const lineRef = comment.start_line === comment.end_line
       ? `Line ${comment.start_line}`
       : `Lines ${comment.start_line}\u2013${comment.end_line}`
@@ -2054,6 +2424,13 @@ function renderCommentsPanel(ctx) {
     const header = document.createElement('div')
     header.className = 'comments-panel-card-header'
     header.textContent = `${authorLabel} \u00b7 ${lineRef}`
+    if (comment.resolved) {
+      const resolvedBadge = document.createElement('span')
+      resolvedBadge.className = 'resolved-badge'
+      resolvedBadge.textContent = 'Resolved'
+      header.appendChild(document.createTextNode(' '))
+      header.appendChild(resolvedBadge)
+    }
     if (comment.review_round >= 1) {
       const roundBadge = document.createElement('span')
       const rc = comment.review_round === ctx.reviewRound ? ' round-current' : comment.review_round === ctx.reviewRound - 1 ? ' round-latest' : ''
@@ -2080,6 +2457,15 @@ function renderCommentsPanel(ctx) {
 
     card.appendChild(header)
     card.appendChild(bodyEl)
+
+    // Reply preview
+    if (comment.replies && comment.replies.length > 0) {
+      const replyPreview = document.createElement('div')
+      replyPreview.className = 'comments-panel-card-replies'
+      replyPreview.textContent = comment.replies.length + ' repl' + (comment.replies.length === 1 ? 'y' : 'ies')
+      card.appendChild(replyPreview)
+    }
+
     card.addEventListener('click', () => {
       if (filePath) {
         const section = document.getElementById('file-section-' + CSS.escape(filePath))
