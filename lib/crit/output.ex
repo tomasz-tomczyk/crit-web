@@ -81,6 +81,7 @@ defmodule Crit.Output do
                  start_line: c.start_line,
                  end_line: c.end_line,
                  body: c.body,
+                 quote: c.quote,
                  resolved: false,
                  created_at: DateTime.to_iso8601(c.inserted_at),
                  updated_at: DateTime.to_iso8601(c.updated_at)

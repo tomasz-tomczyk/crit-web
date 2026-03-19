@@ -354,6 +354,62 @@ function findFormForEdit(ctx, commentId) {
   return ctx.activeForms.find(f => f.editingId === commentId)
 }
 
+// ===== Text Selection → Line Range Mapping =====
+
+function getLineRangeFromSelection(selection) {
+  if (!selection || selection.isCollapsed || !selection.toString().trim()) return null
+
+  const anchorNode = selection.anchorNode
+  const focusNode = selection.focusNode
+  if (!anchorNode || !focusNode) return null
+
+  // Walk up from a node to find the nearest commentable element.
+  function findLineInfo(node) {
+    const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node
+    if (!el) return null
+
+    // Check if inside a comment — don't trigger on existing comment text
+    if (el.closest('.comment-form-wrapper') || el.closest('.comment-card')) return null
+
+    // Check if inside non-commentable UI (header, file tree, buttons)
+    if (el.closest('.header') || el.closest('.file-tree') || el.closest('.toc-panel')) return null
+
+    // Try markdown line-block
+    const lineBlock = el.closest('.line-block[data-file-path]')
+    if (lineBlock) {
+      return {
+        filePath: lineBlock.dataset.filePath,
+        startLine: parseInt(lineBlock.dataset.startLine),
+        endLine: parseInt(lineBlock.dataset.endLine),
+        blockIndex: lineBlock.dataset.blockIndex != null ? parseInt(lineBlock.dataset.blockIndex) : null,
+      }
+    }
+
+    return null
+  }
+
+  const anchorInfo = findLineInfo(anchorNode)
+  const focusInfo = findLineInfo(focusNode)
+
+  if (!anchorInfo || !focusInfo) return null
+
+  // Both ends must be in the same file
+  if (anchorInfo.filePath !== focusInfo.filePath) return null
+
+  // Compute union range
+  const startLine = Math.min(anchorInfo.startLine, focusInfo.startLine)
+  const endLine = Math.max(anchorInfo.endLine, focusInfo.endLine)
+  const filePath = anchorInfo.filePath
+
+  // Determine afterBlockIndex: use the larger blockIndex (form appears after last block in range)
+  let afterBlockIndex = null
+  if (anchorInfo.blockIndex != null && focusInfo.blockIndex != null) {
+    afterBlockIndex = Math.max(anchorInfo.blockIndex, focusInfo.blockIndex)
+  }
+
+  return { filePath, startLine, endLine, afterBlockIndex }
+}
+
 function openForm(ctx, newForm) {
   const fk = formKey(newForm)
   const existing = ctx.activeForms.find(f => f.formKey === fk)
@@ -1403,7 +1459,137 @@ function renderFileSection(ctx, file) {
   }
 
   section.appendChild(body)
+  highlightQuotesInSection(section, file, ctx.activeForms)
   return section
+}
+
+// ===== Quote Highlighting in Document Body =====
+
+function highlightQuotesInSection(sectionEl, file, activeForms) {
+  var quotedComments = file.comments.filter(function(c) { return c.quote && !c.resolved })
+
+  // Include quotes from open comment forms (shown before the comment is saved)
+  if (activeForms) {
+    activeForms.forEach(function(f) {
+      if (f.quote && !f.editingId && (f.filePath || null) === (file.path || null)) {
+        quotedComments.push({
+          quote: f.quote,
+          start_line: f.startLine,
+          end_line: f.endLine,
+          id: f.formKey,
+          resolved: false,
+        })
+      }
+    })
+  }
+
+  if (quotedComments.length === 0) return
+
+  quotedComments.forEach(function(comment) {
+    // Find the content elements in this comment's line range
+    var contentEls = []
+    for (var ln = comment.start_line; ln <= comment.end_line; ln++) {
+      sectionEl.querySelectorAll('.line-block[data-file-path="' + CSS.escape(file.path) + '"]').forEach(function(el) {
+        var s = parseInt(el.dataset.startLine)
+        var e = parseInt(el.dataset.endLine)
+        if (s <= ln && e >= ln) {
+          var content = el.querySelector('.line-content')
+          if (content && contentEls.indexOf(content) === -1) contentEls.push(content)
+        }
+      })
+    }
+
+    if (contentEls.length === 0) return
+
+    // Collect all text nodes across the content elements
+    var textNodes = []
+    contentEls.forEach(function(el) {
+      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null)
+      var node
+      while ((node = walker.nextNode())) {
+        if (node.textContent.length > 0) textNodes.push(node)
+      }
+    })
+
+    if (textNodes.length === 0) return
+
+    // Build concatenated text and find the quote within it.
+    // Normalize the quote: collapse whitespace/newlines so cross-line selections match.
+    var fullText = textNodes.map(function(n) { return n.textContent }).join('')
+    var normalizedQuote = comment.quote.replace(/\s+/g, ' ')
+    var normalizedFull = fullText.replace(/\s+/g, ' ')
+    var quoteIdx = normalizedFull.indexOf(normalizedQuote)
+    if (quoteIdx === -1) {
+      quoteIdx = normalizedFull.toLowerCase().indexOf(normalizedQuote.toLowerCase())
+    }
+    if (quoteIdx === -1) return
+
+    // Map the normalized index back to the original fullText position.
+    var origIdx = 0, normIdx = 0
+    while (normIdx < quoteIdx && origIdx < fullText.length) {
+      if (/\s/.test(fullText[origIdx])) {
+        while (origIdx < fullText.length && /\s/.test(fullText[origIdx])) origIdx++
+        normIdx++
+      } else {
+        origIdx++
+        normIdx++
+      }
+    }
+    quoteIdx = origIdx
+    // Find the end position similarly
+    var matchLen = 0, ni = 0
+    while (ni < normalizedQuote.length && (origIdx + matchLen) < fullText.length) {
+      if (/\s/.test(fullText[origIdx + matchLen])) {
+        while ((origIdx + matchLen) < fullText.length && /\s/.test(fullText[origIdx + matchLen])) matchLen++
+        ni++
+      } else {
+        matchLen++
+        ni++
+      }
+    }
+
+    // Walk text nodes to find which ones overlap with the quote range
+    var quoteEnd = quoteIdx + matchLen
+    var pos = 0
+    for (var i = 0; i < textNodes.length; i++) {
+      var node = textNodes[i]
+      var nodeEnd = pos + node.textContent.length
+      if (nodeEnd <= quoteIdx) { pos = nodeEnd; continue }
+      if (pos >= quoteEnd) break
+
+      // This node overlaps with the quote range
+      var startInNode = Math.max(0, quoteIdx - pos)
+      var endInNode = Math.min(node.textContent.length, quoteEnd - pos)
+
+      // Skip wrapping whitespace-only matches (e.g. newlines between blocks)
+      var matchText = node.textContent.slice(startInNode, endInNode)
+      if (!matchText.trim()) { pos = nodeEnd; continue }
+
+      if (startInNode === 0 && endInNode === node.textContent.length) {
+        // Wrap entire text node
+        var mark = document.createElement('mark')
+        mark.className = 'quote-highlight'
+        mark.dataset.commentId = comment.id
+        node.parentNode.replaceChild(mark, node)
+        mark.appendChild(node)
+      } else {
+        // Split and wrap partial text
+        var before = node.textContent.slice(0, startInNode)
+        var middle = node.textContent.slice(startInNode, endInNode)
+        var after = node.textContent.slice(endInNode)
+        var frag = document.createDocumentFragment()
+        if (before) frag.appendChild(document.createTextNode(before))
+        var mark = document.createElement('mark')
+        mark.className = 'quote-highlight'
+        mark.dataset.commentId = comment.id
+        mark.textContent = middle
+        frag.appendChild(mark)
+        if (after) frag.appendChild(document.createTextNode(after))
+        node.parentNode.replaceChild(frag, node)
+      }
+      pos = nodeEnd
+    }
+  })
 }
 
 // ---- Render document --------------------------------------------------------
@@ -1531,6 +1717,7 @@ function renderDocument(ctx) {
 
   renderMermaidBlocks(container)
   replaceBrokenImages(container)
+  highlightQuotesInSection(container, { path: ctx.singleFilePath, comments: ctx.comments }, ctx.activeForms)
   updateCommentCount(ctx)
 
   if (ctx.focusedBlockIndex >= 0) {
@@ -1973,12 +2160,14 @@ function createInlineEditor(comment, formObj, ctx) {
 function submitNewComment(body, formObj, ctx) {
   if (!body.trim()) return
   clearDraft(ctx.reviewToken, formObj)
-  ctx.pushEvent("add_comment", {
+  const payload = {
     start_line: formObj.startLine,
     end_line: formObj.endLine,
     body: body.trim(),
     file_path: formObj.filePath || null,
-  })
+  }
+  if (formObj.quote) payload.quote = formObj.quote
+  ctx.pushEvent("add_comment", payload)
   removeForm(ctx, formObj.formKey)
   if (ctx.activeForms.length === 0) {
     ctx.selectionStart = null
@@ -2767,6 +2956,65 @@ export const DocumentRenderer = {
       }
     })
 
+    // ===== Select-to-Comment: open comment form on text selection =====
+    ctx._mouseupHandler = (e) => {
+      // Don't interfere with gutter interactions (drag-to-select, + button clicks).
+      if (ctx.dragState) return
+      if (e.target.closest('.line-comment-gutter')) return
+
+      // Small delay to let the browser finalize the selection
+      requestAnimationFrame(() => {
+        const selection = window.getSelection()
+        const range = getLineRangeFromSelection(selection)
+        if (!range) return
+
+        // If any comment form is already open, don't hijack text selection —
+        // the user is selecting text to copy, not to open another comment.
+        if (ctx.activeForms.length > 0) return
+
+        // Capture the selected text before clearing, for the quote field.
+        // If the selection covers the full text of the line range, skip it — redundant.
+        let quote = null
+        try {
+          let selectedText = selection.toString().trim()
+          if (selectedText) {
+            // Get the full text content of the lines in this range to compare.
+            let fullText = ''
+            for (let ln = range.startLine; ln <= range.endLine; ln++) {
+              ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el) {
+                if (el.dataset.filePath !== range.filePath) return
+                const s = parseInt(el.dataset.startLine), e = parseInt(el.dataset.endLine)
+                if (s <= ln && e >= ln) {
+                  const content = el.querySelector('.line-content')
+                  if (content) fullText += (fullText ? '\n' : '') + content.textContent.trim()
+                }
+              })
+            }
+            // Only include quote if it's a partial selection (not the full line content)
+            const normalizedSelected = selectedText.replace(/\s+/g, ' ')
+            const normalizedFull = fullText.trim().replace(/\s+/g, ' ')
+            if (normalizedSelected !== normalizedFull && selectedText.length <= 300) {
+              quote = selectedText
+            }
+          }
+        } catch (_) { /* quote is a nice-to-have, don't break form opening */ }
+
+        // Clear the browser selection — the form is the interaction now
+        selection.removeAllRanges()
+
+        // Open the comment form using the same flow as gutter click / 'c' key.
+        openForm(ctx, {
+          filePath: range.filePath,
+          afterBlockIndex: range.afterBlockIndex,
+          startLine: range.startLine,
+          endLine: range.endLine,
+          editingId: null,
+          quote: quote,
+        })
+      })
+    }
+    document.addEventListener('mouseup', ctx._mouseupHandler)
+
     ctx._keydownHandler = (e) => {
       const tag = e.target.tagName
       if (tag === 'TEXTAREA' || tag === 'INPUT' || e.target.isContentEditable) {
@@ -2891,6 +3139,9 @@ export const DocumentRenderer = {
     document.body.classList.remove("dragging")
     if (this._scrollHandler) {
       window.removeEventListener("scroll", this._scrollHandler)
+    }
+    if (this._mouseupHandler) {
+      document.removeEventListener("mouseup", this._mouseupHandler)
     }
     if (this._keydownHandler) {
       document.removeEventListener("keydown", this._keydownHandler)

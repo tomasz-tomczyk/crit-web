@@ -517,6 +517,22 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 .comment-actions button { background: none; border: none; color: var(--crit-fg-muted); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 3px; transition: all 0.15s; }
 .comment-actions button:hover { color: var(--crit-fg-primary); background: var(--crit-bg-hover); }
 .comment-actions .delete-btn:hover { color: var(--crit-red); }
+
+.quote-highlight {
+  color: inherit;
+  background: rgba(250, 200, 60, 0.12);
+  border-bottom: 1.5px solid rgba(250, 200, 60, 0.4);
+  border-radius: 1px;
+  padding: 1px 0;
+}
+[data-theme="light"] .quote-highlight {
+  background: rgba(250, 200, 60, 0.18);
+  border-bottom-color: rgba(200, 160, 30, 0.45);
+}
+@media (prefers-color-scheme: light) { html:not([data-theme]) .quote-highlight {
+  background: rgba(250, 200, 60, 0.18);
+  border-bottom-color: rgba(200, 160, 30, 0.45);
+}}
 .comment-body { padding: 10px 14px; font-size: 14px; line-height: 1.6; word-break: break-word; }
 .comment-body p { margin: 0 0 0.5em; }
 .comment-body p:last-child { margin-bottom: 0; }

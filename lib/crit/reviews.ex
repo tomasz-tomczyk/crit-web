@@ -423,6 +423,7 @@ defmodule Crit.Reviews do
       start_line: c.start_line,
       end_line: c.end_line,
       body: c.body,
+      quote: c.quote,
       author_identity: c.author_identity,
       author_display_name: c.author_display_name,
       review_round: c.review_round,
