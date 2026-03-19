@@ -91,11 +91,15 @@ defmodule CritWeb.ReviewLive do
     %{review: review, identity: identity} = socket.assigns
     file_path = params["file_path"]
 
-    attrs = %{
-      "start_line" => sl,
-      "end_line" => el,
-      "body" => body
-    }
+    attrs =
+      %{
+        "start_line" => sl,
+        "end_line" => el,
+        "body" => body
+      }
+      |> then(fn a ->
+        if q = params["quote"], do: Map.put(a, "quote", q), else: a
+      end)
 
     case Reviews.create_comment(review, attrs, identity, socket.assigns.display_name, file_path) do
       {:ok, _comment} ->

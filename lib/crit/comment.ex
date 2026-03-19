@@ -9,6 +9,7 @@ defmodule Crit.Comment do
     field :author_display_name, :string
     field :review_round, :integer, default: 0
     field :file_path, :string
+    field :quote, :string
 
     field :resolved, :boolean, default: false
     belongs_to :review, Crit.Review
@@ -30,6 +31,7 @@ defmodule Crit.Comment do
       :author_display_name,
       :review_round,
       :file_path,
+      :quote,
       :resolved
     ])
     |> validate_required([:start_line, :end_line, :body])
