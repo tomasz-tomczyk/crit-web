@@ -17,19 +17,24 @@ crit-web/
 │   │   ├── application.ex           # OTP app supervision tree
 │   │   ├── repo.ex                  # Ecto repo
 │   │   ├── review.ex                # Review schema (token, document, delete_token)
-│   │   ├── comment.ex               # Comment schema (review_id, start_line, end_line, body)
+│   │   ├── comment.ex               # Comment schema (review_id, start_line, end_line, body, parent_id, resolved)
 │   │   ├── reviews.ex               # Context: create/get/delete reviews with comments
 │   │   ├── output.ex                # Formats review data for API responses
 │   │   ├── display_name.ex          # Author display name logic
 │   │   ├── integrations.ex          # Integration metadata (editors, AI tools)
+│   │   ├── changelog.ex             # GenServer: fetches and caches GitHub releases
 │   │   ├── rate_limit.ex            # Hammer-based rate limiting
 │   │   ├── release.ex               # Release migration helpers
+│   │   ├── review_cleaner.ex        # Periodic cleanup of expired reviews
+│   │   ├── review_file.ex           # Review file schema
 │   │   └── schema.ex                # Base schema module
 │   ├── crit_web/
 │   │   ├── router.ex                # Routes: pages, /r/:token LiveView, /api/*
 │   │   ├── endpoint.ex              # Phoenix endpoint
 │   │   ├── controllers/
 │   │   │   ├── api_controller.ex    # JSON API: POST /api/reviews, DELETE, export
+│   │   │   ├── auth_controller.ex   # Admin login/logout
+│   │   │   ├── health_controller.ex # Health check endpoint
 │   │   │   ├── page_controller.ex   # Static pages: home, features, integrations, terms, privacy
 │   │   │   ├── review_controller.ex # set-name action
 │   │   │   └── page_html.ex         # Page view module
@@ -65,6 +70,7 @@ crit-web/
 3. **Delete via token** — reviews are deleted by passing the `delete_token` (not auth). The CLI stores this in `.crit.json`.
 4. **Rate limiting** — Hammer-based, applied to API create/delete endpoints.
 5. **Identity** — session-based visitor ID via `Plugs.Identity`, used for display names on comments.
+6. **Comment threading** — comments support nested replies (`parent_id` self-referential FK) and a `resolved` boolean. The review LiveView handles reply CRUD and resolve/unresolve via `push_event`.
 
 ## Routes
 
@@ -73,7 +79,11 @@ crit-web/
 - `/` — homepage
 - `/features`, `/features/:slug` — feature pages
 - `/integrations` — integrations page
+- `/getting-started` — getting started guide
+- `/self-hosting` — self-hosting documentation
+- `/changelog` — auto-fetched GitHub release notes
 - `/terms`, `/privacy` — legal pages
+- `POST /auth/login`, `POST /auth/logout` — admin auth
 - `/r/:token` — review LiveView (the core page)
 - `POST /set-name` — set display name
 
@@ -133,7 +143,7 @@ Elixir 1.19 / OTP 28 / PostgreSQL 17.
 
 **crit-web** is the hosted share target for [Crit](https://github.com/tomasz-tomczyk/crit) — a local-first Go CLI for reviewing code changes and markdown files with inline comments. When users click Share in local Crit, it POSTs document + comments to `POST /api/reviews`, gets back `{url, delete_token}`, and shows the share link.
 
-**Comment shape** (same in both): `id`, `start_line`, `end_line`, `body`, `created_at`, `updated_at` (ISO8601).
+**Comment shape** (same in both): `id`, `start_line`, `end_line`, `body`, `author`, `resolved`, `replies` (nested comments with `parent_id`), `created_at`, `updated_at` (ISO8601).
 
 **Security/limits**: HTTPS only, `noindex` meta, 5 MB document, 50 KB per comment body, 500 comments per review. Rate-limit write endpoints and 404s per IP.
 
