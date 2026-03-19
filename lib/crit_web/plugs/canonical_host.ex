@@ -35,7 +35,7 @@ defmodule CritWeb.Plugs.CanonicalHost do
 
     conn
     |> put_resp_header("location", url)
-    |> send_resp(301, "")
+    |> send_resp(308, "")
     |> halt()
   end
 end
