@@ -1958,6 +1958,12 @@ function createInlineEditor(comment, formObj, ctx) {
   form.appendChild(header)
   form.appendChild(textarea)
   form.appendChild(actions)
+
+  // Keep replies visible below the edit form, inside the form's card
+  if (comment.replies && comment.replies.length > 0) {
+    form.appendChild(renderReplyList(comment, ctx))
+  }
+
   wrapper.appendChild(form)
 
   requestAnimationFrame(() => textarea.focus())
