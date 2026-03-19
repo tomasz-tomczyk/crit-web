@@ -1059,7 +1059,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   right: 0;
   width: 360px;
   height: calc(100vh - var(--crit-header-height, 53px));
-  background: var(--crit-bg-primary);
+  background: var(--crit-bg-secondary);
   border-left: 1px solid var(--crit-border);
   z-index: 90;
   display: none;
@@ -1075,11 +1075,13 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--crit-border);
   font-weight: 600;
-  font-size: 14px;
-  color: var(--crit-fg-primary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--crit-fg-muted);
 }
 
 .comments-panel-header button {
