@@ -27,7 +27,7 @@ defmodule CritWeb.Plugs.CanonicalHost do
   end
 
   defp redirect_to_canonical(conn, canonical_host) do
-    scheme = if conn.scheme == :https, do: "https", else: "http"
+    scheme = redirect_scheme(conn)
     path = conn.request_path
     query = if conn.query_string != "", do: "?#{conn.query_string}", else: ""
 
@@ -37,5 +37,19 @@ defmodule CritWeb.Plugs.CanonicalHost do
     |> put_resp_header("location", url)
     |> send_resp(308, "")
     |> halt()
+  end
+
+  defp redirect_scheme(conn) do
+    case get_req_header(conn, "x-forwarded-proto") do
+      [forwarded_proto | _rest] ->
+        forwarded_proto
+        |> String.split(",", parts: 2)
+        |> hd()
+        |> String.trim()
+        |> String.downcase()
+
+      [] ->
+        if conn.scheme == :https, do: "https", else: "http"
+    end
   end
 end

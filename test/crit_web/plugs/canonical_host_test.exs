@@ -44,6 +44,17 @@ defmodule CritWeb.Plugs.CanonicalHostTest do
     assert get_resp_header(conn, "location") == ["http://crit.md/r/abc123?foo=bar"]
   end
 
+  test "uses forwarded https scheme on redirect", %{conn: conn} do
+    conn =
+      conn
+      |> Map.put(:host, "crit.live")
+      |> Plug.Conn.put_req_header("x-forwarded-proto", "https")
+      |> call_plug()
+
+    assert conn.status == 308
+    assert get_resp_header(conn, "location") == ["https://crit.md/"]
+  end
+
   test "does not redirect canonical host", %{conn: conn} do
     conn =
       conn
