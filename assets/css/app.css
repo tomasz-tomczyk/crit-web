@@ -891,6 +891,17 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   padding: 0;
 }
 
+.reply-body a {
+  color: var(--crit-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--crit-accent-subtle);
+  transition: color 0.15s, border-color 0.15s;
+}
+.reply-body a:hover {
+  color: var(--crit-accent-hover);
+  border-bottom-color: var(--crit-accent-hover);
+}
+
 .reply-actions {
   display: flex;
   gap: 2px;
