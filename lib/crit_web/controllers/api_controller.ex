@@ -84,26 +84,8 @@ defmodule CritWeb.ApiController do
 
   def comments_list(conn, %{"token" => token}) do
     case Reviews.get_by_token(token) do
-      nil ->
-        not_found(conn)
-
-      review ->
-        json(
-          conn,
-          Enum.map(visible_comments(review), fn c ->
-            %{
-              id: c.id,
-              start_line: c.start_line,
-              end_line: c.end_line,
-              body: c.body,
-              author_identity: c.author_identity,
-              review_round: c.review_round,
-              file_path: c.file_path,
-              created_at: DateTime.to_iso8601(c.inserted_at),
-              updated_at: DateTime.to_iso8601(c.updated_at)
-            }
-          end)
-        )
+      nil -> not_found(conn)
+      review -> json(conn, Enum.map(visible_comments(review), &Reviews.serialize_comment/1))
     end
   end
 
