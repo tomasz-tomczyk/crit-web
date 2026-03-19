@@ -1691,7 +1691,6 @@ function createCommentElement(comment, ctx) {
   const card = document.createElement("div")
   card.className = "comment-card"
   card.dataset.commentId = comment.id
-  card.style.setProperty("--comment-hue", identityHue(comment.author_identity))
 
   // Apply saved collapse state (unresolved defaults to expanded)
   if (commentCollapseOverrides[comment.id] === true) card.classList.add('collapsed')
@@ -2228,7 +2227,6 @@ function createResolvedElement(comment, ctx) {
   const isCollapsed = commentCollapseOverrides[comment.id] !== undefined ? commentCollapseOverrides[comment.id] : true
   card.className = 'comment-card resolved-card' + (isCollapsed ? ' collapsed' : '')
   card.dataset.commentId = comment.id
-  card.style.setProperty("--comment-hue", identityHue(comment.author_identity))
 
   const header = document.createElement('div')
   header.className = 'comment-header'
