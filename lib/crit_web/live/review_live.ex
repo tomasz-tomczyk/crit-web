@@ -162,6 +162,74 @@ defmodule CritWeb.ReviewLive do
   end
 
   @impl true
+  def handle_event("noop_refresh", _params, socket) do
+    broadcast_comments(socket.assigns.review)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("add_reply", %{"comment_id" => comment_id, "body" => body}, socket) do
+    %{review: review, identity: identity, display_name: display_name} = socket.assigns
+
+    case Reviews.create_reply(comment_id, %{"body" => body}, identity, display_name) do
+      {:ok, _reply} ->
+        broadcast_comments(review)
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to add reply.")}
+    end
+  end
+
+  @impl true
+  def handle_event("edit_reply", %{"id" => id, "body" => body}, socket) do
+    %{review: review, identity: identity} = socket.assigns
+
+    case Reviews.update_reply(id, body, identity) do
+      {:ok, _} ->
+        broadcast_comments(review)
+        {:noreply, socket}
+
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "You can only edit your own replies.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update reply.")}
+    end
+  end
+
+  @impl true
+  def handle_event("delete_reply", %{"id" => id}, socket) do
+    %{review: review, identity: identity} = socket.assigns
+
+    case Reviews.delete_reply(id, identity) do
+      {:ok, _} ->
+        broadcast_comments(review)
+        {:noreply, socket}
+
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "You can only delete your own replies.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete reply.")}
+    end
+  end
+
+  @impl true
+  def handle_event("resolve_comment", %{"id" => id, "resolved" => resolved}, socket) do
+    %{review: review} = socket.assigns
+
+    case Reviews.resolve_comment(id, resolved) do
+      {:ok, _} ->
+        broadcast_comments(review)
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update comment.")}
+    end
+  end
+
+  @impl true
   def handle_info({:comments_updated, comments}, socket) do
     %{demo?: demo?, identity: identity} = socket.assigns
     filtered = filter_demo_comments(comments, demo?, identity)
