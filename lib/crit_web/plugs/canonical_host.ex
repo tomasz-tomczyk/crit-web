@@ -22,7 +22,8 @@ defmodule CritWeb.Plugs.CanonicalHost do
 
   defp should_redirect?(host, canonical_host) do
     host != canonical_host &&
-      (String.starts_with?(host, "www.") || String.ends_with?(host, ".fly.dev"))
+      (String.starts_with?(host, "www.") || String.ends_with?(host, ".fly.dev") ||
+         host == "crit.live" || host == "www.crit.live")
   end
 
   defp redirect_to_canonical(conn, canonical_host) do

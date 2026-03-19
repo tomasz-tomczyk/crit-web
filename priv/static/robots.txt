@@ -6,4 +6,4 @@ Disallow: /dashboard
 Disallow: /set-name
 Disallow: /auth/
 
-Sitemap: https://crit.live/sitemap.xml
+Sitemap: https://crit.md/sitemap.xml

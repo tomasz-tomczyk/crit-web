@@ -11,7 +11,7 @@ defmodule CritWeb.PageController do
         "Select a single line or drag across multiple lines to highlight a range. A comment form appears immediately so you can start typing.",
         "Comments support markdown - use **bold**, *italic*, `inline code`, code blocks, links, and lists to format your feedback.",
         "Edit or delete any comment you've made. Each comment is anchored to the exact lines it references.",
-        "On the hosted version (crit.live), multiple reviewers can comment on the same document. Each author's comments are color-coded by a unique hue so you can tell at a glance who said what."
+        "On the hosted version (crit.md), multiple reviewers can comment on the same document. Each author's comments are color-coded by a unique hue so you can tell at a glance who said what."
       ],
       why_this_matters: [
         "AI coding agents are fast, but they're also opaque. When Claude Code or Cursor rewrites a function, you don't get a natural place to say \"this is wrong at line 12\" unless you're already in a PR workflow. Most people end up pasting chunks of code into the chat and hoping the agent understands which part they mean. That's slow and error-prone.",
@@ -230,7 +230,7 @@ defmodule CritWeb.PageController do
           "operatingSystem" => "macOS, Linux, Windows",
           "description" =>
             "Review AI-generated plans before coding. Inline comments, multi-round diffs, and a structured feedback loop for any AI coding agent.",
-          "url" => "https://crit.live",
+          "url" => "https://crit.md",
           "offers" => %{
             "@type" => "Offer",
             "price" => "0",
@@ -272,19 +272,19 @@ defmodule CritWeb.PageController do
                 "@type" => "ListItem",
                 "position" => 1,
                 "name" => "Home",
-                "item" => "https://crit.live/"
+                "item" => "https://crit.md/"
               },
               %{
                 "@type" => "ListItem",
                 "position" => 2,
                 "name" => "Features",
-                "item" => "https://crit.live/features"
+                "item" => "https://crit.md/features"
               },
               %{
                 "@type" => "ListItem",
                 "position" => 3,
                 "name" => feature.title,
-                "item" => "https://crit.live/features/#{slug}"
+                "item" => "https://crit.md/features/#{slug}"
               }
             ]
           }
@@ -354,7 +354,7 @@ defmodule CritWeb.PageController do
       web_releases: web_releases,
       canonical_url: canonical_url(conn),
       page_title: "Changelog - Crit",
-      meta_description: "What's new in Crit. Release notes for the Crit CLI and crit.live."
+      meta_description: "What's new in Crit. Release notes for the Crit CLI and crit.md."
     )
   end
 

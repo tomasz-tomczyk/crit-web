@@ -1,6 +1,6 @@
 # Self-hosting docker-compose for crit-web
 # Quick start: docker compose up
-# Full guide: https://crit.live/self-hosting
+# Full guide: https://crit.md/self-hosting
 services:
   db:
     image: postgres:17
