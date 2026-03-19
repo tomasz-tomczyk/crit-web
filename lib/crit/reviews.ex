@@ -347,18 +347,22 @@ defmodule Crit.Reviews do
     |> Repo.all()
   end
 
-  @doc "Toggle the resolved state of a comment."
-  def resolve_comment(comment_id, resolved) when is_boolean(resolved) do
-    case Repo.get(Comment, comment_id) do
+  @doc "Toggle the resolved state of a comment. Scoped to the given review."
+  def resolve_comment(comment_id, resolved, review_id) when is_boolean(resolved) do
+    case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
       nil -> {:error, :not_found}
+      %Comment{parent_id: parent} when parent != nil -> {:error, :not_found}
       comment -> comment |> Ecto.Changeset.change(resolved: resolved) |> Repo.update()
     end
   end
 
-  @doc "Create a reply to an existing comment."
-  def create_reply(comment_id, attrs, identity, display_name \\ nil) do
-    case Repo.get(Comment, comment_id) do
+  @doc "Create a reply to an existing comment. Scoped to the given review."
+  def create_reply(comment_id, attrs, identity, display_name, review_id) do
+    case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
       nil ->
+        {:error, :not_found}
+
+      %Comment{parent_id: parent} when parent != nil ->
         {:error, :not_found}
 
       parent ->

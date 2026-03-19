@@ -171,7 +171,7 @@ defmodule CritWeb.ReviewLive do
   def handle_event("add_reply", %{"comment_id" => comment_id, "body" => body}, socket) do
     %{review: review, identity: identity, display_name: display_name} = socket.assigns
 
-    case Reviews.create_reply(comment_id, %{"body" => body}, identity, display_name) do
+    case Reviews.create_reply(comment_id, %{"body" => body}, identity, display_name, review.id) do
       {:ok, _reply} ->
         broadcast_comments(review)
         {:noreply, socket}
@@ -219,7 +219,7 @@ defmodule CritWeb.ReviewLive do
   def handle_event("resolve_comment", %{"id" => id, "resolved" => resolved}, socket) do
     %{review: review} = socket.assigns
 
-    case Reviews.resolve_comment(id, resolved) do
+    case Reviews.resolve_comment(id, resolved, review.id) do
       {:ok, _} ->
         broadcast_comments(review)
         {:noreply, socket}

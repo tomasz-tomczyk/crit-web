@@ -96,6 +96,7 @@ defmodule Crit.ReviewsTest do
 
     test "create_review imports comments with resolved and replies" do
       files = [%{"path" => "f.md", "content" => "x"}]
+
       comments = [
         %{
           "file" => "f.md",
@@ -623,56 +624,136 @@ defmodule Crit.ReviewsTest do
     end
   end
 
-  describe "resolve_comment/2" do
+  describe "resolve_comment/3" do
     test "resolves an existing comment" do
       {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
-      {:ok, comment} = Reviews.create_comment(review, %{"start_line" => 1, "end_line" => 1, "body" => "fix"}, "id1")
-      assert {:ok, updated} = Reviews.resolve_comment(comment.id, true)
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
+          "id1"
+        )
+
+      assert {:ok, updated} = Reviews.resolve_comment(comment.id, true, review.id)
       assert updated.resolved == true
     end
 
     test "unresolves a resolved comment" do
       {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
-      {:ok, comment} = Reviews.create_comment(review, %{"start_line" => 1, "end_line" => 1, "body" => "fix"}, "id1")
-      {:ok, _} = Reviews.resolve_comment(comment.id, true)
-      assert {:ok, updated} = Reviews.resolve_comment(comment.id, false)
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
+          "id1"
+        )
+
+      {:ok, _} = Reviews.resolve_comment(comment.id, true, review.id)
+      assert {:ok, updated} = Reviews.resolve_comment(comment.id, false, review.id)
       assert updated.resolved == false
+    end
+
+    test "rejects resolving a comment from a different review" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
+          "id1"
+        )
+
+      other_review_id = Ecto.UUID.generate()
+      assert {:error, :not_found} = Reviews.resolve_comment(comment.id, true, other_review_id)
+    end
+
+    test "rejects resolving a reply" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
+          "id1"
+        )
+
+      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", nil, review.id)
+      assert {:error, :not_found} = Reviews.resolve_comment(reply.id, true, review.id)
     end
   end
 
   describe "reply CRUD" do
     setup do
       {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
-      {:ok, comment} = Reviews.create_comment(review, %{"start_line" => 1, "end_line" => 1, "body" => "fix"}, "id1")
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
+          "id1"
+        )
+
       %{review: review, comment: comment}
     end
 
-    test "create_reply/4 adds a reply", %{comment: comment} do
-      assert {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+    test "create_reply/5 adds a reply", %{review: review, comment: comment} do
+      assert {:ok, reply} =
+               Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+
       assert reply.body == "done"
       assert reply.author_identity == "id2"
       assert reply.author_display_name == "Bob"
       assert reply.parent_id == comment.id
     end
 
-    test "update_reply/3 updates own reply", %{comment: comment} do
-      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+    test "create_reply/5 rejects reply to comment from different review", %{comment: comment} do
+      other_review_id = Ecto.UUID.generate()
+
+      assert {:error, :not_found} =
+               Reviews.create_reply(
+                 comment.id,
+                 %{"body" => "done"},
+                 "id2",
+                 "Bob",
+                 other_review_id
+               )
+    end
+
+    test "create_reply/5 rejects replying to a reply", %{review: review, comment: comment} do
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+
+      assert {:error, :not_found} =
+               Reviews.create_reply(reply.id, %{"body" => "nested"}, "id3", nil, review.id)
+    end
+
+    test "update_reply/3 updates own reply", %{review: review, comment: comment} do
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+
       assert {:ok, updated} = Reviews.update_reply(reply.id, "actually not done", "id2")
       assert updated.body == "actually not done"
     end
 
-    test "update_reply/3 rejects other's reply", %{comment: comment} do
-      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+    test "update_reply/3 rejects other's reply", %{review: review, comment: comment} do
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+
       assert {:error, :unauthorized} = Reviews.update_reply(reply.id, "hacked", "id3")
     end
 
-    test "delete_reply/2 deletes own reply", %{comment: comment} do
-      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+    test "delete_reply/2 deletes own reply", %{review: review, comment: comment} do
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+
       assert {:ok, _} = Reviews.delete_reply(reply.id, "id2")
     end
 
-    test "delete_reply/2 rejects other's reply", %{comment: comment} do
-      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob")
+    test "delete_reply/2 rejects other's reply", %{review: review, comment: comment} do
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+
       assert {:error, :unauthorized} = Reviews.delete_reply(reply.id, "id3")
     end
   end

@@ -32,7 +32,7 @@ defmodule Crit.Comment do
       :file_path,
       :resolved
     ])
-    |> validate_required([:body])
+    |> validate_required([:start_line, :end_line, :body])
     |> validate_number(:start_line, greater_than: 0)
     |> validate_number(:end_line, greater_than: 0)
     |> validate_length(:body, max: 51_200, message: "must be at most 50 KB")
