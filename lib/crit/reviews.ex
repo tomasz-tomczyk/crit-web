@@ -155,11 +155,41 @@ defmodule Crit.Reviews do
 
   defp insert_imported_comments(review, comments_attrs) do
     Enum.reduce_while(comments_attrs, :ok, fn attrs, :ok ->
+      replies_attrs = attrs["replies"] || []
+
       %Comment{}
       |> Comment.create_changeset(attrs)
       |> Ecto.Changeset.put_change(:review_id, review.id)
       |> Ecto.Changeset.put_change(:author_identity, "imported")
       |> Ecto.Changeset.put_change(:file_path, attrs["file"])
+      |> Ecto.Changeset.put_change(:resolved, attrs["resolved"] == true)
+      |> Repo.insert()
+      |> case do
+        {:ok, comment} ->
+          case insert_replies(comment, replies_attrs) do
+            :ok -> {:cont, :ok}
+            error -> {:halt, error}
+          end
+
+        {:error, changeset} ->
+          {:halt, {:error, changeset}}
+      end
+    end)
+  end
+
+  defp insert_replies(_comment, []), do: :ok
+
+  defp insert_replies(comment, replies_attrs) do
+    Enum.reduce_while(replies_attrs, :ok, fn attrs, :ok ->
+      %Comment{}
+      |> Comment.reply_changeset(attrs)
+      |> Ecto.Changeset.put_change(:parent_id, comment.id)
+      |> Ecto.Changeset.put_change(:review_id, comment.review_id)
+      |> Ecto.Changeset.put_change(:author_identity, "imported")
+      |> Ecto.Changeset.put_change(
+        :author_display_name,
+        attrs["author_display_name"] || attrs["author"]
+      )
       |> Repo.insert()
       |> case do
         {:ok, _} -> {:cont, :ok}

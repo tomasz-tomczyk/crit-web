@@ -94,6 +94,31 @@ defmodule Crit.ReviewsTest do
       assert Enum.map(review.files, & &1.file_path) == ["z.go", "a.go"]
     end
 
+    test "create_review imports comments with resolved and replies" do
+      files = [%{"path" => "f.md", "content" => "x"}]
+      comments = [
+        %{
+          "file" => "f.md",
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "fix this",
+          "resolved" => true,
+          "replies" => [
+            %{"body" => "done", "author_display_name" => "Alice"},
+            %{"body" => "verified", "author_display_name" => "Bob"}
+          ]
+        }
+      ]
+
+      {:ok, review} = Reviews.create_review(files, 0, comments)
+      review = Reviews.get_by_token(review.token)
+      comment = hd(review.comments)
+
+      assert comment.resolved == true
+      assert length(comment.replies) == 2
+      assert hd(comment.replies).body == "done"
+    end
+
     test "comments referencing non-existent files are still inserted" do
       files = [%{"path" => "a.go", "content" => "a"}]
 
