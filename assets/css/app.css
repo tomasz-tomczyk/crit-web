@@ -1184,7 +1184,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 }
 
 .comment-flash {
-  animation: comment-flash 1s ease 2;
+  animation: comment-flash 1s ease 1;
 }
 
 /* Toast notifications */
