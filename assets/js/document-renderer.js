@@ -1491,7 +1491,17 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
     var fullText = textNodes.map(function(n) { return n.textContent }).join('')
     var normalizedQuote = comment.quote.replace(/\s+/g, ' ')
     var normalizedFull = fullText.replace(/\s+/g, ' ')
-    var quoteIdx = normalizedFull.indexOf(normalizedQuote)
+    var quoteIdx = -1
+    // Use quote_offset when available to disambiguate duplicate substrings
+    if (comment.quote_offset != null) {
+      var candidateIdx = comment.quote_offset
+      if (normalizedFull.substring(candidateIdx, candidateIdx + normalizedQuote.length) === normalizedQuote) {
+        quoteIdx = candidateIdx
+      }
+    }
+    if (quoteIdx === -1) {
+      quoteIdx = normalizedFull.indexOf(normalizedQuote)
+    }
     if (quoteIdx === -1) {
       quoteIdx = normalizedFull.toLowerCase().indexOf(normalizedQuote.toLowerCase())
     }
