@@ -12,16 +12,17 @@ defmodule CritWeb.ApiController do
   def create(conn, %{"files" => files} = params) when is_list(files) and files != [] do
     review_round = params["review_round"]
     comments = params["comments"] || []
+    review_comments = params["review_comments"] || []
 
     cond do
-      length(comments) > @max_comments ->
+      length(comments) + length(review_comments) > @max_comments ->
         conn |> put_status(422) |> json(%{error: "Too many comments (max #{@max_comments})"})
 
       length(files) > 200 ->
         conn |> put_status(422) |> json(%{error: "Too many files (max 200)"})
 
       true ->
-        case Reviews.create_review(files, review_round, comments) do
+        case Reviews.create_review(files, review_round, comments, review_comments) do
           {:ok, review} ->
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
             conn |> put_status(201) |> json(%{url: url, delete_token: review.delete_token})
@@ -40,19 +41,20 @@ defmodule CritWeb.ApiController do
     filename = params["filename"]
     review_round = params["review_round"]
     comments = params["comments"] || []
+    review_comments = params["review_comments"] || []
 
     file_path = filename || "document"
     files = [%{"path" => file_path, "content" => content}]
     comments_with_file = Enum.map(comments, &Map.put_new(&1, "file", file_path))
 
     cond do
-      length(comments) > @max_comments ->
+      length(comments) + length(review_comments) > @max_comments ->
         conn
         |> put_status(422)
         |> json(%{error: "Too many comments (max #{@max_comments})"})
 
       true ->
-        case Reviews.create_review(files, review_round, comments_with_file) do
+        case Reviews.create_review(files, review_round, comments_with_file, review_comments) do
           {:ok, review} ->
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
             conn |> put_status(201) |> json(%{url: url, delete_token: review.delete_token})

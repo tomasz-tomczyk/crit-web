@@ -11,6 +11,7 @@ defmodule Crit.Comment do
     field :file_path, :string
     field :quote, :string
 
+    field :scope, :string, default: "line"
     field :resolved, :boolean, default: false
     belongs_to :review, Crit.Review
     belongs_to :parent, Crit.Comment
@@ -32,14 +33,27 @@ defmodule Crit.Comment do
       :review_round,
       :file_path,
       :quote,
-      :resolved
+      :resolved,
+      :scope
     ])
-    |> validate_required([:start_line, :end_line, :body])
-    |> validate_number(:start_line, greater_than: 0)
-    |> validate_number(:end_line, greater_than: 0)
+    |> validate_required([:body])
+    |> validate_inclusion(:scope, ["line", "file", "review"])
+    |> validate_line_numbers()
     |> validate_length(:body, max: 51_200, message: "must be at most 50 KB")
     |> validate_length(:author_display_name, max: 40)
     |> validate_length(:file_path, max: 500)
+  end
+
+  defp validate_line_numbers(changeset) do
+    scope = get_field(changeset, :scope) || "line"
+
+    if scope == "line" do
+      changeset
+      |> validate_number(:start_line, greater_than: 0)
+      |> validate_number(:end_line, greater_than: 0)
+    else
+      changeset
+    end
   end
 
   @doc "Changeset for creating a reply (comment with parent_id)."

@@ -23,28 +23,34 @@ defmodule Crit.CommentTest do
       assert %{body: ["can't be blank"]} = errors_on(changeset)
     end
 
-    test "start_line is required" do
-      attrs = Map.delete(@valid_attrs, :start_line)
-      changeset = Comment.create_changeset(%Comment{}, attrs)
-      assert %{start_line: ["can't be blank"]} = errors_on(changeset)
-    end
-
-    test "end_line is required" do
-      attrs = Map.delete(@valid_attrs, :end_line)
-      changeset = Comment.create_changeset(%Comment{}, attrs)
-      assert %{end_line: ["can't be blank"]} = errors_on(changeset)
-    end
-
-    test "start_line must be greater than 0" do
+    test "start_line must be greater than 0 for line scope" do
       attrs = %{@valid_attrs | start_line: 0}
       changeset = Comment.create_changeset(%Comment{}, attrs)
       assert %{start_line: _} = errors_on(changeset)
     end
 
-    test "end_line must be greater than 0" do
+    test "end_line must be greater than 0 for line scope" do
       attrs = %{@valid_attrs | end_line: 0}
       changeset = Comment.create_changeset(%Comment{}, attrs)
       assert %{end_line: _} = errors_on(changeset)
+    end
+
+    test "start_line and end_line are optional for file scope" do
+      attrs = %{body: "File comment", scope: "file"}
+      changeset = Comment.create_changeset(%Comment{}, attrs)
+      assert changeset.valid?
+    end
+
+    test "start_line and end_line are optional for review scope" do
+      attrs = %{body: "Review comment", scope: "review"}
+      changeset = Comment.create_changeset(%Comment{}, attrs)
+      assert changeset.valid?
+    end
+
+    test "scope must be line, file, or review" do
+      attrs = Map.put(@valid_attrs, :scope, "invalid")
+      changeset = Comment.create_changeset(%Comment{}, attrs)
+      assert %{scope: _} = errors_on(changeset)
     end
 
     test "body has max length of 50KB" do

@@ -85,17 +85,19 @@ defmodule CritWeb.ReviewLive do
   @impl true
   def handle_event(
         "add_comment",
-        %{"start_line" => sl, "end_line" => el, "body" => body} = params,
+        %{"body" => body} = params,
         socket
       ) do
     %{review: review, identity: identity} = socket.assigns
     file_path = params["file_path"]
+    scope = params["scope"] || "line"
 
     attrs =
       %{
-        "start_line" => sl,
-        "end_line" => el,
-        "body" => body
+        "start_line" => params["start_line"] || 0,
+        "end_line" => params["end_line"] || 0,
+        "body" => body,
+        "scope" => scope
       }
       |> then(fn a ->
         if q = params["quote"], do: Map.put(a, "quote", q), else: a

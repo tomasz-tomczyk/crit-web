@@ -80,7 +80,8 @@ defmodule Crit.Reviews do
         |> Comment.create_changeset(%{
           "start_line" => comment.start_line,
           "end_line" => comment.end_line,
-          "body" => body
+          "body" => body,
+          "scope" => comment.scope || "line"
         })
         |> Repo.update()
 
@@ -104,7 +105,7 @@ defmodule Crit.Reviews do
   end
 
   @doc "Create a review from the share API payload. Files is a list of %{\"path\" => _, \"content\" => _} maps."
-  def create_review(files_attrs, review_round, comments_attrs) do
+  def create_review(files_attrs, review_round, comments_attrs, review_comments_attrs \\ []) do
     total_size = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
 
     if total_size > @max_total_size do
@@ -123,6 +124,12 @@ defmodule Crit.Reviews do
       end)
       |> Ecto.Multi.run(:comments, fn _repo, %{review: review} ->
         case insert_imported_comments(review, comments_attrs) do
+          :ok -> {:ok, :ok}
+          error -> error
+        end
+      end)
+      |> Ecto.Multi.run(:review_comments, fn _repo, %{review: review} ->
+        case insert_imported_comments(review, review_comments_attrs) do
           :ok -> {:ok, :ok}
           error -> error
         end
@@ -156,9 +163,10 @@ defmodule Crit.Reviews do
   defp insert_imported_comments(review, comments_attrs) do
     Enum.reduce_while(comments_attrs, :ok, fn attrs, :ok ->
       replies_attrs = attrs["replies"] || []
+      scope = attrs["scope"] || infer_scope(attrs)
 
       %Comment{}
-      |> Comment.create_changeset(attrs)
+      |> Comment.create_changeset(Map.put(attrs, "scope", scope))
       |> Ecto.Changeset.put_change(:review_id, review.id)
       |> Ecto.Changeset.put_change(:author_identity, "imported")
       |> Ecto.Changeset.put_change(:file_path, attrs["file"])
@@ -175,6 +183,17 @@ defmodule Crit.Reviews do
           {:halt, {:error, changeset}}
       end
     end)
+  end
+
+  defp infer_scope(attrs) do
+    start_line = attrs["start_line"] || 0
+    file = attrs["file"]
+
+    cond do
+      is_nil(file) and start_line == 0 -> "review"
+      start_line == 0 -> "file"
+      true -> "line"
+    end
   end
 
   defp insert_replies(_comment, []), do: :ok
@@ -424,6 +443,7 @@ defmodule Crit.Reviews do
       end_line: c.end_line,
       body: c.body,
       quote: c.quote,
+      scope: c.scope || "line",
       author_identity: c.author_identity,
       author_display_name: c.author_display_name,
       review_round: c.review_round,

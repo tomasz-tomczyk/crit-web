@@ -1367,7 +1367,7 @@ function renderFileSection(ctx, file) {
 
   // Scroll correction on collapse
   header.addEventListener('click', function(e) {
-    if (e.target.closest('.file-header-viewed')) {
+    if (e.target.closest('.file-header-viewed') || e.target.closest('.file-comment-btn')) {
       e.preventDefault()
       return
     }
@@ -1385,7 +1385,7 @@ function renderFileSection(ctx, file) {
     file.collapsed = !section.open
   })
 
-  const unresolvedCount = file.comments.filter(c => !c.resolved).length
+  const fileComments = file.comments.filter(c => c.scope === 'file')
   const dirParts = file.path.split('/')
   const fileName = dirParts.pop()
   const dirPath = dirParts.length > 0 ? dirParts.join('/') + '/' : ''
@@ -1393,10 +1393,19 @@ function renderFileSection(ctx, file) {
   header.innerHTML =
     '<div class="file-header-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg></div>' +
     '<svg class="file-header-icon" viewBox="0 0 16 16" fill="var(--crit-fg-dimmed)"><path fill-rule="evenodd" d="M3.75 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75zm5.75.56v2.19c0 .138.112.25.25.25h2.19L9.5 2.06zM2 1.75C2 .784 2.784 0 3.75 0h5.086c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25V1.75z"/></svg>' +
-    '<span class="file-header-name"><span class="dir">' + escapeHtml(dirPath) + '</span>' + escapeHtml(fileName) + '</span>' +
-    (unresolvedCount > 0 ? '<span class="file-header-comment-count">' +
-      '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>' +
-      unresolvedCount + '</span>' : '')
+    '<span class="file-header-name"><span class="dir">' + escapeHtml(dirPath) + '</span>' + escapeHtml(fileName) + '</span>'
+
+  // File comment button
+  const fileCommentBtn = document.createElement('button')
+  fileCommentBtn.className = 'file-comment-btn'
+  fileCommentBtn.title = 'Add file comment'
+  fileCommentBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>'
+  fileCommentBtn.addEventListener('click', function(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    openFileCommentForm(ctx, file.path)
+  })
+  header.appendChild(fileCommentBtn)
 
   // Viewed checkbox
   const viewedLabel = document.createElement('label')
@@ -1412,6 +1421,23 @@ function renderFileSection(ctx, file) {
   header.appendChild(viewedLabel)
 
   section.appendChild(header)
+
+  // File-level comments (between header and body)
+  if (fileComments.length > 0 || ctx.activeForms.some(f => f.scope === 'file' && f.filePath === file.path)) {
+    const fileCommentsContainer = document.createElement('div')
+    fileCommentsContainer.className = 'file-comments'
+    for (const c of fileComments) {
+      const card = renderPanelCard(ctx, c, file.path)
+      card.style.cursor = ''
+      fileCommentsContainer.appendChild(card)
+    }
+    // Render file comment form if active
+    const fileForm = ctx.activeForms.find(f => f.scope === 'file' && f.filePath === file.path)
+    if (fileForm) {
+      fileCommentsContainer.appendChild(renderCommentFormUI(ctx, fileForm))
+    }
+    section.appendChild(fileCommentsContainer)
+  }
 
   // File body — render using renderBlock per block
   const body = document.createElement('div')
@@ -1580,6 +1606,8 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
 function buildCommentsMap(comments) {
   const map = {}
   for (const c of comments) {
+    if (c.scope === 'file' || c.scope === 'review') continue
+    if (!c.end_line) continue
     if (!map[c.end_line]) map[c.end_line] = []
     map[c.end_line].push(c)
   }
@@ -1589,6 +1617,8 @@ function buildCommentsMap(comments) {
 function buildCommentedLineSet(comments) {
   const set = new Set()
   for (const c of comments) {
+    if (c.scope === 'file' || c.scope === 'review') continue
+    if (!c.start_line || !c.end_line) continue
     for (let ln = c.start_line; ln <= c.end_line; ln++) set.add(ln)
   }
   return set
@@ -1733,16 +1763,14 @@ function updateCommentCount(ctx) {
   const resolvedCount = ctx.comments.filter(c => c.resolved).length
   const total = unresolvedCount + resolvedCount
   if (total === 0) {
-    el.style.display = 'none'
     el.title = 'Toggle comments panel'
+    el.classList.remove('comment-count-resolved')
     if (numEl) numEl.textContent = ''
   } else if (unresolvedCount > 0) {
-    el.style.display = ''
     el.classList.remove('comment-count-resolved')
     el.title = unresolvedCount + ' unresolved comment' + (unresolvedCount === 1 ? '' : 's') + ' — toggle panel'
     if (numEl) numEl.textContent = unresolvedCount
   } else {
-    el.style.display = ''
     el.classList.add('comment-count-resolved')
     el.title = resolvedCount + ' resolved comment' + (resolvedCount === 1 ? '' : 's') + ' — toggle panel'
     if (numEl) numEl.textContent = '\u2713'
@@ -2143,10 +2171,13 @@ function submitNewComment(body, formObj, ctx) {
   if (!body.trim()) return
   clearDraft(ctx.reviewToken, formObj)
   const payload = {
-    start_line: formObj.startLine,
-    end_line: formObj.endLine,
     body: body.trim(),
     file_path: formObj.filePath || null,
+    scope: formObj.scope || 'line',
+  }
+  if (formObj.scope !== 'file' && formObj.scope !== 'review') {
+    payload.start_line = formObj.startLine
+    payload.end_line = formObj.endLine
   }
   if (formObj.quote) payload.quote = formObj.quote
   ctx.pushEvent("add_comment", payload)
@@ -2581,128 +2612,331 @@ function updateTocActive(tocItems) {
   })
 }
 
+// ---- File & Review comment helpers ------------------------------------------
+
+function openFileCommentForm(ctx, filePath) {
+  const fk = 'file:' + filePath
+  if (ctx.activeForms.find(f => f.formKey === fk)) return
+  const form = { formKey: fk, scope: 'file', filePath: filePath, startLine: null, endLine: null, editingId: null }
+  ctx.activeForms.push(form)
+  render(ctx)
+  requestAnimationFrame(() => {
+    const ta = ctx.el.querySelector('.file-comment-form textarea')
+    if (ta) ta.focus()
+  })
+}
+
+function openReviewCommentForm(ctx) {
+  const fk = 'review:general'
+  if (ctx.activeForms.find(f => f.formKey === fk)) return
+  const form = { formKey: fk, scope: 'review', filePath: null, startLine: null, endLine: null, editingId: null }
+  ctx.activeForms.push(form)
+  // Open panel if not open
+  const panel = ctx._commentsPanel
+  if (panel && !panel.classList.contains('comments-panel-open')) {
+    panel.classList.add('comments-panel-open')
+    updateTocPosition(ctx)
+  }
+  renderCommentsPanel(ctx)
+  requestAnimationFrame(() => {
+    const ta = panel.querySelector('.panel-review-comment-form textarea')
+    if (ta) ta.focus()
+  })
+}
+
+function renderCommentFormUI(ctx, formObj) {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'comment-form-wrapper'
+
+  const form = document.createElement('div')
+  form.className = 'comment-form'
+
+  const textarea = document.createElement('textarea')
+  textarea.placeholder = formObj.scope === 'review'
+    ? 'Leave a comment\u2026 (Ctrl+Enter to submit, Escape to cancel)'
+    : 'Add a file comment\u2026 (Ctrl+Enter to submit, Escape to cancel)'
+  textarea.value = formObj.draftBody || ''
+  textarea.addEventListener('keydown', function(e) {
+    e.stopPropagation()
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault()
+      submitNewComment(textarea.value, formObj, ctx)
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelComment(formObj, ctx)
+    }
+  })
+  form.appendChild(textarea)
+
+  const actions = document.createElement('div')
+  actions.className = 'comment-form-actions'
+  const cancelBtn = document.createElement('button')
+  cancelBtn.className = 'btn btn-sm'
+  cancelBtn.textContent = 'Cancel'
+  cancelBtn.addEventListener('click', () => cancelComment(formObj, ctx))
+  const submitBtn = document.createElement('button')
+  submitBtn.className = 'btn btn-sm btn-primary'
+  submitBtn.textContent = 'Submit'
+  submitBtn.addEventListener('click', () => submitNewComment(textarea.value, formObj, ctx))
+  actions.appendChild(cancelBtn)
+  actions.appendChild(submitBtn)
+  form.appendChild(actions)
+
+  wrapper.appendChild(form)
+  return wrapper
+}
+
 // ---- Comments panel helpers -------------------------------------------------
 
 function renderCommentsPanel(ctx) {
   const panel = ctx._commentsPanel
   if (!panel) return
   const body = panel.querySelector('.comments-panel-body')
+  const savedScroll = body.scrollTop
   body.innerHTML = ''
 
-  if (ctx.comments.length === 0) {
-    body.innerHTML = '<div class="comments-panel-empty">No comments yet</div>'
+  const showResolvedEl = panel.querySelector('#showResolvedToggle')
+  const showResolved = showResolvedEl ? showResolvedEl.checked : false
+
+  // Show/hide filter bar based on whether any resolved comments exist
+  const hasResolved = ctx.comments.some(c => c.resolved)
+  const filterBar = panel.querySelector('.comments-panel-filter')
+  if (filterBar) filterBar.style.display = hasResolved ? '' : 'none'
+
+  // Review comment form at top
+  const reviewForm = ctx.activeForms.find(f => f.scope === 'review')
+  if (reviewForm) {
+    body.appendChild(renderCommentFormUI(ctx, reviewForm))
+  }
+
+  // Separate and filter comments by scope
+  const visibleFilter = c => showResolved ? true : !c.resolved
+  const reviewComments = ctx.comments.filter(c => c.scope === 'review').filter(visibleFilter)
+  const fileAndLineComments = ctx.comments.filter(c => c.scope !== 'review').filter(visibleFilter)
+
+  if (ctx.comments.length === 0 && !reviewForm) {
+    body.innerHTML += '<div class="comments-panel-empty">No comments yet</div>'
     return
   }
 
-  const sorted = [...ctx.comments].sort((a, b) => a.start_line - b.start_line)
+  // Review comments first
+  if (reviewComments.length > 0) {
+    const group = document.createElement('div')
+    group.className = 'comments-panel-file-group'
 
-  function renderCommentCard(comment, filePath) {
-    const card = document.createElement('div')
-    card.className = 'comments-panel-card' + (comment.resolved ? ' comments-panel-card-resolved' : '')
+    const groupName = document.createElement('div')
+    groupName.className = 'comments-panel-file-name'
+    groupName.textContent = 'Review'
+    group.appendChild(groupName)
 
-    const lineRef = document.createElement('div')
-    lineRef.className = 'comments-panel-card-line'
-    lineRef.textContent = comment.start_line === comment.end_line
-      ? 'Line ' + comment.start_line
-      : 'Lines ' + comment.start_line + '\u2013' + comment.end_line
-    if (comment.resolved) {
+    for (const c of reviewComments) {
+      group.appendChild(renderPanelCard(ctx, c, null))
+    }
+    body.appendChild(group)
+  }
+
+  // File and line comments
+  if (fileAndLineComments.length > 0) {
+    const sorted = [...fileAndLineComments].sort((a, b) => (a.start_line || 0) - (b.start_line || 0))
+
+    if (ctx.multiFile) {
+      const grouped = {}
+      for (const c of sorted) {
+        const fp = c.file_path || ''
+        if (!grouped[fp]) grouped[fp] = []
+        grouped[fp].push(c)
+      }
+
+      for (const file of ctx.files) {
+        const fileComments = grouped[file.path]
+        if (!fileComments || fileComments.length === 0) continue
+
+        const group = document.createElement('div')
+        group.className = 'comments-panel-file-group'
+
+        const groupName = document.createElement('div')
+        groupName.className = 'comments-panel-file-name'
+        groupName.textContent = file.path
+        group.appendChild(groupName)
+
+        for (const c of fileComments) {
+          group.appendChild(renderPanelCard(ctx, c, file.path))
+        }
+        body.appendChild(group)
+      }
+    } else {
+      const group = document.createElement('div')
+      group.className = 'comments-panel-file-group'
+      for (const c of sorted) {
+        group.appendChild(renderPanelCard(ctx, c, null))
+      }
+      body.appendChild(group)
+    }
+  }
+
+  body.scrollTop = savedScroll
+}
+
+function renderPanelCard(ctx, comment, filePath) {
+  const isGeneral = comment.scope === 'review'
+  const isResolved = comment.resolved
+
+  const wrapper = document.createElement('div')
+  wrapper.className = 'comment-block panel-comment-block'
+
+  const card = document.createElement('div')
+  card.className = 'comment-card' + (isResolved ? ' resolved-card' : '')
+  card.dataset.commentId = comment.id
+
+  // Collapse state
+  const isCollapsed = isResolved
+    ? (commentCollapseOverrides[comment.id] !== undefined ? commentCollapseOverrides[comment.id] : true)
+    : (commentCollapseOverrides[comment.id] === true)
+  if (isCollapsed) card.classList.add('collapsed')
+
+  // Header
+  const header = document.createElement('div')
+  header.className = 'comment-header'
+
+  const headerLeft = document.createElement('div')
+  headerLeft.className = 'comment-header-left'
+
+  const collapseBtn = document.createElement('button')
+  collapseBtn.className = 'comment-collapse-btn'
+  collapseBtn.title = isCollapsed ? 'Expand comment' : 'Collapse comment'
+  collapseBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg>'
+  collapseBtn.addEventListener('click', function(e) {
+    e.stopPropagation()
+    card.classList.toggle('collapsed')
+    commentCollapseOverrides[comment.id] = card.classList.contains('collapsed')
+    collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
+  })
+  headerLeft.appendChild(collapseBtn)
+
+  // Author
+  const isOwn = comment.author_identity === ctx.identity
+  if (comment.author_display_name) {
+    const authorBadge = document.createElement('span')
+    authorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(comment.author_display_name)
+    authorBadge.textContent = '@' + comment.author_display_name
+    headerLeft.appendChild(authorBadge)
+  } else {
+    const author = document.createElement('span')
+    author.className = 'comment-author' + (isOwn ? ' comment-author-you' : '')
+    author.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="comment-author-icon"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd"/></svg>' +
+      (isOwn ? (ctx.displayName || 'You') : 'anonymous')
+    headerLeft.appendChild(author)
+  }
+
+  // Round badge
+  if (comment.review_round >= 1) {
+    const rc = comment.review_round === ctx.reviewRound ? ' round-current' : comment.review_round === ctx.reviewRound - 1 ? ' round-latest' : ''
+    const roundBadge = document.createElement('span')
+    roundBadge.className = 'comment-round-badge' + rc
+    roundBadge.textContent = 'R' + comment.review_round
+    headerLeft.appendChild(roundBadge)
+  }
+
+  // Line reference / scope label (no label for file-scope or review-scope)
+  if (!isGeneral && comment.scope !== 'file' && comment.start_line) {
+    const ref = document.createElement('span')
+    ref.className = 'comment-line-ref'
+    ref.textContent = comment.start_line === comment.end_line
+      ? 'L' + comment.start_line
+      : 'L' + comment.start_line + '\u2013' + comment.end_line
+    headerLeft.appendChild(ref)
+  }
+
+  // Time (inside headerLeft, as last child — matches crit local)
+  const time = document.createElement('span')
+  time.className = 'comment-time'
+  time.textContent = formatTime(comment.created_at)
+  headerLeft.appendChild(time)
+
+  header.appendChild(headerLeft)
+
+  // Actions appended to header (sibling to headerLeft — matches crit local)
+  // Only show for own review comments
+  if (isGeneral && isOwn) {
+    const actions = document.createElement('div')
+    actions.className = 'comment-actions'
+
+    // Resolved badge + action icons (same as main body resolved card)
+    if (isResolved) {
       const badge = document.createElement('span')
-      badge.className = 'comments-panel-badge comments-panel-badge-resolved'
+      badge.className = 'resolved-badge'
       badge.textContent = 'Resolved'
-      lineRef.appendChild(badge)
-    }
-    if (comment.review_round >= 1) {
-      const roundBadge = document.createElement('span')
-      const rc = comment.review_round === ctx.reviewRound ? ' round-current' : comment.review_round === ctx.reviewRound - 1 ? ' round-latest' : ''
-      roundBadge.className = 'comment-round-badge' + rc
-      roundBadge.textContent = 'R' + comment.review_round
-      lineRef.appendChild(roundBadge)
-    }
-    if (comment.replies && comment.replies.length > 0) {
-      const replyBadge = document.createElement('span')
-      replyBadge.className = 'comments-panel-badge-replies'
-      replyBadge.textContent = comment.replies.length + (comment.replies.length === 1 ? ' reply' : ' replies')
-      lineRef.appendChild(replyBadge)
+      actions.appendChild(badge)
     }
 
-    const bodyEl = document.createElement('div')
-    bodyEl.className = 'comments-panel-card-body'
-    const env = {}
-    if (comment.start_line && comment.end_line && !comment.side) {
-      let fileContent = ctx.rawContent
-      if (ctx.multiFile && filePath) {
-        const file = ctx.files.find(f => f.path === filePath)
-        if (file) fileContent = file.content
-      }
-      if (fileContent) {
-        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
-      }
+    const resolveBtn = document.createElement('button')
+    resolveBtn.title = isResolved ? 'Unresolve' : 'Resolve'
+    resolveBtn.innerHTML = isResolved
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    resolveBtn.addEventListener('click', function(e) {
+      e.stopPropagation()
+      ctx.pushEvent('resolve_comment', { id: comment.id, resolved: !isResolved })
+    })
+    actions.appendChild(resolveBtn)
+
+    const deleteBtn = document.createElement('button')
+    deleteBtn.className = 'delete-btn'
+    deleteBtn.title = 'Delete'
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+    deleteBtn.addEventListener('click', function(e) {
+      e.stopPropagation()
+      ctx.pushEvent('delete_comment', { id: comment.id })
+    })
+    actions.appendChild(deleteBtn)
+
+    header.appendChild(actions)
+  }
+
+  card.appendChild(header)
+
+  // Body
+  const bodyEl = document.createElement('div')
+  bodyEl.className = 'comment-body'
+  const env = {}
+  if (comment.start_line && comment.end_line) {
+    let fileContent = ctx.rawContent
+    if (ctx.multiFile && filePath) {
+      const file = ctx.files.find(f => f.path === filePath)
+      if (file) fileContent = file.content
     }
-    bodyEl.innerHTML = commentMd.render(comment.body, env)
-
-    card.appendChild(lineRef)
-    card.appendChild(bodyEl)
-
-    // Reply preview — show last reply with author + truncated body
-    if (comment.replies && comment.replies.length > 0) {
-      const lastReply = comment.replies[comment.replies.length - 1]
-      const preview = document.createElement('div')
-      preview.className = 'comments-panel-reply-preview'
-
-      const previewAuthor = document.createElement('span')
-      previewAuthor.className = 'reply-preview-author'
-      previewAuthor.textContent = lastReply.author || lastReply.author_display_name || 'anonymous'
-
-      const previewBody = document.createElement('span')
-      previewBody.className = 'reply-preview-body'
-      const maxLen = 80
-      previewBody.textContent = lastReply.body.length > maxLen
-        ? lastReply.body.substring(0, maxLen) + '\u2026'
-        : lastReply.body
-
-      preview.appendChild(previewAuthor)
-      preview.appendChild(document.createTextNode(': '))
-      preview.appendChild(previewBody)
-      card.appendChild(preview)
+    if (fileContent) {
+      env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
     }
+  }
+  bodyEl.innerHTML = commentMd.render(comment.body, env)
+  card.appendChild(bodyEl)
 
-    card.addEventListener('click', () => {
+  // Replies (read-only in panel)
+  if (comment.replies && comment.replies.length > 0) {
+    card.appendChild(renderReplyList(comment, ctx))
+  }
+
+  wrapper.appendChild(card)
+
+  // Click to scroll for file/line comments (not review)
+  if (!isGeneral) {
+    wrapper.style.cursor = 'pointer'
+    wrapper.addEventListener('click', function(e) {
+      if (e.target.closest('button')) return
       if (filePath) {
         const section = document.getElementById('file-section-' + CSS.escape(filePath))
         if (section && !section.open) section.open = true
       }
-      scrollToInlineComment(comment, ctx)
-    })
-    return card
-  }
-
-  if (ctx.multiFile) {
-    // Group by file_path
-    const grouped = {}
-    for (const c of sorted) {
-      const fp = c.file_path || ''
-      if (!grouped[fp]) grouped[fp] = []
-      grouped[fp].push(c)
-    }
-
-    for (const file of ctx.files) {
-      const fileComments = grouped[file.path]
-      if (!fileComments || fileComments.length === 0) continue
-
-      const fileHeader = document.createElement('div')
-      fileHeader.className = 'comments-panel-file-header'
-      fileHeader.textContent = file.path
-      body.appendChild(fileHeader)
-
-      for (const c of fileComments) {
-        body.appendChild(renderCommentCard(c, file.path))
+      if (comment.start_line) {
+        scrollToInlineComment(comment, ctx)
       }
-    }
-  } else {
-    for (const comment of sorted) {
-      body.appendChild(renderCommentCard(comment, null))
-    }
+    })
   }
+
+  return wrapper
 }
 
 function scrollToInlineComment(comment, ctx) {
@@ -2838,6 +3072,7 @@ export const DocumentRenderer = {
           <tr><td><kbd>d</kbd></td><td>Delete comment on focused block</td></tr>
           <tr><td><kbd>t</kbd></td><td>Toggle table of contents</td></tr>
           <tr><td><kbd>Shift</kbd>+<kbd>C</kbd></td><td>Toggle comments panel</td></tr>
+          <tr><td><kbd>Shift</kbd>+<kbd>G</kbd></td><td>Add review comment</td></tr>
           <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Submit comment</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Cancel / clear focus</td></tr>
           <tr><td><kbd>?</kbd></td><td>Toggle this help</td></tr>
@@ -2863,13 +3098,29 @@ export const DocumentRenderer = {
     commentsPanel.innerHTML = `
       <div class="comments-panel-header">
         <span>Comments</span>
-        <button title="Close">\u00d7</button>
+        <div class="comments-panel-header-actions">
+          <button class="comments-panel-add-btn" title="Add a general comment (Shift+G)">+ Add</button>
+          <button class="comments-panel-close" title="Close comments panel" aria-label="Close comments panel">&#x2715;</button>
+        </div>
+      </div>
+      <div class="comments-panel-filter" style="display:none">
+        <label class="comments-panel-switch">
+          <input type="checkbox" id="showResolvedToggle">
+          <span class="comments-panel-switch-track"><span class="comments-panel-switch-thumb"></span></span>
+          <span class="comments-panel-switch-text">Show resolved</span>
+        </label>
       </div>
       <div class="comments-panel-body"></div>
     `
-    commentsPanel.querySelector('.comments-panel-header button').addEventListener('click', () => {
+    commentsPanel.querySelector('.comments-panel-add-btn').addEventListener('click', () => {
+      openReviewCommentForm(ctx)
+    })
+    commentsPanel.querySelector('.comments-panel-close').addEventListener('click', () => {
       commentsPanel.classList.remove('comments-panel-open')
       updateTocPosition(ctx)
+    })
+    commentsPanel.querySelector('#showResolvedToggle').addEventListener('change', () => {
+      renderCommentsPanel(ctx)
     })
     const mainLayout = document.getElementById('crit-main-layout')
     mainLayout.appendChild(commentsPanel)
@@ -3037,6 +3288,13 @@ export const DocumentRenderer = {
       if (e.key === 'C' && e.shiftKey) {
         e.preventDefault()
         toggleCommentsPanel(ctx)
+        return
+      }
+
+      // Review comment form
+      if (e.key === 'G' && e.shiftKey) {
+        e.preventDefault()
+        openReviewCommentForm(ctx)
         return
       }
 
