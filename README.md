@@ -106,6 +106,10 @@ mix precommit   # Full CI check before submitting
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
+## Privacy
+
+Crit Web collects no analytics or tracking data. There is no telemetry, no usage stats, and no phone-home. If we ever add anonymous usage statistics in the future, they will be explicitly opt-in.
+
 ## License
 
 [MIT](LICENSE)
