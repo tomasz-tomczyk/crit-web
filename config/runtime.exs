@@ -37,10 +37,25 @@ config :crit, CritWeb.Endpoint, http: [port: String.to_integer(System.get_env("P
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+      case {
+        System.get_env("DB_HOST"),
+        System.get_env("DB_USER"),
+        System.get_env("DB_PASSWORD"),
+        System.get_env("DB_NAME")
+      } do
+        {host, user, password, name}
+        when is_binary(host) and is_binary(user) and is_binary(password) and is_binary(name) ->
+          port = System.get_env("DB_PORT", "5432")
+          "ecto://#{user}:#{password}@#{host}:#{port}/#{name}"
+
+        _ ->
+          raise """
+          Database connection not configured. Set either:
+            DATABASE_URL=ecto://USER:PASS@HOST/DATABASE
+          or all of:
+            DB_HOST, DB_USER, DB_PASSWORD, DB_NAME (and optionally DB_PORT, default 5432)
+          """
+      end
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 

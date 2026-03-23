@@ -207,9 +207,63 @@
               DATABASE_URL
             </code>
             <div class="flex-1 min-w-0">
-              <p class="text-sm text-(--crit-fg-secondary)">PostgreSQL connection URL</p>
+              <p class="text-sm text-(--crit-fg-secondary)">
+                PostgreSQL connection URL, e.g.
+                <code class="text-[0.9em]">ecto://user:pass@host/db</code>. Use this <em>or</em>
+                the individual <code class="text-[0.9em]">DB_*</code> vars below.
+              </p>
             </div>
-            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required</span>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required*</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              DB_HOST
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                Database host — use with <code class="text-[0.9em]">DB_USER</code>,
+                <code class="text-[0.9em]">DB_PASSWORD</code>,
+                <code class="text-[0.9em]">DB_NAME</code>
+                as an alternative to <code class="text-[0.9em]">DATABASE_URL</code>
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required*</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              DB_USER
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">Database user</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required*</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              DB_PASSWORD
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">Database password</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required*</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              DB_NAME
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">Database name</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-accent) shrink-0">required*</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              DB_PORT
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">Database port (default: 5432)</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
           </div>
           <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
             <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
@@ -307,6 +361,15 @@
               </p>
             </div>
             <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="px-4 py-3 bg-(--crit-bg-primary) border-t border-(--crit-border)">
+            <p class="text-xs text-(--crit-fg-muted)">
+              * Set either <code class="text-[0.9em]">DATABASE_URL</code>
+              or all four of <code class="text-[0.9em]">DB_HOST</code>,
+              <code class="text-[0.9em]">DB_USER</code>,
+              <code class="text-[0.9em]">DB_PASSWORD</code>,
+              <code class="text-[0.9em]">DB_NAME</code>.
+            </p>
           </div>
         </div>
       </div>

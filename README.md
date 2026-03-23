@@ -67,7 +67,14 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | Yes | — | PostgreSQL connection URL (`ecto://USER:PASS@HOST/DB`) |
+| `DATABASE_URL` | Yes* | — | PostgreSQL connection URL (`ecto://USER:PASS@HOST/DB`) |
+| `DB_HOST` | Yes* | — | Database host — use instead of `DATABASE_URL` |
+| `DB_USER` | Yes* | — | Database user |
+| `DB_PASSWORD` | Yes* | — | Database password |
+| `DB_NAME` | Yes* | — | Database name |
+| `DB_PORT` | No | `5432` | Database port (only used with `DB_HOST`) |
+
+\* Set either `DATABASE_URL` **or** all four of `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
 | `SECRET_KEY_BASE` | Yes | — | Session signing key. Generate with `openssl rand -base64 64` |
 | `SELFHOSTED` | Yes | — | Set to `true` to enable self-hosted mode (dashboard, no marketing pages) |
 | `ADMIN_PASSWORD` | No | — | Password for the `/dashboard` admin panel. If unset, the dashboard is accessible without authentication |
