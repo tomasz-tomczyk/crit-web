@@ -271,9 +271,9 @@
             </code>
             <div class="flex-1 min-w-0">
               <p class="text-sm text-(--crit-fg-secondary)">
-                Set to <code class="text-[0.9em]">require</code>
-                for an encrypted connection without
-                certificate verification — recommended for AWS RDS without a CA bundle
+                Set to <code class="text-[0.9em]">true</code>
+                to enable SSL. Without <code class="text-[0.9em]">DB_SSL_CA_CERT</code>, connects
+                encrypted without certificate verification — recommended for AWS RDS
               </p>
             </div>
             <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
@@ -284,7 +284,7 @@
             </code>
             <div class="flex-1 min-w-0">
               <p class="text-sm text-(--crit-fg-secondary)">
-                Path to a CA certificate file. Enables SSL with full
+                Path to a CA certificate file. When set alongside <code class="text-[0.9em]">DB_SSL=true</code>, enables full
                 <code class="text-[0.9em]">verify_peer</code>
                 verification. In Docker, mount the file as a volume and pass the container path
               </p>
