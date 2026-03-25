@@ -73,8 +73,8 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `DB_PASSWORD` | Yes* | — | Database password |
 | `DB_NAME` | Yes* | — | Database name |
 | `DB_PORT` | No | `5432` | Database port (only used with `DB_HOST`) |
-| `DB_SSL` | No | — | Enable database SSL. `true` = full verification; `require` = encrypted, no cert check (useful for RDS) |
-| `DB_SSL_CA_CERT` | No | — | Path to CA certificate file (used when `DB_SSL=true` to verify RDS or custom CAs) |
+| `DB_SSL` | No | — | Set to `require` for an encrypted connection without certificate verification (typical for AWS RDS) |
+| `DB_SSL_CA_CERT` | No | — | Path to a CA certificate file. Enables SSL with full `verify_peer` verification (requires volume mount in Docker) |
 | `SECRET_KEY_BASE` | Yes | — | Session signing key. Generate with `openssl rand -base64 64` |
 | `SELFHOSTED` | Yes | — | Set to `true` to enable self-hosted mode (dashboard, no marketing pages) |
 | `ADMIN_PASSWORD` | No | — | Password for the `/dashboard` admin panel. If unset, the dashboard is accessible without authentication |

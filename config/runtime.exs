@@ -60,17 +60,14 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   ssl_opts =
-    case System.get_env("DB_SSL") do
-      val when val in ~w(true 1) ->
-        case System.get_env("DB_SSL_CA_CERT") do
-          nil -> true
-          path -> [cacertfile: path]
-        end
+    cond do
+      ca_cert = System.get_env("DB_SSL_CA_CERT") ->
+        [verify: :verify_peer, cacertfile: ca_cert]
 
-      "require" ->
+      System.get_env("DB_SSL") == "require" ->
         [verify: :verify_none]
 
-      _ ->
+      true ->
         false
     end
 
