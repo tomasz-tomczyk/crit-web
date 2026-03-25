@@ -59,8 +59,23 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  ssl_opts =
+    case System.get_env("DB_SSL") do
+      val when val in ~w(true 1) ->
+        case System.get_env("DB_SSL_CA_CERT") do
+          nil -> true
+          path -> [cacertfile: path]
+        end
+
+      "require" ->
+        [verify: :verify_none]
+
+      _ ->
+        false
+    end
+
   config :crit, Crit.Repo,
-    # ssl: true,
+    ssl: ssl_opts,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     # For machines with several cores, consider starting multiple pools of `pool_size`
