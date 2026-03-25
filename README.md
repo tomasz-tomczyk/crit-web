@@ -73,8 +73,8 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `DB_PASSWORD` | Yes* | — | Database password |
 | `DB_NAME` | Yes* | — | Database name |
 | `DB_PORT` | No | `5432` | Database port (only used with `DB_HOST`) |
-
-\* Set either `DATABASE_URL` **or** all four of `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
+| `DB_SSL` | No | — | Set to `true` to enable SSL. Without `DB_SSL_CA_CERT`, connects encrypted without certificate verification (typical for AWS RDS) |
+| `DB_SSL_CA_CERT` | No | — | Path to a CA certificate file. When set alongside `DB_SSL=true`, enables full `verify_peer` verification (requires volume mount in Docker) |
 | `SECRET_KEY_BASE` | Yes | — | Session signing key. Generate with `openssl rand -base64 64` |
 | `SELFHOSTED` | Yes | — | Set to `true` to enable self-hosted mode (dashboard, no marketing pages) |
 | `ADMIN_PASSWORD` | No | — | Password for the `/dashboard` admin panel. If unset, the dashboard is accessible without authentication |
@@ -83,6 +83,8 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `FORCE_SSL` | No | `false` | Set `true` if terminating TLS at the app (not behind a reverse proxy) |
 | `PHX_SCHEME` | No | `https` | URL scheme for link generation |
 | `PHX_URL_PORT` | No | `443`/`80` | Port for generated URLs |
+
+\* Set either `DATABASE_URL` **or** all four of `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
 | `POOL_SIZE` | No | `10` | Database connection pool size |
 
 ### Behind a reverse proxy
