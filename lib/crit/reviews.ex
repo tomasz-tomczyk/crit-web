@@ -180,6 +180,7 @@ defmodule Crit.Reviews do
           {:error, reason} -> {:error, reason}
         end
       else
+        replace_comments(review, comments)
         {:ok, :no_changes, review}
       end
     end

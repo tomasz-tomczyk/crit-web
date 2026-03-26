@@ -327,6 +327,11 @@
   align-items: center;
   gap: 10px;
 }
+.crit-header-round {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--crit-green);
+}
 
 /* Comment count icon */
 .comment-count-btn {
@@ -394,6 +399,12 @@
 }
 /* Multi-file mode: renderer is full-width, file-body constrains content */
 #document-renderer.multi-file {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+/* Split diff: full viewport width, matching crit local behavior */
+#document-renderer.round-diff-split {
   max-width: none;
   margin: 0;
   padding: 0;
@@ -612,6 +623,118 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 }
 .diff-word-add { background: var(--crit-diff-word-add-bg); border-radius: 2px; padding: 0 1px; }
 .diff-word-del { background: var(--crit-diff-word-del-bg); border-radius: 2px; padding: 0 1px; }
+
+/* ===== Round Diff Toggle ===== */
+.crit-round-diff-toggle { display: flex; align-items: center; gap: 6px; }
+.crit-round-diff-btn {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--crit-border);
+  background: var(--crit-bg-tertiary);
+  color: var(--crit-fg-primary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.crit-round-diff-btn:hover { background: var(--crit-bg-hover); }
+.crit-round-diff-btn--active {
+  background: var(--crit-accent);
+  color: #fff;
+  border-color: var(--crit-accent);
+}
+.crit-round-diff-btn--active:hover { background: var(--crit-accent-hover); border-color: var(--crit-accent-hover); }
+
+.crit-diff-mode-toggle {
+  display: inline-flex;
+  background: var(--crit-bg-tertiary);
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 1px;
+}
+.crit-toggle-btn {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--crit-fg-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.crit-toggle-btn:first-child { border-radius: 4px 0 0 4px; }
+.crit-toggle-btn:last-child { border-radius: 0 4px 4px 0; }
+.crit-toggle-btn--active {
+  background: var(--crit-accent-subtle);
+  color: var(--crit-accent);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.crit-toggle-btn:hover:not(.crit-toggle-btn--active) { background: var(--crit-bg-hover); color: var(--crit-fg-primary); }
+
+/* ===== Rendered Diff View (round diff) ===== */
+.diff-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.diff-view-cell {
+  min-width: 0;
+  overflow-x: auto;
+}
+.diff-view-cell:nth-child(odd) {
+  border-right: 1px solid var(--crit-border);
+}
+.diff-view-side-label {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  color: var(--crit-fg-dimmed);
+  border-bottom: 1px solid var(--crit-border);
+  background: var(--crit-bg-secondary);
+}
+.diff-view .line-gutter,
+.diff-view-unified .line-gutter {
+  min-width: 32px;
+  width: auto;
+  padding: 0;
+}
+.diff-view .line-num,
+.diff-view-unified .line-num {
+  display: inline;
+}
+.diff-view .line-comment-gutter,
+.diff-view-unified .line-comment-gutter {
+  margin-left: 0;
+}
+.line-comment-gutter.diff-no-comment {
+  cursor: default;
+}
+.line-comment-gutter.diff-no-comment:hover .line-add {
+  opacity: 0;
+  pointer-events: none;
+}
+.diff-view .line-block.diff-added .line-content {
+  background: var(--crit-diff-add-bg);
+}
+.diff-view .line-block.diff-removed .line-content {
+  background: var(--crit-diff-del-bg);
+}
+.diff-view-unified {
+  max-width: 840px;
+  margin: 0 auto;
+}
+.diff-view-unified .line-block.diff-added .line-content {
+  background: var(--crit-diff-add-bg);
+}
+.diff-view-unified .line-block.diff-removed .line-content {
+  background: var(--crit-diff-del-bg);
+}
 
 /* ===== Diff Gutter Backgrounds ===== */
 /* Unified diff */
@@ -1594,6 +1717,10 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   max-width: 900px;
   margin: 0 auto;
   padding: 16px 24px;
+}
+.file-body.diff-split {
+  max-width: none;
+  padding: 0;
 }
 
 /* ===== File Tree Panel (multi-file mode) ===== */

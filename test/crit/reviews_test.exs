@@ -802,7 +802,8 @@ defmodule Crit.ReviewsTest do
 
   describe "review_round_snapshot" do
     test "create_round_snapshot/4 stores file content for a round" do
-      {:ok, review} = Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
+      {:ok, review} =
+        Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
 
       {:ok, snap} = Reviews.create_round_snapshot(review.id, 1, "plan.md", "v1 content")
 
@@ -813,7 +814,9 @@ defmodule Crit.ReviewsTest do
     end
 
     test "get_round_snapshots/2 returns a file_path => content map for a round" do
-      {:ok, review} = Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
+      {:ok, review} =
+        Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
+
       Reviews.create_round_snapshot(review.id, 1, "plan.md", "round 1 content")
       Reviews.create_round_snapshot(review.id, 1, "other.md", "other round 1")
       Reviews.create_round_snapshot(review.id, 2, "plan.md", "round 2 content")

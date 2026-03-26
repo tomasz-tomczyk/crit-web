@@ -19,6 +19,9 @@
             {first.file_path}
           </span>
         <% end %>
+        <%= if @review.review_round > 1 do %>
+          <span class="crit-header-round">Round #{@review.review_round}</span>
+        <% end %>
       </div>
       <div class="crit-header-right">
         <%= if @review.review_round > 1 do %>
@@ -27,23 +30,25 @@
               phx-click="toggle_round_diff"
               class={["crit-round-diff-btn", @show_round_diff && "crit-round-diff-btn--active"]}
             >
-              Round diff
+              Toggle diff
             </button>
             <%= if @show_round_diff do %>
-              <button
-                phx-click="set_diff_mode"
-                phx-value-mode="split"
-                class={["crit-round-diff-btn", @diff_mode == "split" && "crit-round-diff-btn--active"]}
-              >
-                Split
-              </button>
-              <button
-                phx-click="set_diff_mode"
-                phx-value-mode="unified"
-                class={["crit-round-diff-btn", @diff_mode == "unified" && "crit-round-diff-btn--active"]}
-              >
-                Unified
-              </button>
+              <div class="crit-diff-mode-toggle">
+                <button
+                  phx-click="set_diff_mode"
+                  phx-value-mode="split"
+                  class={["crit-toggle-btn", @diff_mode == "split" && "crit-toggle-btn--active"]}
+                >
+                  Split
+                </button>
+                <button
+                  phx-click="set_diff_mode"
+                  phx-value-mode="unified"
+                  class={["crit-toggle-btn", @diff_mode == "unified" && "crit-toggle-btn--active"]}
+                >
+                  Unified
+                </button>
+              </div>
             <% end %>
           </div>
         <% end %>
@@ -91,6 +96,7 @@
           id="comment-count"
           title="Toggle comments panel"
           aria-label="Toggle comments panel"
+          phx-click={JS.dispatch("crit:toggle-comments", to: "#document-renderer")}
         >
           <svg
             class="comment-count-icon"

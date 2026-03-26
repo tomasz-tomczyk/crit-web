@@ -1356,6 +1356,362 @@ function renderMultiFile(ctx) {
   updateViewedCount(ctx)
 }
 
+// ---- Round diff helpers (ported from crit local) ----------------------------
+
+function htmlToText(html) {
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || ''
+}
+
+function lineSimilarity(a, b) {
+  if (a === b) return 1
+  if (!a || !b) return 0
+  const wordRe = /^\w+$/
+  const tokA = tokenize(a).filter(t => wordRe.test(t))
+  const tokB = tokenize(b).filter(t => wordRe.test(t))
+  if (tokA.length === 0 && tokB.length === 0) return 1
+  if (tokA.length === 0 || tokB.length === 0) return 0
+  const counts = {}
+  for (let i = 0; i < tokA.length; i++) {
+    counts[tokA[i]] = (counts[tokA[i]] || 0) + 1
+  }
+  let common = 0
+  for (let i = 0; i < tokB.length; i++) {
+    if (counts[tokB[i]] > 0) { common++; counts[tokB[i]]-- }
+  }
+  return (2 * common) / (tokA.length + tokB.length)
+}
+
+function bestWordDiffPairing(delTexts, addTexts) {
+  const delCount = delTexts.length
+  const addCount = addTexts.length
+  const pairCount = Math.min(delCount, addCount)
+  if (pairCount === 0) return []
+  if (delCount + addCount > 8) return []
+  if (delCount === 1 && addCount === 1) {
+    return lineSimilarity(delTexts[0], addTexts[0]) >= 0.4 ? [[0, 0]] : []
+  }
+  const candidates = []
+  for (let d = 0; d < delCount; d++) {
+    for (let a = 0; a < addCount; a++) {
+      candidates.push({ d, a, score: lineSimilarity(delTexts[d], addTexts[a]) })
+    }
+  }
+  candidates.sort((x, y) => y.score - x.score)
+  const usedDels = {}
+  const usedAdds = {}
+  const pairs = []
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i]
+    if (usedDels[c.d] || usedAdds[c.a]) continue
+    if (c.score < 0.4) break
+    pairs.push([c.d, c.a])
+    usedDels[c.d] = true
+    usedAdds[c.a] = true
+    if (pairs.length === pairCount) break
+  }
+  return pairs
+}
+
+function applyWordDiffPairBlocks(oldBlock, newBlock) {
+  const oldText = htmlToText(oldBlock.html).replace(/\n/g, ' ')
+  const newText = htmlToText(newBlock.html).replace(/\n/g, ' ')
+  const wd = wordDiff(oldText, newText)
+  if (!wd) return
+  const oldChangedChars = wd.oldRanges.reduce((s, r) => s + r[1] - r[0], 0)
+  const newChangedChars = wd.newRanges.reduce((s, r) => s + r[1] - r[0], 0)
+  if (oldText.length > 0 && oldChangedChars / oldText.length > 0.7) return
+  if (newText.length > 0 && newChangedChars / newText.length > 0.7) return
+  oldBlock.wordDiffHtml = applyWordDiffToHtml(oldBlock.html, wd.oldRanges, 'diff-word-del')
+  newBlock.wordDiffHtml = applyWordDiffToHtml(newBlock.html, wd.newRanges, 'diff-word-add')
+}
+
+function classifyBlock(block, changedLines) {
+  for (let ln = block.startLine; ln <= block.endLine; ln++) {
+    if (changedLines.has(ln)) return true
+  }
+  return false
+}
+
+function annotateBlocksWithDiff(blocks, changedLines) {
+  return blocks.map(b => Object.assign({}, b, { isDiff: classifyBlock(b, changedLines) }))
+}
+
+// Build sets of added/removed line numbers by diffing prev vs current content line by line.
+// Uses a simple LCS approach on the line arrays to detect which lines changed.
+function buildRoundDiffLineSets(prevContent, currContent) {
+  const prevLines = prevContent.split('\n')
+  const currLines = currContent.split('\n')
+
+  // Build LCS table
+  const m = prevLines.length
+  const n = currLines.length
+  // Use rolling two-row DP to reduce memory
+  let prev = new Uint16Array(n + 1)
+  let curr = new Uint16Array(n + 1)
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (prevLines[i - 1] === currLines[j - 1]) {
+        curr[j] = prev[j - 1] + 1
+      } else {
+        curr[j] = Math.max(prev[j], curr[j - 1])
+      }
+    }
+    // Swap rows
+    const tmp = prev
+    prev = curr
+    curr = tmp
+    curr.fill(0)
+  }
+
+  // Backtrack — need full DP for this, rebuild with a more compact approach
+  // Actually for backtracking we need the full table. Use a column-based approach.
+  const dp = []
+  for (let i = 0; i <= m; i++) dp[i] = new Uint16Array(n + 1)
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (prevLines[i - 1] === currLines[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
+      }
+    }
+  }
+
+  const removedSet = new Set()
+  const addedSet = new Set()
+  let i = m, j = n
+  while (i > 0 && j > 0) {
+    if (prevLines[i - 1] === currLines[j - 1]) {
+      i--; j--
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      removedSet.add(i) // 1-based line number in prev
+      i--
+    } else {
+      addedSet.add(j) // 1-based line number in curr
+      j--
+    }
+  }
+  while (i > 0) { removedSet.add(i); i-- }
+  while (j > 0) { addedSet.add(j); j-- }
+
+  return { added: addedSet, removed: removedSet }
+}
+
+function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockIndex, commentsMap, commentedLineSet) {
+  const frag = document.createDocumentFragment()
+  const lineBlockEl = document.createElement('div')
+  lineBlockEl.className = 'line-block'
+  lineBlockEl.dataset.filePath = file.path
+  if (commentable) {
+    lineBlockEl.dataset.blockIndex = blockIndex
+    lineBlockEl.dataset.startLine = block.startLine
+    lineBlockEl.dataset.endLine = block.endLine
+  }
+  if (diffClass) lineBlockEl.classList.add(diffClass)
+
+  let blockComments = null
+  if (commentable) {
+    blockComments = getCommentsForBlock(block, commentsMap)
+    if (blockHasComment(block, commentedLineSet)) lineBlockEl.classList.add('has-comment')
+
+    const hasFormForBlock = ctx.activeForms.some(f =>
+      !f.editingId && block.startLine >= f.startLine && block.endLine <= f.endLine &&
+      (f.filePath || null) === (file.path || null)
+    )
+    const inCurrentSelection = ctx.selectionStart !== null && ctx.selectionEnd !== null &&
+      block.startLine >= ctx.selectionStart && block.endLine <= ctx.selectionEnd
+    if (inCurrentSelection) lineBlockEl.classList.add('selected')
+    if (hasFormForBlock && !inCurrentSelection) lineBlockEl.classList.add('form-selected')
+
+    // Comment gutter
+    const commentGutter = document.createElement('div')
+    commentGutter.className = 'line-comment-gutter'
+    commentGutter.dataset.startLine = block.startLine
+    commentGutter.dataset.endLine = block.endLine
+    commentGutter.dataset.filePath = file.path
+    const lineAdd = document.createElement('span')
+    lineAdd.className = 'line-add'
+    lineAdd.textContent = '+'
+    commentGutter.appendChild(lineAdd)
+    commentGutter.addEventListener('mousedown', (e) => handleGutterMouseDown(e, ctx))
+    lineBlockEl.appendChild(commentGutter)
+  } else {
+    const roGutter = document.createElement('div')
+    roGutter.className = 'line-comment-gutter diff-no-comment'
+    lineBlockEl.appendChild(roGutter)
+  }
+
+  // Line number gutter
+  const gutter = document.createElement('div')
+  gutter.className = 'line-gutter'
+  const lineNum = document.createElement('span')
+  lineNum.className = 'line-num'
+  lineNum.textContent = block.startLine
+  gutter.appendChild(lineNum)
+  lineBlockEl.insertBefore(gutter, lineBlockEl.firstChild)
+
+  // Content
+  const contentEl = document.createElement('div')
+  let contentClasses = 'line-content'
+  if (block.isEmpty) contentClasses += ' empty-line'
+  if (block.cssClass) contentClasses += ' ' + block.cssClass
+  contentEl.className = contentClasses
+  let html = block.wordDiffHtml || block.html
+  html = processTaskLists(html)
+  contentEl.innerHTML = html
+  lineBlockEl.appendChild(contentEl)
+
+  frag.appendChild(lineBlockEl)
+
+  // Comments after block (only on commentable/new side)
+  if (commentable && blockComments) {
+    for (const comment of blockComments) {
+      frag.appendChild(createCommentElement(comment, ctx))
+    }
+    const formsHere = ctx.activeForms.filter(f =>
+      !f.editingId && f.afterBlockIndex === blockIndex &&
+      (f.filePath || null) === (file.path || null)
+    )
+    for (const formObj of formsHere) {
+      frag.appendChild(createCommentForm(formObj, ctx))
+    }
+  }
+
+  return frag
+}
+
+function renderRenderedDiffSplit(ctx, md, file, prevContent) {
+  const container = document.createElement('div')
+  container.className = 'diff-view'
+
+  const prevBlocks = buildLineBlocks(md, prevContent)
+  const currBlocks = file.lineBlocks
+  const lineSets = buildRoundDiffLineSets(prevContent, file.content)
+  const prevAnnotated = annotateBlocksWithDiff(prevBlocks, lineSets.removed)
+  const currAnnotated = annotateBlocksWithDiff(currBlocks, lineSets.added)
+
+  // Word-level diffs for paired changed blocks
+  const prevDiffBlocks = prevAnnotated.filter(b => b.isDiff)
+  const currDiffBlocks = currAnnotated.filter(b => b.isDiff)
+  const pairCount = Math.min(prevDiffBlocks.length, currDiffBlocks.length)
+  for (let p = 0; p < pairCount; p++) {
+    applyWordDiffPairBlocks(prevDiffBlocks[p], currDiffBlocks[p])
+  }
+
+  // Labels row
+  const leftLabel = document.createElement('div')
+  leftLabel.className = 'diff-view-side-label'
+  leftLabel.textContent = 'Previous round'
+  container.appendChild(leftLabel)
+  const rightLabel = document.createElement('div')
+  rightLabel.className = 'diff-view-side-label'
+  rightLabel.textContent = 'Current round'
+  container.appendChild(rightLabel)
+
+  // Two-pointer merge for horizontal alignment
+  const commentsMap = buildCommentsMap(file.comments)
+  const commentedLineSet = buildCommentedLineSet(file.comments)
+  let oldIdx = 0, newIdx = 0
+
+  while (oldIdx < prevAnnotated.length || newIdx < currAnnotated.length) {
+    const leftCell = document.createElement('div')
+    leftCell.className = 'diff-view-cell'
+    const rightCell = document.createElement('div')
+    rightCell.className = 'diff-view-cell'
+
+    if (oldIdx >= prevAnnotated.length) {
+      rightCell.appendChild(renderRoundDiffBlock(ctx, currAnnotated[newIdx], 'diff-added', file, true, newIdx, commentsMap, commentedLineSet))
+      newIdx++
+    } else if (newIdx >= currAnnotated.length) {
+      leftCell.appendChild(renderRoundDiffBlock(ctx, prevAnnotated[oldIdx], 'diff-removed', file, false, oldIdx, null, null))
+      oldIdx++
+    } else if (prevAnnotated[oldIdx].isDiff && currAnnotated[newIdx].isDiff) {
+      leftCell.appendChild(renderRoundDiffBlock(ctx, prevAnnotated[oldIdx], 'diff-removed', file, false, oldIdx, null, null))
+      rightCell.appendChild(renderRoundDiffBlock(ctx, currAnnotated[newIdx], 'diff-added', file, true, newIdx, commentsMap, commentedLineSet))
+      oldIdx++
+      newIdx++
+    } else if (prevAnnotated[oldIdx].isDiff) {
+      leftCell.appendChild(renderRoundDiffBlock(ctx, prevAnnotated[oldIdx], 'diff-removed', file, false, oldIdx, null, null))
+      oldIdx++
+    } else if (currAnnotated[newIdx].isDiff) {
+      rightCell.appendChild(renderRoundDiffBlock(ctx, currAnnotated[newIdx], 'diff-added', file, true, newIdx, commentsMap, commentedLineSet))
+      newIdx++
+    } else {
+      leftCell.appendChild(renderRoundDiffBlock(ctx, prevAnnotated[oldIdx], null, file, false, oldIdx, null, null))
+      rightCell.appendChild(renderRoundDiffBlock(ctx, currAnnotated[newIdx], null, file, true, newIdx, commentsMap, commentedLineSet))
+      oldIdx++
+      newIdx++
+    }
+
+    container.appendChild(leftCell)
+    container.appendChild(rightCell)
+  }
+
+  return container
+}
+
+function renderRenderedDiffUnified(ctx, md, file, prevContent) {
+  const container = document.createElement('div')
+  container.className = 'diff-view-unified'
+
+  const prevBlocks = buildLineBlocks(md, prevContent)
+  const currBlocks = file.lineBlocks
+  const lineSets = buildRoundDiffLineSets(prevContent, file.content)
+
+  const commentsMap = buildCommentsMap(file.comments)
+  const commentedLineSet = buildCommentedLineSet(file.comments)
+
+  let oldIdx = 0, newIdx = 0
+
+  while (oldIdx < prevBlocks.length || newIdx < currBlocks.length) {
+    if (oldIdx >= prevBlocks.length) {
+      container.appendChild(renderRoundDiffBlock(ctx, currBlocks[newIdx], 'diff-added', file, true, newIdx, commentsMap, commentedLineSet))
+      newIdx++
+    } else if (newIdx >= currBlocks.length) {
+      container.appendChild(renderRoundDiffBlock(ctx, prevBlocks[oldIdx], 'diff-removed', file, false, oldIdx, null, null))
+      oldIdx++
+    } else if (classifyBlock(prevBlocks[oldIdx], lineSets.removed)) {
+      // Collect consecutive removed blocks
+      const removedRun = []
+      while (oldIdx < prevBlocks.length && classifyBlock(prevBlocks[oldIdx], lineSets.removed)) {
+        removedRun.push(oldIdx)
+        oldIdx++
+      }
+      // Collect consecutive added blocks
+      const addedRun = []
+      while (newIdx < currBlocks.length && classifyBlock(currBlocks[newIdx], lineSets.added)) {
+        addedRun.push(newIdx)
+        newIdx++
+      }
+      // Pair removed/added blocks by similarity for word diff
+      const rmTexts = removedRun.map(idx => htmlToText(prevBlocks[idx].html))
+      const adTexts = addedRun.map(idx => htmlToText(currBlocks[idx].html))
+      const mdPairs = bestWordDiffPairing(rmTexts, adTexts)
+      for (const [rIdx, aIdx] of mdPairs) {
+        applyWordDiffPairBlocks(prevBlocks[removedRun[rIdx]], currBlocks[addedRun[aIdx]])
+      }
+      // Emit all removed then all added
+      for (const ri of removedRun) {
+        container.appendChild(renderRoundDiffBlock(ctx, prevBlocks[ri], 'diff-removed', file, false, ri, null, null))
+      }
+      for (const ai of addedRun) {
+        container.appendChild(renderRoundDiffBlock(ctx, currBlocks[ai], 'diff-added', file, true, ai, commentsMap, commentedLineSet))
+      }
+    } else if (classifyBlock(currBlocks[newIdx], lineSets.added)) {
+      container.appendChild(renderRoundDiffBlock(ctx, currBlocks[newIdx], 'diff-added', file, true, newIdx, commentsMap, commentedLineSet))
+      newIdx++
+    } else {
+      container.appendChild(renderRoundDiffBlock(ctx, currBlocks[newIdx], null, file, true, newIdx, commentsMap, commentedLineSet))
+      newIdx++
+      oldIdx++
+    }
+  }
+
+  return container
+}
+
 function renderFileSection(ctx, file) {
   const section = document.createElement('details')
   section.className = 'file-section'
@@ -1439,18 +1795,29 @@ function renderFileSection(ctx, file) {
     section.appendChild(fileCommentsContainer)
   }
 
-  // File body — render using renderBlock per block
+  // File body — render using renderBlock per block, or diff view if round diff is active
   const body = document.createElement('div')
   body.className = 'file-body' + (file.fileType === 'code' ? ' code-document' : '')
 
-  const commentsMap = buildCommentsMap(file.comments)
-  const commentedLineSet = buildCommentedLineSet(file.comments)
-  const lineBlocks = file.lineBlocks
+  const prevContent = ctx.prevRoundSnapshots[file.path]
+  if (ctx.showRoundDiff && prevContent != null && file.fileType !== 'code') {
+    // Round diff mode — render split or unified diff view
+    const isSplit = ctx.diffMode === 'split'
+    body.classList.toggle('diff-split', isSplit)
+    const diffContainer = isSplit
+      ? renderRenderedDiffSplit(ctx, ctx.md, file, prevContent)
+      : renderRenderedDiffUnified(ctx, ctx.md, file, prevContent)
+    body.appendChild(diffContainer)
+  } else {
+    const commentsMap = buildCommentsMap(file.comments)
+    const commentedLineSet = buildCommentedLineSet(file.comments)
+    const lineBlocks = file.lineBlocks
 
-  for (let i = 0; i < lineBlocks.length; i++) {
-    const block = lineBlocks[i]
-    const blockEl = renderBlock(ctx, block, i, commentsMap, commentedLineSet, file.path)
-    body.appendChild(blockEl)
+    for (let i = 0; i < lineBlocks.length; i++) {
+      const block = lineBlocks[i]
+      const blockEl = renderBlock(ctx, block, i, commentsMap, commentedLineSet, file.path)
+      body.appendChild(blockEl)
+    }
   }
 
   if (file.fileType !== 'code') {
@@ -1719,6 +2086,31 @@ function renderDocument(ctx) {
   saveOpenFormContent(ctx)
   const container = ctx.el
   container.innerHTML = ""
+
+  // Round diff mode for single-file reviews
+  if (ctx.showRoundDiff && ctx.singleFilePath && !isCodeFile(ctx.singleFilePath)) {
+    const prevContent = ctx.prevRoundSnapshots[ctx.singleFilePath]
+    if (prevContent != null) {
+      const file = {
+        path: ctx.singleFilePath,
+        content: ctx.rawContent,
+        fileType: 'markdown',
+        lineBlocks: ctx.lineBlocks,
+        comments: ctx.comments,
+      }
+      const isSplit = ctx.diffMode === 'split'
+      container.classList.toggle('round-diff-split', isSplit)
+      const diffEl = isSplit
+        ? renderRenderedDiffSplit(ctx, ctx.md, file, prevContent)
+        : renderRenderedDiffUnified(ctx, ctx.md, file, prevContent)
+      container.appendChild(diffEl)
+      renderMermaidBlocks(container)
+      replaceBrokenImages(container)
+      updateCommentCount(ctx)
+      return
+    }
+  }
+  container.classList.remove('round-diff-split')
 
   const commentsMap = buildCommentsMap(ctx.comments)
   const commentedLineSet = buildCommentedLineSet(ctx.comments)
@@ -2992,6 +3384,9 @@ export const DocumentRenderer = {
     ctx.singleFilePath = null
     ctx.focusedFilePath = null
     ctx.treeFolderState = {}
+    ctx.prevRoundSnapshots = {}
+    ctx.showRoundDiff = false
+    ctx.diffMode = 'split'
 
     const rawContent = ctx.el.dataset.content || ""
     ctx.rawContent = rawContent
@@ -3024,6 +3419,7 @@ export const DocumentRenderer = {
       return defaultListItemOpen(tokens, idx, options, _env, self)
     }
 
+    ctx.md = md
     ctx.lineBlocks = buildLineBlocks(md, rawContent)
 
     // Build table of contents
@@ -3126,11 +3522,10 @@ export const DocumentRenderer = {
     mainLayout.appendChild(commentsPanel)
     ctx._commentsPanel = commentsPanel
 
-    // Wire comment count as panel toggle
-    const commentCountEl = document.getElementById('comment-count')
-    if (commentCountEl) {
-      commentCountEl.addEventListener('click', () => toggleCommentsPanel(ctx))
-    }
+    // Wire comment count as panel toggle. The button uses phx-click with
+    // JS.dispatch("crit:toggle-comments", to: "#document-renderer") so this
+    // listener survives LiveView DOM patches to the header.
+    ctx.el.addEventListener('crit:toggle-comments', () => toggleCommentsPanel(ctx))
 
     // Show loading until server sends init
     ctx.el.innerHTML = '<div class="crit-loading">Loading comments…</div>'
@@ -3199,6 +3594,19 @@ export const DocumentRenderer = {
       render(ctx)
       if (ctx._commentsPanel?.classList.contains('comments-panel-open')) {
         renderCommentsPanel(ctx)
+      }
+    })
+
+    ctx.handleEvent("round_diff_updated", ({ enabled, snapshots }) => {
+      ctx.showRoundDiff = enabled
+      ctx.prevRoundSnapshots = snapshots || {}
+      render(ctx)
+    })
+
+    ctx.handleEvent("diff_mode_updated", ({ mode }) => {
+      ctx.diffMode = mode
+      if (ctx.showRoundDiff) {
+        render(ctx)
       }
     })
 

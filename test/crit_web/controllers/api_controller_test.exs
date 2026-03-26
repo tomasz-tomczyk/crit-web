@@ -147,7 +147,15 @@ defmodule CritWeb.ApiControllerTest do
         Reviews.create_review(
           [%{"path" => "plan.md", "content" => "# Plan"}],
           1,
-          [%{"file" => "plan.md", "start_line" => 1, "end_line" => 1, "body" => "fix this", "external_id" => "c1"}],
+          [
+            %{
+              "file" => "plan.md",
+              "start_line" => 1,
+              "end_line" => 1,
+              "body" => "fix this",
+              "external_id" => "c1"
+            }
+          ],
           []
         )
 
