@@ -154,6 +154,82 @@ defmodule Crit.Reviews do
     end
   end
 
+  @doc """
+  Update an existing review identified by token+delete_token with new files and comments.
+  Appends a new round of snapshots if anything changed — no data is deleted.
+  Returns {:ok, :updated, review}, {:ok, :no_changes, review}, or {:error, reason}.
+  """
+  def upsert_review(token, delete_token, payload) do
+    with {:ok, review} <- fetch_review_for_update(token, delete_token) do
+      files = payload["files"] || []
+      comments = payload["comments"] || []
+
+      if content_changed?(review, files) do
+        new_round = review.review_round + 1
+
+        Repo.transaction(fn ->
+          insert_round_snapshots(review, new_round, files)
+          replace_comments(review, comments)
+
+          review
+          |> Ecto.Changeset.change(review_round: new_round)
+          |> Repo.update!()
+        end)
+        |> case do
+          {:ok, updated} -> {:ok, :updated, updated}
+          {:error, reason} -> {:error, reason}
+        end
+      else
+        {:ok, :no_changes, review}
+      end
+    end
+  end
+
+  defp fetch_review_for_update(token, delete_token) do
+    case Repo.one(from r in Review, where: r.token == ^token) do
+      nil -> {:error, :not_found}
+      %{delete_token: ^delete_token} = review -> {:ok, review}
+      _ -> {:error, :unauthorized}
+    end
+  end
+
+  defp content_changed?(review, new_files) do
+    current =
+      get_current_files(review)
+      |> Map.new(fn f -> {f.file_path, :crypto.hash(:sha256, f.content)} end)
+
+    incoming =
+      new_files
+      |> Map.new(fn f -> {f["path"], :crypto.hash(:sha256, f["content"] || "")} end)
+
+    current != incoming
+  end
+
+  defp replace_comments(review, new_comments) do
+    Repo.delete_all(from c in Comment, where: c.review_id == ^review.id)
+
+    Enum.each(new_comments, fn attrs ->
+      scope = attrs["scope"] || infer_scope(attrs)
+
+      %Comment{}
+      |> Comment.create_changeset(%{
+        "start_line" => attrs["start_line"],
+        "end_line" => attrs["end_line"],
+        "body" => attrs["body"],
+        "file_path" => attrs["file"],
+        "quote" => attrs["quote"],
+        "author_display_name" => attrs["author_display_name"] || "crit",
+        "review_round" => attrs["review_round"] || 1,
+        "resolved" => attrs["resolved"] || false,
+        "scope" => scope,
+        "external_id" => attrs["external_id"]
+      })
+      |> Ecto.Changeset.put_change(:review_id, review.id)
+      |> Ecto.Changeset.put_change(:author_identity, "imported")
+      |> Repo.insert!()
+    end)
+  end
+
   defp insert_round_snapshots(review, round_number, files_attrs) do
     Enum.with_index(files_attrs)
     |> Enum.reduce_while(:ok, fn {file_attrs, idx}, :ok ->

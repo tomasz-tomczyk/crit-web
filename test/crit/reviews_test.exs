@@ -824,6 +824,99 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "upsert_review/3" do
+    test "returns {:error, :unauthorized} when delete_token is wrong" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      result =
+        Reviews.upsert_review(review.token, "wrong-token", %{
+          "files" => [%{"path" => "f.md", "content" => "v2"}],
+          "comments" => [],
+          "review_round" => 1
+        })
+
+      assert result == {:error, :unauthorized}
+    end
+
+    test "returns {:ok, :no_changes, review} when content is identical" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "same"}], 1, [], [])
+
+      {:ok, :no_changes, returned} =
+        Reviews.upsert_review(review.token, review.delete_token, %{
+          "files" => [%{"path" => "f.md", "content" => "same"}],
+          "comments" => [],
+          "review_round" => 1
+        })
+
+      assert returned.id == review.id
+      assert returned.review_round == review.review_round
+    end
+
+    test "increments review_round when file content changes" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      {:ok, :updated, updated} =
+        Reviews.upsert_review(review.token, review.delete_token, %{
+          "files" => [%{"path" => "f.md", "content" => "v2"}],
+          "comments" => [],
+          "review_round" => 1
+        })
+
+      assert updated.review_round == review.review_round + 1
+    end
+
+    test "preserves initial round content after upsert (no data deleted)" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "old"}], 1, [], [])
+      initial_round = review.review_round
+
+      Reviews.upsert_review(review.token, review.delete_token, %{
+        "files" => [%{"path" => "f.md", "content" => "new"}],
+        "comments" => [],
+        "review_round" => 1
+      })
+
+      snaps = Reviews.get_round_snapshots(review.id, initial_round)
+      assert snaps["f.md"] == "old"
+    end
+
+    test "get_by_token returns latest round file content after upsert" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(review.token, review.delete_token, %{
+        "files" => [%{"path" => "f.md", "content" => "v2 updated"}],
+        "comments" => [],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      assert hd(updated.files).content == "v2 updated"
+    end
+
+    test "replaces comments and preserves external_id and resolved state" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(review.token, review.delete_token, %{
+        "files" => [%{"path" => "f.md", "content" => "v2"}],
+        "comments" => [
+          %{
+            "file" => "f.md",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "addressed",
+            "external_id" => "local-c1",
+            "resolved" => true
+          }
+        ],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.external_id == "local-c1"
+      assert comment.resolved == true
+    end
+  end
+
   describe "delete_review/1" do
     test "deletes a review by id" do
       review = review_fixture()
