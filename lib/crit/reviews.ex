@@ -486,6 +486,7 @@ defmodule Crit.Reviews do
       review_round: c.review_round,
       file_path: c.file_path,
       resolved: c.resolved,
+      external_id: c.external_id,
       created_at: DateTime.to_iso8601(c.inserted_at),
       updated_at: DateTime.to_iso8601(c.updated_at),
       replies:

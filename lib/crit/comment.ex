@@ -13,6 +13,7 @@ defmodule Crit.Comment do
 
     field :scope, :string, default: "line"
     field :resolved, :boolean, default: false
+    field :external_id, :string
     belongs_to :review, Crit.Review
     belongs_to :parent, Crit.Comment
     has_many :replies, Crit.Comment, foreign_key: :parent_id, preload_order: [asc: :inserted_at]
@@ -34,7 +35,8 @@ defmodule Crit.Comment do
       :file_path,
       :quote,
       :resolved,
-      :scope
+      :scope,
+      :external_id
     ])
     |> validate_required([:body])
     |> validate_inclusion(:scope, ["line", "file", "review"])

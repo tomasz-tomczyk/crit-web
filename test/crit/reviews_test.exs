@@ -120,6 +120,48 @@ defmodule Crit.ReviewsTest do
       assert hd(comment.replies).body == "done"
     end
 
+    test "create_review stores external_id on comments" do
+      files = [%{"path" => "plan.md", "content" => "# Plan"}]
+
+      comments = [
+        %{
+          "file" => "plan.md",
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "fix this",
+          "external_id" => "local-c1"
+        }
+      ]
+
+      {:ok, review} = Reviews.create_review(files, 1, comments, [])
+      review = Repo.preload(review, :comments)
+
+      assert hd(review.comments).external_id == "local-c1"
+    end
+
+    test "serialize_comment includes external_id" do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "# Plan"}],
+          1,
+          [
+            %{
+              "file" => "plan.md",
+              "start_line" => 1,
+              "end_line" => 1,
+              "body" => "test",
+              "external_id" => "local-abc"
+            }
+          ],
+          []
+        )
+
+      review = Repo.preload(review, :comments)
+      serialized = Reviews.serialize_comment(hd(review.comments))
+
+      assert serialized.external_id == "local-abc"
+    end
+
     test "comments referencing non-existent files are still inserted" do
       files = [%{"path" => "a.go", "content" => "a"}]
 
