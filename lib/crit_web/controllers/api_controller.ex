@@ -5,7 +5,7 @@ defmodule CritWeb.ApiController do
   alias Crit.Output
 
   # 30 write requests per minute per IP
-  plug :rate_limit_write when action in [:create]
+  plug :rate_limit_write when action in [:create, :update]
 
   @max_comments 500
 

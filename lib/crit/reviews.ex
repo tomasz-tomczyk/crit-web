@@ -180,7 +180,7 @@ defmodule Crit.Reviews do
           {:error, reason} -> {:error, reason}
         end
       else
-        replace_comments(review, comments)
+        Repo.transaction(fn -> replace_comments(review, comments) end)
         {:ok, :no_changes, review}
       end
     end
