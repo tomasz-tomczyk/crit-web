@@ -95,10 +95,8 @@ defmodule Crit.Output do
     |> Enum.join("\n\n---\n\n")
   end
 
-  @doc "Serialize multi-file comments to .crit.json shape."
-  def multi_file_comments_json(files, comments) do
-    alias Crit.Reviews
-
+  @doc "Serialize review + comments to .crit.json shape for agent consumption."
+  def multi_file_comments_json(review, files, comments, base_url) do
     comments_by_file =
       comments
       |> Enum.filter(& &1.file_path)
@@ -108,10 +106,48 @@ defmodule Crit.Output do
       files
       |> Enum.map(fn file ->
         file_comments = Map.get(comments_by_file, file.path, [])
-        {file.path, %{comments: Enum.map(file_comments, &Reviews.serialize_comment/1)}}
+        {file.path, %{comments: Enum.map(file_comments, &serialize_comment_for_export/1)}}
       end)
       |> Map.new()
 
-    %{files: file_map}
+    %{
+      review_round: review.review_round,
+      share_url: base_url <> "/r/#{review.token}",
+      delete_token: review.delete_token,
+      updated_at: DateTime.to_iso8601(review.updated_at),
+      files: file_map
+    }
+  end
+
+  defp serialize_comment_for_export(%Comment{} = c) do
+    replies =
+      case c.replies do
+        %Ecto.Association.NotLoaded{} -> []
+        list -> list
+      end
+
+    %{
+      id: c.id,
+      start_line: c.start_line,
+      end_line: c.end_line,
+      body: c.body,
+      quote: c.quote,
+      scope: c.scope || "line",
+      author: c.author_display_name,
+      review_round: c.review_round,
+      resolved: c.resolved,
+      external_id: c.external_id,
+      created_at: DateTime.to_iso8601(c.inserted_at),
+      updated_at: DateTime.to_iso8601(c.updated_at),
+      replies:
+        Enum.map(replies, fn r ->
+          %{
+            id: r.id,
+            body: r.body,
+            author: r.author_display_name,
+            created_at: DateTime.to_iso8601(r.inserted_at)
+          }
+        end)
+    }
   end
 end

@@ -231,7 +231,18 @@ defmodule Crit.OutputTest do
     end
   end
 
-  describe "multi_file_comments_json/2" do
+  describe "multi_file_comments_json/4" do
+    @base_url "http://localhost:4000"
+
+    defp fake_review do
+      %{
+        review_round: 1,
+        token: "test-token",
+        delete_token: "del-token",
+        updated_at: ~U[2026-01-01 00:00:00Z]
+      }
+    end
+
     test "groups comments by file path" do
       ts = ~U[2026-01-01 00:00:00Z]
 
@@ -261,11 +272,14 @@ defmodule Crit.OutputTest do
         }
       ]
 
-      result = Output.multi_file_comments_json(files, comments)
+      result = Output.multi_file_comments_json(fake_review(), files, comments, @base_url)
       assert Map.has_key?(result.files, "a.go")
       assert Map.has_key?(result.files, "b.go")
       assert length(result.files["a.go"].comments) == 1
       assert length(result.files["b.go"].comments) == 1
+      assert result.review_round == 1
+      assert result.share_url == "http://localhost:4000/r/test-token"
+      assert result.delete_token == "del-token"
     end
 
     test "filters out comments with nil file_path" do
@@ -294,7 +308,7 @@ defmodule Crit.OutputTest do
         }
       ]
 
-      result = Output.multi_file_comments_json(files, comments)
+      result = Output.multi_file_comments_json(fake_review(), files, comments, @base_url)
       assert length(result.files["a.go"].comments) == 1
     end
 
@@ -304,7 +318,7 @@ defmodule Crit.OutputTest do
         %{path: "b.go"}
       ]
 
-      result = Output.multi_file_comments_json(files, [])
+      result = Output.multi_file_comments_json(fake_review(), files, [], @base_url)
       assert result.files["a.go"].comments == []
       assert result.files["b.go"].comments == []
     end

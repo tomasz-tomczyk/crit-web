@@ -116,7 +116,8 @@ defmodule CritWeb.ApiController do
       review ->
         comments = visible_comments(review)
         files = Enum.map(review.files, fn f -> %{path: f.file_path} end)
-        json(conn, Output.multi_file_comments_json(files, comments))
+        base_url = CritWeb.Endpoint.url()
+        json(conn, Output.multi_file_comments_json(review, files, comments, base_url))
     end
   end
 

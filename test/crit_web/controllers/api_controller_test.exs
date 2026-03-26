@@ -142,11 +142,37 @@ defmodule CritWeb.ApiControllerTest do
   end
 
   describe "GET /api/export/:token/comments" do
-    test "returns comments export for valid token", %{conn: conn} do
-      review = create_review()
-      token = review_token(review)
-      conn = get(conn, ~p"/api/export/#{token}/comments")
-      assert json_response(conn, 200)
+    test "returns .crit.json compatible shape with top-level fields", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "# Plan"}],
+          1,
+          [%{"file" => "plan.md", "start_line" => 1, "end_line" => 1, "body" => "fix this", "external_id" => "c1"}],
+          []
+        )
+
+      conn = get(conn, ~p"/api/export/#{review.token}/comments")
+      body = json_response(conn, 200)
+
+      # Top-level .crit.json fields
+      assert body["review_round"] == 1
+      assert body["share_url"] =~ review.token
+      assert body["delete_token"] == review.delete_token
+      assert body["updated_at"]
+
+      # Comment shape uses "author" not "author_display_name"
+      [comment] = body["files"]["plan.md"]["comments"]
+      assert comment["id"]
+      assert comment["body"] == "fix this"
+      assert comment["external_id"] == "c1"
+      assert comment["start_line"] == 1
+      assert comment["end_line"] == 1
+      assert comment["created_at"]
+      assert comment["updated_at"]
+      assert Map.has_key?(comment, "author")
+      refute Map.has_key?(comment, "author_display_name")
+      refute Map.has_key?(comment, "author_identity")
+      refute Map.has_key?(comment, "file_path")
     end
 
     test "returns 404 for unknown token", %{conn: conn} do
@@ -201,29 +227,37 @@ defmodule CritWeb.ApiControllerTest do
       export_conn = get(build_conn(), ~p"/api/export/#{token}/comments")
       result = json_response(export_conn, 200)
 
+      # Top-level fields present
+      assert result["review_round"]
+      assert result["share_url"] =~ token
+      assert result["delete_token"]
+
       assert Map.has_key?(result["files"], "main.go")
       comments = result["files"]["main.go"]["comments"]
       assert length(comments) == 2
 
-      # First comment: resolved with replies and author
+      # First comment: resolved with replies and author (export uses "author" key)
       resolved_comment = Enum.find(comments, &(&1["body"] == "add copyright header"))
       assert resolved_comment["resolved"] == true
-      assert resolved_comment["author_display_name"] == "Alice"
+      assert resolved_comment["author"] == "Alice"
       assert resolved_comment["start_line"] == 1
       assert resolved_comment["end_line"] == 1
+      refute Map.has_key?(resolved_comment, "author_display_name")
+      refute Map.has_key?(resolved_comment, "author_identity")
 
-      # Replies are included
+      # Replies use "author" key
       replies = resolved_comment["replies"]
       assert length(replies) == 2
       assert Enum.at(replies, 0)["body"] == "done, added MIT license"
-      assert Enum.at(replies, 0)["author_display_name"] == "Bob"
+      assert Enum.at(replies, 0)["author"] == "Bob"
       assert Enum.at(replies, 1)["body"] == "looks good now"
-      assert Enum.at(replies, 1)["author_display_name"] == "Alice"
+      assert Enum.at(replies, 1)["author"] == "Alice"
+      refute Map.has_key?(Enum.at(replies, 0), "author_display_name")
 
       # Second comment: unresolved, no replies
       unresolved_comment = Enum.find(comments, &(&1["body"] == "needs error handling"))
       assert unresolved_comment["resolved"] == false
-      assert unresolved_comment["author_display_name"] == "Alice"
+      assert unresolved_comment["author"] == "Alice"
       assert unresolved_comment["replies"] == []
     end
   end
