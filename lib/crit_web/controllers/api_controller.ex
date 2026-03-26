@@ -179,6 +179,29 @@ defmodule CritWeb.ApiController do
     conn |> put_status(400) |> json(%{error: "delete_token is required"})
   end
 
+  if Mix.env() == :test do
+    def seed_comment(conn, %{"token" => token} = params) do
+      case Reviews.get_by_token(token) do
+        nil ->
+          not_found(conn)
+
+        review ->
+          attrs = %{
+            "start_line" => params["start_line"] || 1,
+            "end_line" => params["end_line"] || 1,
+            "body" => params["body"] || "web reviewer comment",
+            "file_path" => params["file"] || hd(review.files).file_path,
+            "scope" => "line"
+          }
+
+          {:ok, comment} =
+            Reviews.create_comment(review, attrs, "integration-test", "WebReviewer")
+
+          json(conn, Reviews.serialize_comment(comment))
+      end
+    end
+  end
+
   # Handled by LocalhostCors plug — this action is never reached.
   def options(conn, _params), do: send_resp(conn, 204, "")
 

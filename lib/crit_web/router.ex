@@ -72,6 +72,10 @@ defmodule CritWeb.Router do
 
     get "/export/:token/review", ApiController, :export_review
     get "/export/:token/comments", ApiController, :export_comments
+
+    if Mix.env() == :test do
+      post "/reviews/:token/seed-comment", ApiController, :seed_comment
+    end
   end
 
   defp put_noindex(conn, _opts) do
