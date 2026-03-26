@@ -8,7 +8,9 @@ defmodule Crit.Review do
     field :review_round, :integer, default: 0
 
     has_many :comments, Crit.Comment
-    has_many :files, Crit.ReviewFile
+    has_many :round_snapshots, Crit.ReviewRoundSnapshot
+
+    field :files, {:array, :map}, virtual: true, default: []
 
     timestamps(type: :utc_datetime)
   end

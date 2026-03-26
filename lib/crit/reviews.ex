@@ -2,26 +2,38 @@ defmodule Crit.Reviews do
   @moduledoc "Context for reviews and comments."
 
   import Ecto.Query
-  alias Crit.{Repo, Review, Comment, ReviewFile}
+  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot}
 
   @max_total_size 10_485_760
 
   @doc "Fetch a review by its token, preloading comments sorted by start_line."
   def get_by_token(token) do
-    query =
-      from r in Review,
-        where: r.token == ^token,
-        preload: [
-          files: ^from(f in ReviewFile, order_by: [asc: f.position]),
-          comments:
-            ^from(c in Comment,
-              where: is_nil(c.parent_id),
-              order_by: [asc: c.start_line, asc: c.end_line],
-              preload: [:replies]
-            )
-        ]
+    review =
+      Repo.one(
+        from r in Review,
+          where: r.token == ^token,
+          preload: [
+            comments:
+              ^from(c in Comment,
+                where: is_nil(c.parent_id),
+                order_by: [asc: c.start_line, asc: c.end_line],
+                preload: [:replies]
+              )
+          ]
+      )
 
-    Repo.one(query)
+    case review do
+      nil -> nil
+      r -> Map.put(r, :files, get_current_files(r))
+    end
+  end
+
+  defp get_current_files(review) do
+    Repo.all(
+      from s in ReviewRoundSnapshot,
+        where: s.review_id == ^review.id and s.round_number == ^review.review_round,
+        order_by: [asc: s.position]
+    )
   end
 
   @doc """
@@ -117,7 +129,7 @@ defmodule Crit.Reviews do
         %Review{} |> Review.create_changeset(%{"review_round" => review_round || 0})
       )
       |> Ecto.Multi.run(:files, fn _repo, %{review: review} ->
-        case insert_files(review, files_attrs) do
+        case insert_round_snapshots(review, review.review_round, files_attrs) do
           :ok -> {:ok, :ok}
           error -> error
         end
@@ -142,18 +154,21 @@ defmodule Crit.Reviews do
     end
   end
 
-  defp insert_files(review, files_attrs) do
+  defp insert_round_snapshots(review, round_number, files_attrs) do
     Enum.with_index(files_attrs)
     |> Enum.reduce_while(:ok, fn {file_attrs, idx}, :ok ->
-      %ReviewFile{}
-      |> ReviewFile.create_changeset(%{
-        "file_path" => file_attrs["path"],
-        "content" => file_attrs["content"],
-        "position" => idx
-      })
-      |> Ecto.Changeset.put_change(:review_id, review.id)
-      |> Repo.insert()
-      |> case do
+      result =
+        %ReviewRoundSnapshot{}
+        |> ReviewRoundSnapshot.changeset(%{
+          "file_path" => file_attrs["path"],
+          "content" => file_attrs["content"],
+          "round_number" => round_number,
+          "position" => idx
+        })
+        |> Ecto.Changeset.put_change(:review_id, review.id)
+        |> Repo.insert()
+
+      case result do
         {:ok, _} -> {:cont, :ok}
         {:error, changeset} -> {:halt, {:error, changeset}}
       end
@@ -217,6 +232,28 @@ defmodule Crit.Reviews do
     end)
   end
 
+  def create_round_snapshot(review_id, round_number, file_path, content) do
+    %ReviewRoundSnapshot{}
+    |> ReviewRoundSnapshot.changeset(%{
+      "file_path" => file_path,
+      "content" => content,
+      "round_number" => round_number,
+      "position" => 0
+    })
+    |> Ecto.Changeset.put_change(:review_id, review_id)
+    |> Repo.insert()
+  end
+
+  @doc "Return a %{file_path => content} map for all snapshots at a given round (for diff display)."
+  def get_round_snapshots(review_id, round_number) do
+    Repo.all(
+      from s in ReviewRoundSnapshot,
+        where: s.review_id == ^review_id and s.round_number == ^round_number,
+        select: {s.file_path, s.content}
+    )
+    |> Map.new()
+  end
+
   @doc """
   Deletes all reviews whose last_activity_at is older than `days` days ago.
   Returns {:ok, count} where count is the number of deleted reviews.
@@ -254,7 +291,7 @@ defmodule Crit.Reviews do
   def dashboard_stats do
     total_reviews = Repo.aggregate(Review, :count)
     total_comments = Repo.aggregate(Comment, :count)
-    total_files = Repo.aggregate(ReviewFile, :count)
+    total_files = Repo.aggregate(ReviewRoundSnapshot, :count)
 
     week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
 
@@ -266,7 +303,7 @@ defmodule Crit.Reviews do
 
     total_storage_bytes =
       Repo.one(
-        from(rf in ReviewFile,
+        from(rf in ReviewRoundSnapshot,
           select: fragment("coalesce(sum(octet_length(?)), 0)", rf.content)
         )
       ) || 0
@@ -306,7 +343,7 @@ defmodule Crit.Reviews do
   """
   def list_reviews_with_counts do
     first_file_subquery =
-      from(rf in ReviewFile,
+      from(rf in ReviewRoundSnapshot,
         where: rf.review_id == parent_as(:review).id,
         order_by: [asc: rf.position],
         limit: 1,
@@ -315,7 +352,7 @@ defmodule Crit.Reviews do
 
     from(r in Review, as: :review)
     |> join(:left, [r], c in Comment, on: c.review_id == r.id)
-    |> join(:left, [r, _c], rf in ReviewFile, on: rf.review_id == r.id)
+    |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
     |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
     |> group_by([r, _c, _rf, fp], [r.id, r.token, r.inserted_at, r.last_activity_at, fp.file_path])
     |> select([r, c, rf, fp], %{

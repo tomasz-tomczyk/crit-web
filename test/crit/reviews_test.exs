@@ -758,6 +758,30 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "review_round_snapshot" do
+    test "create_round_snapshot/4 stores file content for a round" do
+      {:ok, review} = Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
+
+      {:ok, snap} = Reviews.create_round_snapshot(review.id, 1, "plan.md", "v1 content")
+
+      assert snap.review_id == review.id
+      assert snap.round_number == 1
+      assert snap.file_path == "plan.md"
+      assert snap.content == "v1 content"
+    end
+
+    test "get_round_snapshots/2 returns a file_path => content map for a round" do
+      {:ok, review} = Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
+      Reviews.create_round_snapshot(review.id, 1, "plan.md", "round 1 content")
+      Reviews.create_round_snapshot(review.id, 1, "other.md", "other round 1")
+      Reviews.create_round_snapshot(review.id, 2, "plan.md", "round 2 content")
+
+      result = Reviews.get_round_snapshots(review.id, 1)
+
+      assert result == %{"plan.md" => "round 1 content", "other.md" => "other round 1"}
+    end
+  end
+
   describe "delete_review/1" do
     test "deletes a review by id" do
       review = review_fixture()
