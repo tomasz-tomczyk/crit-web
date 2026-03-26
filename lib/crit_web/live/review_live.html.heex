@@ -21,6 +21,32 @@
         <% end %>
       </div>
       <div class="crit-header-right">
+        <%= if @review.review_round > 1 do %>
+          <div class="crit-round-diff-toggle">
+            <button
+              phx-click="toggle_round_diff"
+              class={["crit-round-diff-btn", @show_round_diff && "crit-round-diff-btn--active"]}
+            >
+              Round diff
+            </button>
+            <%= if @show_round_diff do %>
+              <button
+                phx-click="set_diff_mode"
+                phx-value-mode="split"
+                class={["crit-round-diff-btn", @diff_mode == "split" && "crit-round-diff-btn--active"]}
+              >
+                Split
+              </button>
+              <button
+                phx-click="set_diff_mode"
+                phx-value-mode="unified"
+                class={["crit-round-diff-btn", @diff_mode == "unified" && "crit-round-diff-btn--active"]}
+              >
+                Unified
+              </button>
+            <% end %>
+          </div>
+        <% end %>
         <div class="crit-name-pill" id="name-pill">
           <button
             type="button"

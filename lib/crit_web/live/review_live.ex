@@ -65,6 +65,9 @@ defmodule CritWeb.ReviewLive do
          |> assign(:local_prompt_text, local_prompt_text)
          |> assign(:full_export_prompt_text, full_export_prompt_text)
          |> assign(:prompt_mode, "local")
+         |> assign(:show_round_diff, false)
+         |> assign(:prev_round_snapshots, %{})
+         |> assign(:diff_mode, "split")
          |> assign(:page_title, display_filename(review))
          |> assign(
            :meta_description,
@@ -80,6 +83,32 @@ defmodule CritWeb.ReviewLive do
   def handle_event("set_prompt_mode", %{"mode" => mode}, socket)
       when mode in ["local", "full_export"] do
     {:noreply, assign(socket, :prompt_mode, mode)}
+  end
+
+  def handle_event("toggle_round_diff", _params, socket) do
+    review = socket.assigns.review
+
+    if socket.assigns.show_round_diff do
+      {:noreply,
+       socket
+       |> assign(show_round_diff: false, prev_round_snapshots: %{})
+       |> push_event("round_diff_updated", %{enabled: false, snapshots: %{}})}
+    else
+      snapshots = Reviews.get_round_snapshots(review.id, review.review_round - 1)
+
+      {:noreply,
+       socket
+       |> assign(show_round_diff: true, prev_round_snapshots: snapshots)
+       |> push_event("round_diff_updated", %{enabled: true, snapshots: snapshots})}
+    end
+  end
+
+  def handle_event("set_diff_mode", %{"mode" => mode}, socket)
+      when mode in ["split", "unified"] do
+    {:noreply,
+     socket
+     |> assign(:diff_mode, mode)
+     |> push_event("diff_mode_updated", %{mode: mode})}
   end
 
   @impl true
