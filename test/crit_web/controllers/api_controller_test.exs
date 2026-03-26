@@ -368,6 +368,92 @@ defmodule CritWeb.ApiControllerTest do
     end
   end
 
+  describe "PUT /api/reviews/:token" do
+    test "updates review content and returns new round", %{conn: conn} do
+      {:ok, review} =
+        Crit.Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "# v1"}],
+          1,
+          [],
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "plan.md", content: "# v2"}],
+          comments: [],
+          review_round: 1
+        })
+
+      assert %{"changed" => true, "review_round" => round, "url" => url} =
+               json_response(conn, 200)
+
+      assert round == review.review_round + 1
+      assert url =~ review.token
+    end
+
+    test "returns changed: false when content is identical", %{conn: conn} do
+      {:ok, review} =
+        Crit.Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "same"}],
+          1,
+          [],
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "plan.md", content: "same"}],
+          comments: [],
+          review_round: 1
+        })
+
+      assert %{"changed" => false} = json_response(conn, 200)
+    end
+
+    test "returns 401 with wrong delete_token", %{conn: conn} do
+      {:ok, review} =
+        Crit.Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "# v1"}],
+          1,
+          [],
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: "wrong",
+          files: [],
+          comments: [],
+          review_round: 1
+        })
+
+      assert conn.status == 401
+    end
+
+    test "returns 404 for unknown token", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/doesnotexist", %{
+          delete_token: "tok",
+          files: [],
+          comments: [],
+          review_round: 1
+        })
+
+      assert conn.status == 404
+    end
+  end
+
   describe "DELETE /api/reviews" do
     test "deletes review with valid delete_token", %{conn: conn} do
       review = create_review()

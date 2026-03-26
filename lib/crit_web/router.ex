@@ -65,6 +65,7 @@ defmodule CritWeb.Router do
     options "/reviews", ApiController, :options
     post "/reviews", ApiController, :create
     delete "/reviews", ApiController, :delete_review
+    put "/reviews/:token", ApiController, :update
 
     get "/reviews/:token/document", ApiController, :document
     get "/reviews/:token/comments", ApiController, :comments_list

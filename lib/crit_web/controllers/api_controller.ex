@@ -140,6 +140,27 @@ defmodule CritWeb.ApiController do
     end
   end
 
+  def update(conn, %{"token" => token} = params) do
+    delete_token = params["delete_token"]
+    payload = Map.take(params, ["files", "comments", "review_round"])
+
+    case Reviews.upsert_review(token, delete_token, payload) do
+      {:ok, :updated, review} ->
+        url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
+        json(conn, %{url: url, review_round: review.review_round, changed: true})
+
+      {:ok, :no_changes, review} ->
+        url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
+        json(conn, %{url: url, review_round: review.review_round, changed: false})
+
+      {:error, :not_found} ->
+        not_found(conn)
+
+      {:error, :unauthorized} ->
+        conn |> put_status(401) |> json(%{error: "unauthorized"})
+    end
+  end
+
   def delete_review(conn, %{"delete_token" => delete_token})
       when is_binary(delete_token) and delete_token != "" do
     case Reviews.delete_by_delete_token(delete_token) do
