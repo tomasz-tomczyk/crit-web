@@ -107,7 +107,7 @@
             </form>
           </div>
           <%= if @oauth_configured do %>
-            <a href={~p"/auth/login"} class="crit-signin-btn">Sign in</a>
+            <a href={~p"/auth/login?#{%{return_to: ~p"/r/#{@review.token}"}}"} class="crit-signin-btn">Sign in</a>
           <% end %>
         <% end %>
         <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>

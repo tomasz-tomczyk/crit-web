@@ -4,13 +4,14 @@ defmodule CritWeb.OAuthController do
   alias Crit.Accounts
 
   @doc "Initiates OAuth: redirects to the configured provider's authorization URL."
-  def request(conn, _params) do
+  def request(conn, params) do
     config = build_config()
 
     case config[:strategy].authorize_url(config) do
       {:ok, %{url: url, session_params: session_params}} ->
         conn
         |> put_session(:oauth_session_params, session_params)
+        |> put_session(:oauth_return_to, safe_return_to(params["return_to"]))
         |> redirect(external: url)
 
       {:error, _reason} ->
@@ -25,17 +26,22 @@ defmodule CritWeb.OAuthController do
     session_params = get_session(conn, :oauth_session_params) || %{}
     config = build_config()
 
-    case config |> Keyword.put(:session_params, session_params) |> config[:strategy].callback(params) do
+    case config
+         |> Keyword.put(:session_params, session_params)
+         |> config[:strategy].callback(params) do
       {:ok, %{user: user_params}} ->
         provider = provider_name(config)
 
         case Accounts.find_or_create_from_oauth(provider, user_params) do
           {:ok, user} ->
+            return_to = get_session(conn, :oauth_return_to) || ~p"/dashboard"
+
             conn
             |> delete_session(:oauth_session_params)
+            |> delete_session(:oauth_return_to)
             |> configure_session(renew: true)
             |> put_session(:user_id, user.id)
-            |> redirect(to: ~p"/dashboard")
+            |> redirect(to: return_to)
 
           {:error, _changeset} ->
             conn
@@ -56,6 +62,10 @@ defmodule CritWeb.OAuthController do
     |> configure_session(drop: true)
     |> redirect(to: ~p"/")
   end
+
+  # Only allow local paths to prevent open redirect attacks.
+  defp safe_return_to("/" <> _ = path), do: path
+  defp safe_return_to(_), do: nil
 
   defp build_config do
     config = Application.get_env(:crit, :oauth_provider, [])
