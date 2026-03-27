@@ -106,6 +106,9 @@
               <button type="submit" class="crit-name-save">Save</button>
             </form>
           </div>
+          <%= if @oauth_configured do %>
+            <a href={~p"/auth/login"} class="crit-signin-btn">Sign in</a>
+          <% end %>
         <% end %>
         <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>
         <button

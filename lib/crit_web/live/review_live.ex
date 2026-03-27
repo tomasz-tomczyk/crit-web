@@ -77,6 +77,7 @@ defmodule CritWeb.ReviewLive do
          socket
          |> assign(:review, review)
          |> assign(:current_user, current_user)
+         |> assign(:oauth_configured, Application.get_env(:crit, :oauth_provider) != nil)
          |> assign(:identity, identity)
          |> assign(:display_name, display_name)
          |> assign(:demo?, demo?)

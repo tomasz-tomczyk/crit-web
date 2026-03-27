@@ -798,6 +798,18 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 .crit-user-signout:hover {
   color: var(--crit-fg-primary);
 }
+.crit-signin-btn {
+  background: var(--crit-accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.crit-signin-btn:hover {
+  opacity: 0.85;
+}
 
 /* ===== Name Pill ===== */
 .crit-name-pill {
