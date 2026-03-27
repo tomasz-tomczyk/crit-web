@@ -71,7 +71,7 @@ defmodule CritWeb.ReviewLive do
 
         auth_note =
           if auth_required do
-            " The server requires authentication — include the header `Authorization: Bearer $CRIT_AUTH_TOKEN` in all fetch requests (set CRIT_AUTH_TOKEN to your API token from the dashboard). `crit share` reads this automatically from the environment."
+            " The server requires authentication — include the header `Authorization: Bearer <token>` in all fetch requests, where <token> is your API token from the dashboard. You can also set CRIT_AUTH_TOKEN in your environment or add `\"auth_token\": \"<token>\"` to ~/.crit.config.json — `crit share` reads this automatically."
           else
             ""
           end
