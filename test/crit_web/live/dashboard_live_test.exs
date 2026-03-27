@@ -51,8 +51,31 @@ defmodule CritWeb.DashboardLiveTest do
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
       assert html =~ "Sign in to view and manage reviews"
-      assert html =~ "password"
       refute html =~ "All Reviews"
+    end
+
+    test "shows password form when no OAuth configured", %{conn: conn} do
+      Application.delete_env(:crit, :oauth_provider)
+
+      on_exit(fn ->
+        Application.put_env(:crit, :oauth_provider,
+          strategy: Assent.Strategy.Github,
+          client_id: "test_github_client_id",
+          client_secret: "test_github_client_secret"
+        )
+      end)
+
+      {:ok, _view, html} = live(conn, ~p"/dashboard")
+
+      assert html =~ "password"
+      refute html =~ "Sign in with OAuth"
+    end
+
+    test "shows OAuth button and hides password form when OAuth configured", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/dashboard")
+
+      assert html =~ "Sign in with OAuth"
+      refute html =~ "login-form"
     end
 
     test "shows review list when authenticated", %{conn: conn} do

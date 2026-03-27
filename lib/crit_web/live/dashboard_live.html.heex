@@ -70,26 +70,28 @@
             Sign in with OAuth
           </a>
         <% end %>
-        <.form
-          for={%{}}
-          action={~p"/auth/login"}
-          method="post"
-          class="flex items-center justify-center gap-3 max-w-sm mx-auto"
-          id="login-form"
-        >
-          <input
-            type="password"
-            name="password"
-            placeholder="Admin password"
-            class="flex-1 bg-[var(--crit-bg-primary)] border border-[var(--crit-border)] rounded-md px-3 py-2 text-sm text-[var(--crit-fg-primary)] placeholder-[var(--crit-fg-muted)] focus:outline-none focus:border-[var(--crit-accent)]"
-          />
-          <button
-            type="submit"
-            class="px-5 py-2 bg-[var(--crit-accent)] text-[var(--crit-bg-primary)] rounded-md text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+        <%= if @password_required and not @oauth_configured do %>
+          <.form
+            for={%{}}
+            action={~p"/auth/login"}
+            method="post"
+            class="flex items-center justify-center gap-3 max-w-sm mx-auto"
+            id="login-form"
           >
-            Sign in
-          </button>
-        </.form>
+            <input
+              type="password"
+              name="password"
+              placeholder="Admin password"
+              class="flex-1 bg-[var(--crit-bg-primary)] border border-[var(--crit-border)] rounded-md px-3 py-2 text-sm text-[var(--crit-fg-primary)] placeholder-[var(--crit-fg-muted)] focus:outline-none focus:border-[var(--crit-accent)]"
+            />
+            <button
+              type="submit"
+              class="px-5 py-2 bg-[var(--crit-accent)] text-[var(--crit-bg-primary)] rounded-md text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Sign in
+            </button>
+          </.form>
+        <% end %>
       </div>
     <% else %>
       <div class="mt-6">
