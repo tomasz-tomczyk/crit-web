@@ -66,6 +66,7 @@ defmodule Crit.MixProject do
       {:nanoid, "~> 2.1"},
       {:hammer, "~> 7.0"},
       {:req, "~> 0.5"},
+      {:assent, "~> 0.2"},
       {:earmark, "~> 1.4"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
