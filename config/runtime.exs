@@ -28,6 +28,33 @@ if admin_password = System.get_env("ADMIN_PASSWORD") do
   config :crit, :admin_password, admin_password
 end
 
+# OAuth provider — configure exactly one provider per deployment.
+#
+# Hosted (GitHub):
+#   GITHUB_CLIENT_ID=...  GITHUB_CLIENT_SECRET=...
+#
+# Self-hosted (any OIDC provider — Google, GitLab, Keycloak, etc.):
+#   OAUTH_CLIENT_ID=...  OAUTH_CLIENT_SECRET=...  OAUTH_BASE_URL=https://accounts.google.com
+#
+cond do
+  System.get_env("GITHUB_CLIENT_ID") ->
+    config :crit, :oauth_provider,
+      strategy: Assent.Strategy.Github,
+      client_id: System.get_env("GITHUB_CLIENT_ID"),
+      client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+
+  System.get_env("OAUTH_CLIENT_ID") ->
+    config :crit, :oauth_provider,
+      strategy: Assent.Strategy.OIDC,
+      client_id: System.get_env("OAUTH_CLIENT_ID"),
+      client_secret: System.get_env("OAUTH_CLIENT_SECRET"),
+      base_url: System.get_env("OAUTH_BASE_URL"),
+      authorization_params: [scope: "openid email profile"]
+
+  true ->
+    :ok
+end
+
 if System.get_env("PHX_SERVER") do
   config :crit, CritWeb.Endpoint, server: true
 end

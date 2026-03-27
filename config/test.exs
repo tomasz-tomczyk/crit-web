@@ -38,3 +38,8 @@ config :phoenix,
 config :crit, start_review_cleaner: false
 config :crit, start_changelog: false
 config :crit, start_integrations: false
+
+config :crit, :oauth_provider,
+  strategy: Assent.Strategy.Github,
+  client_id: "test_github_client_id",
+  client_secret: "test_github_client_secret"
