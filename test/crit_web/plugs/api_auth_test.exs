@@ -1,5 +1,5 @@
 defmodule CritWeb.Plugs.ApiAuthTest do
-  use CritWeb.ConnCase, async: true
+  use CritWeb.ConnCase, async: false
 
   alias CritWeb.Plugs.ApiAuth
   alias Crit.Accounts

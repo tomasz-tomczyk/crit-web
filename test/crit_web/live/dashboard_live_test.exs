@@ -154,6 +154,58 @@ defmodule CritWeb.DashboardLiveTest do
     end
   end
 
+  describe "delete_review with OAuth" do
+    test "owner can delete their own review", %{conn: conn} do
+      {conn, user} = login_user_with_record(conn)
+      review = review_fixture(user_id: user.id)
+
+      {:ok, view, html} = live(conn, ~p"/dashboard")
+      assert html =~ hd(review.files).file_path
+
+      view
+      |> element("button[phx-value-id='#{review.id}']")
+      |> render_click()
+
+      refute render(view) =~ hd(review.files).file_path
+    end
+
+    test "user cannot delete another user's review", %{conn: conn} do
+      {:ok, other_user} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "other_uid_#{System.unique_integer()}",
+          "email" => "other@example.com",
+          "name" => "Other User"
+        })
+
+      review = review_fixture(user_id: other_user.id)
+      conn = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      refute has_element?(view, "button[phx-value-id='#{review.id}']")
+
+      # Also verify the server-side guard rejects a crafted event
+      view
+      |> render_hook("delete_review", %{"id" => review.id})
+
+      assert render(view) =~ hd(review.files).file_path
+    end
+
+    test "any authenticated user can delete an ownerless review", %{conn: conn} do
+      review = review_fixture()
+      conn = login_user(conn)
+
+      {:ok, view, html} = live(conn, ~p"/dashboard")
+      assert html =~ hd(review.files).file_path
+
+      view
+      |> element("button[phx-value-id='#{review.id}']")
+      |> render_click()
+
+      refute render(view) =~ hd(review.files).file_path
+    end
+  end
+
   describe "review links" do
     setup :without_oauth
 

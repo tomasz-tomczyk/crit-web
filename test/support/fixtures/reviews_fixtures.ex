@@ -17,12 +17,15 @@ defmodule Crit.ReviewsFixtures do
 
   def review_fixture(attrs \\ %{}) do
     attrs = valid_review_attrs(attrs)
+    opts = if user_id = attrs[:user_id], do: [user_id: user_id], else: []
 
     {:ok, review} =
       Reviews.create_review(
         attrs[:files],
         attrs[:review_round],
-        attrs[:comments] || []
+        attrs[:comments] || [],
+        [],
+        opts
       )
 
     Reviews.get_by_token(review.token)
