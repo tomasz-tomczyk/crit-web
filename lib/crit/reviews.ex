@@ -117,16 +117,30 @@ defmodule Crit.Reviews do
   end
 
   @doc "Create a review from the share API payload. Files is a list of %{\"path\" => _, \"content\" => _} maps."
-  def create_review(files_attrs, review_round, comments_attrs, review_comments_attrs \\ []) do
+  def create_review(
+        files_attrs,
+        review_round,
+        comments_attrs,
+        review_comments_attrs \\ [],
+        opts \\ []
+      ) do
     total_size = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
+    user_id = Keyword.get(opts, :user_id)
 
     if total_size > @max_total_size do
       {:error, :total_size_exceeded}
     else
+      review_changeset =
+        %Review{}
+        |> Review.create_changeset(%{"review_round" => review_round || 0})
+        |> then(fn cs ->
+          if user_id, do: Ecto.Changeset.put_change(cs, :user_id, user_id), else: cs
+        end)
+
       Ecto.Multi.new()
       |> Ecto.Multi.insert(
         :review,
-        %Review{} |> Review.create_changeset(%{"review_round" => review_round || 0})
+        review_changeset
       )
       |> Ecto.Multi.run(:files, fn _repo, %{review: review} ->
         case insert_round_snapshots(review, review.review_round, files_attrs) do
@@ -431,12 +445,20 @@ defmodule Crit.Reviews do
     |> join(:left, [r], c in Comment, on: c.review_id == r.id)
     |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
     |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
-    |> group_by([r, _c, _rf, fp], [r.id, r.token, r.inserted_at, r.last_activity_at, fp.file_path])
+    |> group_by([r, _c, _rf, fp], [
+      r.id,
+      r.token,
+      r.inserted_at,
+      r.last_activity_at,
+      r.user_id,
+      fp.file_path
+    ])
     |> select([r, c, rf, fp], %{
       id: r.id,
       token: r.token,
       inserted_at: r.inserted_at,
       last_activity_at: r.last_activity_at,
+      user_id: r.user_id,
       comment_count: count(c.id, :distinct),
       file_count: count(rf.id, :distinct),
       first_file_path: fp.file_path

@@ -340,7 +340,67 @@
             </code>
             <div class="flex-1 min-w-0">
               <p class="text-sm text-(--crit-fg-secondary)">
-                Password for the admin dashboard (if unset, dashboard is open)
+                Password for the admin dashboard (if unset and no OAuth configured, dashboard is open)
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              GITHUB_CLIENT_ID
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                GitHub OAuth App client ID. Set alongside
+                <code class="text-[0.9em]">GITHUB_CLIENT_SECRET</code>
+                to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              GITHUB_CLIENT_SECRET
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                GitHub OAuth App client secret
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              OAUTH_CLIENT_ID
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                Generic OIDC/OAuth2 client ID. Use with
+                <code class="text-[0.9em]">OAUTH_CLIENT_SECRET</code>
+                and <code class="text-[0.9em]">OAUTH_BASE_URL</code>
+                for providers like Google, GitLab, or Okta. Mutually exclusive with
+                <code class="text-[0.9em]">GITHUB_CLIENT_ID</code>
+              </p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              OAUTH_CLIENT_SECRET
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">Generic OAuth2 client secret</p>
+            </div>
+            <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 bg-(--crit-bg-secondary)">
+            <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded shrink-0">
+              OAUTH_BASE_URL
+            </code>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-(--crit-fg-secondary)">
+                OIDC discovery base URL, e.g.
+                <code class="text-[0.9em]">https://accounts.google.com</code>
               </p>
             </div>
             <span class="text-xs font-mono text-(--crit-fg-muted) shrink-0">optional</span>

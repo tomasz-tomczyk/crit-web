@@ -77,7 +77,12 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `DB_SSL_CA_CERT` | No | — | Path to a CA certificate file. When set alongside `DB_SSL=true`, enables full `verify_peer` verification (requires volume mount in Docker) |
 | `SECRET_KEY_BASE` | Yes | — | Session signing key. Generate with `openssl rand -base64 64` |
 | `SELFHOSTED` | Yes | — | Set to `true` to enable self-hosted mode (dashboard, no marketing pages) |
-| `ADMIN_PASSWORD` | No | — | Password for the `/dashboard` admin panel. If unset, the dashboard is accessible without authentication |
+| `ADMIN_PASSWORD` | No | — | Password for the `/dashboard` admin panel. If unset and no OAuth is configured, the dashboard is open |
+| `GITHUB_CLIENT_ID` | No | — | GitHub OAuth App client ID. Set with `GITHUB_CLIENT_SECRET` to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews |
+| `GITHUB_CLIENT_SECRET` | No | — | GitHub OAuth App client secret |
+| `OAUTH_CLIENT_ID` | No | — | Generic OIDC/OAuth2 client ID for Google, GitLab, Okta, etc. Use with `OAUTH_CLIENT_SECRET` and `OAUTH_BASE_URL`. Mutually exclusive with `GITHUB_CLIENT_ID` |
+| `OAUTH_CLIENT_SECRET` | No | — | Generic OAuth2 client secret |
+| `OAUTH_BASE_URL` | No | — | OIDC discovery base URL, e.g. `https://accounts.google.com` |
 | `PHX_HOST` | No | `localhost` | Hostname for URL generation |
 | `PORT` | No | `4000` | HTTP listening port |
 | `FORCE_SSL` | No | `false` | Set `true` if terminating TLS at the app (not behind a reverse proxy) |
