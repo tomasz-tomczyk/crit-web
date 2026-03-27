@@ -221,13 +221,13 @@ defmodule CritWeb.Layouts do
                       class="h-8 w-8 rounded-full"
                     />
                   <% end %>
-                  <span class="text-sm text-gray-300">
+                  <span class="text-sm text-[var(--crit-fg-primary)]">
                     {@current_user.name || @current_user.email}
                   </span>
                   <.link
                     href={~p"/auth/logout"}
                     method="delete"
-                    class="text-sm text-gray-400 hover:text-white"
+                    class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)]"
                   >
                     Sign out
                   </.link>
