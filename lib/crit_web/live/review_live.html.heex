@@ -118,28 +118,50 @@
           <% end %>
         <% end %>
         <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>
-        <button
-          class="comment-count-btn"
-          id="comment-count"
-          title="Toggle comments panel"
-          aria-label="Toggle comments panel"
-          phx-click={JS.dispatch("crit:toggle-comments", to: "#document-renderer")}
-        >
-          <svg
-            class="comment-count-icon"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.25"
-            aria-hidden="true"
+        <div class="comment-nav-group" id="comment-nav-group">
+          <button
+            class="comment-nav-btn"
+            id="comment-nav-prev"
+            title="Previous comment ([)"
+            aria-label="Previous comment"
           >
-            <path
-              d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Z"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span class="comment-count-number" id="commentCountNumber"></span>
-        </button>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+              <path d="M4 10l4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button
+            class="comment-count-btn"
+            id="comment-count"
+            title="Toggle comments panel"
+            aria-label="Toggle comments panel"
+            phx-click={JS.dispatch("crit:toggle-comments", to: "#document-renderer")}
+          >
+            <svg
+              class="comment-count-icon"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.25"
+              aria-hidden="true"
+            >
+              <path
+                d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Z"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="comment-count-number" id="commentCountNumber"></span>
+          </button>
+          <button
+            class="comment-nav-btn"
+            id="comment-nav-next"
+            title="Next comment (])"
+            aria-label="Next comment"
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
         <button
           class="crit-toc-toggle"
           id="shortcuts-btn"

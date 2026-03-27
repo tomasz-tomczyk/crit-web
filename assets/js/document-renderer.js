@@ -2169,6 +2169,8 @@ function updateCommentCount(ctx) {
     el.title = resolvedCount + ' resolved comment' + (resolvedCount === 1 ? '' : 's') + ' — toggle panel'
     if (numEl) numEl.textContent = '\u2713'
   }
+  const navGroup = document.getElementById('comment-nav-group')
+  if (navGroup) navGroup.classList.toggle('has-comments', total > 0)
 }
 
 // ---- Gutter drag selection --------------------------------------------------
@@ -3398,6 +3400,53 @@ function toggleCommentsPanel(ctx) {
   updateTocPosition(ctx)
 }
 
+// ---- Comment navigation -----------------------------------------------------
+
+function getInlineCommentCards(ctx) {
+  const panel = ctx._commentsPanel
+  return Array.from(ctx.el.querySelectorAll('.comment-card')).filter(card => {
+    return !panel || !panel.contains(card)
+  })
+}
+
+function navigateToComment(ctx, direction) {
+  const cards = getInlineCommentCards(ctx)
+  if (cards.length === 0) return
+
+  const header = document.querySelector('.crit-header')
+  const headerHeight = header ? header.offsetHeight : 52
+
+  // Find current position by stored comment ID (immune to smooth-scroll race conditions)
+  let idx = ctx._navCommentId
+    ? cards.findIndex(c => c.dataset.commentId === ctx._navCommentId)
+    : -1
+
+  let targetIdx
+  if (direction === 1) {
+    if (idx < 0) {
+      // First use: pick first card below the header area by viewport position
+      const firstBelow = cards.findIndex(c => c.getBoundingClientRect().top > headerHeight + 8)
+      targetIdx = firstBelow >= 0 ? firstBelow : 0
+    } else {
+      targetIdx = idx >= cards.length - 1 ? 0 : idx + 1
+    }
+  } else {
+    if (idx < 0) {
+      targetIdx = cards.length - 1
+    } else {
+      targetIdx = idx <= 0 ? cards.length - 1 : idx - 1
+    }
+  }
+
+  const target = cards[targetIdx]
+  ctx._navCommentId = target.dataset.commentId
+
+  const rect = target.getBoundingClientRect()
+  window.scrollTo({ top: rect.top + window.scrollY - headerHeight - 16, behavior: 'smooth' })
+  target.classList.add('comment-nav-highlight')
+  setTimeout(() => target.classList.remove('comment-nav-highlight'), 1000)
+}
+
 // ---- Phoenix LiveView hook --------------------------------------------------
 
 export const DocumentRenderer = {
@@ -3420,6 +3469,7 @@ export const DocumentRenderer = {
     ctx.prevRoundSnapshots = {}
     ctx.showRoundDiff = false
     ctx.diffMode = 'split'
+    ctx._navCommentId = null
 
     const rawContent = ctx.el.dataset.content || ""
     ctx.rawContent = rawContent
@@ -3496,6 +3546,8 @@ export const DocumentRenderer = {
         <table class="shortcuts-table">
           <tr><td><kbd>j</kbd></td><td>Next block</td></tr>
           <tr><td><kbd>k</kbd></td><td>Previous block</td></tr>
+          <tr><td><kbd>]</kbd></td><td>Next comment</td></tr>
+          <tr><td><kbd>[</kbd></td><td>Previous comment</td></tr>
           <tr><td><kbd>c</kbd></td><td>Comment on focused block</td></tr>
           <tr><td><kbd>e</kbd></td><td>Edit comment on focused block</td></tr>
           <tr><td><kbd>d</kbd></td><td>Delete comment on focused block</td></tr>
@@ -3520,6 +3572,11 @@ export const DocumentRenderer = {
         ctx._shortcutsOverlay.classList.toggle('visible')
       })
     }
+
+    const prevBtn = document.getElementById('comment-nav-prev')
+    if (prevBtn) prevBtn.addEventListener('click', () => navigateToComment(ctx, -1))
+    const nextBtn = document.getElementById('comment-nav-next')
+    if (nextBtn) nextBtn.addEventListener('click', () => navigateToComment(ctx, 1))
 
     // Comments panel
     const commentsPanel = document.createElement('div')
@@ -3731,6 +3788,10 @@ export const DocumentRenderer = {
         toggleCommentsPanel(ctx)
         return
       }
+
+      // Comment navigation
+      if (e.key === '[') { e.preventDefault(); navigateToComment(ctx, -1); return }
+      if (e.key === ']') { e.preventDefault(); navigateToComment(ctx, 1); return }
 
       // Review comment form
       if (e.key === 'G' && e.shiftKey) {
