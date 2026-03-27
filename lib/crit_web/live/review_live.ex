@@ -76,8 +76,8 @@ defmodule CritWeb.ReviewLive do
 
         local_prompt_text =
           "Run `crit fetch` in the project directory to pull the latest review comments into .crit.json. " <>
-            "Read each unresolved comment, address it in the relevant file at the referenced location, " <>
-            "then reply and resolve it with `crit comment --reply-to <id> --resolve --author 'Claude Code' '<what you did>'`. " <>
+            "Read each comment, address it in the relevant file at the referenced location, " <>
+            "then reply with `crit comment --reply-to <id> --author 'Claude Code' '<what you did>'`. " <>
             "When all comments are addressed, run `crit share #{file_paths}` to post the updated files and replies back."
 
         export_url = CritWeb.Endpoint.url() <> ~p"/api/export/#{review.token}/review"
