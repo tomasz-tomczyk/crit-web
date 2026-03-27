@@ -2379,8 +2379,19 @@ function createCommentElement(comment, ctx) {
   const body = document.createElement("div")
   body.className = "comment-body"
   const env = {}
-  if (ctx && ctx.rawContent && comment.start_line && comment.end_line && !comment.side) {
-    env.originalLines = ctx.rawContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+  if (ctx && comment.start_line && comment.end_line && !comment.side) {
+    if (comment.quote) {
+      env.originalLines = comment.quote.split('\n')
+    } else {
+      let fileContent = ctx.rawContent
+      if (ctx.multiFile && comment.file_path) {
+        const file = ctx.files && ctx.files.find(f => f.path === comment.file_path)
+        if (file) fileContent = file.content
+      }
+      if (fileContent) {
+        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+      }
+    }
   }
   body.innerHTML = commentMd.render(comment.body, env)
 
@@ -2602,12 +2613,17 @@ function cancelComment(formObj, ctx) {
 }
 
 function insertSuggestion(textarea, formObj, ctx) {
-  let rawContent = ctx.rawContent
-  if (formObj.filePath && ctx.multiFile) {
-    const file = ctx.files.find(f => f.path === formObj.filePath)
-    if (file) rawContent = file.content
+  let lines
+  if (formObj.quote) {
+    lines = formObj.quote.split('\n')
+  } else {
+    let rawContent = ctx.rawContent
+    if (formObj.filePath && ctx.multiFile) {
+      const file = ctx.files.find(f => f.path === formObj.filePath)
+      if (file) rawContent = file.content
+    }
+    lines = rawContent.split("\n").slice(formObj.startLine - 1, formObj.endLine)
   }
-  const lines = rawContent.split("\n").slice(formObj.startLine - 1, formObj.endLine)
   const suggestion = "```suggestion\n" + lines.join("\n") + "\n```"
   const start = textarea.selectionStart
   const end = textarea.selectionEnd
@@ -2919,8 +2935,19 @@ function createResolvedElement(comment, ctx) {
   const body = document.createElement('div')
   body.className = 'comment-body'
   const env = {}
-  if (ctx && ctx.rawContent && comment.start_line && comment.end_line && !comment.side) {
-    env.originalLines = ctx.rawContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+  if (ctx && comment.start_line && comment.end_line && !comment.side) {
+    if (comment.quote) {
+      env.originalLines = comment.quote.split('\n')
+    } else {
+      let fileContent = ctx.rawContent
+      if (ctx.multiFile && comment.file_path) {
+        const file = ctx.files && ctx.files.find(f => f.path === comment.file_path)
+        if (file) fileContent = file.content
+      }
+      if (fileContent) {
+        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+      }
+    }
   }
   body.innerHTML = commentMd.render(comment.body, env)
 
@@ -3296,13 +3323,17 @@ function renderPanelCard(ctx, comment, filePath) {
   bodyEl.className = 'comment-body'
   const env = {}
   if (comment.start_line && comment.end_line) {
-    let fileContent = ctx.rawContent
-    if (ctx.multiFile && filePath) {
-      const file = ctx.files.find(f => f.path === filePath)
-      if (file) fileContent = file.content
-    }
-    if (fileContent) {
-      env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+    if (comment.quote) {
+      env.originalLines = comment.quote.split('\n')
+    } else {
+      let fileContent = ctx.rawContent
+      if (ctx.multiFile && filePath) {
+        const file = ctx.files.find(f => f.path === filePath)
+        if (file) fileContent = file.content
+      }
+      if (fileContent) {
+        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+      }
     }
   }
   bodyEl.innerHTML = commentMd.render(comment.body, env)
