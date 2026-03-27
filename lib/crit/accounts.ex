@@ -1,5 +1,7 @@
 defmodule Crit.Accounts do
-  alias Crit.{Repo, User}
+  import Ecto.Query
+
+  alias Crit.{Repo, User, UserApiToken}
 
   @doc """
   Finds an existing user by provider + provider_uid, or creates one.
@@ -44,5 +46,66 @@ defmodule Crit.Accounts do
     end
   rescue
     Ecto.Query.CastError -> {:error, :not_found}
+  end
+
+  @doc """
+  Creates a new API token for the given user with the given name.
+  Returns `{:ok, {plaintext_token, token_record}}` or `{:error, changeset}`.
+  """
+  def create_token(user, name) do
+    plaintext = "crit_" <> Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
+    token_hash = Base.url_encode64(:crypto.hash(:sha256, plaintext), padding: false)
+
+    changeset =
+      %UserApiToken{}
+      |> UserApiToken.changeset(%{name: name, token_hash: token_hash})
+      |> Ecto.Changeset.put_assoc(:user, user)
+
+    case Repo.insert(changeset) do
+      {:ok, token} -> {:ok, {plaintext, token}}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Verifies a plaintext token. If valid, updates last_used_at and returns `{:ok, user}`.
+  Returns `{:error, :invalid}` if not found.
+  """
+  def verify_token(plaintext) do
+    token_hash = Base.url_encode64(:crypto.hash(:sha256, plaintext), padding: false)
+
+    case Repo.get_by(UserApiToken, token_hash: token_hash) |> Repo.preload(:user) do
+      nil ->
+        {:error, :invalid}
+
+      token ->
+        token
+        |> Ecto.Changeset.change(last_used_at: DateTime.utc_now() |> DateTime.truncate(:second))
+        |> Repo.update!()
+
+        {:ok, token.user}
+    end
+  end
+
+  @doc """
+  Revokes a token by id, only if it belongs to the given user.
+  Returns `:ok` or `{:error, :not_found}`.
+  """
+  def revoke_token(token_id, user_id) do
+    case Repo.get_by(UserApiToken, id: token_id, user_id: user_id) do
+      nil -> {:error, :not_found}
+      token -> Repo.delete!(token) && :ok
+    end
+  end
+
+  @doc """
+  Returns all API tokens for the given user, ordered by inserted_at desc.
+  """
+  def list_tokens(user_id) do
+    Repo.all(
+      from t in UserApiToken,
+        where: t.user_id == ^user_id,
+        order_by: [desc: t.inserted_at]
+    )
   end
 end
