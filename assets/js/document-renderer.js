@@ -1261,17 +1261,13 @@ function renderFileTree(ctx) {
   if (ctx.files.length > 1) {
     const collapseBtn = document.createElement('button')
     collapseBtn.className = 'file-tree-collapse-btn'
-    collapseBtn.title = 'Collapse all folders'
+    collapseBtn.title = 'Collapse all files'
     collapseBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.22 3.22a.75.75 0 0 1 1.06 0L8 5.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 4.28a.75.75 0 0 1 0-1.06zm0 5a.75.75 0 0 1 1.06 0L8 10.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 9.28a.75.75 0 0 1 0-1.06z"/></svg>'
     collapseBtn.addEventListener('click', function() {
-      const allFolders = panel.querySelectorAll('.tree-folder')
-      const anyExpanded = Array.from(allFolders).some(f => !f.classList.contains('collapsed'))
-      allFolders.forEach(function(f) {
-        const fp = f.dataset.folderPath
-        ctx.treeFolderState[fp] = anyExpanded
-        f.classList.toggle('collapsed', anyExpanded)
-      })
-      collapseBtn.title = anyExpanded ? 'Expand all folders' : 'Collapse all folders'
+      const sections = document.querySelectorAll('.file-section')
+      const anyExpanded = Array.from(sections).some(s => s.open)
+      sections.forEach(function(s) { s.open = !anyExpanded })
+      collapseBtn.title = anyExpanded ? 'Expand all files' : 'Collapse all files'
       collapseBtn.classList.toggle('all-collapsed', anyExpanded)
     })
     headerEl.appendChild(collapseBtn)
@@ -1314,11 +1310,17 @@ function renderMultiFile(ctx) {
   const container = ctx.el
   container.classList.add('multi-file')
 
-  // Measure actual header height and set CSS variable for sticky positioning
+  // Measure actual header height and set CSS variable for sticky positioning.
+  // Uses getBoundingClientRect (sub-pixel accurate) and updates on resize so
+  // the mobile browser chrome appearing/disappearing doesn't create a gap.
   const header = document.querySelector('.crit-header')
-  if (header) {
-    document.documentElement.style.setProperty('--crit-header-height', header.offsetHeight + 'px')
+  function updateHeaderHeight() {
+    if (header) {
+      document.documentElement.style.setProperty('--crit-header-height', header.getBoundingClientRect().height + 'px')
+    }
   }
+  updateHeaderHeight()
+  window.addEventListener('resize', updateHeaderHeight)
 
   // Remove only the files container, preserving loading text on first render
   const existing = container.querySelector('.files-container')

@@ -93,7 +93,7 @@
               Review AI plans before they become code. Local-first, no login required.
             </p>
           </div>
-          <div class="flex items-center gap-3 text-xs pt-0.5">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs pt-0.5">
             <a
               href="https://github.com/tomasz-tomczyk/crit"
               class="text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors flex items-center gap-1.5"
@@ -116,14 +116,16 @@
               href={~p"/terms"}
               class="text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors"
             >
-              Terms of Service
+              <span class="max-sm:hidden">Terms of Service</span>
+              <span class="sm:hidden">Terms</span>
             </a>
             <span class="text-[var(--crit-fg-dimmed)]">/</span>
             <a
               href={~p"/privacy"}
               class="text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors"
             >
-              Privacy Policy
+              <span class="max-sm:hidden">Privacy Policy</span>
+              <span class="sm:hidden">Privacy</span>
             </a>
           </div>
         </div>

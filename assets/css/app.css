@@ -1919,6 +1919,13 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   .crit-header-filename { display: none; }
   #shortcuts-btn { display: none !important; }
   .crit-name-pill { display: none; }
+  .crit-viewed-count { display: none !important; }
+
+  /* File headers must be edge-to-edge so sticky has no gaps for content to bleed through */
+  .files-container { padding-left: 0; padding-right: 0; }
+  #document-renderer { padding-left: 0; padding-right: 0; padding-top: 8px; }
+  .file-header { padding: 8px 12px; }
+  .file-body { padding: 4px 8px; }
 
 }
 
