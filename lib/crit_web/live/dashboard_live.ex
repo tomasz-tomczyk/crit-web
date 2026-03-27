@@ -134,7 +134,8 @@ defmodule CritWeb.DashboardLive do
 
     authorized =
       if oauth_configured do
-        current_user != nil && current_user.id == owner_id
+        # Allow deleting reviews with no owner (pre-OAuth installs)
+        current_user != nil && (is_nil(owner_id) || owner_id == "" || current_user.id == owner_id)
       else
         true
       end
