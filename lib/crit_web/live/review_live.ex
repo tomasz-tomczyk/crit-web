@@ -19,13 +19,29 @@ defmodule CritWeb.ReviewLive do
           end
       end
 
-    {identity, display_name} =
-      if current_user do
-        {current_user.id, current_user.name || current_user.email}
-      else
-        {Map.get(session, "identity", Ecto.UUID.generate()), Map.get(session, "display_name")}
-      end
+    auth_required =
+      Application.get_env(:crit, :selfhosted) &&
+        Application.get_env(:crit, :oauth_provider) != nil
 
+    if auth_required && current_user == nil do
+      return_to = ~p"/r/#{token}"
+
+      {:ok,
+       redirect(socket, to: ~p"/auth/login?#{%{return_to: return_to}}"),
+       layout: {CritWeb.Layouts, :review}}
+    else
+      {identity, display_name} =
+        if current_user do
+          {current_user.id, current_user.name || current_user.email}
+        else
+          {Map.get(session, "identity", Ecto.UUID.generate()), Map.get(session, "display_name")}
+        end
+
+      mount_review(token, socket, current_user, identity, display_name)
+    end
+  end
+
+  defp mount_review(token, socket, current_user, identity, display_name) do
     case Reviews.get_by_token(token) do
       nil ->
         {:ok,
