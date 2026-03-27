@@ -186,20 +186,30 @@ defmodule CritWeb.ApiController do
     conn |> put_status(400) |> json(%{error: "delete_token is required"})
   end
 
-  if Mix.env() == :test do
+  if Mix.env() in [:test, :dev] do
     def seed_comment(conn, %{"token" => token} = params) do
       case Reviews.get_by_token(token) do
         nil ->
           not_found(conn)
 
         review ->
-          attrs = %{
-            "start_line" => params["start_line"] || 1,
-            "end_line" => params["end_line"] || 1,
-            "body" => params["body"] || "web reviewer comment",
-            "file_path" => params["file"] || hd(review.files).file_path,
-            "scope" => "line"
-          }
+          scope = params["scope"] || if(params["file"], do: "line", else: "review")
+
+          attrs =
+            if scope == "review" do
+              %{
+                "body" => params["body"] || "web reviewer comment",
+                "scope" => "review"
+              }
+            else
+              %{
+                "start_line" => params["start_line"] || 1,
+                "end_line" => params["end_line"] || 1,
+                "body" => params["body"] || "web reviewer comment",
+                "file_path" => params["file"] || hd(review.files).file_path,
+                "scope" => scope
+              }
+            end
 
           {:ok, comment} =
             Reviews.create_comment(review, attrs, "integration-test", "WebReviewer")

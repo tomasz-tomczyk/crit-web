@@ -255,7 +255,8 @@ defmodule CritWeb.ReviewLiveTest do
     test "defaults to local prompt mode", %{conn: conn, review: review} do
       {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
       assert html =~ "Act on comments"
-      assert html =~ "/api/export/#{review.token}/comments"
+      assert html =~ "crit fetch"
+      assert html =~ "crit share"
     end
 
     test "switches to full_export mode", %{conn: conn, review: review} do
@@ -266,7 +267,7 @@ defmodule CritWeb.ReviewLiveTest do
         |> element("#crit-prompt-panel")
         |> render()
 
-      assert html =~ "/api/export/#{review.token}/comments"
+      assert html =~ "crit fetch"
 
       render_click(view, "set_prompt_mode", %{"mode" => "full_export"})
 
@@ -290,7 +291,7 @@ defmodule CritWeb.ReviewLiveTest do
         |> element("#crit-prompt-panel")
         |> render()
 
-      assert html =~ "/api/export/#{review.token}/comments"
+      assert html =~ "crit fetch"
       assert html =~ "Act on comments"
     end
   end

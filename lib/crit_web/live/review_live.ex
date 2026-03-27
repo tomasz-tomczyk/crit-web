@@ -65,8 +65,6 @@ defmodule CritWeb.ReviewLive do
             socket
           end
 
-        comments_url = CritWeb.Endpoint.url() <> ~p"/api/export/#{review.token}/comments"
-
         file_paths = review.files |> Enum.map(& &1.file_path) |> Enum.join(" ")
 
         auth_note =
@@ -77,10 +75,10 @@ defmodule CritWeb.ReviewLive do
           end
 
         local_prompt_text =
-          "Please fetch #{comments_url} — these are review comments from crit.#{auth_note} " <>
-            "Comments are grouped per file with start_line/end_line referencing the source. " <>
-            "Read each comment, address it in the relevant file and location, " <>
-            "then run `crit share #{file_paths}` to sync the updated files back and signal the review is ready for the next round."
+          "Run `crit fetch` in the project directory to pull the latest review comments into .crit.json. " <>
+            "Read each unresolved comment, address it in the relevant file at the referenced location, " <>
+            "then reply and resolve it with `crit comment --reply-to <id> --resolve --author 'Claude Code' '<what you did>'`. " <>
+            "When all comments are addressed, run `crit share #{file_paths}` to post the updated files and replies back."
 
         export_url = CritWeb.Endpoint.url() <> ~p"/api/export/#{review.token}/review"
 

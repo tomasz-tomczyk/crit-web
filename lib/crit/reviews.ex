@@ -225,23 +225,27 @@ defmodule Crit.Reviews do
 
     Enum.each(new_comments, fn attrs ->
       scope = attrs["scope"] || infer_scope(attrs)
+      replies_attrs = attrs["replies"] || []
 
-      %Comment{}
-      |> Comment.create_changeset(%{
-        "start_line" => attrs["start_line"],
-        "end_line" => attrs["end_line"],
-        "body" => attrs["body"],
-        "file_path" => attrs["file"],
-        "quote" => attrs["quote"],
-        "author_display_name" => attrs["author_display_name"] || "crit",
-        "review_round" => attrs["review_round"] || 1,
-        "resolved" => attrs["resolved"] || false,
-        "scope" => scope,
-        "external_id" => attrs["external_id"]
-      })
-      |> Ecto.Changeset.put_change(:review_id, review.id)
-      |> Ecto.Changeset.put_change(:author_identity, "imported")
-      |> Repo.insert!()
+      comment =
+        %Comment{}
+        |> Comment.create_changeset(%{
+          "start_line" => attrs["start_line"],
+          "end_line" => attrs["end_line"],
+          "body" => attrs["body"],
+          "file_path" => attrs["file"],
+          "quote" => attrs["quote"],
+          "author_display_name" => attrs["author_display_name"] || "crit",
+          "review_round" => attrs["review_round"] || 1,
+          "resolved" => attrs["resolved"] || false,
+          "scope" => scope,
+          "external_id" => attrs["external_id"]
+        })
+        |> Ecto.Changeset.put_change(:review_id, review.id)
+        |> Ecto.Changeset.put_change(:author_identity, "imported")
+        |> Repo.insert!()
+
+      :ok = insert_replies(comment, replies_attrs)
     end)
   end
 
