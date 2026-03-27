@@ -96,10 +96,17 @@ defmodule CritWeb.ReviewLive do
          |> assign(:show_round_diff, false)
          |> assign(:prev_round_snapshots, %{})
          |> assign(:diff_mode, "split")
-         |> assign(:page_title, display_filename(review))
+         |> assign(
+           :page_title,
+           if(auth_required && is_nil(current_user), do: "Review - Crit", else: display_filename(review))
+         )
          |> assign(
            :meta_description,
-           "Shared review of #{display_filename(review)} on Crit. View inline comments and add your own feedback."
+           if(auth_required && is_nil(current_user),
+             do: "Sign in to view this review on Crit.",
+             else:
+               "Shared review of #{display_filename(review)} on Crit. View inline comments and add your own feedback."
+           )
          )
          |> assign(:noindex, true)
          |> assign(:og_type, "article")
