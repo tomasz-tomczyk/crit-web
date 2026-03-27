@@ -39,3 +39,4 @@ npm-debug.log
 .crit.json
 mise.local.toml
 .env
+.envrc.local

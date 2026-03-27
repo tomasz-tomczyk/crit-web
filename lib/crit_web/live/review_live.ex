@@ -69,8 +69,15 @@ defmodule CritWeb.ReviewLive do
 
         file_paths = review.files |> Enum.map(& &1.file_path) |> Enum.join(" ")
 
+        auth_note =
+          if auth_required do
+            " The server requires authentication — include the header `Authorization: Bearer $CRIT_AUTH_TOKEN` in all fetch requests (set CRIT_AUTH_TOKEN to your API token from the dashboard). `crit share` reads this automatically from the environment."
+          else
+            ""
+          end
+
         local_prompt_text =
-          "Please fetch #{comments_url} — these are review comments from crit. " <>
+          "Please fetch #{comments_url} — these are review comments from crit.#{auth_note} " <>
             "Comments are grouped per file with start_line/end_line referencing the source. " <>
             "Read each comment, address it in the relevant file and location, " <>
             "then run `crit share #{file_paths}` to sync the updated files back and signal the review is ready for the next round."
@@ -79,7 +86,7 @@ defmodule CritWeb.ReviewLive do
 
         full_export_prompt_text =
           "Please fetch #{export_url} — this contains the full plan with review comments " <>
-            "interjected inline. Implement the plan while addressing each review comment."
+            "interjected inline.#{auth_note} Implement the plan while addressing each review comment."
 
         {:ok,
          socket
@@ -98,7 +105,10 @@ defmodule CritWeb.ReviewLive do
          |> assign(:diff_mode, "split")
          |> assign(
            :page_title,
-           if(auth_required && is_nil(current_user), do: "Review - Crit", else: display_filename(review))
+           if(auth_required && is_nil(current_user),
+             do: "Review - Crit",
+             else: display_filename(review)
+           )
          )
          |> assign(
            :meta_description,

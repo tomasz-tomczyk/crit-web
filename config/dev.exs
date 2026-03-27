@@ -89,11 +89,3 @@ config :phoenix_live_view,
   debug_attributes: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
-
-# OAuth — set GITHUB_CLIENT_ID + GITHUB_CLIENT_SECRET in your shell before running dev up.
-if github_client_id = System.get_env("GITHUB_CLIENT_ID") do
-  config :crit, :oauth_provider,
-    strategy: Assent.Strategy.Github,
-    client_id: github_client_id,
-    client_secret: System.get_env("GITHUB_CLIENT_SECRET", "")
-end
