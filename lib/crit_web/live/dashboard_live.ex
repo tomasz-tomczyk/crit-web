@@ -1,13 +1,28 @@
 defmodule CritWeb.DashboardLive do
   use CritWeb, :live_view
 
-  alias Crit.Reviews
+  alias Crit.{Accounts, Reviews}
 
   @impl true
   def mount(_params, session, socket) do
     if Application.get_env(:crit, :selfhosted) do
       password_required = Application.get_env(:crit, :admin_password) != nil
-      authenticated = Map.get(session, "admin_authenticated", false) == true
+      admin_authenticated = Map.get(session, "admin_authenticated", false) == true
+
+      current_user =
+        case Map.get(session, "user_id") do
+          nil ->
+            nil
+
+          user_id ->
+            case Accounts.get_user(user_id) do
+              {:ok, user} -> user
+              {:error, :not_found} -> nil
+            end
+        end
+
+      authenticated = admin_authenticated || current_user != nil
+      oauth_configured = Application.get_env(:crit, :oauth_provider) != nil
 
       stats = Reviews.dashboard_stats()
       chart_data = Reviews.activity_chart(30)
@@ -20,6 +35,8 @@ defmodule CritWeb.DashboardLive do
         |> assign(:max_count, max_count)
         |> assign(:password_required, password_required)
         |> assign(:authenticated, authenticated)
+        |> assign(:current_user, current_user)
+        |> assign(:oauth_configured, oauth_configured)
         |> assign(:page_title, "Dashboard - Crit")
         |> assign(:noindex, true)
 
@@ -61,7 +78,10 @@ defmodule CritWeb.DashboardLive do
 
   @doc false
   def session_opts(conn) do
-    %{"admin_authenticated" => Plug.Conn.get_session(conn, :admin_authenticated)}
+    %{
+      "admin_authenticated" => Plug.Conn.get_session(conn, :admin_authenticated),
+      "user_id" => Plug.Conn.get_session(conn, :user_id)
+    }
   end
 
   defp format_bytes(bytes) when bytes < 1024, do: "#{bytes} B"
