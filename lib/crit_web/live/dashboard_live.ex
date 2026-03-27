@@ -128,35 +128,32 @@ defmodule CritWeb.DashboardLive do
   end
 
   @impl true
-  def handle_event("delete_review", %{"id" => id} = params, socket) do
+  def handle_event("delete_review", %{"id" => id}, socket) do
     %{oauth_configured: oauth_configured, current_user: current_user} = socket.assigns
-    owner_id = Map.get(params, "owner-id")
 
-    authorized =
-      if oauth_configured do
-        # Allow deleting reviews with no owner (pre-OAuth installs)
-        current_user != nil && (is_nil(owner_id) || owner_id == "" || current_user.id == owner_id)
+    opts =
+      if oauth_configured && current_user do
+        [owner_id: current_user.id]
       else
-        true
+        []
       end
 
-    if authorized do
-      case Reviews.delete_review(id) do
-        :ok ->
-          reviews = Reviews.list_reviews_with_counts()
-          stats = Reviews.dashboard_stats()
+    case Reviews.delete_review(id, opts) do
+      :ok ->
+        reviews = Reviews.list_reviews_with_counts()
+        stats = Reviews.dashboard_stats()
 
-          {:noreply,
-           socket
-           |> stream(:reviews, reviews, reset: true)
-           |> assign(:review_count, length(reviews))
-           |> assign(:stats, stats)}
+        {:noreply,
+         socket
+         |> stream(:reviews, reviews, reset: true)
+         |> assign(:review_count, length(reviews))
+         |> assign(:stats, stats)}
 
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Failed to delete review.")}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete review.")}
     end
   end
 

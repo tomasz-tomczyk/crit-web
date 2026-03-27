@@ -467,16 +467,30 @@ defmodule Crit.Reviews do
     |> Repo.all()
   end
 
-  @doc "Delete a review by its id. Returns :ok or {:error, :not_found}."
-  def delete_review(id) do
+  @doc """
+  Delete a review by its id.
+
+  Accepts an optional `owner_id` keyword argument. When provided, deletion is
+  only allowed if the review's `user_id` matches `owner_id` or if the review
+  has no owner (legacy reviews created before OAuth was introduced).
+
+  Returns `:ok`, `{:error, :not_found}`, or `{:error, :unauthorized}`.
+  """
+  def delete_review(id, opts \\ []) do
+    owner_id = Keyword.get(opts, :owner_id)
+
     case Repo.get(Review, id) do
       nil ->
         {:error, :not_found}
 
       review ->
-        case Repo.delete(review) do
-          {:ok, _} -> :ok
-          {:error, _} -> {:error, :delete_failed}
+        if owner_id && review.user_id && review.user_id != owner_id do
+          {:error, :unauthorized}
+        else
+          case Repo.delete(review) do
+            {:ok, _} -> :ok
+            {:error, _} -> {:error, :delete_failed}
+          end
         end
     end
   end
