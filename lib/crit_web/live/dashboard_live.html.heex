@@ -53,7 +53,7 @@
     </div>
 
     <%!-- Review list or login prompt --%>
-    <%= if @password_required and not @authenticated do %>
+    <%= if not @authenticated do %>
       <div
         id="login"
         class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-8 mt-6 text-center"
@@ -70,7 +70,7 @@
             Sign in with OAuth
           </a>
         <% end %>
-        <%= if @password_required and not @oauth_configured do %>
+        <%= if not @oauth_configured do %>
           <.form
             for={%{}}
             action={~p"/auth/login"}

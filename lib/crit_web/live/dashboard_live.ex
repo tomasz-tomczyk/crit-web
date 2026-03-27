@@ -21,8 +21,14 @@ defmodule CritWeb.DashboardLive do
             end
         end
 
-      authenticated = admin_authenticated || current_user != nil
       oauth_configured = Application.get_env(:crit, :oauth_provider) != nil
+
+      authenticated =
+        cond do
+          oauth_configured -> current_user != nil
+          password_required -> admin_authenticated
+          true -> true
+        end
 
       stats = Reviews.dashboard_stats()
       chart_data = Reviews.activity_chart(30)
@@ -41,7 +47,7 @@ defmodule CritWeb.DashboardLive do
         |> assign(:noindex, true)
 
       socket =
-        if !password_required or authenticated do
+        if authenticated do
           reviews = Reviews.list_reviews_with_counts()
 
           socket

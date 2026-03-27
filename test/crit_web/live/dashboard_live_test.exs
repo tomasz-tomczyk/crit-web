@@ -13,6 +13,30 @@ defmodule CritWeb.DashboardLiveTest do
     end)
   end
 
+  defp login_user(conn) do
+    {:ok, user} =
+      Crit.Accounts.find_or_create_from_oauth("github", %{
+        "sub" => "test_uid_#{System.unique_integer()}",
+        "email" => "test@example.com",
+        "name" => "Test User"
+      })
+
+    init_test_session(conn, %{user_id: user.id})
+  end
+
+  defp without_oauth(ctx) do
+    original = Application.get_env(:crit, :oauth_provider)
+    Application.delete_env(:crit, :oauth_provider)
+
+    on_exit(fn ->
+      if original,
+        do: Application.put_env(:crit, :oauth_provider, original),
+        else: Application.delete_env(:crit, :oauth_provider)
+    end)
+
+    ctx
+  end
+
   describe "mount" do
     test "redirects to / when not in selfhosted mode", %{conn: conn} do
       Application.delete_env(:crit, :selfhosted)
@@ -32,9 +56,10 @@ defmodule CritWeb.DashboardLiveTest do
       assert html =~ "Activity"
     end
 
-    test "shows review list when no password set", %{conn: conn} do
-      review = review_fixture()
+    test "shows review list when no password and no oauth configured", %{conn: conn} do
+      without_oauth(%{})
 
+      review = review_fixture()
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
       assert html =~ "All Reviews"
@@ -78,10 +103,10 @@ defmodule CritWeb.DashboardLiveTest do
       refute html =~ "login-form"
     end
 
-    test "shows review list when authenticated", %{conn: conn} do
+    test "shows review list when authenticated via OAuth", %{conn: conn} do
       review = review_fixture()
+      conn = login_user(conn)
 
-      conn = conn |> init_test_session(%{admin_authenticated: true})
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
       assert html =~ "All Reviews"
@@ -106,6 +131,8 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   describe "delete_review" do
+    setup :without_oauth
+
     test "removes review from list", %{conn: conn} do
       review = review_fixture()
 
@@ -123,6 +150,8 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   describe "review links" do
+    setup :without_oauth
+
     test "review rows link to /r/:token", %{conn: conn} do
       review = review_fixture()
 
@@ -133,6 +162,8 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   describe "empty state" do
+    setup :without_oauth
+
     test "shows message when no reviews", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
