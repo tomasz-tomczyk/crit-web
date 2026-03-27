@@ -277,6 +277,16 @@
     <ul class="crit-toc-list"></ul>
   </div>
 
+  <%= if @auth_required and is_nil(@current_user) do %>
+    <div class="crit-auth-gate">
+      <div class="crit-auth-gate-inner">
+        <p class="crit-auth-gate-msg">Sign in to view this review</p>
+        <a href={~p"/auth/login?#{%{return_to: ~p"/r/#{@review.token}"}}"} class="crit-signin-btn">
+          Sign in
+        </a>
+      </div>
+    </div>
+  <% else %>
   <div id="crit-main-layout" class="crit-main-layout">
     <div id="fileTreePanel" class="tree-panel" style="display:none">
       <div class="tree-header">
@@ -298,4 +308,5 @@
       </div>
     </div>
   </div>
+  <% end %>
 </div>

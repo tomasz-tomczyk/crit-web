@@ -20,28 +20,20 @@ defmodule CritWeb.ReviewLive do
       end
 
     auth_required =
-      Application.get_env(:crit, :selfhosted) &&
+      Application.get_env(:crit, :selfhosted) == true &&
         Application.get_env(:crit, :oauth_provider) != nil
 
-    if auth_required && current_user == nil do
-      return_to = ~p"/r/#{token}"
+    {identity, display_name} =
+      if current_user do
+        {current_user.id, current_user.name || current_user.email}
+      else
+        {Map.get(session, "identity", Ecto.UUID.generate()), Map.get(session, "display_name")}
+      end
 
-      {:ok,
-       redirect(socket, to: ~p"/auth/login?#{%{return_to: return_to}}"),
-       layout: {CritWeb.Layouts, :review}}
-    else
-      {identity, display_name} =
-        if current_user do
-          {current_user.id, current_user.name || current_user.email}
-        else
-          {Map.get(session, "identity", Ecto.UUID.generate()), Map.get(session, "display_name")}
-        end
-
-      mount_review(token, socket, current_user, identity, display_name)
-    end
+    mount_review(token, socket, current_user, identity, display_name, auth_required)
   end
 
-  defp mount_review(token, socket, current_user, identity, display_name) do
+  defp mount_review(token, socket, current_user, identity, display_name, auth_required) do
     case Reviews.get_by_token(token) do
       nil ->
         {:ok,
@@ -94,6 +86,7 @@ defmodule CritWeb.ReviewLive do
          |> assign(:review, review)
          |> assign(:current_user, current_user)
          |> assign(:oauth_configured, Application.get_env(:crit, :oauth_provider) != nil)
+         |> assign(:auth_required, auth_required)
          |> assign(:identity, identity)
          |> assign(:display_name, display_name)
          |> assign(:demo?, demo?)

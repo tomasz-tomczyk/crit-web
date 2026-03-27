@@ -798,6 +798,23 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 .crit-user-signout:hover {
   color: var(--crit-fg-primary);
 }
+.crit-auth-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 4rem 1rem;
+}
+.crit-auth-gate-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.crit-auth-gate-msg {
+  font-size: 15px;
+  color: var(--crit-fg-muted);
+}
 .crit-signin-btn {
   background: var(--crit-accent);
   color: #fff;
