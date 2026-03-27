@@ -53,7 +53,9 @@ defmodule CritWeb.Router do
   scope "/", CritWeb do
     pipe_through [:browser, :noindex]
 
-    live_session :review, on_mount: [] do
+    live_session :review,
+      on_mount: [],
+      session: {CritWeb.ReviewLive, :session_opts, []} do
       live "/r/:token", ReviewLive, :show
     end
 

@@ -52,44 +52,61 @@
             <% end %>
           </div>
         <% end %>
-        <div class="crit-name-pill" id="name-pill">
-          <button
-            type="button"
-            id="name-pill-btn"
-            phx-click={
-              JS.hide(to: "#name-pill-btn")
-              |> JS.show(to: "#name-form")
-              |> JS.focus(to: "#name-input")
-            }
-            class="crit-name-btn"
-          >
-            {if @display_name, do: @display_name, else: "Set your name"}
-          </button>
-          <form
-            id="name-form"
-            phx-submit={
-              JS.push("set_display_name")
-              |> JS.hide(to: "#name-form")
-              |> JS.show(to: "#name-pill-btn")
-            }
-            style="display:none"
-            class="crit-name-form"
-          >
-            <input
-              type="text"
-              id="name-input"
-              name="name"
-              value={@display_name || ""}
-              placeholder="Your name"
-              maxlength="40"
-              phx-keydown={JS.hide(to: "#name-form") |> JS.show(to: "#name-pill-btn")}
-              phx-key="Escape"
-              autocomplete="off"
-              class="crit-name-input"
-            />
-            <button type="submit" class="crit-name-save">Save</button>
-          </form>
-        </div>
+        <%= if @current_user do %>
+          <div class="crit-user-pill">
+            <%= if @current_user.avatar_url do %>
+              <img
+                src={@current_user.avatar_url}
+                alt={@current_user.name || @current_user.email}
+                class="crit-user-avatar"
+              />
+            <% end %>
+            <span class="crit-user-name">{@current_user.name || @current_user.email}</span>
+            <.form for={%{}} action={~p"/auth/logout"} method="post" id="review-logout-form">
+              <input type="hidden" name="_method" value="delete" />
+              <button type="submit" class="crit-user-signout">Sign out</button>
+            </.form>
+          </div>
+        <% else %>
+          <div class="crit-name-pill" id="name-pill">
+            <button
+              type="button"
+              id="name-pill-btn"
+              phx-click={
+                JS.hide(to: "#name-pill-btn")
+                |> JS.show(to: "#name-form")
+                |> JS.focus(to: "#name-input")
+              }
+              class="crit-name-btn"
+            >
+              {if @display_name, do: @display_name, else: "Set your name"}
+            </button>
+            <form
+              id="name-form"
+              phx-submit={
+                JS.push("set_display_name")
+                |> JS.hide(to: "#name-form")
+                |> JS.show(to: "#name-pill-btn")
+              }
+              style="display:none"
+              class="crit-name-form"
+            >
+              <input
+                type="text"
+                id="name-input"
+                name="name"
+                value={@display_name || ""}
+                placeholder="Your name"
+                maxlength="40"
+                phx-keydown={JS.hide(to: "#name-form") |> JS.show(to: "#name-pill-btn")}
+                phx-key="Escape"
+                autocomplete="off"
+                class="crit-name-input"
+              />
+              <button type="submit" class="crit-name-save">Save</button>
+            </form>
+          </div>
+        <% end %>
         <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>
         <button
           class="comment-count-btn"

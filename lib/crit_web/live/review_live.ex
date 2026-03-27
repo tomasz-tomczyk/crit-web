@@ -1,14 +1,30 @@
 defmodule CritWeb.ReviewLive do
   use CritWeb, :live_view
 
-  alias Crit.Reviews
+  alias Crit.{Accounts, Reviews}
 
   @pubsub Crit.PubSub
 
   @impl true
   def mount(%{"token" => token}, session, socket) do
-    identity = Map.get(session, "identity", Ecto.UUID.generate())
-    display_name = Map.get(session, "display_name")
+    current_user =
+      case Map.get(session, "user_id") do
+        nil ->
+          nil
+
+        user_id ->
+          case Accounts.get_user(user_id) do
+            {:ok, user} -> user
+            {:error, :not_found} -> nil
+          end
+      end
+
+    {identity, display_name} =
+      if current_user do
+        {current_user.id, current_user.name || current_user.email}
+      else
+        {Map.get(session, "identity", Ecto.UUID.generate()), Map.get(session, "display_name")}
+      end
 
     case Reviews.get_by_token(token) do
       nil ->
@@ -60,6 +76,7 @@ defmodule CritWeb.ReviewLive do
         {:ok,
          socket
          |> assign(:review, review)
+         |> assign(:current_user, current_user)
          |> assign(:identity, identity)
          |> assign(:display_name, display_name)
          |> assign(:demo?, demo?)
@@ -295,6 +312,11 @@ defmodule CritWeb.ReviewLive do
 
       %{c | replies: filtered_replies}
     end)
+  end
+
+  @doc false
+  def session_opts(conn) do
+    %{"user_id" => Plug.Conn.get_session(conn, :user_id)}
   end
 
   defp display_filename(%{files: [first | _]}), do: first.file_path

@@ -769,6 +769,36 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 .btn-primary:hover { background: #6e9af2; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 .btn-sm { font-size: 12px; padding: 3px 10px; }
 
+/* ===== User Pill (logged-in identity) ===== */
+.crit-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.crit-user-avatar {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.crit-user-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--crit-fg-primary);
+}
+.crit-user-signout {
+  font-size: 12px;
+  color: var(--crit-fg-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.crit-user-signout:hover {
+  color: var(--crit-fg-primary);
+}
+
 /* ===== Name Pill ===== */
 .crit-name-pill {
   display: inline-flex;
