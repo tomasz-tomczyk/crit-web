@@ -58,10 +58,73 @@ defmodule CritWeb.DashboardLive do
           |> assign(:review_count, 0)
         end
 
+      socket =
+        if authenticated && current_user do
+          socket
+          |> assign(:tokens, Accounts.list_tokens(current_user.id))
+          |> assign(:new_token_plaintext, nil)
+          |> assign(:new_token_name, "")
+        else
+          socket
+          |> assign(:tokens, [])
+          |> assign(:new_token_plaintext, nil)
+          |> assign(:new_token_name, "")
+        end
+
       {:ok, socket, layout: false}
     else
       {:ok, redirect(socket, to: ~p"/")}
     end
+  end
+
+  @impl true
+  def handle_event("create_token", %{"name" => name}, socket) do
+    case socket.assigns.current_user do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Not authenticated.")}
+
+      user ->
+        case Accounts.create_token(user, name) do
+          {:ok, {plaintext, _token}} ->
+            tokens = Accounts.list_tokens(user.id)
+
+            {:noreply,
+             socket
+             |> assign(:tokens, tokens)
+             |> assign(:new_token_plaintext, plaintext)
+             |> assign(:new_token_name, "")}
+
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "Failed to create token.")}
+        end
+    end
+  end
+
+  @impl true
+  def handle_event("revoke_token", %{"id" => id}, socket) do
+    case socket.assigns.current_user do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Not authenticated.")}
+
+      user ->
+        case Accounts.revoke_token(id, user.id) do
+          :ok ->
+            tokens = Accounts.list_tokens(user.id)
+
+            {:noreply,
+             socket
+             |> assign(:tokens, tokens)
+             |> assign(:new_token_plaintext, nil)}
+
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "Failed to revoke token.")}
+        end
+    end
+  end
+
+  @impl true
+  def handle_event("dismiss_token", _params, socket) do
+    {:noreply, assign(socket, :new_token_plaintext, nil)}
   end
 
   @impl true

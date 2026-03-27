@@ -160,6 +160,104 @@
           </div>
         <% end %>
       </div>
+
+      <%!-- API Tokens (only for OAuth-authenticated users) --%>
+      <%= if @current_user do %>
+        <div class="mt-8 mb-8">
+          <div class="mb-3">
+            <span class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">
+              API Tokens
+            </span>
+          </div>
+
+          <%= if @new_token_plaintext do %>
+            <div
+              id="new-token-reveal"
+              class="mb-4 p-4 border border-green-500/40 bg-green-500/10 rounded-lg"
+            >
+              <div class="text-xs text-green-400 font-medium mb-2">
+                Token created — copy it now. It won't be shown again.
+              </div>
+              <div class="flex items-center gap-2">
+                <code class="flex-1 text-xs font-mono bg-[var(--crit-bg-primary)] border border-[var(--crit-border)] rounded px-3 py-2 text-[var(--crit-fg-primary)] break-all">
+                  {@new_token_plaintext}
+                </code>
+                <button
+                  phx-click={JS.dispatch("clipboard:copy", detail: %{text: @new_token_plaintext})}
+                  class="shrink-0 text-xs px-3 py-2 bg-[var(--crit-bg-secondary)] border border-[var(--crit-border)] rounded hover:border-[var(--crit-accent)] transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+              <button
+                phx-click="dismiss_token"
+                class="mt-2 text-xs text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          <% end %>
+
+          <%= if @tokens == [] do %>
+            <div class="text-xs text-[var(--crit-fg-muted)] mb-4">
+              No tokens yet. Create one to authenticate the Crit CLI.
+            </div>
+          <% else %>
+            <div class="flex flex-col gap-2 mb-4">
+              <div
+                :for={token <- @tokens}
+                id={"token-#{token.id}"}
+                class="flex items-center justify-between p-3 border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg"
+              >
+                <div>
+                  <div class="text-sm font-medium text-[var(--crit-fg-primary)]">
+                    {token.name}
+                  </div>
+                  <div class="text-xs text-[var(--crit-fg-muted)] mt-0.5">
+                    Created {time_ago(token.inserted_at)}
+                    <%= if token.last_used_at do %>
+                      &middot; Last used {time_ago(token.last_used_at)}
+                    <% else %>
+                      &middot; Never used
+                    <% end %>
+                  </div>
+                </div>
+                <button
+                  phx-click="revoke_token"
+                  phx-value-id={token.id}
+                  data-confirm="Revoke this token? Any CLI using it will stop working."
+                  class="text-[var(--crit-fg-muted)] hover:text-red-400 transition-colors cursor-pointer shrink-0 ml-4 text-xs"
+                >
+                  Revoke
+                </button>
+              </div>
+            </div>
+          <% end %>
+
+          <.form
+            for={%{}}
+            phx-submit="create_token"
+            class="flex items-center gap-2 max-w-sm"
+            id="create-token-form"
+          >
+            <input
+              type="text"
+              name="name"
+              value={@new_token_name}
+              placeholder="Token name (e.g. my laptop)"
+              maxlength="80"
+              required
+              class="flex-1 bg-[var(--crit-bg-primary)] border border-[var(--crit-border)] rounded-md px-3 py-2 text-sm text-[var(--crit-fg-primary)] placeholder-[var(--crit-fg-muted)] focus:outline-none focus:border-[var(--crit-accent)]"
+            />
+            <button
+              type="submit"
+              class="shrink-0 px-4 py-2 bg-[var(--crit-accent)] text-[var(--crit-bg-primary)] rounded-md text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Create
+            </button>
+          </.form>
+        </div>
+      <% end %>
     <% end %>
   </div>
 </div>

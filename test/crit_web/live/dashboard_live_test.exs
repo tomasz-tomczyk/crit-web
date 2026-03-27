@@ -14,6 +14,11 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   defp login_user(conn) do
+    {conn, _user} = login_user_with_record(conn)
+    conn
+  end
+
+  defp login_user_with_record(conn) do
     {:ok, user} =
       Crit.Accounts.find_or_create_from_oauth("github", %{
         "sub" => "test_uid_#{System.unique_integer()}",
@@ -21,7 +26,7 @@ defmodule CritWeb.DashboardLiveTest do
         "name" => "Test User"
       })
 
-    init_test_session(conn, %{user_id: user.id})
+    {init_test_session(conn, %{user_id: user.id}), user}
   end
 
   defp without_oauth(ctx) do
@@ -168,6 +173,71 @@ defmodule CritWeb.DashboardLiveTest do
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
       assert html =~ "No reviews yet"
+    end
+  end
+
+  describe "API token management" do
+    test "shows token section when authenticated via OAuth", %{conn: conn} do
+      Application.put_env(:crit, :admin_password, "secret123")
+      conn = login_user(conn)
+
+      {:ok, _view, html} = live(conn, ~p"/dashboard")
+
+      assert html =~ "API Tokens"
+      assert html =~ "create-token-form"
+    end
+
+    test "creates a token and shows plaintext once", %{conn: conn} do
+      Application.put_env(:crit, :admin_password, "secret123")
+      conn = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      view
+      |> element("#create-token-form")
+      |> render_submit(%{name: "my laptop"})
+
+      html = render(view)
+      assert html =~ "my laptop"
+      assert html =~ "copy it now"
+      assert html =~ "crit_"
+    end
+
+    test "revokes a token", %{conn: conn} do
+      Application.put_env(:crit, :admin_password, "secret123")
+      {conn, user} = login_user_with_record(conn)
+
+      {:ok, _token_plaintext, token} =
+        Crit.Accounts.create_token(user, "to revoke") |> then(fn {:ok, {p, t}} -> {:ok, p, t} end)
+
+      {:ok, view, html} = live(conn, ~p"/dashboard")
+      assert html =~ "to revoke"
+
+      view
+      |> element("button[phx-value-id='#{token.id}']")
+      |> render_click()
+
+      html = render(view)
+      refute html =~ "to revoke"
+    end
+
+    test "dismisses the new token reveal", %{conn: conn} do
+      Application.put_env(:crit, :admin_password, "secret123")
+      conn = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      view
+      |> element("#create-token-form")
+      |> render_submit(%{name: "temp"})
+
+      assert render(view) =~ "copy it now"
+
+      view
+      |> element("button[phx-click='dismiss_token']")
+      |> render_click()
+
+      refute render(view) =~ "copy it now"
     end
   end
 end
