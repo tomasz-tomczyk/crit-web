@@ -109,7 +109,12 @@
             </form>
           </div>
           <%= if @oauth_configured do %>
-            <a href={~p"/auth/login?#{%{return_to: ~p"/r/#{@review.token}"}}"} class="crit-signin-btn">Sign in</a>
+            <a
+              href={~p"/auth/login?#{%{return_to: ~p"/r/#{@review.token}"}}"}
+              class="crit-signin-btn"
+            >
+              Sign in
+            </a>
           <% end %>
         <% end %>
         <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>
@@ -289,26 +294,26 @@
       </div>
     </div>
   <% else %>
-  <div id="crit-main-layout" class="crit-main-layout">
-    <div id="fileTreePanel" class="tree-panel" style="display:none">
-      <div class="tree-header">
-        <span class="tree-title">Files</span>
-        <span id="fileTreeStats" class="tree-stats"></span>
+    <div id="crit-main-layout" class="crit-main-layout">
+      <div id="fileTreePanel" class="tree-panel" style="display:none">
+        <div class="tree-header">
+          <span class="tree-title">Files</span>
+          <span id="fileTreeStats" class="tree-stats"></span>
+        </div>
+        <div id="fileTreeBody" class="tree-body"></div>
       </div>
-      <div id="fileTreeBody" class="tree-body"></div>
-    </div>
 
-    <div class="crit-main-content">
-      <div
-        id="document-renderer"
-        phx-hook=".DocumentRenderer"
-        phx-update="ignore"
-        data-identity={@identity}
-        data-review-round={@review.review_round || 0}
-      >
-        <div class="crit-loading">Loading document...</div>
+      <div class="crit-main-content">
+        <div
+          id="document-renderer"
+          phx-hook=".DocumentRenderer"
+          phx-update="ignore"
+          data-identity={@identity}
+          data-review-round={@review.review_round || 0}
+        >
+          <div class="crit-loading">Loading document...</div>
+        </div>
       </div>
     </div>
-  </div>
   <% end %>
 </div>
