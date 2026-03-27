@@ -66,7 +66,6 @@
   --crit-scrollbar-thumb: #3b4261;
   --crit-orange: #ff9e64;
   --crit-badge-resolved-bg: rgba(158, 206, 106, 0.12);
-  --crit-badge-unresolved-bg: rgba(255, 158, 100, 0.14);
 }
 
 [data-theme="dark"] {
@@ -106,7 +105,6 @@
   --crit-scrollbar-thumb: #3b4261;
   --crit-orange: #ff9e64;
   --crit-badge-resolved-bg: rgba(158, 206, 106, 0.12);
-  --crit-badge-unresolved-bg: rgba(255, 158, 100, 0.14);
 }
 
 [data-theme="light"] {
@@ -146,7 +144,6 @@
   --crit-scrollbar-thumb: #d0d0d0;
   --crit-orange: #bc4c00;
   --crit-badge-resolved-bg: rgba(26, 127, 55, 0.1);
-  --crit-badge-unresolved-bg: rgba(188, 76, 0, 0.1);
 }
 
 /* System preference: light — overrides dark :root defaults when OS is light */
@@ -187,7 +184,6 @@
     --crit-scrollbar-thumb: #d0d0d0;
     --crit-orange: #bc4c00;
     --crit-badge-resolved-bg: rgba(26, 127, 55, 0.1);
-    --crit-badge-unresolved-bg: rgba(188, 76, 0, 0.1);
   }
 }
 
