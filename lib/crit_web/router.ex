@@ -16,6 +16,7 @@ defmodule CritWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug CritWeb.Plugs.SecurityHeaders
+    plug CritWeb.Plugs.ApiAuth
   end
 
   pipeline :noindex do

@@ -7,6 +7,8 @@ defmodule Crit.Review do
     field :last_activity_at, :utc_datetime
     field :review_round, :integer, default: 0
 
+    belongs_to :user, Crit.User, type: :binary_id
+
     has_many :comments, Crit.Comment
     has_many :round_snapshots, Crit.ReviewRoundSnapshot
 
