@@ -10,6 +10,7 @@ defmodule CritWeb.Router do
     plug :put_secure_browser_headers
     plug CritWeb.Plugs.Identity
     plug CritWeb.Plugs.SecurityHeaders
+    plug CritWeb.Plugs.Auth
   end
 
   pipeline :api do
@@ -42,6 +43,10 @@ defmodule CritWeb.Router do
     post "/set-name", ReviewController, :set_name
     post "/auth/login", AuthController, :login
     post "/auth/logout", AuthController, :logout
+
+    get "/auth/login", OAuthController, :request
+    get "/auth/login/callback", OAuthController, :callback
+    delete "/auth/logout", OAuthController, :delete
   end
 
   # Review pages and dashboard — noindex
