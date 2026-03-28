@@ -3451,7 +3451,10 @@ function navigateToComment(ctx, direction) {
   ctx._navCommentId = target.dataset.commentId
 
   const rect = target.getBoundingClientRect()
-  window.scrollTo({ top: rect.top + window.scrollY - headerHeight - 16, behavior: 'smooth' })
+  const fileSection = target.closest('.file-section')
+  const fileHeader = fileSection ? fileSection.querySelector('.file-header') : null
+  const fileHeaderHeight = fileHeader ? fileHeader.offsetHeight : 0
+  window.scrollTo({ top: rect.top + window.scrollY - headerHeight - fileHeaderHeight - 16, behavior: 'smooth' })
   target.classList.add('comment-nav-highlight')
   setTimeout(() => target.classList.remove('comment-nav-highlight'), 1000)
 }
