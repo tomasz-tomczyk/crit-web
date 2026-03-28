@@ -181,21 +181,38 @@ defmodule Crit.Reviews do
       if content_changed?(review, files) do
         new_round = review.review_round + 1
 
-        Repo.transaction(fn ->
-          insert_round_snapshots(review, new_round, files)
-          replace_comments(review, comments)
-
-          review
-          |> Ecto.Changeset.change(review_round: new_round)
-          |> Repo.update!()
+        Ecto.Multi.new()
+        |> Ecto.Multi.run(:snapshots, fn _repo, _changes ->
+          case insert_round_snapshots(review, new_round, files) do
+            :ok -> {:ok, :ok}
+            {:error, _} = error -> error
+          end
         end)
+        |> Ecto.Multi.run(:comments, fn _repo, _changes ->
+          case replace_comments(review, comments) do
+            :ok -> {:ok, :ok}
+            {:error, _} = error -> error
+          end
+        end)
+        |> Ecto.Multi.update(:review, Ecto.Changeset.change(review, review_round: new_round))
+        |> Repo.transaction()
         |> case do
-          {:ok, updated} -> {:ok, :updated, updated}
-          {:error, reason} -> {:error, reason}
+          {:ok, %{review: updated}} -> {:ok, :updated, updated}
+          {:error, _step, reason, _changes} -> {:error, reason}
         end
       else
-        Repo.transaction(fn -> replace_comments(review, comments) end)
-        {:ok, :no_changes, review}
+        Ecto.Multi.new()
+        |> Ecto.Multi.run(:comments, fn _repo, _changes ->
+          case replace_comments(review, comments) do
+            :ok -> {:ok, :ok}
+            {:error, _} = error -> error
+          end
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, _} -> {:ok, :no_changes, review}
+          {:error, _step, reason, _changes} -> {:error, reason}
+        end
       end
     end
   end
@@ -223,29 +240,36 @@ defmodule Crit.Reviews do
   defp replace_comments(review, new_comments) do
     Repo.delete_all(from c in Comment, where: c.review_id == ^review.id)
 
-    Enum.each(new_comments, fn attrs ->
+    Enum.reduce_while(new_comments, :ok, fn attrs, :ok ->
       scope = attrs["scope"] || infer_scope(attrs)
       replies_attrs = attrs["replies"] || []
 
-      comment =
-        %Comment{}
-        |> Comment.create_changeset(%{
-          "start_line" => attrs["start_line"],
-          "end_line" => attrs["end_line"],
-          "body" => attrs["body"],
-          "file_path" => attrs["file"],
-          "quote" => attrs["quote"],
-          "author_display_name" => attrs["author_display_name"] || "crit",
-          "review_round" => attrs["review_round"] || 1,
-          "resolved" => attrs["resolved"] || false,
-          "scope" => scope,
-          "external_id" => attrs["external_id"]
-        })
-        |> Ecto.Changeset.put_change(:review_id, review.id)
-        |> Ecto.Changeset.put_change(:author_identity, "imported")
-        |> Repo.insert!()
+      %Comment{}
+      |> Comment.create_changeset(%{
+        "start_line" => attrs["start_line"],
+        "end_line" => attrs["end_line"],
+        "body" => attrs["body"],
+        "file_path" => attrs["file"],
+        "quote" => attrs["quote"],
+        "author_display_name" => attrs["author_display_name"] || "crit",
+        "review_round" => attrs["review_round"] || 1,
+        "resolved" => attrs["resolved"] || false,
+        "scope" => scope,
+        "external_id" => attrs["external_id"]
+      })
+      |> Ecto.Changeset.put_change(:review_id, review.id)
+      |> Ecto.Changeset.put_change(:author_identity, "imported")
+      |> Repo.insert()
+      |> case do
+        {:ok, comment} ->
+          case insert_replies(comment, replies_attrs) do
+            :ok -> {:cont, :ok}
+            {:error, _} = error -> {:halt, error}
+          end
 
-      :ok = insert_replies(comment, replies_attrs)
+        {:error, changeset} ->
+          {:halt, {:error, changeset}}
+      end
     end)
   end
 

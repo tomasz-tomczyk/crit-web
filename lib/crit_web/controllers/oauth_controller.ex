@@ -40,7 +40,7 @@ defmodule CritWeb.OAuthController do
             |> delete_session(:oauth_session_params)
             |> delete_session(:oauth_return_to)
             |> configure_session(renew: true)
-            |> put_session(:user_id, user.id)
+            |> put_session("user_id", user.id)
             |> redirect(to: return_to)
 
           {:error, _changeset} ->

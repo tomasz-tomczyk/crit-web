@@ -1,23 +1,15 @@
 defmodule CritWeb.ReviewLive do
   use CritWeb, :live_view
 
-  alias Crit.{Accounts, Reviews}
+  alias Crit.Reviews
+
+  on_mount {CritWeb.Live.Hooks, :load_current_user}
 
   @pubsub Crit.PubSub
 
   @impl true
   def mount(%{"token" => token}, session, socket) do
-    current_user =
-      case Map.get(session, "user_id") do
-        nil ->
-          nil
-
-        user_id ->
-          case Accounts.get_user(user_id) do
-            {:ok, user} -> user
-            {:error, :not_found} -> nil
-          end
-      end
+    current_user = socket.assigns.current_user
 
     auth_required =
       Application.get_env(:crit, :selfhosted) == true &&
@@ -341,7 +333,7 @@ defmodule CritWeb.ReviewLive do
 
   @doc false
   def session_opts(conn) do
-    %{"user_id" => Plug.Conn.get_session(conn, :user_id)}
+    %{"user_id" => Plug.Conn.get_session(conn, "user_id")}
   end
 
   defp display_filename(%{files: [first | _]}), do: first.file_path
