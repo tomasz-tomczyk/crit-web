@@ -40,12 +40,14 @@ defmodule Crit.Accounts do
 
   @doc "Fetches a user by primary key. Returns {:ok, user} or {:error, :not_found}."
   def get_user(id) do
-    case Repo.get(User, id) do
-      nil -> {:error, :not_found}
-      user -> {:ok, user}
+    with {:ok, uuid} <- Ecto.UUID.cast(id) do
+      case Repo.get(User, uuid) do
+        nil -> {:error, :not_found}
+        user -> {:ok, user}
+      end
+    else
+      :error -> {:error, :not_found}
     end
-  rescue
-    Ecto.Query.CastError -> {:error, :not_found}
   end
 
   @doc """
@@ -93,8 +95,14 @@ defmodule Crit.Accounts do
   """
   def revoke_token(token_id, user_id) do
     case Repo.get_by(UserApiToken, id: token_id, user_id: user_id) do
-      nil -> {:error, :not_found}
-      token -> Repo.delete!(token) && :ok
+      nil ->
+        {:error, :not_found}
+
+      token ->
+        case Repo.delete(token) do
+          {:ok, _token} -> :ok
+          {:error, changeset} -> {:error, changeset}
+        end
     end
   end
 

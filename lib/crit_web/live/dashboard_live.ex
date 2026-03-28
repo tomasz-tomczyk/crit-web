@@ -1,67 +1,41 @@
 defmodule CritWeb.DashboardLive do
   use CritWeb, :live_view
 
-  alias Crit.{Accounts, Reviews}
+  alias Crit.Reviews
+
+  import CritWeb.Helpers, only: [time_ago: 1]
+
+  on_mount {CritWeb.Live.Hooks, :require_authenticated_user}
 
   @impl true
-  def mount(_params, session, socket) do
-    if Application.get_env(:crit, :selfhosted) do
-      password_required = Application.get_env(:crit, :admin_password) != nil
-      admin_authenticated = Map.get(session, "admin_authenticated", false) == true
+  def mount(_params, _session, socket) do
+    %{authenticated: authenticated} = socket.assigns
 
-      current_user =
-        case Map.get(session, "user_id") do
-          nil ->
-            nil
+    stats = Reviews.dashboard_stats()
+    chart_data = Reviews.activity_chart(30)
+    max_count = chart_data |> Enum.map(&elem(&1, 1)) |> Enum.max(fn -> 1 end)
 
-          user_id ->
-            case Accounts.get_user(user_id) do
-              {:ok, user} -> user
-              {:error, :not_found} -> nil
-            end
-        end
+    socket =
+      socket
+      |> assign(:stats, stats)
+      |> assign(:chart_data, chart_data)
+      |> assign(:max_count, max_count)
+      |> assign(:page_title, "Dashboard - Crit")
+      |> assign(:noindex, true)
 
-      oauth_configured = Application.get_env(:crit, :oauth_provider) != nil
+    socket =
+      if authenticated do
+        reviews = Reviews.list_reviews_with_counts()
 
-      authenticated =
-        cond do
-          oauth_configured -> current_user != nil
-          password_required -> admin_authenticated
-          true -> true
-        end
-
-      stats = Reviews.dashboard_stats()
-      chart_data = Reviews.activity_chart(30)
-      max_count = chart_data |> Enum.map(&elem(&1, 1)) |> Enum.max(fn -> 1 end)
-
-      socket =
         socket
-        |> assign(:stats, stats)
-        |> assign(:chart_data, chart_data)
-        |> assign(:max_count, max_count)
-        |> assign(:password_required, password_required)
-        |> assign(:authenticated, authenticated)
-        |> assign(:current_user, current_user)
-        |> assign(:oauth_configured, oauth_configured)
-        |> assign(:page_title, "Dashboard - Crit")
-        |> assign(:noindex, true)
+        |> stream(:reviews, reviews)
+        |> assign(:review_count, length(reviews))
+      else
+        socket
+        |> assign(:review_count, 0)
+      end
 
-      socket =
-        if authenticated do
-          reviews = Reviews.list_reviews_with_counts()
-
-          socket
-          |> stream(:reviews, reviews)
-          |> assign(:review_count, length(reviews))
-        else
-          socket
-          |> assign(:review_count, 0)
-        end
-
-      {:ok, socket, layout: false}
-    else
-      {:ok, redirect(socket, to: ~p"/")}
-    end
+    {:ok, socket, layout: false}
   end
 
   @impl true
@@ -97,24 +71,12 @@ defmodule CritWeb.DashboardLive do
   @doc false
   def session_opts(conn) do
     %{
-      "admin_authenticated" => Plug.Conn.get_session(conn, :admin_authenticated),
-      "user_id" => Plug.Conn.get_session(conn, :user_id)
+      "admin_authenticated" => Plug.Conn.get_session(conn, "admin_authenticated"),
+      "user_id" => Plug.Conn.get_session(conn, "user_id")
     }
   end
 
   defp format_bytes(bytes) when bytes < 1024, do: "#{bytes} B"
   defp format_bytes(bytes) when bytes < 1_048_576, do: "#{Float.round(bytes / 1024, 1)} KB"
   defp format_bytes(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MB"
-
-  defp time_ago(datetime) do
-    diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
-
-    cond do
-      diff < 60 -> "just now"
-      diff < 3600 -> "#{div(diff, 60)}m ago"
-      diff < 86400 -> "#{div(diff, 3600)}h ago"
-      diff < 604_800 -> "#{div(diff, 86400)}d ago"
-      true -> "#{div(diff, 604_800)}w ago"
-    end
-  end
 end

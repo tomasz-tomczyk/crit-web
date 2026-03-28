@@ -3,56 +3,30 @@ defmodule CritWeb.TokensLive do
 
   alias Crit.Accounts
 
+  import CritWeb.Helpers, only: [time_ago: 1]
+
+  on_mount {CritWeb.Live.Hooks, :require_authenticated_user}
+
   @impl true
-  def mount(_params, session, socket) do
-    if Application.get_env(:crit, :selfhosted) do
-      password_required = Application.get_env(:crit, :admin_password) != nil
-      admin_authenticated = Map.get(session, "admin_authenticated", false) == true
+  def mount(_params, _session, socket) do
+    %{authenticated: authenticated, current_user: current_user} = socket.assigns
 
-      current_user =
-        case Map.get(session, "user_id") do
-          nil ->
-            nil
+    socket =
+      socket
+      |> assign(:page_title, "API Tokens - Crit")
+      |> assign(:noindex, true)
 
-          user_id ->
-            case Accounts.get_user(user_id) do
-              {:ok, user} -> user
-              {:error, :not_found} -> nil
-            end
-        end
-
-      oauth_configured = Application.get_env(:crit, :oauth_provider) != nil
-
-      authenticated =
-        cond do
-          oauth_configured -> current_user != nil
-          password_required -> admin_authenticated
-          true -> true
-        end
-
-      socket =
+    socket =
+      if authenticated && current_user do
         socket
-        |> assign(:password_required, password_required)
-        |> assign(:authenticated, authenticated)
-        |> assign(:current_user, current_user)
-        |> assign(:page_title, "API Tokens - Crit")
-        |> assign(:noindex, true)
+        |> assign(:tokens, Accounts.list_tokens(current_user.id))
+        |> assign(:new_token_plaintext, nil)
+        |> assign(:new_token_name, "")
+      else
+        redirect(socket, to: ~p"/dashboard")
+      end
 
-      socket =
-        if authenticated && current_user do
-          socket
-          |> assign(:tokens, Accounts.list_tokens(current_user.id))
-          |> assign(:new_token_plaintext, nil)
-          |> assign(:new_token_name, "")
-        else
-          {:ok, redirect(socket, to: ~p"/dashboard")}
-          |> elem(1)
-        end
-
-      {:ok, socket, layout: false}
-    else
-      {:ok, redirect(socket, to: ~p"/")}
-    end
+    {:ok, socket, layout: false}
   end
 
   @impl true
@@ -103,25 +77,5 @@ defmodule CritWeb.TokensLive do
   @impl true
   def handle_event("dismiss_token", _params, socket) do
     {:noreply, assign(socket, :new_token_plaintext, nil)}
-  end
-
-  @doc false
-  def session_opts(conn) do
-    %{
-      "admin_authenticated" => Plug.Conn.get_session(conn, :admin_authenticated),
-      "user_id" => Plug.Conn.get_session(conn, :user_id)
-    }
-  end
-
-  defp time_ago(datetime) do
-    diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
-
-    cond do
-      diff < 60 -> "just now"
-      diff < 3600 -> "#{div(diff, 60)}m ago"
-      diff < 86400 -> "#{div(diff, 3600)}h ago"
-      diff < 604_800 -> "#{div(diff, 86400)}d ago"
-      true -> "#{div(diff, 604_800)}w ago"
-    end
   end
 end
