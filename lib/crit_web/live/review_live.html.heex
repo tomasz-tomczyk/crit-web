@@ -140,6 +140,7 @@
             id="comment-count"
             title="Toggle comments panel"
             aria-label="Toggle comments panel"
+            aria-expanded="false"
             phx-click={JS.dispatch("crit:toggle-comments", to: "#document-renderer")}
           >
             <svg
