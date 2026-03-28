@@ -12,13 +12,18 @@
       <h1 class="text-xl font-semibold text-(--crit-fg-primary)">API Tokens</h1>
       <p class="text-sm text-(--crit-fg-muted) mt-1">
         Use tokens to authenticate the Crit CLI when
-        <code class="text-xs bg-(--crit-bg-secondary) border border-(--crit-border) px-1 py-0.5 rounded">SELFHOSTED</code>
+        <code class="text-xs bg-(--crit-bg-secondary) border border-(--crit-border) px-1 py-0.5 rounded">
+          SELFHOSTED
+        </code>
         mode is enabled.
       </p>
     </div>
 
     <%= if @new_token_plaintext do %>
-      <div id="new-token-reveal" class="mb-6 p-4 border border-green-500/40 bg-green-500/10 rounded-lg">
+      <div
+        id="new-token-reveal"
+        class="mb-6 p-4 border border-green-500/40 bg-green-500/10 rounded-lg"
+      >
         <div class="text-sm text-green-400 font-medium mb-2">
           Token created — copy it now. It won't be shown again.
         </div>

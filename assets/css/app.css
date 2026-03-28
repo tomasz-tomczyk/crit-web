@@ -66,6 +66,13 @@
   --crit-scrollbar-thumb: #3b4261;
   --crit-orange: #ff9e64;
   --crit-badge-resolved-bg: rgba(158, 206, 106, 0.12);
+  --crit-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --crit-bg-gutter: #131420;
+  --crit-yellow: #e0af68;
+  --crit-purple: #a371f7;
+  --crit-yellow-subtle: rgba(224, 175, 104, 0.08);
+  --crit-yellow-bg: rgba(224, 175, 104, 0.14);
+  --crit-yellow-border: rgba(224, 175, 104, 0.2);
 }
 
 [data-theme="dark"] {
@@ -105,6 +112,13 @@
   --crit-scrollbar-thumb: #3b4261;
   --crit-orange: #ff9e64;
   --crit-badge-resolved-bg: rgba(158, 206, 106, 0.12);
+  --crit-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --crit-bg-gutter: #131420;
+  --crit-yellow: #e0af68;
+  --crit-purple: #a371f7;
+  --crit-yellow-subtle: rgba(224, 175, 104, 0.08);
+  --crit-yellow-bg: rgba(224, 175, 104, 0.14);
+  --crit-yellow-border: rgba(224, 175, 104, 0.2);
 }
 
 [data-theme="light"] {
@@ -144,6 +158,13 @@
   --crit-scrollbar-thumb: #d0d0d0;
   --crit-orange: #bc4c00;
   --crit-badge-resolved-bg: rgba(26, 127, 55, 0.1);
+  --crit-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --crit-bg-gutter: #f0f0f0;
+  --crit-yellow: #9a6700;
+  --crit-purple: #8250df;
+  --crit-yellow-subtle: rgba(154, 103, 0, 0.06);
+  --crit-yellow-bg: rgba(154, 103, 0, 0.1);
+  --crit-yellow-border: rgba(154, 103, 0, 0.16);
 }
 
 /* System preference: light — overrides dark :root defaults when OS is light */
@@ -184,6 +205,13 @@
     --crit-scrollbar-thumb: #d0d0d0;
     --crit-orange: #bc4c00;
     --crit-badge-resolved-bg: rgba(26, 127, 55, 0.1);
+    --crit-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --crit-bg-gutter: #f0f0f0;
+    --crit-yellow: #9a6700;
+    --crit-purple: #8250df;
+    --crit-yellow-subtle: rgba(154, 103, 0, 0.06);
+    --crit-yellow-bg: rgba(154, 103, 0, 0.1);
+    --crit-yellow-border: rgba(154, 103, 0, 0.16);
   }
 }
 
@@ -2116,7 +2144,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   border: 1px solid var(--crit-border);
   border-radius: 12px;
   padding: 24px 32px;
-  max-width: 480px;
+  max-width: 560px;
   width: 90vw;
 }
 
@@ -2156,7 +2184,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 }
 
 .shortcuts-table td:first-child {
-  width: 120px;
+  width: 180px;
   white-space: nowrap;
 }
 

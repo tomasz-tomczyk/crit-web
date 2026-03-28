@@ -229,21 +229,29 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   describe "API token management" do
-    test "shows token section when authenticated via OAuth", %{conn: conn} do
+    setup do
+      Application.put_env(:crit, :selfhosted, true)
       Application.put_env(:crit, :admin_password, "secret123")
+      on_exit(fn ->
+        Application.delete_env(:crit, :selfhosted)
+        Application.delete_env(:crit, :admin_password)
+      end)
+      :ok
+    end
+
+    test "shows token section when authenticated via OAuth", %{conn: conn} do
       conn = login_user(conn)
 
-      {:ok, _view, html} = live(conn, ~p"/dashboard")
+      {:ok, _view, html} = live(conn, ~p"/tokens")
 
       assert html =~ "API Tokens"
       assert html =~ "create-token-form"
     end
 
     test "creates a token and shows plaintext once", %{conn: conn} do
-      Application.put_env(:crit, :admin_password, "secret123")
       conn = login_user(conn)
 
-      {:ok, view, _html} = live(conn, ~p"/dashboard")
+      {:ok, view, _html} = live(conn, ~p"/tokens")
 
       view
       |> element("#create-token-form")
@@ -256,13 +264,12 @@ defmodule CritWeb.DashboardLiveTest do
     end
 
     test "revokes a token", %{conn: conn} do
-      Application.put_env(:crit, :admin_password, "secret123")
       {conn, user} = login_user_with_record(conn)
 
       {:ok, _token_plaintext, token} =
         Crit.Accounts.create_token(user, "to revoke") |> then(fn {:ok, {p, t}} -> {:ok, p, t} end)
 
-      {:ok, view, html} = live(conn, ~p"/dashboard")
+      {:ok, view, html} = live(conn, ~p"/tokens")
       assert html =~ "to revoke"
 
       view
@@ -274,10 +281,9 @@ defmodule CritWeb.DashboardLiveTest do
     end
 
     test "dismisses the new token reveal", %{conn: conn} do
-      Application.put_env(:crit, :admin_password, "secret123")
       conn = login_user(conn)
 
-      {:ok, view, _html} = live(conn, ~p"/dashboard")
+      {:ok, view, _html} = live(conn, ~p"/tokens")
 
       view
       |> element("#create-token-form")

@@ -13,19 +13,25 @@
     <div class="sm:grid sm:grid-cols-3 sm:gap-4 hidden">
       <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5">
         <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">Reviews</div>
-        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">{@stats.total_reviews}</div>
+        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
+          {@stats.total_reviews}
+        </div>
         <div class="text-xs text-green-400 mt-1">+{@stats.reviews_this_week} this week</div>
       </div>
       <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5">
         <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">Comments</div>
-        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">{@stats.total_comments}</div>
+        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
+          {@stats.total_comments}
+        </div>
         <div class="text-xs text-green-400 mt-1">
           ~{Float.round(@stats.avg_comments_per_review, 1)} per review
         </div>
       </div>
       <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5">
         <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">Files</div>
-        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">{@stats.total_files}</div>
+        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
+          {@stats.total_files}
+        </div>
         <div class="text-xs text-[var(--crit-fg-muted)] mt-1">
           {format_bytes(@stats.total_storage_bytes)} total
         </div>
@@ -34,21 +40,31 @@
     <%!-- Mobile strip --%>
     <div class="flex sm:hidden border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg overflow-hidden">
       <div class="flex-1 px-4 py-3">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">Reviews</div>
+        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">
+          Reviews
+        </div>
         <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">{@stats.total_reviews}</div>
         <div class="text-xs text-green-400 mt-0.5">+{@stats.reviews_this_week} wk</div>
       </div>
       <div class="w-px bg-[var(--crit-border)]"></div>
       <div class="flex-1 px-4 py-3">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">Comments</div>
-        <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">{@stats.total_comments}</div>
-        <div class="text-xs text-green-400 mt-0.5">~{Float.round(@stats.avg_comments_per_review, 1)}/review</div>
+        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">
+          Comments
+        </div>
+        <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">
+          {@stats.total_comments}
+        </div>
+        <div class="text-xs text-green-400 mt-0.5">
+          ~{Float.round(@stats.avg_comments_per_review, 1)}/review
+        </div>
       </div>
       <div class="w-px bg-[var(--crit-border)]"></div>
       <div class="flex-1 px-4 py-3">
         <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">Files</div>
         <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">{@stats.total_files}</div>
-        <div class="text-xs text-[var(--crit-fg-muted)] mt-0.5">{format_bytes(@stats.total_storage_bytes)}</div>
+        <div class="text-xs text-[var(--crit-fg-muted)] mt-0.5">
+          {format_bytes(@stats.total_storage_bytes)}
+        </div>
       </div>
     </div>
 
@@ -177,7 +193,6 @@
           </div>
         <% end %>
       </div>
-
     <% end %>
   </div>
 </div>
