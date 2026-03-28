@@ -232,10 +232,12 @@ defmodule CritWeb.DashboardLiveTest do
     setup do
       Application.put_env(:crit, :selfhosted, true)
       Application.put_env(:crit, :admin_password, "secret123")
+
       on_exit(fn ->
         Application.delete_env(:crit, :selfhosted)
         Application.delete_env(:crit, :admin_password)
       end)
+
       :ok
     end
 
