@@ -3,16 +3,19 @@
 <div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.site_header />
 
-  <section class="max-w-[1100px] mx-auto mt-20 mb-8 px-10 w-full max-sm:px-5 max-sm:mt-12">
+  <section class="max-w-[1100px] mx-auto my-10 px-10 w-full max-sm:px-5 max-sm:mt-12">
     <div class="flex items-start gap-14 max-lg:flex-col max-lg:gap-10">
       <div class="flex-1 min-w-0">
-        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent)  mb-3">
+        <p class="font-mono text-xs tracking-widest max-sm:tracking-normal uppercase text-(--crit-accent) mb-3">
           Local-first · No login · Works with any agent
         </p>
         <h1 class="text-6xl font-bold leading-[1.05] tracking-tighter mb-6 max-sm:text-4xl">
-          Don't let your agent<br />build the wrong thing<span class="text-(--crit-accent) ">.</span>
-          <span class="crit-blink-cursor">
-            ▍
+          Don't let your agent<br />build the wrong
+          <span class="whitespace-nowrap">
+            thing<span class="text-(--crit-accent)">.</span>
+            <span class="crit-blink-cursor">
+              ▍
+            </span>
           </span>
         </h1>
         <p class="text-lg max-sm:text-base leading-relaxed text-(--crit-fg-secondary) max-w-[480px] mb-8">
@@ -20,24 +23,24 @@
           Leave inline comments in a browser-based UI, click Finish Review, and your agent
           picks up the feedback automatically. It iterates. You review the diff. Repeat.
         </p>
-        <div class="flex gap-3 flex-wrap">
+        <div class="flex gap-3 flex-wrap max-sm:grid max-sm:grid-cols-2">
           <a
             href={~p"/getting-started"}
-            class="inline-flex items-center px-6 py-2.5 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold no-underline hover:bg-(--crit-accent-hover) transition-colors"
+            class="inline-flex items-center justify-center px-6 py-2.5 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold no-underline hover:bg-(--crit-accent-hover) transition-colors"
           >
             Get started
           </a>
           <%= if @demo_token do %>
             <a
               href={~p"/r/#{@demo_token}"}
-              class="inline-flex items-center px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+              class="inline-flex items-center justify-center px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
             >
               See demo
             </a>
           <% end %>
           <a
             href="https://github.com/tomasz-tomczyk/crit"
-            class="inline-flex items-center gap-2 px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+            class="inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors max-sm:col-span-2"
           >
             <svg viewBox="0 0 16 16" class="size-3.5 fill-current opacity-70" aria-hidden="true">
               <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
