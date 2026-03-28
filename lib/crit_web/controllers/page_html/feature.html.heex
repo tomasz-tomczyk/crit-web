@@ -517,37 +517,3 @@
     </div>
   </section>
 </div>
-
-<script>
-  document.querySelectorAll(".copy-btn").forEach(btn => {
-    const defaultIcon = btn.querySelector(".icon-default");
-    const copiedIcon = btn.querySelector(".icon-copied");
-    btn.addEventListener("click", () => {
-      const raw = btn.previousElementSibling.textContent.trim();
-      const text = raw.replace(/^\$\s+/, "");
-      navigator.clipboard.writeText(text).then(() => {
-        btn.style.color = "var(--crit-green)";
-        defaultIcon.classList.add("hidden");
-        copiedIcon.classList.remove("hidden");
-        setTimeout(() => {
-          btn.style.color = "";
-          defaultIcon.classList.remove("hidden");
-          copiedIcon.classList.add("hidden");
-        }, 2000);
-      });
-    });
-  });
-
-  document.querySelectorAll(".install-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".install-tab").forEach(t => {
-        t.classList.remove("border-(--crit-accent)", "text-(--crit-accent)");
-        t.classList.add("border-transparent", "text-(--crit-fg-muted)");
-      });
-      document.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"));
-      tab.classList.add("border-(--crit-accent)", "text-(--crit-accent)");
-      tab.classList.remove("border-transparent", "text-(--crit-fg-muted)");
-      document.getElementById(tab.dataset.target).classList.remove("hidden");
-    });
-  });
-</script>

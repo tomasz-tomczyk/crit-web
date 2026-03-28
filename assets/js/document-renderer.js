@@ -1320,6 +1320,8 @@ function renderMultiFile(ctx) {
     }
   }
   updateHeaderHeight()
+  // Store reference so destroyed() can clean it up
+  ctx._resizeHandler = updateHeaderHeight
   window.addEventListener('resize', updateHeaderHeight)
 
   // Remove only the files container, preserving loading text on first render
@@ -3058,6 +3060,7 @@ function openReviewCommentForm(ctx) {
   const panel = ctx._commentsPanel
   if (panel && !panel.classList.contains('comments-panel-open')) {
     panel.classList.add('comments-panel-open')
+    syncCommentsPanelAria(true)
     updateTocPosition(ctx)
   }
   renderCommentsPanel(ctx)
@@ -3387,6 +3390,11 @@ function updateTocPosition(ctx) {
   toc.style.right = panelOpen ? (panel.offsetWidth + 16) + 'px' : ''
 }
 
+function syncCommentsPanelAria(isOpen) {
+  const btn = document.getElementById('comment-count')
+  if (btn) btn.setAttribute('aria-expanded', String(isOpen))
+}
+
 function toggleCommentsPanel(ctx) {
   const panel = ctx._commentsPanel
   if (!panel) return
@@ -3397,6 +3405,7 @@ function toggleCommentsPanel(ctx) {
     renderCommentsPanel(ctx)
     panel.classList.add('comments-panel-open')
   }
+  syncCommentsPanelAria(!isOpen)
   updateTocPosition(ctx)
 }
 
@@ -3603,6 +3612,7 @@ export const DocumentRenderer = {
     })
     commentsPanel.querySelector('.comments-panel-close').addEventListener('click', () => {
       commentsPanel.classList.remove('comments-panel-open')
+      syncCommentsPanelAria(false)
       updateTocPosition(ctx)
     })
     commentsPanel.querySelector('#showResolvedToggle').addEventListener('change', () => {
@@ -3900,6 +3910,9 @@ export const DocumentRenderer = {
     }
     if (this._keydownHandler) {
       document.removeEventListener("keydown", this._keydownHandler)
+    }
+    if (this._resizeHandler) {
+      window.removeEventListener("resize", this._resizeHandler)
     }
     if (this._shortcutsOverlay) {
       this._shortcutsOverlay.remove()
