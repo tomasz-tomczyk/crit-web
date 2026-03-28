@@ -7,6 +7,8 @@ defmodule CritWeb.ReviewLiveTest do
   alias Crit.Reviews
 
   setup do
+    Application.put_env(:crit, :selfhosted, false)
+    on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
     review = review_fixture()
     %{review: review}
   end
