@@ -8,7 +8,12 @@ defmodule Crit.ReviewCleanerTest do
 
   setup do
     Application.put_env(:crit, :review_cleaner_interval_ms, 10)
-    on_exit(fn -> Application.delete_env(:crit, :review_cleaner_interval_ms) end)
+
+    on_exit(fn ->
+      Application.delete_env(:crit, :review_cleaner_interval_ms)
+      Application.delete_env(:crit, :selfhosted)
+    end)
+
     :ok
   end
 
@@ -34,6 +39,17 @@ defmodule Crit.ReviewCleanerTest do
   test "does not delete active reviews" do
     review = review_fixture()
 
+    start_supervised!({ReviewCleaner, []})
+    Process.sleep(50)
+
+    assert Repo.get(Review, review.id)
+  end
+
+  test "does not delete reviews in self-hosted mode" do
+    review = review_fixture()
+    set_last_activity(review, 31)
+
+    Application.put_env(:crit, :selfhosted, true)
     start_supervised!({ReviewCleaner, []})
     Process.sleep(50)
 

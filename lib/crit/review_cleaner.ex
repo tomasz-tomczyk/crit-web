@@ -24,12 +24,16 @@ defmodule Crit.ReviewCleaner do
 
   @impl true
   def handle_info(:run, state) do
-    case Crit.Reviews.delete_inactive(@inactivity_days) do
-      {:ok, 0} ->
-        Logger.debug("[ReviewCleaner] No inactive reviews to delete")
+    if Application.get_env(:crit, :selfhosted) do
+      Logger.debug("[ReviewCleaner] Skipping cleanup in self-hosted mode")
+    else
+      case Crit.Reviews.delete_inactive(@inactivity_days) do
+        {:ok, 0} ->
+          Logger.debug("[ReviewCleaner] No inactive reviews to delete")
 
-      {:ok, count} ->
-        Logger.info("[ReviewCleaner] Deleted #{count} inactive review(s)")
+        {:ok, count} ->
+          Logger.info("[ReviewCleaner] Deleted #{count} inactive review(s)")
+      end
     end
 
     schedule_next_run()
