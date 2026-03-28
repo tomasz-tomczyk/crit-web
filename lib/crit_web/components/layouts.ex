@@ -225,6 +225,12 @@ defmodule CritWeb.Layouts do
                     {@current_user.name || @current_user.email}
                   </span>
                   <.link
+                    href={~p"/tokens"}
+                    class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"
+                  >
+                    API Tokens
+                  </.link>
+                  <.link
                     href={~p"/auth/logout"}
                     method="delete"
                     class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"

@@ -16,16 +16,14 @@
         <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
           {@stats.total_reviews}
         </div>
-        <div class="text-xs text-[var(--crit-green)] mt-1">
-          +{@stats.reviews_this_week} this week
-        </div>
+        <div class="text-xs text-green-400 mt-1">+{@stats.reviews_this_week} this week</div>
       </div>
       <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5">
         <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">Comments</div>
         <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
           {@stats.total_comments}
         </div>
-        <div class="text-xs text-[var(--crit-green)] mt-1">
+        <div class="text-xs text-green-400 mt-1">
           ~{Float.round(@stats.avg_comments_per_review, 1)} per review
         </div>
       </div>
@@ -46,7 +44,7 @@
           Reviews
         </div>
         <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">{@stats.total_reviews}</div>
-        <div class="text-xs text-[var(--crit-green)] mt-0.5">+{@stats.reviews_this_week} wk</div>
+        <div class="text-xs text-green-400 mt-0.5">+{@stats.reviews_this_week} wk</div>
       </div>
       <div class="w-px bg-[var(--crit-border)]"></div>
       <div class="flex-1 px-4 py-3">
@@ -56,7 +54,7 @@
         <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">
           {@stats.total_comments}
         </div>
-        <div class="text-xs text-[var(--crit-green)] mt-0.5">
+        <div class="text-xs text-green-400 mt-0.5">
           ~{Float.round(@stats.avg_comments_per_review, 1)}/review
         </div>
       </div>
@@ -98,7 +96,7 @@
         <%= if @oauth_configured do %>
           <a
             href={~p"/auth/login"}
-            class="inline-flex items-center gap-2 rounded-lg bg-[var(--crit-bg-tertiary)] px-4 py-2 text-sm font-medium text-[var(--crit-fg-primary)] hover:bg-[var(--crit-bg-secondary)]"
+            class="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
           >
             Sign in with OAuth
           </a>
