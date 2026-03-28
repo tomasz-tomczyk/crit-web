@@ -1,7 +1,7 @@
-defmodule CritWeb.DashboardLive do
+defmodule CritWeb.TokensLive do
   use CritWeb, :live_view
 
-  alias Crit.{Accounts, Reviews}
+  alias Crit.Accounts
 
   @impl true
   def mount(_params, session, socket) do
@@ -30,32 +30,23 @@ defmodule CritWeb.DashboardLive do
           true -> true
         end
 
-      stats = Reviews.dashboard_stats()
-      chart_data = Reviews.activity_chart(30)
-      max_count = chart_data |> Enum.map(&elem(&1, 1)) |> Enum.max(fn -> 1 end)
-
       socket =
         socket
-        |> assign(:stats, stats)
-        |> assign(:chart_data, chart_data)
-        |> assign(:max_count, max_count)
         |> assign(:password_required, password_required)
         |> assign(:authenticated, authenticated)
         |> assign(:current_user, current_user)
-        |> assign(:oauth_configured, oauth_configured)
-        |> assign(:page_title, "Dashboard - Crit")
+        |> assign(:page_title, "API Tokens - Crit")
         |> assign(:noindex, true)
 
       socket =
-        if authenticated do
-          reviews = Reviews.list_reviews_with_counts()
-
+        if authenticated && current_user do
           socket
-          |> stream(:reviews, reviews)
-          |> assign(:review_count, length(reviews))
+          |> assign(:tokens, Accounts.list_tokens(current_user.id))
+          |> assign(:new_token_plaintext, nil)
+          |> assign(:new_token_name, "")
         else
-          socket
-          |> assign(:review_count, 0)
+          {:ok, redirect(socket, to: ~p"/dashboard")}
+          |> elem(1)
         end
 
       {:ok, socket, layout: false}
@@ -65,33 +56,53 @@ defmodule CritWeb.DashboardLive do
   end
 
   @impl true
-  def handle_event("delete_review", %{"id" => id}, socket) do
-    %{oauth_configured: oauth_configured, current_user: current_user} = socket.assigns
+  def handle_event("create_token", %{"name" => name}, socket) do
+    case socket.assigns.current_user do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Not authenticated.")}
 
-    opts =
-      if oauth_configured && current_user do
-        [owner_id: current_user.id]
-      else
-        []
-      end
+      user ->
+        case Accounts.create_token(user, name) do
+          {:ok, {plaintext, _token}} ->
+            tokens = Accounts.list_tokens(user.id)
 
-    case Reviews.delete_review(id, opts) do
-      :ok ->
-        reviews = Reviews.list_reviews_with_counts()
-        stats = Reviews.dashboard_stats()
+            {:noreply,
+             socket
+             |> assign(:tokens, tokens)
+             |> assign(:new_token_plaintext, plaintext)
+             |> assign(:new_token_name, "")}
 
-        {:noreply,
-         socket
-         |> stream(:reviews, reviews, reset: true)
-         |> assign(:review_count, length(reviews))
-         |> assign(:stats, stats)}
-
-      {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to delete review.")}
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "Failed to create token.")}
+        end
     end
+  end
+
+  @impl true
+  def handle_event("revoke_token", %{"id" => id}, socket) do
+    case socket.assigns.current_user do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Not authenticated.")}
+
+      user ->
+        case Accounts.revoke_token(id, user.id) do
+          :ok ->
+            tokens = Accounts.list_tokens(user.id)
+
+            {:noreply,
+             socket
+             |> assign(:tokens, tokens)
+             |> assign(:new_token_plaintext, nil)}
+
+          {:error, _} ->
+            {:noreply, put_flash(socket, :error, "Failed to revoke token.")}
+        end
+    end
+  end
+
+  @impl true
+  def handle_event("dismiss_token", _params, socket) do
+    {:noreply, assign(socket, :new_token_plaintext, nil)}
   end
 
   @doc false
@@ -101,10 +112,6 @@ defmodule CritWeb.DashboardLive do
       "user_id" => Plug.Conn.get_session(conn, :user_id)
     }
   end
-
-  defp format_bytes(bytes) when bytes < 1024, do: "#{bytes} B"
-  defp format_bytes(bytes) when bytes < 1_048_576, do: "#{Float.round(bytes / 1024, 1)} KB"
-  defp format_bytes(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MB"
 
   defp time_ago(datetime) do
     diff = DateTime.diff(DateTime.utc_now(), datetime, :second)

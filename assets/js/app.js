@@ -66,6 +66,10 @@ document.getElementById("mobile-nav-toggle")?.addEventListener("click", () => {
   document.getElementById("mobile-nav")?.classList.toggle("hidden");
 });
 
+document.getElementById("dashboard-nav-toggle")?.addEventListener("click", () => {
+  document.getElementById("dashboard-nav")?.classList.toggle("hidden");
+});
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 

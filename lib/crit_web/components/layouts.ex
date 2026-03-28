@@ -221,19 +221,25 @@ defmodule CritWeb.Layouts do
                       class="h-8 w-8 rounded-full"
                     />
                   <% end %>
-                  <span class="text-sm text-[var(--crit-fg-primary)]">
+                  <span class="text-sm text-[var(--crit-fg-primary)] max-sm:hidden">
                     {@current_user.name || @current_user.email}
                   </span>
                   <.link
                     href={~p"/auth/logout"}
                     method="delete"
-                    class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)]"
+                    class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"
                   >
                     Sign out
                   </.link>
                 </div>
               <% else %>
-                <.form for={%{}} action={~p"/auth/logout"} method="post" id="logout-form">
+                <.form
+                  for={%{}}
+                  action={~p"/auth/logout"}
+                  method="post"
+                  id="logout-form"
+                  class="max-sm:hidden"
+                >
                   <button
                     type="submit"
                     class="text-sm text-red-400 hover:text-red-300 transition-colors cursor-pointer"
@@ -252,8 +258,54 @@ defmodule CritWeb.Layouts do
             <% end %>
           <% end %>
           <.theme_toggle />
+          <%= if @authenticated do %>
+            <button
+              id="dashboard-nav-toggle"
+              class="sm:hidden p-1 text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] cursor-pointer"
+              aria-label="Toggle menu"
+            >
+              <.icon name="hero-bars-3" class="size-5" />
+            </button>
+          <% end %>
         </nav>
       </div>
+      <%!-- Mobile nav dropdown --%>
+      <%= if @authenticated do %>
+        <div id="dashboard-nav" class="hidden sm:hidden border-t border-[var(--crit-border)]">
+          <div class="flex flex-col px-5 py-2">
+            <.link
+              href={~p"/dashboard"}
+              class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-2"
+            >
+              Dashboard
+            </.link>
+            <%= if @current_user do %>
+              <.link
+                href={~p"/tokens"}
+                class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-2"
+              >
+                API Tokens
+              </.link>
+              <.link
+                href={~p"/auth/logout"}
+                method="delete"
+                class="text-sm text-red-400 hover:text-red-300 no-underline py-2"
+              >
+                Sign out
+              </.link>
+            <% else %>
+              <.form for={%{}} action={~p"/auth/logout"} method="post" id="logout-form-mobile">
+                <button
+                  type="submit"
+                  class="text-sm text-red-400 hover:text-red-300 transition-colors cursor-pointer py-2"
+                >
+                  Sign out
+                </button>
+              </.form>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
     </header>
     """
   end

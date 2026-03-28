@@ -36,6 +36,7 @@ npm-debug.log
 /assets/node_modules/
 
 .worktrees/
+.mix_tasks
 .crit.json
 mise.local.toml
 .env
