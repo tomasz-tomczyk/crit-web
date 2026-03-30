@@ -2350,8 +2350,9 @@ function createCommentElement(comment, ctx) {
 
   if (isOwn) {
     const resolveBtn = document.createElement('button')
+    resolveBtn.className = 'resolve-btn'
     resolveBtn.title = 'Resolve'
-    resolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    resolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Resolve</span>'
     resolveBtn.addEventListener('click', function() {
       ctx.pushEvent("resolve_comment", { id: comment.id, resolved: true })
     })
@@ -2909,13 +2910,10 @@ function createResolvedElement(comment, ctx) {
   const actions = document.createElement('div')
   actions.className = 'comment-actions'
 
-  const badge = document.createElement('span')
-  badge.className = 'resolved-badge'
-  badge.textContent = 'Resolved'
-
   const unresolveBtn = document.createElement('button')
+  unresolveBtn.className = 'resolve-btn resolve-btn--active'
   unresolveBtn.title = 'Unresolve'
-  unresolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>'
+  unresolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
   unresolveBtn.addEventListener('click', function() {
     ctx.pushEvent("resolve_comment", { id: comment.id, resolved: false })
   })
@@ -2929,7 +2927,6 @@ function createResolvedElement(comment, ctx) {
     ctx.pushEvent("delete_comment", { id: comment.id })
   })
 
-  actions.appendChild(badge)
   actions.appendChild(unresolveBtn)
   if (isOwn) actions.appendChild(deleteBtn)
 
@@ -3289,19 +3286,12 @@ function renderPanelCard(ctx, comment, filePath) {
     const actions = document.createElement('div')
     actions.className = 'comment-actions'
 
-    // Resolved badge + action icons (same as main body resolved card)
-    if (isResolved) {
-      const badge = document.createElement('span')
-      badge.className = 'resolved-badge'
-      badge.textContent = 'Resolved'
-      actions.appendChild(badge)
-    }
-
     const resolveBtn = document.createElement('button')
+    resolveBtn.className = isResolved ? 'resolve-btn resolve-btn--active' : 'resolve-btn'
     resolveBtn.title = isResolved ? 'Unresolve' : 'Resolve'
     resolveBtn.innerHTML = isResolved
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Resolve</span>'
     resolveBtn.addEventListener('click', function(e) {
       e.stopPropagation()
       ctx.pushEvent('resolve_comment', { id: comment.id, resolved: !isResolved })
