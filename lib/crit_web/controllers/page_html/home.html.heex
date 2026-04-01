@@ -594,8 +594,57 @@
       </div>
     </div>
   </section>
-  
-<!-- ===== Self-Hosting ===== -->
+
+  <%!-- ===== Testimonials ===== --%>
+  <section class="w-full mt-14 mb-8 py-12 bg-(--crit-bg-secondary)">
+    <div class="max-w-[1100px] mx-auto px-10 max-sm:px-5">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-10">
+        What engineers are saying
+      </p>
+      <div class="grid grid-cols-2 gap-12 max-sm:grid-cols-1 max-sm:gap-10" id="testimonials-grid">
+        <div :for={testimonial <- @testimonials} class="feature-card relative">
+          <span
+            class="absolute -top-4 -left-3 text-[8rem] leading-none text-(--crit-accent) opacity-10 select-none pointer-events-none"
+            aria-hidden="true"
+          >
+            &ldquo;
+          </span>
+          <p class="relative text-xl font-semibold leading-snug text-(--crit-fg-primary) mb-5">
+            {testimonial.highlight}
+          </p>
+          <div class="relative space-y-3 mb-5">
+            <p
+              :for={paragraph <- testimonial.body}
+              class="text-sm leading-relaxed text-(--crit-fg-muted)"
+            >
+              {paragraph}
+            </p>
+          </div>
+          <p class="relative font-mono text-xs text-(--crit-fg-muted)">
+            &mdash; {testimonial.author}, {testimonial.role}
+            <a
+              href={"https://x.com/#{testimonial.handle}"}
+              class="text-(--crit-fg-dimmed) hover:text-(--crit-accent) transition-colors ml-1"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @{testimonial.handle}
+            </a>
+          </p>
+        </div>
+      </div>
+      <p class="mt-10 text-xs text-(--crit-fg-dimmed)">
+        Using crit? I'd love to hear from you.
+        <a
+          href="mailto:me@tomasztomczyk.com?subject=Crit%20testimonial"
+          class="underline underline-offset-2 hover:text-(--crit-fg-muted) transition-colors"
+        >
+          me@tomasztomczyk.com
+        </a>
+      </p>
+    </div>
+  </section>
+  <!-- ===== Self-Hosting ===== -->
   <section
     class="max-w-[1100px] mx-auto mt-2 mb-16 px-10 max-sm:px-5 w-full"
     id="self-hosting-card"

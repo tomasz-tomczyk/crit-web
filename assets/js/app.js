@@ -156,6 +156,22 @@ if (featuresGrid) {
   observer.observe(featuresGrid)
 }
 
+// Home page: testimonials scroll-triggered reveal
+const testimonialsGrid = document.getElementById("testimonials-grid")
+if (testimonialsGrid) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        testimonialsGrid.querySelectorAll(".feature-card").forEach((card, i) => {
+          setTimeout(() => card.classList.add("revealed"), i * 150)
+        })
+        observer.unobserve(entry.target)
+      }
+    })
+  }, { threshold: 0.1 })
+  observer.observe(testimonialsGrid)
+}
+
 // Integrations page: tab switching
 document.querySelectorAll(".integration-tab").forEach(tab => {
   tab.addEventListener("click", () => {
