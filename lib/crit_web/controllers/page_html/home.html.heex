@@ -603,10 +603,10 @@
     <div class="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
       <div
         :for={testimonial <- @testimonials}
-        class="rounded-lg border border-(--crit-border) bg-(--crit-bg-secondary) p-6"
+        class="rounded-lg border border-(--crit-border) border-l-2 border-l-(--crit-accent) bg-(--crit-bg-secondary) p-6 hover:border-(--crit-fg-dimmed) hover:border-l-(--crit-accent) transition-[border-color] duration-150"
       >
         <p class="text-sm leading-relaxed text-(--crit-fg-primary) mb-4">
-          "{testimonial.body}"
+          &ldquo;{testimonial.body}&rdquo;
         </p>
         <p class="font-mono text-xs text-(--crit-fg-muted)">
           {testimonial.author}
