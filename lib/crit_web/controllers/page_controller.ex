@@ -146,6 +146,7 @@ defmodule CritWeb.PageController do
         "Crit saves me so much time reviewing Claude Code plans - instead of fumbling with line numbers or accidental sends, I get a clean local UI to batch my feedback and iterate, all without leaving my workflow."
       ],
       author: "Omer",
+      role: "Principal Engineer",
       handle: "omervk"
     },
     %{
@@ -156,6 +157,7 @@ defmodule CritWeb.PageController do
         "On long, complex plans I used to ask claude things like \"on point 3., we should do X, drop point 7., ...\". Using comments makes it more straightforward and easy to review later."
       ],
       author: "Vincent",
+      role: "Senior Software Engineer",
       handle: "vineus"
     }
   ]
