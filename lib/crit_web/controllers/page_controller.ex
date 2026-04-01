@@ -141,6 +141,7 @@ defmodule CritWeb.PageController do
 
   @testimonials [
     %{
+      highlight: "A clean local UI to batch my feedback and iterate.",
       body: [
         "Crit saves me so much time reviewing Claude Code plans - instead of fumbling with line numbers or accidental sends, I get a clean local UI to batch my feedback and iterate, all without leaving my workflow."
       ],
@@ -148,6 +149,7 @@ defmodule CritWeb.PageController do
       handle: "omervk"
     },
     %{
+      highlight: "It's like a pull request review but for your plan.",
       body: [
         "I've been using crit to review plans for some times. I use claude code in the command line without an IDE, so being to quickly check the plan with rendering is super nice.",
         "The system allowing you to add comments is the killer feature: it's like a pull request review but for your plan.",

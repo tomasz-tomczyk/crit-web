@@ -601,23 +601,26 @@
       <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-10">
         What engineers are saying
       </p>
-      <div class="grid grid-cols-2 gap-12 max-sm:grid-cols-1 max-sm:gap-10">
-        <div :for={testimonial <- @testimonials}>
+      <div class="grid grid-cols-2 gap-12 max-sm:grid-cols-1 max-sm:gap-10" id="testimonials-grid">
+        <div :for={testimonial <- @testimonials} class="feature-card relative">
           <span
-            class="block text-4xl leading-none text-(--crit-accent) select-none mb-3"
+            class="absolute -top-4 -left-3 text-[8rem] leading-none text-(--crit-accent) opacity-10 select-none pointer-events-none"
             aria-hidden="true"
           >
             &ldquo;
           </span>
-          <div class="space-y-3 mb-4">
+          <p class="relative text-xl font-semibold leading-snug text-(--crit-fg-primary) mb-5">
+            {testimonial.highlight}
+          </p>
+          <div class="relative space-y-3 mb-5">
             <p
               :for={paragraph <- testimonial.body}
-              class="text-base leading-relaxed text-(--crit-fg-secondary)"
+              class="text-sm leading-relaxed text-(--crit-fg-muted)"
             >
               {paragraph}
             </p>
           </div>
-          <p class="font-mono text-xs text-(--crit-fg-muted)">
+          <p class="relative font-mono text-xs text-(--crit-fg-muted)">
             &mdash; {testimonial.author}
             <a
               href={"https://x.com/#{testimonial.handle}"}
