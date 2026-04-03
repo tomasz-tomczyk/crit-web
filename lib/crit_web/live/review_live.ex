@@ -90,6 +90,11 @@ defmodule CritWeb.ReviewLive do
          |> assign(:local_prompt_text, local_prompt_text)
          |> assign(:full_export_prompt_text, full_export_prompt_text)
          |> assign(:prompt_mode, "local")
+         |> assign(
+           :has_previous_round,
+           review.review_round > 1 &&
+             Reviews.has_round_snapshots?(review.id, review.review_round - 1)
+         )
          |> assign(:show_round_diff, false)
          |> assign(:prev_round_snapshots, %{})
          |> assign(:diff_mode, "split")

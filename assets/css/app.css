@@ -279,6 +279,7 @@
 
 /* ===== Crit Review Page Layout ===== */
 :root { --crit-header-height: 53px; }
+@media (max-width: 600px) { :root { --crit-header-height: 90px; } }
 
 .crit-page {
   min-height: 100vh;
@@ -303,14 +304,15 @@
   border-bottom: 1px solid var(--crit-border);
   backdrop-filter: blur(8px);
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  padding: 12px 24px;
+  gap: 10px;
 }
 
 .crit-header-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
+  gap: 12px;
 }
 
 .crit-header-left {
@@ -346,7 +348,24 @@
   color: var(--crit-accent);
 }
 
-.crit-header-right {
+.crit-header-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crit-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.crit-header-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.crit-header-actions-right {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1374,9 +1393,6 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 
 /* Comments panel */
 .comments-panel {
-  position: fixed;
-  top: var(--crit-header-height, 53px);
-  right: 0;
   width: 480px;
   height: calc(100vh - var(--crit-header-height, 53px));
   background: var(--crit-bg-secondary);
@@ -1395,10 +1411,11 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--crit-border);
   font-weight: 600;
   font-size: 11px;
+  line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--crit-fg-muted);
@@ -1416,11 +1433,12 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   color: var(--crit-fg-muted);
   cursor: pointer;
   font-size: 11px;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 4px;
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
+  line-height: 1;
 }
 .comments-panel-add-btn:hover {
   color: var(--crit-fg-primary);
@@ -1432,8 +1450,8 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   border: none;
   color: var(--crit-fg-muted);
   cursor: pointer;
-  font-size: 14px;
-  padding: 2px 6px;
+  font-size: 11px;
+  padding: 2px 4px;
   border-radius: 4px;
   line-height: 1;
 }
@@ -1514,7 +1532,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 
 /* Panel comment blocks — reuse inline .comment-card inside panel */
 .panel-comment-block {
-  padding: 0 12px;
+  padding: 0 6px;
   margin: 0;
 }
 .panel-comment-block .comment-header-left {
@@ -1522,7 +1540,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   flex-wrap: wrap;
 }
 .comments-panel-body > .comment-form-wrapper {
-  padding: 0 12px;
+  padding: 0 6px;
 }
 
 /* File-level comments (between file header and file body) */
@@ -2026,23 +2044,33 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   .file-header { padding: 8px 12px; }
 }
 @media (max-width: 600px) {
-  .comments-panel {
-    position: fixed;
-    top: var(--crit-header-height, 53px);
-    right: 0;
-    width: 100%;
-    height: calc(100vh - var(--crit-header-height, 53px));
-  }
+  .comments-panel { width: 100%; }
   .line-content.code-line { white-space: pre-wrap; overflow-wrap: anywhere; }
   .crit-toc, #crit-toc-toggle { display: none !important; }
   .tree-panel { display: none !important; }
 
-  /* Single-row header on mobile: hide non-essential items */
-  .crit-header-bar { padding: 10px 14px; }
+  /* Two-row header on mobile */
+  .crit-header {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .crit-header-bar {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .crit-header-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+    border-top: 1px solid var(--crit-border);
+    padding-top: 8px;
+  }
   .crit-header-filename { display: none; }
   #shortcuts-btn { display: none !important; }
-  .crit-name-pill { display: none; }
   .crit-viewed-count { display: none !important; }
+
+  .comment-block { padding: 0 6px; }
 
   /* File headers must be edge-to-edge so sticky has no gaps for content to bleed through */
   .files-container { padding-left: 0; padding-right: 0; }

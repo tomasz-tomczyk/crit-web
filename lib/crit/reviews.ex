@@ -363,6 +363,14 @@ defmodule Crit.Reviews do
     |> Repo.insert()
   end
 
+  @doc "Check whether any round snapshots exist for a given review and round."
+  def has_round_snapshots?(review_id, round_number) do
+    Repo.exists?(
+      from s in ReviewRoundSnapshot,
+        where: s.review_id == ^review_id and s.round_number == ^round_number
+    )
+  end
+
   @doc "Return a %{file_path => content} map for all snapshots at a given round (for diff display)."
   def get_round_snapshots(review_id, round_number) do
     Repo.all(

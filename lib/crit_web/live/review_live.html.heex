@@ -25,35 +25,7 @@
           <% end %>
         <% end %>
       </div>
-      <div class="crit-header-right">
-        <%= if @review.review_round > 1 do %>
-          <div class="crit-round-diff-toggle">
-            <button
-              phx-click="toggle_round_diff"
-              class={["crit-round-diff-btn", @show_round_diff && "crit-round-diff-btn--active"]}
-            >
-              Toggle diff
-            </button>
-            <%= if @show_round_diff do %>
-              <div class="crit-diff-mode-toggle">
-                <button
-                  phx-click="set_diff_mode"
-                  phx-value-mode="split"
-                  class={["crit-toggle-btn", @diff_mode == "split" && "crit-toggle-btn--active"]}
-                >
-                  Split
-                </button>
-                <button
-                  phx-click="set_diff_mode"
-                  phx-value-mode="unified"
-                  class={["crit-toggle-btn", @diff_mode == "unified" && "crit-toggle-btn--active"]}
-                >
-                  Unified
-                </button>
-              </div>
-            <% end %>
-          </div>
-        <% end %>
+      <div class="crit-header-identity">
         <%= if @current_user do %>
           <div class="crit-user-pill">
             <%= if @current_user.avatar_url do %>
@@ -117,6 +89,40 @@
             </a>
           <% end %>
         <% end %>
+      </div>
+    </div>
+    <div class="crit-header-actions">
+      <div class="crit-header-actions-left">
+        <%= if @has_previous_round do %>
+          <div class="crit-round-diff-toggle">
+            <button
+              phx-click="toggle_round_diff"
+              class={["crit-round-diff-btn", @show_round_diff && "crit-round-diff-btn--active"]}
+            >
+              Toggle diff
+            </button>
+            <%= if @show_round_diff do %>
+              <div class="crit-diff-mode-toggle">
+                <button
+                  phx-click="set_diff_mode"
+                  phx-value-mode="split"
+                  class={["crit-toggle-btn", @diff_mode == "split" && "crit-toggle-btn--active"]}
+                >
+                  Split
+                </button>
+                <button
+                  phx-click="set_diff_mode"
+                  phx-value-mode="unified"
+                  class={["crit-toggle-btn", @diff_mode == "unified" && "crit-toggle-btn--active"]}
+                >
+                  Unified
+                </button>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      <div class="crit-header-actions-right">
         <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>
         <div class="comment-nav-group" id="comment-nav-group">
           <button
