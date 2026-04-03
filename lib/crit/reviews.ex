@@ -2,7 +2,7 @@ defmodule Crit.Reviews do
   @moduledoc "Context for reviews and comments."
 
   import Ecto.Query
-  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot}
+  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Statistics}
 
   @max_total_size 10_485_760
 
@@ -79,6 +79,10 @@ defmodule Crit.Reviews do
       if file_path, do: Ecto.Changeset.put_change(cs, :file_path, file_path), else: cs
     end)
     |> Repo.insert()
+    |> tap(fn
+      {:ok, _} -> Statistics.increment_comment()
+      _ -> :ok
+    end)
   end
 
   @doc "Update a comment's body if the identity matches the author."
@@ -162,8 +166,26 @@ defmodule Crit.Reviews do
       end)
       |> Repo.transaction()
       |> case do
-        {:ok, %{review: review}} -> {:ok, review}
-        {:error, _step, reason, _changes} -> {:error, reason}
+        {:ok, %{review: review}} ->
+          comment_count = length(comments_attrs) + length(review_comments_attrs)
+          total_bytes = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
+
+          total_lines =
+            files_attrs
+            |> Enum.map(&((&1["content"] || "") |> String.split("\n") |> length()))
+            |> Enum.sum()
+
+          Statistics.increment_review(
+            length(files_attrs),
+            comment_count,
+            total_bytes,
+            total_lines
+          )
+
+          {:ok, review}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
       end
     end
   end
@@ -197,8 +219,19 @@ defmodule Crit.Reviews do
         |> Ecto.Multi.update(:review, Ecto.Changeset.change(review, review_round: new_round))
         |> Repo.transaction()
         |> case do
-          {:ok, %{review: updated}} -> {:ok, :updated, updated}
-          {:error, _step, reason, _changes} -> {:error, reason}
+          {:ok, %{review: updated}} ->
+            total_bytes = files |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
+
+            total_lines =
+              files
+              |> Enum.map(&((&1["content"] || "") |> String.split("\n") |> length()))
+              |> Enum.sum()
+
+            Statistics.increment_content(length(files), total_bytes, total_lines)
+            {:ok, :updated, updated}
+
+          {:error, _step, reason, _changes} ->
+            {:error, reason}
         end
       else
         Ecto.Multi.new()
@@ -406,56 +439,6 @@ defmodule Crit.Reviews do
     end
   end
 
-  @doc "Returns aggregate stats for the self-hosted dashboard."
-  def dashboard_stats do
-    total_reviews = Repo.aggregate(Review, :count)
-    total_comments = Repo.aggregate(Comment, :count)
-    total_files = Repo.aggregate(ReviewRoundSnapshot, :count)
-
-    week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
-
-    reviews_this_week =
-      Repo.aggregate(from(r in Review, where: r.inserted_at >= ^week_ago), :count)
-
-    avg_comments_per_review =
-      if total_reviews > 0, do: total_comments * 1.0 / total_reviews, else: 0.0
-
-    total_storage_bytes =
-      Repo.one(
-        from(rf in ReviewRoundSnapshot,
-          select: fragment("coalesce(sum(octet_length(?)), 0)", rf.content)
-        )
-      ) || 0
-
-    %{
-      total_reviews: total_reviews,
-      total_comments: total_comments,
-      total_files: total_files,
-      reviews_this_week: reviews_this_week,
-      avg_comments_per_review: avg_comments_per_review,
-      total_storage_bytes: total_storage_bytes
-    }
-  end
-
-  @doc "Returns a list of {date, count} tuples for the last N days (UTC)."
-  def activity_chart(days \\ 30) do
-    start_date = Date.utc_today() |> Date.add(-(days - 1))
-
-    counts_by_date =
-      from(r in Review,
-        where: r.inserted_at >= ^DateTime.new!(start_date, ~T[00:00:00], "Etc/UTC"),
-        group_by: fragment("?::date", r.inserted_at),
-        select: {fragment("?::date", r.inserted_at), count(r.id)}
-      )
-      |> Repo.all()
-      |> Map.new()
-
-    Enum.map(0..(days - 1), fn offset ->
-      date = Date.add(start_date, offset)
-      {date, Map.get(counts_by_date, date, 0)}
-    end)
-  end
-
   @doc """
   Returns all reviews as plain maps with comment/file counts and first file path.
   Sorted by last_activity_at descending. Does not include delete_token.
@@ -570,6 +553,10 @@ defmodule Crit.Reviews do
         |> Ecto.Changeset.put_change(:author_identity, identity)
         |> Ecto.Changeset.put_change(:author_display_name, display_name)
         |> Repo.insert()
+        |> tap(fn
+          {:ok, _} -> Statistics.increment_comment()
+          _ -> :ok
+        end)
     end
   end
 

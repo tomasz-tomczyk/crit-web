@@ -20,4 +20,13 @@ defmodule CritWeb.PageControllerTest do
     conn = get(conn, ~p"/self-hosting")
     assert html_response(conn, 200) =~ "Self-Hosting"
   end
+
+  test "GET / shows platform stats", %{conn: conn} do
+    conn = get(conn, ~p"/")
+    html = html_response(conn, 200)
+    assert html =~ "Shared to"
+    assert html =~ "reviews"
+    assert html =~ "comments"
+    assert html =~ "lines"
+  end
 end

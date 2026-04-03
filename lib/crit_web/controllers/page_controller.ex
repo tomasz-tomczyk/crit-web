@@ -169,6 +169,7 @@ defmodule CritWeb.PageController do
       render(conn, :home,
         demo_token: Application.get_env(:crit, :demo_review_token),
         testimonials: @testimonials,
+        stats: Crit.Statistics.totals(),
         canonical_url: canonical_url(conn),
         page_title: "Crit - Inline code review for AI coding agents",
         meta_description:

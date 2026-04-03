@@ -28,6 +28,23 @@ defmodule CritWeb.PageHTML do
     |> Phoenix.HTML.raw()
   end
 
+  def format_stat(n) when is_integer(n) do
+    n
+    |> Integer.to_string()
+    |> String.reverse()
+    |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
+    |> String.reverse()
+  end
+
+  def format_bytes(bytes) when is_integer(bytes) do
+    cond do
+      bytes >= 1_000_000_000 -> "#{Float.round(bytes / 1_000_000_000, 1)} GB"
+      bytes >= 1_000_000 -> "#{Float.round(bytes / 1_000_000, 1)} MB"
+      bytes >= 1_000 -> "#{Float.round(bytes / 1_000, 0) |> trunc()} KB"
+      true -> "#{bytes} B"
+    end
+  end
+
   def install_widget(assigns) do
     ~H"""
     <div class="flex gap-0 border-b border-[var(--crit-border)]">

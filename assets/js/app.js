@@ -204,6 +204,54 @@ document.querySelectorAll(".copy-snippet-btn").forEach(btn => {
   })
 })
 
+// Home page: platform stats count-up + staggered reveal
+const platformStats = document.getElementById("platform-stats")
+if (platformStats) {
+  const formatWithCommas = n => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  const formatBytes = bytes => {
+    if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`
+    if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`
+    if (bytes >= 1e3) return `${Math.round(bytes / 1e3)} KB`
+    return `${bytes} B`
+  }
+
+  const countUp = (el, target, formatter, duration = 1200) => {
+    const start = performance.now()
+    const step = now => {
+      const t = Math.min((now - start) / duration, 1)
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3)
+      el.textContent = formatter(Math.round(eased * target))
+      if (t < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }
+
+  const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Staggered reveal
+        platformStats.querySelectorAll(".stat-item, .stat-divider").forEach((el, i) => {
+          setTimeout(() => el.classList.add("revealed"), i * 100)
+        })
+
+        // Count-up after first item reveals
+        setTimeout(() => {
+          platformStats.querySelectorAll("[data-count-to]").forEach(el => {
+            countUp(el, parseInt(el.dataset.countTo, 10), formatWithCommas)
+          })
+          platformStats.querySelectorAll("[data-count-bytes]").forEach(el => {
+            countUp(el, parseInt(el.dataset.countBytes, 10), formatBytes)
+          })
+        }, 150)
+
+        statsObserver.unobserve(entry.target)
+      }
+    })
+  }, { threshold: 0.2 })
+  statsObserver.observe(platformStats)
+}
+
 // Home page: install tab switcher
 document.querySelectorAll(".install-tab").forEach(tab => {
   tab.addEventListener("click", () => {

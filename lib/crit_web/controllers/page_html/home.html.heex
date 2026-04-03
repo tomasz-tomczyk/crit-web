@@ -642,11 +642,61 @@
           me@tomasztomczyk.com
         </a>
       </p>
+      <%!-- ===== Platform Stats ===== --%>
+      <div
+        class="mt-12 pt-10 border-t border-(--crit-border)"
+        id="platform-stats"
+      >
+        <p class="font-mono text-xs text-(--crit-fg-dimmed) text-center mb-6">
+          Shared to {CritWeb.Endpoint.host()}
+        </p>
+        <div class="flex items-center justify-center gap-12 max-sm:gap-6 max-sm:flex-col">
+          <div class="stat-item text-center">
+            <div
+              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
+              data-count-to={@stats.reviews_created}
+            >
+              {format_stat(@stats.reviews_created)}
+            </div>
+            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">reviews</div>
+          </div>
+          <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
+          <div class="stat-item text-center">
+            <div
+              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
+              data-count-to={@stats.comments_created}
+            >
+              {format_stat(@stats.comments_created)}
+            </div>
+            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">comments</div>
+          </div>
+          <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
+          <div class="stat-item text-center">
+            <div
+              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
+              data-count-to={@stats.lines_reviewed}
+            >
+              {format_stat(@stats.lines_reviewed)}
+            </div>
+            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">lines</div>
+          </div>
+          <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
+          <div class="stat-item text-center">
+            <div
+              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
+              data-count-bytes={@stats.bytes_stored}
+            >
+              {format_bytes(@stats.bytes_stored)}
+            </div>
+            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">data</div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
   <!-- ===== Self-Hosting ===== -->
   <section
-    class="max-w-[1100px] mx-auto mt-2 mb-16 px-10 max-sm:px-5 w-full"
+    class="max-w-[1100px] mx-auto mt-10 mb-16 px-10 max-sm:px-5 w-full"
     id="self-hosting-card"
   >
     <a

@@ -1,7 +1,7 @@
 defmodule CritWeb.DashboardLive do
   use CritWeb, :live_view
 
-  alias Crit.Reviews
+  alias Crit.{Reviews, Statistics}
 
   import CritWeb.Helpers, only: [time_ago: 1]
 
@@ -11,8 +11,8 @@ defmodule CritWeb.DashboardLive do
   def mount(_params, _session, socket) do
     %{authenticated: authenticated} = socket.assigns
 
-    stats = Reviews.dashboard_stats()
-    chart_data = Reviews.activity_chart(30)
+    stats = Statistics.dashboard_stats()
+    chart_data = Statistics.activity_chart(30)
     max_count = chart_data |> Enum.map(&elem(&1, 1)) |> Enum.max(fn -> 1 end)
 
     socket =
@@ -52,7 +52,7 @@ defmodule CritWeb.DashboardLive do
     case Reviews.delete_review(id, opts) do
       :ok ->
         reviews = Reviews.list_reviews_with_counts()
-        stats = Reviews.dashboard_stats()
+        stats = Statistics.dashboard_stats()
 
         {:noreply,
          socket
