@@ -12,7 +12,7 @@
 
 if Mix.env() in [:dev, :test] do
   import Ecto.Query
-  alias Crit.{Repo, Review, Comment}
+  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot}
 
   seed_token = "seedreview12345678901"
 
@@ -79,12 +79,20 @@ if Mix.env() in [:dev, :test] do
       Repo.insert!(%Review{
         token: seed_token,
         delete_token: Nanoid.generate(21),
-        content: sample_md,
-        filename: "auth-plan.md",
+        review_round: 0,
         last_activity_at: now,
         inserted_at: now,
         updated_at: now
       })
+
+    Repo.insert!(%ReviewRoundSnapshot{
+      review_id: review.id,
+      round_number: 0,
+      file_path: "auth-plan.md",
+      content: sample_md,
+      position: 0,
+      inserted_at: now
+    })
 
     Repo.insert!(%Comment{
       id: "a0000000-0000-0000-0000-000000000001",
@@ -94,6 +102,7 @@ if Mix.env() in [:dev, :test] do
       body:
         "Should we also consider clock skew tolerance? JWT validators usually allow ±30s drift.",
       author_identity: "imported",
+      file_path: "auth-plan.md",
       inserted_at: now,
       updated_at: now
     })
@@ -106,6 +115,7 @@ if Mix.env() in [:dev, :test] do
       body:
         "Good list. Also consider: logout should invalidate the access token if we add a token denylist (not needed for MVP with short expiry).",
       author_identity: "imported",
+      file_path: "auth-plan.md",
       inserted_at: now,
       updated_at: now
     })

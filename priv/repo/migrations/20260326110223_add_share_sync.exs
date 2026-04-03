@@ -22,8 +22,9 @@ defmodule Crit.Repo.Migrations.AddShareSync do
 
     execute """
     INSERT INTO review_round_snapshots (id, review_id, round_number, file_path, content, position, inserted_at)
-    SELECT gen_random_uuid(), review_id, 1, file_path, content, position, inserted_at
-    FROM review_files
+    SELECT gen_random_uuid(), rf.review_id, r.review_round, rf.file_path, rf.content, rf.position, rf.inserted_at
+    FROM review_files rf
+    JOIN reviews r ON r.id = rf.review_id
     """
 
     drop table(:review_files)
