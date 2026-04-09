@@ -1,6 +1,8 @@
 defmodule CritWeb.OAuthControllerTest do
   use CritWeb.ConnCase, async: false
 
+  alias Crit.DeviceCodes
+
   describe "DELETE /auth/logout" do
     test "clears user_id from session and redirects to /" do
       conn =
@@ -22,7 +24,7 @@ defmodule CritWeb.OAuthControllerTest do
   end
 
   describe "GET /auth/login/callback (happy path)" do
-    test "logs in user, sets session user_id, and redirects to dashboard" do
+    setup do
       original = Application.get_env(:crit, :oauth_provider)
 
       Application.put_env(:crit, :oauth_provider,
@@ -37,6 +39,10 @@ defmodule CritWeb.OAuthControllerTest do
           else: Application.delete_env(:crit, :oauth_provider)
       end)
 
+      :ok
+    end
+
+    test "logs in user, sets session user_id, and redirects to dashboard" do
       conn =
         build_conn()
         |> init_test_session(%{oauth_session_params: %{}})
@@ -44,6 +50,22 @@ defmodule CritWeb.OAuthControllerTest do
 
       assert redirected_to(conn) == ~p"/dashboard"
       assert get_session(conn, "user_id") != nil
+    end
+
+    test "redirects to /device/authorize when device_code_id is in session" do
+      {:ok, %{record: device_code}} = DeviceCodes.create_device_code()
+
+      conn =
+        build_conn()
+        |> init_test_session(%{
+          oauth_session_params: %{},
+          device_code_id: device_code.id
+        })
+        |> get(~p"/auth/login/callback", %{"code" => "test_code"})
+
+      assert redirected_to(conn) == ~p"/device/authorize"
+      assert get_session(conn, "user_id") != nil
+      assert get_session(conn, :device_code_id) == device_code.id
     end
   end
 

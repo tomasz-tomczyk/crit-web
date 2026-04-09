@@ -118,6 +118,20 @@ defmodule Crit.AccountsTest do
     end
   end
 
+  describe "revoke_token_by_plaintext/1" do
+    test "deletes the token and returns :ok" do
+      {:ok, user} = Accounts.find_or_create_from_oauth("github", @oauth_params)
+      {:ok, {plaintext, _token}} = Accounts.create_token(user, "To revoke")
+
+      assert :ok = Accounts.revoke_token_by_plaintext(plaintext)
+      assert {:error, :invalid} = Accounts.verify_token(plaintext)
+    end
+
+    test "returns :ok when token does not exist (idempotent)" do
+      assert :ok = Accounts.revoke_token_by_plaintext("crit_nonexistent_token")
+    end
+  end
+
   describe "list_tokens/1" do
     test "returns tokens for the user ordered by inserted_at desc" do
       {:ok, user} = Accounts.find_or_create_from_oauth("github", @oauth_params)

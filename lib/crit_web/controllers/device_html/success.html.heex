@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Signed in - Crit</title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script>
+      // Theme detection (mirrors root layout pattern)
+      (() => {
+        const t = localStorage.getItem("phx:theme");
+        if (t && t !== "system") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--crit-bg-primary)] text-[var(--crit-fg-primary)] min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-[360px] px-6">
+      <%!-- Logo mark --%>
+      <div class="text-center mb-8">
+        <a
+          href="/"
+          class="inline-block font-mono text-2xl font-bold text-[var(--crit-accent)] tracking-tight"
+        >
+          Crit
+        </a>
+      </div>
+
+      <%!-- Card --%>
+      <div class="border border-[var(--crit-border)] rounded-lg bg-[var(--crit-bg-secondary)] p-6 text-center">
+        <%!-- Checkmark --%>
+        <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-[var(--crit-green)]/10 border border-[var(--crit-green)]/20 flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-[var(--crit-green)]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+
+        <h1 class="text-lg font-semibold text-[var(--crit-fg-primary)]">
+          You're signed in
+        </h1>
+        <p class="text-sm text-[var(--crit-fg-muted)] mt-2 leading-relaxed">
+          You can close this tab and return to your terminal.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

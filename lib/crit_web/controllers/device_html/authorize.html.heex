@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Authorize Device - Crit</title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script>
+      // Theme detection (mirrors root layout pattern)
+      (() => {
+        const t = localStorage.getItem("phx:theme");
+        if (t && t !== "system") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--crit-bg-primary)] text-[var(--crit-fg-primary)] min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-[360px] px-6">
+      <%!-- Logo mark --%>
+      <div class="text-center mb-8">
+        <a
+          href="/"
+          class="inline-block font-mono text-2xl font-bold text-[var(--crit-accent)] tracking-tight"
+        >
+          Crit
+        </a>
+      </div>
+
+      <%!-- User identity card --%>
+      <div class="border border-[var(--crit-border)] rounded-lg bg-[var(--crit-bg-secondary)] p-4 mb-4 flex items-center gap-3">
+        <%= if @current_user.avatar_url do %>
+          <img
+            src={@current_user.avatar_url}
+            alt=""
+            class="w-10 h-10 rounded-full shrink-0"
+          />
+        <% else %>
+          <div class="w-10 h-10 rounded-full shrink-0 bg-[var(--crit-accent)]/10 border border-[var(--crit-accent)]/20 flex items-center justify-center text-sm font-semibold text-[var(--crit-accent)]">
+            {String.first(@current_user.name || @current_user.email || "?")}
+          </div>
+        <% end %>
+        <div class="min-w-0">
+          <p class="text-sm font-medium text-[var(--crit-fg-primary)] truncate">
+            {@current_user.name || @current_user.email || @current_user.provider_uid}
+          </p>
+          <p class="text-xs text-[var(--crit-fg-muted)]">
+            {@host}
+          </p>
+        </div>
+      </div>
+
+      <%!-- Consent card --%>
+      <div class="border border-[var(--crit-border)] rounded-lg bg-[var(--crit-bg-secondary)] p-6">
+        <h1 class="text-lg font-semibold text-center text-[var(--crit-fg-primary)]">
+          Authorize Device
+        </h1>
+        <p class="text-sm text-[var(--crit-fg-muted)] text-center mt-2 leading-relaxed">
+          Authorize this device to access your account on {@host}?
+        </p>
+
+        <form method="post" action={~p"/device/authorize"} class="mt-6">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+
+          <button
+            type="submit"
+            class="w-full py-2.5 rounded-md
+                   bg-[var(--crit-accent)] text-[var(--crit-bg-primary)]
+                   font-semibold text-sm
+                   hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            Authorize
+          </button>
+        </form>
+
+        <form method="post" action={~p"/device/cancel"} class="mt-2">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+
+          <button
+            type="submit"
+            class="w-full py-2.5 rounded-md
+                   border border-[var(--crit-border)]
+                   bg-transparent text-[var(--crit-fg-muted)]
+                   font-semibold text-sm
+                   hover:text-[var(--crit-fg-primary)] hover:border-[var(--crit-fg-muted)]
+                   transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

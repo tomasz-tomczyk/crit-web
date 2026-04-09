@@ -107,6 +107,21 @@ defmodule Crit.Accounts do
   end
 
   @doc """
+  Revokes a token by its plaintext value.
+  Returns `:ok` regardless of whether the token existed (idempotent).
+  """
+  def revoke_token_by_plaintext(plaintext) do
+    token_hash = Base.url_encode64(:crypto.hash(:sha256, plaintext), padding: false)
+
+    case Repo.get_by(UserApiToken, token_hash: token_hash) do
+      nil -> :ok
+      record -> Repo.delete(record)
+    end
+
+    :ok
+  end
+
+  @doc """
   Returns all API tokens for the given user, ordered by inserted_at desc.
   """
   def list_tokens(user_id) do

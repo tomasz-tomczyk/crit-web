@@ -34,14 +34,24 @@ defmodule CritWeb.OAuthController do
 
         case Accounts.find_or_create_from_oauth(provider, user_params) do
           {:ok, user} ->
+            device_code_id = get_session(conn, :device_code_id)
             return_to = get_session(conn, :oauth_return_to) || ~p"/dashboard"
 
-            conn
-            |> delete_session(:oauth_session_params)
-            |> delete_session(:oauth_return_to)
-            |> configure_session(renew: true)
-            |> put_session("user_id", user.id)
-            |> redirect(to: return_to)
+            conn =
+              conn
+              |> delete_session(:oauth_session_params)
+              |> delete_session(:oauth_return_to)
+              |> configure_session(renew: true)
+              |> put_session("user_id", user.id)
+
+            if device_code_id do
+              # Keep device_code_id in session; redirect to consent screen
+              conn
+              |> put_session(:device_code_id, device_code_id)
+              |> redirect(to: ~p"/device/authorize")
+            else
+              redirect(conn, to: return_to)
+            end
 
           {:error, _changeset} ->
             conn

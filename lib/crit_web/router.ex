@@ -19,6 +19,17 @@ defmodule CritWeb.Router do
     plug CritWeb.Plugs.ApiAuth
   end
 
+  pipeline :device_api do
+    plug :accepts, ["json"]
+    plug CritWeb.Plugs.SecurityHeaders
+  end
+
+  pipeline :auth_api do
+    plug :accepts, ["json"]
+    plug CritWeb.Plugs.SecurityHeaders
+    plug CritWeb.Plugs.RequireBearerAuth
+  end
+
   pipeline :noindex do
     plug :put_noindex
   end
@@ -50,6 +61,18 @@ defmodule CritWeb.Router do
     delete "/auth/logout", OAuthController, :delete
   end
 
+  # Device flow browser pages — noindexed
+  scope "/", CritWeb do
+    pipe_through [:browser, :noindex]
+
+    get "/device", DeviceController, :index
+    post "/device", DeviceController, :submit
+    get "/device/authorize", DeviceController, :authorize
+    post "/device/authorize", DeviceController, :confirm_authorize
+    post "/device/cancel", DeviceController, :cancel
+    get "/device/success", DeviceController, :success
+  end
+
   # Review pages and dashboard — noindex
   scope "/", CritWeb do
     pipe_through [:browser, :noindex]
@@ -66,6 +89,22 @@ defmodule CritWeb.Router do
       live "/dashboard", DashboardLive, :index
       live "/tokens", TokensLive, :index
     end
+  end
+
+  # Device flow API — unauthenticated (exempt from ApiAuth)
+  scope "/api/device", CritWeb do
+    pipe_through [:device_api, :noindex]
+
+    post "/code", DeviceApiController, :create
+    post "/token", DeviceApiController, :token
+  end
+
+  # Auth API — always requires Bearer token
+  scope "/api/auth", CritWeb do
+    pipe_through [:auth_api, :noindex]
+
+    get "/whoami", AuthApiController, :whoami
+    delete "/token", AuthApiController, :revoke
   end
 
   scope "/api", CritWeb do

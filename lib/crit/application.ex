@@ -16,6 +16,7 @@ defmodule Crit.Application do
         {Crit.RateLimit, clean_period: :timer.minutes(10)}
       ] ++
         review_cleaner() ++
+        device_code_cleaner() ++
         changelog() ++
         integrations() ++
         [
@@ -31,6 +32,14 @@ defmodule Crit.Application do
   defp review_cleaner do
     if Application.get_env(:crit, :start_review_cleaner, true) do
       [Crit.ReviewCleaner]
+    else
+      []
+    end
+  end
+
+  defp device_code_cleaner do
+    if Application.get_env(:crit, :start_device_code_cleaner, true) do
+      [Crit.DeviceCodeCleaner]
     else
       []
     end

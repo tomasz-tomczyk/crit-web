@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Sign in to Crit</title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script>
+      // Theme detection (mirrors root layout pattern)
+      (() => {
+        const t = localStorage.getItem("phx:theme");
+        if (t && t !== "system") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--crit-bg-primary)] text-[var(--crit-fg-primary)] min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-[360px] px-6">
+      <%!-- Logo mark --%>
+      <div class="text-center mb-8">
+        <a
+          href="/"
+          class="inline-block font-mono text-2xl font-bold text-[var(--crit-accent)] tracking-tight"
+        >
+          Crit
+        </a>
+      </div>
+
+      <%!-- Card --%>
+      <div class="border border-[var(--crit-border)] rounded-lg bg-[var(--crit-bg-secondary)] p-6">
+        <h1 class="text-lg font-semibold text-center text-[var(--crit-fg-primary)]">
+          Sign in to Crit
+        </h1>
+        <p class="text-sm text-[var(--crit-fg-muted)] text-center mt-2 leading-relaxed">
+          Enter the code shown in your terminal.
+        </p>
+
+        <%= if @error do %>
+          <div class="mt-4 px-3 py-2 text-sm text-[var(--crit-red)] border border-[var(--crit-red)]/20 bg-[var(--crit-red)]/5 rounded">
+            {@error}
+          </div>
+        <% end %>
+
+        <form method="post" action={~p"/device"} class="mt-6">
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+
+          <label class="block text-xs font-medium text-[var(--crit-fg-muted)] mb-2 uppercase tracking-wider">
+            Device code
+          </label>
+          <input
+            type="text"
+            name="user_code"
+            value={@code}
+            placeholder="BCDF-GHJK"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            autofocus
+            maxlength="9"
+            class="w-full text-center text-2xl font-mono tracking-[0.3em] px-4 py-3
+                   rounded-md border border-[var(--crit-border)]
+                   bg-[var(--crit-bg-primary)] text-[var(--crit-fg-primary)]
+                   placeholder-[var(--crit-fg-dimmed)]
+                   focus:outline-none focus:border-[var(--crit-accent)]
+                   transition-colors duration-150"
+          />
+
+          <button
+            type="submit"
+            class="w-full mt-4 py-2.5 rounded-md
+                   bg-[var(--crit-accent)] text-[var(--crit-bg-primary)]
+                   font-semibold text-sm
+                   hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            Continue
+          </button>
+        </form>
+      </div>
+
+      <p class="text-xs text-[var(--crit-fg-dimmed)] text-center mt-5">
+        Run
+        <code class="font-mono text-[var(--crit-fg-muted)] bg-[var(--crit-bg-secondary)] border border-[var(--crit-border)] px-1.5 py-0.5 rounded text-[11px]">
+          crit auth login
+        </code>
+        in your terminal to get a code.
+      </p>
+    </div>
+  </body>
+</html>
