@@ -727,6 +727,53 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "serialize_reply/1" do
+    test "returns expected shape" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "parent"},
+          "id1"
+        )
+
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "test reply"}, "id2", "Bob", review.id)
+
+      serialized = Reviews.serialize_reply(reply)
+
+      assert serialized.id == reply.id
+      assert serialized.body == "test reply"
+      assert serialized.author_identity == "id2"
+      assert serialized.author_display_name == "Bob"
+      assert Map.has_key?(serialized, :created_at)
+
+      expected_keys =
+        MapSet.new([:id, :body, :author_identity, :author_display_name, :created_at])
+
+      assert MapSet.new(Map.keys(serialized)) == expected_keys
+    end
+
+    test "formats inserted_at as ISO8601" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "parent"},
+          "id1"
+        )
+
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "reply"}, "id2", nil, review.id)
+
+      serialized = Reviews.serialize_reply(reply)
+
+      assert {:ok, _dt, _offset} = DateTime.from_iso8601(serialized.created_at)
+    end
+  end
+
   describe "review_round_snapshot" do
     test "create_round_snapshot/4 stores file content for a round" do
       {:ok, review} =
@@ -844,6 +891,98 @@ defmodule Crit.ReviewsTest do
       [comment] = updated.comments
       assert comment.external_id == "local-c1"
       assert comment.resolved == true
+    end
+
+    test "preserves author_display_name from payload" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(review.token, review.delete_token, %{
+        "files" => [%{"path" => "f.md", "content" => "v2"}],
+        "comments" => [
+          %{
+            "file" => "f.md",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "nice work",
+            "author_display_name" => "Tomasz"
+          }
+        ],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.author_display_name == "Tomasz"
+    end
+
+    test "author_display_name is nil when not provided (not defaulted to 'crit')" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(review.token, review.delete_token, %{
+        "files" => [%{"path" => "f.md", "content" => "v2"}],
+        "comments" => [
+          %{
+            "file" => "f.md",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "comment without author"
+          }
+        ],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert is_nil(comment.author_display_name)
+    end
+
+    test "falls back to author field when author_display_name is not provided" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(review.token, review.delete_token, %{
+        "files" => [%{"path" => "f.md", "content" => "v2"}],
+        "comments" => [
+          %{
+            "file" => "f.md",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "from export",
+            "author" => "ExportUser"
+          }
+        ],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.author_display_name == "ExportUser"
+    end
+
+    test "preserves author_display_name on replies during upsert" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(review.token, review.delete_token, %{
+        "files" => [%{"path" => "f.md", "content" => "v2"}],
+        "comments" => [
+          %{
+            "file" => "f.md",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "original comment",
+            "author_display_name" => "Tomasz",
+            "replies" => [
+              %{"body" => "reply text", "author_display_name" => "Reviewer"}
+            ]
+          }
+        ],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.author_display_name == "Tomasz"
+      [reply] = comment.replies
+      assert reply.author_display_name == "Reviewer"
     end
   end
 

@@ -12,13 +12,11 @@ defmodule CritWeb.ReviewController do
         if identity do
           Crit.Reviews.update_display_name(identity, name)
 
-          for {id, token} <- Crit.Reviews.reviews_for_identity(identity) do
-            comments = Crit.Reviews.list_comments(id)
-
+          for {_id, token} <- Crit.Reviews.reviews_for_identity(identity) do
             Phoenix.PubSub.broadcast(
               Crit.PubSub,
               "review:#{token}",
-              {:comments_updated, comments}
+              {:display_name_changed, %{identity: identity, name: name}}
             )
           end
         end

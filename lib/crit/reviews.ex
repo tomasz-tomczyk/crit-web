@@ -284,7 +284,7 @@ defmodule Crit.Reviews do
         "body" => attrs["body"],
         "file_path" => attrs["file"],
         "quote" => attrs["quote"],
-        "author_display_name" => attrs["author_display_name"] || "crit",
+        "author_display_name" => attrs["author_display_name"] || attrs["author"],
         "review_round" => attrs["review_round"] || 1,
         "resolved" => attrs["resolved"] || false,
         "scope" => scope,
@@ -338,6 +338,10 @@ defmodule Crit.Reviews do
       |> Ecto.Changeset.put_change(:author_identity, "imported")
       |> Ecto.Changeset.put_change(:file_path, attrs["file"])
       |> Ecto.Changeset.put_change(:resolved, attrs["resolved"] == true)
+      |> Ecto.Changeset.put_change(
+        :author_display_name,
+        attrs["author_display_name"] || attrs["author"]
+      )
       |> Repo.insert()
       |> case do
         {:ok, comment} ->
@@ -625,16 +629,18 @@ defmodule Crit.Reviews do
       external_id: c.external_id,
       created_at: DateTime.to_iso8601(c.inserted_at),
       updated_at: DateTime.to_iso8601(c.updated_at),
-      replies:
-        Enum.map(replies, fn r ->
-          %{
-            id: r.id,
-            body: r.body,
-            author_identity: r.author_identity,
-            author_display_name: r.author_display_name,
-            created_at: DateTime.to_iso8601(r.inserted_at)
-          }
-        end)
+      replies: Enum.map(replies, &serialize_reply/1)
+    }
+  end
+
+  @doc "Serialize a reply to the API JSON shape."
+  def serialize_reply(%Comment{} = r) do
+    %{
+      id: r.id,
+      body: r.body,
+      author_identity: r.author_identity,
+      author_display_name: r.author_display_name,
+      created_at: DateTime.to_iso8601(r.inserted_at)
     }
   end
 end

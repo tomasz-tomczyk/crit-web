@@ -3111,6 +3111,125 @@ function renderCommentFormUI(ctx, formObj) {
   return wrapper
 }
 
+// ---- Delta sync DOM helpers -------------------------------------------------
+
+function insertInlineComment(ctx, comment) {
+  if (comment.scope === 'review') return // review-scope comments are panel-only
+  if (comment.scope === 'file') {
+    // File-scope: append to .file-comments container
+    if (ctx.multiFile && comment.file_path) {
+      const section = document.getElementById('file-section-' + CSS.escape(comment.file_path))
+      if (section) {
+        let container = section.querySelector('.file-comments')
+        if (!container) {
+          container = document.createElement('div')
+          container.className = 'file-comments'
+          const header = section.querySelector('.file-header')
+          if (header) header.after(container)
+          else section.prepend(container)
+        }
+        const card = renderPanelCard(ctx, comment, comment.file_path)
+        card.style.cursor = ''
+        container.appendChild(card)
+      }
+    }
+    return
+  }
+  // Line-scope: find the .line-block for end_line, append after it
+  if (!comment.end_line) return
+  const lineBlocks = ctx.el.querySelectorAll('.line-block')
+  let targetBlock = null
+  for (const lb of lineBlocks) {
+    const start = parseInt(lb.dataset.startLine)
+    const end = parseInt(lb.dataset.endLine)
+    const fp = lb.dataset.filePath || null
+    if (comment.end_line >= start && comment.end_line <= end &&
+        (comment.file_path || null) === (fp || null)) {
+      targetBlock = lb
+      break
+    }
+  }
+  if (!targetBlock) return
+
+  // Mark lines as having comments
+  for (const lb of lineBlocks) {
+    const start = parseInt(lb.dataset.startLine)
+    const end = parseInt(lb.dataset.endLine)
+    const fp = lb.dataset.filePath || null
+    if ((comment.file_path || null) === (fp || null) &&
+        comment.start_line <= end && comment.end_line >= start) {
+      lb.classList.add('has-comment')
+    }
+  }
+
+  // Insert after any existing comment blocks following the target line block
+  let insertAfter = targetBlock
+  while (insertAfter.nextElementSibling &&
+         (insertAfter.nextElementSibling.classList.contains('comment-block') ||
+          insertAfter.nextElementSibling.classList.contains('comment-form-wrapper'))) {
+    insertAfter = insertAfter.nextElementSibling
+  }
+  const newEl = createCommentElement(comment, ctx)
+  insertAfter.after(newEl)
+}
+
+function removeInlineComment(ctx, comment) {
+  // Remove inline DOM
+  const card = ctx.el.querySelector(`.comment-card[data-comment-id="${comment.id}"]`)
+  if (card) {
+    const block = card.closest('.comment-block')
+    if (block) {
+      // Don't remove panel cards, only inline ones
+      const panel = ctx._commentsPanel
+      if (!panel || !panel.contains(block)) {
+        block.remove()
+      }
+    }
+  }
+  // Update has-comment classes on line blocks
+  if (comment.start_line && comment.end_line) {
+    const commentedLineSet = buildCommentedLineSet(ctx.comments)
+    const lineBlocks = ctx.el.querySelectorAll('.line-block')
+    for (const lb of lineBlocks) {
+      const start = parseInt(lb.dataset.startLine)
+      const end = parseInt(lb.dataset.endLine)
+      const fp = lb.dataset.filePath || null
+      if ((comment.file_path || null) !== (fp || null)) continue
+      let hasComment = false
+      for (let ln = start; ln <= end; ln++) {
+        if (commentedLineSet.has(ln)) { hasComment = true; break }
+      }
+      if (!hasComment) lb.classList.remove('has-comment')
+    }
+  }
+}
+
+function updateTreeBadge(ctx, filePath) {
+  if (!ctx.multiFile || !filePath) return
+  const treeFile = document.querySelector(`.tree-file[data-path="${CSS.escape(filePath)}"]`)
+  if (!treeFile) return
+  const f = ctx.files.find(fl => fl.path === filePath)
+  if (!f) return
+  const unresolvedCount = f.comments.filter(c => !c.resolved).length
+  let badge = treeFile.querySelector('.tree-comment-badge')
+  if (unresolvedCount > 0) {
+    if (!badge) {
+      badge = document.createElement('span')
+      badge.className = 'tree-comment-badge'
+      treeFile.appendChild(badge)
+    }
+    badge.textContent = unresolvedCount
+  } else if (badge) {
+    badge.remove()
+  }
+}
+
+function rerenderPanel(ctx) {
+  if (ctx._commentsPanel?.classList.contains('comments-panel-open')) {
+    renderCommentsPanel(ctx)
+  }
+}
+
 // ---- Comments panel helpers -------------------------------------------------
 
 function renderCommentsPanel(ctx) {
@@ -3676,19 +3795,144 @@ export const DocumentRenderer = {
       render(ctx)
     })
 
-    ctx.handleEvent("comments_updated", ({ comments }) => {
+    // ===== Delta comment sync handlers =====
+
+    ctx.handleEvent("comment_added", ({ comment }) => {
+      ctx.comments.push(comment)
+      if (ctx.multiFile) {
+        const f = ctx.files.find(fl => fl.path === comment.file_path)
+        if (f) f.comments.push(comment)
+      }
+      insertInlineComment(ctx, comment)
+      updateCommentCount(ctx)
+      updateTreeBadge(ctx, comment.file_path)
+      rerenderPanel(ctx)
+    })
+
+    ctx.handleEvent("comment_updated", ({ id, body, updated_at }) => {
+      const comment = ctx.comments.find(c => c.id === id)
+      if (!comment) return
+      comment.body = body
+      comment.updated_at = updated_at
+      const card = ctx.el.querySelector(`.comment-card[data-comment-id="${id}"]`)
+      if (card) {
+        const bodyEl = card.querySelector('.comment-body')
+        if (bodyEl) bodyEl.innerHTML = commentMd.render(body)
+      }
+      rerenderPanel(ctx)
+    })
+
+    ctx.handleEvent("comment_deleted", ({ id }) => {
+      const comment = ctx.comments.find(c => c.id === id)
+      if (!comment) return
+      ctx.comments = ctx.comments.filter(c => c.id !== id)
+      if (ctx.multiFile) {
+        const f = ctx.files.find(fl => fl.path === comment.file_path)
+        if (f) f.comments = f.comments.filter(c => c.id !== id)
+      }
+      removeInlineComment(ctx, comment)
+      updateCommentCount(ctx)
+      updateTreeBadge(ctx, comment.file_path)
+      rerenderPanel(ctx)
+    })
+
+    ctx.handleEvent("comment_resolved", ({ id, resolved }) => {
+      const comment = ctx.comments.find(c => c.id === id)
+      if (!comment) return
+      comment.resolved = resolved
+      // Re-render just this comment inline (resolved/unresolved have different renderers)
+      const block = ctx.el.querySelector(`.comment-block:has(> .comment-card[data-comment-id="${id}"])`)
+      if (block) {
+        const newEl = createCommentElement(comment, ctx)
+        block.replaceWith(newEl)
+      }
+      updateCommentCount(ctx)
+      updateTreeBadge(ctx, comment.file_path)
+      rerenderPanel(ctx)
+    })
+
+    ctx.handleEvent("reply_added", ({ parent_id, reply }) => {
+      const comment = ctx.comments.find(c => c.id === parent_id)
+      if (!comment) return
+      if (!comment.replies) comment.replies = []
+      comment.replies.push(reply)
+      const card = ctx.el.querySelector(`.comment-card[data-comment-id="${parent_id}"]`)
+      if (card) {
+        let repliesContainer = card.querySelector('.comment-replies')
+        if (repliesContainer) {
+          repliesContainer.replaceWith(renderReplyList(comment, ctx))
+        } else {
+          const replyInput = card.querySelector('.reply-form')
+          if (replyInput) {
+            card.insertBefore(renderReplyList(comment, ctx), replyInput)
+          } else {
+            card.appendChild(renderReplyList(comment, ctx))
+          }
+        }
+      }
+      rerenderPanel(ctx)
+    })
+
+    ctx.handleEvent("reply_updated", ({ parent_id, id, body }) => {
+      const comment = ctx.comments.find(c => c.id === parent_id)
+      if (!comment) return
+      const reply = comment.replies && comment.replies.find(r => r.id === id)
+      if (!reply) return
+      reply.body = body
+      const replyEl = ctx.el.querySelector(`.comment-reply[data-reply-id="${id}"]`)
+      if (replyEl) {
+        const bodyEl = replyEl.querySelector('.reply-body')
+        if (bodyEl) {
+          bodyEl.dataset.rawBody = body
+          bodyEl.innerHTML = commentMd.render(body)
+        }
+      }
+      rerenderPanel(ctx)
+    })
+
+    ctx.handleEvent("reply_deleted", ({ parent_id, id }) => {
+      const comment = ctx.comments.find(c => c.id === parent_id)
+      if (!comment) return
+      comment.replies = (comment.replies || []).filter(r => r.id !== id)
+      const replyEl = ctx.el.querySelector(`.comment-reply[data-reply-id="${id}"]`)
+      if (replyEl) replyEl.remove()
+      rerenderPanel(ctx)
+    })
+
+    ctx.handleEvent("display_name_changed", ({ identity, name }) => {
+      for (const c of ctx.comments) {
+        if (c.author_identity === identity) c.author_display_name = name
+        for (const r of (c.replies || [])) {
+          if (r.author_identity === identity) r.author_display_name = name
+        }
+      }
+      // Display name changes are rare — full re-render is acceptable
+      render(ctx)
+      rerenderPanel(ctx)
+    })
+
+    // Full sync escape hatch (reconnect, noop_refresh)
+    ctx.handleEvent("comments_full_sync", ({ comments }) => {
       ctx.comments = comments
       if (ctx.multiFile) {
-        // Re-distribute comments to files
         for (const f of ctx.files) {
           f.comments = comments.filter(c => c.file_path === f.path)
         }
       }
-      // Preserve any open form
       render(ctx)
-      if (ctx._commentsPanel?.classList.contains('comments-panel-open')) {
-        renderCommentsPanel(ctx)
+      rerenderPanel(ctx)
+    })
+
+    // Legacy handler — kept for backwards compatibility during rollout
+    ctx.handleEvent("comments_updated", ({ comments }) => {
+      ctx.comments = comments
+      if (ctx.multiFile) {
+        for (const f of ctx.files) {
+          f.comments = comments.filter(c => c.file_path === f.path)
+        }
       }
+      render(ctx)
+      rerenderPanel(ctx)
     })
 
     ctx.handleEvent("round_diff_updated", ({ enabled, snapshots }) => {
