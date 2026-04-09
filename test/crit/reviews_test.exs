@@ -727,6 +727,53 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "serialize_reply/1" do
+    test "returns expected shape" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "parent"},
+          "id1"
+        )
+
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "test reply"}, "id2", "Bob", review.id)
+
+      serialized = Reviews.serialize_reply(reply)
+
+      assert serialized.id == reply.id
+      assert serialized.body == "test reply"
+      assert serialized.author_identity == "id2"
+      assert serialized.author_display_name == "Bob"
+      assert Map.has_key?(serialized, :created_at)
+
+      expected_keys =
+        MapSet.new([:id, :body, :author_identity, :author_display_name, :created_at])
+
+      assert MapSet.new(Map.keys(serialized)) == expected_keys
+    end
+
+    test "formats inserted_at as ISO8601" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "parent"},
+          "id1"
+        )
+
+      {:ok, reply} =
+        Reviews.create_reply(comment.id, %{"body" => "reply"}, "id2", nil, review.id)
+
+      serialized = Reviews.serialize_reply(reply)
+
+      assert {:ok, _dt, _offset} = DateTime.from_iso8601(serialized.created_at)
+    end
+  end
+
   describe "review_round_snapshot" do
     test "create_round_snapshot/4 stores file content for a round" do
       {:ok, review} =

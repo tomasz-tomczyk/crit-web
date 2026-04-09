@@ -108,5 +108,81 @@ defmodule CritWeb.ReviewControllerTest do
 
       assert json_response(conn, 422)["error"] =~ "required"
     end
+
+    test "broadcasts display_name_changed, not comments_updated", %{conn: conn} do
+      review = review_fixture()
+      identity = Ecto.UUID.generate()
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "test"},
+          identity,
+          "OldName"
+        )
+
+      Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review.token}")
+
+      conn
+      |> init_test_session(%{"identity" => identity})
+      |> post(~p"/set-name", %{"name" => "NewName"})
+
+      assert_receive {:display_name_changed, %{identity: ^identity, name: "NewName"}}, 500
+      refute_receive {:comments_updated, _}, 100
+    end
+
+    test "broadcasts to all affected review topics", %{conn: conn} do
+      review1 = review_fixture()
+      review2 = review_fixture(%{files: [%{"path" => "b.md", "content" => "# B"}]})
+      identity = Ecto.UUID.generate()
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review1,
+          %{"start_line" => 1, "end_line" => 1, "body" => "R1"},
+          identity,
+          "Old"
+        )
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review2,
+          %{"start_line" => 1, "end_line" => 1, "body" => "R2"},
+          identity,
+          "Old"
+        )
+
+      Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review1.token}")
+      Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review2.token}")
+
+      conn
+      |> init_test_session(%{"identity" => identity})
+      |> post(~p"/set-name", %{"name" => "BothReviews"})
+
+      assert_receive {:display_name_changed, %{identity: ^identity, name: "BothReviews"}}, 500
+      assert_receive {:display_name_changed, %{identity: ^identity, name: "BothReviews"}}, 500
+    end
+
+    test "display_name_changed payload contains identity and name", %{conn: conn} do
+      review = review_fixture()
+      identity = Ecto.UUID.generate()
+
+      {:ok, _} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "test"},
+          identity,
+          "Old"
+        )
+
+      Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review.token}")
+
+      conn
+      |> init_test_session(%{"identity" => identity})
+      |> post(~p"/set-name", %{"name" => "PayloadCheck"})
+
+      assert_receive {:display_name_changed, payload}, 500
+      assert payload == %{identity: identity, name: "PayloadCheck"}
+    end
   end
 end

@@ -629,16 +629,18 @@ defmodule Crit.Reviews do
       external_id: c.external_id,
       created_at: DateTime.to_iso8601(c.inserted_at),
       updated_at: DateTime.to_iso8601(c.updated_at),
-      replies:
-        Enum.map(replies, fn r ->
-          %{
-            id: r.id,
-            body: r.body,
-            author_identity: r.author_identity,
-            author_display_name: r.author_display_name,
-            created_at: DateTime.to_iso8601(r.inserted_at)
-          }
-        end)
+      replies: Enum.map(replies, &serialize_reply/1)
+    }
+  end
+
+  @doc "Serialize a reply to the API JSON shape."
+  def serialize_reply(%Comment{} = r) do
+    %{
+      id: r.id,
+      body: r.body,
+      author_identity: r.author_identity,
+      author_display_name: r.author_display_name,
+      created_at: DateTime.to_iso8601(r.inserted_at)
     }
   end
 end

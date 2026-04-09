@@ -173,8 +173,10 @@ defmodule CritWeb.ReviewLive do
       end)
 
     case Reviews.create_comment(review, attrs, identity, socket.assigns.display_name, file_path) do
-      {:ok, _comment} ->
-        broadcast_comments(review)
+      {:ok, comment} ->
+        payload = %{comment: Reviews.serialize_comment(comment)}
+        socket = push_event(socket, "comment_added", payload)
+        broadcast_from_review(socket, {:comment_added, payload})
         {:noreply, socket}
 
       {:error, _changeset} ->
@@ -184,11 +186,18 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("edit_comment", %{"id" => id, "body" => body}, socket) do
-    %{review: review, identity: identity} = socket.assigns
+    %{identity: identity} = socket.assigns
 
     case Reviews.update_comment(id, body, identity) do
-      {:ok, _comment} ->
-        broadcast_comments(review)
+      {:ok, comment} ->
+        payload = %{
+          id: comment.id,
+          body: comment.body,
+          updated_at: DateTime.to_iso8601(comment.updated_at)
+        }
+
+        socket = push_event(socket, "comment_updated", payload)
+        broadcast_from_review(socket, {:comment_updated, payload})
         {:noreply, socket}
 
       {:error, :unauthorized} ->
@@ -201,11 +210,13 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("delete_comment", %{"id" => id}, socket) do
-    %{review: review, identity: identity} = socket.assigns
+    %{identity: identity} = socket.assigns
 
     case Reviews.delete_comment(id, identity) do
       {:ok, _} ->
-        broadcast_comments(review)
+        payload = %{id: id}
+        socket = push_event(socket, "comment_deleted", payload)
+        broadcast_from_review(socket, {:comment_deleted, payload})
         {:noreply, socket}
 
       {:error, :unauthorized} ->
@@ -220,15 +231,12 @@ defmodule CritWeb.ReviewLive do
   def handle_event("set_display_name", %{"name" => name}, socket) do
     # Updates the in-memory assign only. The DB update and cross-review
     # broadcast happen in the controller's POST /set-name handler (the JS
-    # hook fires both this event and the POST). We broadcast the current
-    # review here for immediate feedback to other viewers on this page.
+    # hook fires both this event and the POST).
     case Crit.DisplayName.normalize(name) do
       nil ->
         {:noreply, socket}
 
       name ->
-        broadcast_comments(socket.assigns.review)
-
         {:noreply,
          socket
          |> assign(:display_name, name)
@@ -238,7 +246,7 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("noop_refresh", _params, socket) do
-    broadcast_comments(socket.assigns.review)
+    broadcast_full_sync(socket.assigns.review)
     {:noreply, socket}
   end
 
@@ -247,8 +255,10 @@ defmodule CritWeb.ReviewLive do
     %{review: review, identity: identity, display_name: display_name} = socket.assigns
 
     case Reviews.create_reply(comment_id, %{"body" => body}, identity, display_name, review.id) do
-      {:ok, _reply} ->
-        broadcast_comments(review)
+      {:ok, reply} ->
+        payload = %{parent_id: comment_id, reply: Reviews.serialize_reply(reply)}
+        socket = push_event(socket, "reply_added", payload)
+        broadcast_from_review(socket, {:reply_added, payload})
         {:noreply, socket}
 
       {:error, _} ->
@@ -258,11 +268,13 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("edit_reply", %{"id" => id, "body" => body}, socket) do
-    %{review: review, identity: identity} = socket.assigns
+    %{identity: identity} = socket.assigns
 
     case Reviews.update_reply(id, body, identity) do
-      {:ok, _} ->
-        broadcast_comments(review)
+      {:ok, reply} ->
+        payload = %{parent_id: reply.parent_id, id: reply.id, body: reply.body}
+        socket = push_event(socket, "reply_updated", payload)
+        broadcast_from_review(socket, {:reply_updated, payload})
         {:noreply, socket}
 
       {:error, :unauthorized} ->
@@ -275,11 +287,13 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("delete_reply", %{"id" => id}, socket) do
-    %{review: review, identity: identity} = socket.assigns
+    %{identity: identity} = socket.assigns
 
     case Reviews.delete_reply(id, identity) do
-      {:ok, _} ->
-        broadcast_comments(review)
+      {:ok, deleted} ->
+        payload = %{parent_id: deleted.parent_id, id: id}
+        socket = push_event(socket, "reply_deleted", payload)
+        broadcast_from_review(socket, {:reply_deleted, payload})
         {:noreply, socket}
 
       {:error, :unauthorized} ->
@@ -295,8 +309,10 @@ defmodule CritWeb.ReviewLive do
     %{review: review} = socket.assigns
 
     case Reviews.resolve_comment(id, resolved, review.id) do
-      {:ok, _} ->
-        broadcast_comments(review)
+      {:ok, comment} ->
+        payload = %{id: comment.id, resolved: comment.resolved}
+        socket = push_event(socket, "comment_resolved", payload)
+        broadcast_from_review(socket, {:comment_resolved, payload})
         {:noreply, socket}
 
       {:error, _} ->
@@ -304,16 +320,77 @@ defmodule CritWeb.ReviewLive do
     end
   end
 
+  # Delta broadcast handle_info clauses — forward each event to the client via push_event.
+  # comment_added and reply_added apply demo mode filtering; other events pass through
+  # because filtered entities never entered client state (harmless no-ops on the JS side).
+
   @impl true
-  def handle_info({:comments_updated, comments}, socket) do
+  def handle_info({:comment_added, %{comment: comment} = payload}, socket) do
     %{demo?: demo?, identity: identity} = socket.assigns
-    filtered = filter_demo_comments(comments, demo?, identity)
-    {:noreply, push_event(socket, "comments_updated", %{comments: serialize_comments(filtered)})}
+
+    if demo? and comment.author_identity not in ["imported", identity] do
+      {:noreply, socket}
+    else
+      {:noreply, push_event(socket, "comment_added", payload)}
+    end
   end
 
-  defp broadcast_comments(%{token: token} = review) do
-    comments = Reviews.list_comments(review)
-    Phoenix.PubSub.broadcast(@pubsub, "review:#{token}", {:comments_updated, comments})
+  @impl true
+  def handle_info({:comment_updated, payload}, socket) do
+    {:noreply, push_event(socket, "comment_updated", payload)}
+  end
+
+  @impl true
+  def handle_info({:comment_deleted, payload}, socket) do
+    {:noreply, push_event(socket, "comment_deleted", payload)}
+  end
+
+  @impl true
+  def handle_info({:comment_resolved, payload}, socket) do
+    {:noreply, push_event(socket, "comment_resolved", payload)}
+  end
+
+  @impl true
+  def handle_info({:reply_added, %{reply: reply} = payload}, socket) do
+    %{demo?: demo?, identity: identity} = socket.assigns
+
+    if demo? and reply.author_identity not in ["imported", identity] do
+      {:noreply, socket}
+    else
+      {:noreply, push_event(socket, "reply_added", payload)}
+    end
+  end
+
+  @impl true
+  def handle_info({:reply_updated, payload}, socket) do
+    {:noreply, push_event(socket, "reply_updated", payload)}
+  end
+
+  @impl true
+  def handle_info({:reply_deleted, payload}, socket) do
+    {:noreply, push_event(socket, "reply_deleted", payload)}
+  end
+
+  @impl true
+  def handle_info({:comments_full_sync, comments}, socket) do
+    %{demo?: demo?, identity: identity} = socket.assigns
+    filtered = filter_demo_serialized_comments(comments, demo?, identity)
+    {:noreply, push_event(socket, "comments_full_sync", %{comments: filtered})}
+  end
+
+  @impl true
+  def handle_info({:display_name_changed, payload}, socket) do
+    {:noreply, push_event(socket, "display_name_changed", payload)}
+  end
+
+  defp broadcast_from_review(socket, message) do
+    token = socket.assigns.review.token
+    Phoenix.PubSub.broadcast_from(@pubsub, self(), "review:#{token}", message)
+  end
+
+  defp broadcast_full_sync(%{token: token} = review) do
+    comments = Reviews.list_comments(review) |> serialize_comments()
+    Phoenix.PubSub.broadcast(@pubsub, "review:#{token}", {:comments_full_sync, comments})
   end
 
   defp serialize_comments(comments) do
@@ -332,6 +409,18 @@ defmodule CritWeb.ReviewLive do
           replies -> Enum.filter(replies, &(&1.author_identity in ["imported", identity]))
         end
 
+      %{c | replies: filtered_replies}
+    end)
+  end
+
+  # Filters already-serialized comment maps (atom keys) for demo mode full sync.
+  defp filter_demo_serialized_comments(comments, false, _identity), do: comments
+
+  defp filter_demo_serialized_comments(comments, true, identity) do
+    comments
+    |> Enum.filter(fn c -> c.author_identity in ["imported", identity] end)
+    |> Enum.map(fn c ->
+      filtered_replies = Enum.filter(c.replies, &(&1.author_identity in ["imported", identity]))
       %{c | replies: filtered_replies}
     end)
   end
