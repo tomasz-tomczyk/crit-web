@@ -284,7 +284,7 @@ defmodule Crit.Reviews do
         "body" => attrs["body"],
         "file_path" => attrs["file"],
         "quote" => attrs["quote"],
-        "author_display_name" => attrs["author_display_name"] || "crit",
+        "author_display_name" => attrs["author_display_name"] || attrs["author"],
         "review_round" => attrs["review_round"] || 1,
         "resolved" => attrs["resolved"] || false,
         "scope" => scope,
@@ -338,6 +338,10 @@ defmodule Crit.Reviews do
       |> Ecto.Changeset.put_change(:author_identity, "imported")
       |> Ecto.Changeset.put_change(:file_path, attrs["file"])
       |> Ecto.Changeset.put_change(:resolved, attrs["resolved"] == true)
+      |> Ecto.Changeset.put_change(
+        :author_display_name,
+        attrs["author_display_name"] || attrs["author"]
+      )
       |> Repo.insert()
       |> case do
         {:ok, comment} ->
