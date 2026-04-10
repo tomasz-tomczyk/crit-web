@@ -125,6 +125,29 @@
             Tokens authenticate the Crit CLI with your account. Treat them like passwords.
           </p>
 
+          <.form
+            for={%{}}
+            phx-submit="create_token"
+            class="flex items-center gap-2 max-w-sm mb-6"
+            id="create-token-form"
+          >
+            <input
+              type="text"
+              name="name"
+              value={@new_token_name}
+              placeholder="Token name (e.g. my laptop)"
+              maxlength="80"
+              required
+              class="flex-1 bg-(--crit-bg-primary) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-accent)"
+            />
+            <button
+              type="submit"
+              class="shrink-0 px-4 py-2 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Create
+            </button>
+          </.form>
+
           <%= if @new_token_plaintext do %>
             <div
               id="new-token-reveal"
@@ -154,11 +177,11 @@
           <% end %>
 
           <%= if @tokens == [] do %>
-            <div class="text-sm text-(--crit-fg-muted) mb-6">
-              No tokens yet. Create one below to authenticate the Crit CLI.
+            <div class="text-sm text-(--crit-fg-muted)">
+              No tokens yet.
             </div>
           <% else %>
-            <div class="flex flex-col gap-2 mb-6">
+            <div class="flex flex-col gap-2">
               <div
                 :for={token <- @tokens}
                 id={"token-#{token.id}"}
@@ -186,29 +209,6 @@
               </div>
             </div>
           <% end %>
-
-          <.form
-            for={%{}}
-            phx-submit="create_token"
-            class="flex items-center gap-2 max-w-sm"
-            id="create-token-form"
-          >
-            <input
-              type="text"
-              name="name"
-              value={@new_token_name}
-              placeholder="Token name (e.g. my laptop)"
-              maxlength="80"
-              required
-              class="flex-1 bg-(--crit-bg-primary) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-accent)"
-            />
-            <button
-              type="submit"
-              class="shrink-0 px-4 py-2 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              Create
-            </button>
-          </.form>
         </section>
 
         <%!-- Danger Zone --%>
