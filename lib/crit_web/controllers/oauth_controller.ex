@@ -48,7 +48,7 @@ defmodule CritWeb.OAuthController do
               # Keep device_code_id in session; redirect to consent screen
               conn
               |> put_session(:device_code_id, device_code_id)
-              |> redirect(to: ~p"/device/authorize")
+              |> redirect(to: ~p"/auth/cli/authorize")
             else
               redirect(conn, to: return_to)
             end

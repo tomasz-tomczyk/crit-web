@@ -61,16 +61,15 @@ defmodule CritWeb.Router do
     delete "/auth/logout", OAuthController, :delete
   end
 
-  # Device flow browser pages — noindexed
+  # CLI auth browser pages — noindexed
   scope "/", CritWeb do
     pipe_through [:browser, :noindex]
 
-    get "/device", DeviceController, :index
-    post "/device", DeviceController, :submit
-    get "/device/authorize", DeviceController, :authorize
-    post "/device/authorize", DeviceController, :confirm_authorize
-    post "/device/cancel", DeviceController, :cancel
-    get "/device/success", DeviceController, :success
+    get "/auth/cli", DeviceController, :index
+    get "/auth/cli/authorize", DeviceController, :authorize
+    post "/auth/cli/authorize", DeviceController, :confirm_authorize
+    post "/auth/cli/cancel", DeviceController, :cancel
+    get "/auth/cli/success", DeviceController, :success
   end
 
   # Review pages and dashboard — noindex

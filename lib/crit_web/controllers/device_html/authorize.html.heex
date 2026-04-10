@@ -60,7 +60,7 @@
           Authorize this device to access your account on {@host}?
         </p>
 
-        <form method="post" action={~p"/device/authorize"} class="mt-6">
+        <form method="post" action={~p"/auth/cli/authorize"} class="mt-6">
           <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
 
           <button
@@ -74,7 +74,7 @@
           </button>
         </form>
 
-        <form method="post" action={~p"/device/cancel"} class="mt-2">
+        <form method="post" action={~p"/auth/cli/cancel"} class="mt-2">
           <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
 
           <button

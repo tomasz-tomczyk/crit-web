@@ -3,68 +3,40 @@ defmodule CritWeb.DeviceControllerTest do
 
   alias Crit.{Accounts, DeviceCodes}
 
-  describe "GET /device" do
-    test "renders the code entry page", %{conn: conn} do
-      conn = get(conn, ~p"/device")
-      assert html_response(conn, 200) =~ "Sign in to Crit"
-    end
-
-    test "does not show user identity card", %{conn: conn} do
-      {:ok, user} =
-        Accounts.find_or_create_from_oauth("github", %{
-          "sub" => "uid_index",
-          "name" => "Test User",
-          "email" => "test@example.com",
-          "picture" => nil
-        })
-
-      conn =
-        conn
-        |> init_test_session(%{"user_id" => user.id})
-        |> get(~p"/device")
-
-      body = html_response(conn, 200)
-      refute body =~ "Test User"
-      refute body =~ "test@example.com"
-    end
-  end
-
-  describe "POST /device" do
-    test "redirects to OAuth login with valid user code", %{conn: conn} do
-      {:ok, %{user_code: user_code}} = DeviceCodes.create_device_code()
+  describe "GET /auth/cli?code=SESSION_CODE" do
+    test "redirects to OAuth login with valid session code", %{conn: conn} do
+      {:ok, %{session_code: session_code, record: record}} = DeviceCodes.create_device_code()
 
       conn =
         conn
         |> init_test_session(%{})
-        |> post(~p"/device", %{user_code: user_code})
+        |> get(~p"/auth/cli", %{code: session_code})
 
       assert redirected_to(conn) == ~p"/auth/login"
-      assert get_session(conn, :device_code_id) != nil
+      assert get_session(conn, :device_code_id) == record.id
     end
 
-    test "shows error with invalid user code", %{conn: conn} do
+    test "returns 400 with invalid session code", %{conn: conn} do
       conn =
         conn
         |> init_test_session(%{})
-        |> post(~p"/device", %{user_code: "ZZZZ-ZZZZ"})
+        |> get(~p"/auth/cli", %{code: "nonexistent"})
 
-      assert html_response(conn, 200) =~ "Invalid or expired code"
+      assert html_response(conn, 400) =~ "invalid or expired"
     end
 
-    test "shows error when user_code is missing", %{conn: conn} do
+    test "returns 400 when code param is missing", %{conn: conn} do
       conn =
         conn
         |> init_test_session(%{})
-        |> post(~p"/device", %{})
+        |> get(~p"/auth/cli")
 
-      assert html_response(conn, 200) =~ "Please enter a code"
+      assert html_response(conn, 400) =~ "invalid or expired"
     end
   end
 
-  describe "GET /device/authorize" do
-    test "renders consent page when session has device_code_id and user is logged in", %{
-      conn: conn
-    } do
+  describe "GET /auth/cli/authorize" do
+    test "renders consent page when session has device_code_id and user is logged in", %{conn: conn} do
       {:ok, user} =
         Accounts.find_or_create_from_oauth("github", %{
           "sub" => "uid_authorize",
@@ -79,7 +51,7 @@ defmodule CritWeb.DeviceControllerTest do
         conn
         |> init_test_session(%{"user_id" => user.id, device_code_id: device_code.id})
         |> assign(:current_user, user)
-        |> get(~p"/device/authorize")
+        |> get(~p"/auth/cli/authorize")
 
       body = html_response(conn, 200)
       assert body =~ "Authorize Device"
@@ -102,14 +74,14 @@ defmodule CritWeb.DeviceControllerTest do
         conn
         |> init_test_session(%{"user_id" => user.id, device_code_id: device_code.id})
         |> assign(:current_user, user)
-        |> get(~p"/device/authorize")
+        |> get(~p"/auth/cli/authorize")
 
       body = html_response(conn, 200)
       assert body =~ "Authorize Device"
       assert body =~ "No Avatar"
     end
 
-    test "redirects to /device when device_code_id is missing from session", %{conn: conn} do
+    test "redirects to /auth/cli when device_code_id is missing from session", %{conn: conn} do
       {:ok, user} =
         Accounts.find_or_create_from_oauth("github", %{
           "sub" => "uid_no_code",
@@ -122,24 +94,24 @@ defmodule CritWeb.DeviceControllerTest do
         conn
         |> init_test_session(%{"user_id" => user.id})
         |> assign(:current_user, user)
-        |> get(~p"/device/authorize")
+        |> get(~p"/auth/cli/authorize")
 
-      assert redirected_to(conn) == ~p"/device"
+      assert redirected_to(conn) == ~p"/auth/cli"
     end
 
-    test "redirects to /device when user is not logged in", %{conn: conn} do
+    test "redirects to /auth/cli when user is not logged in", %{conn: conn} do
       {:ok, %{record: device_code}} = DeviceCodes.create_device_code()
 
       conn =
         conn
         |> init_test_session(%{device_code_id: device_code.id})
-        |> get(~p"/device/authorize")
+        |> get(~p"/auth/cli/authorize")
 
-      assert redirected_to(conn) == ~p"/device"
+      assert redirected_to(conn) == ~p"/auth/cli"
     end
   end
 
-  describe "POST /device/authorize" do
+  describe "POST /auth/cli/authorize" do
     test "authorizes device code and redirects to success", %{conn: conn} do
       {:ok, user} =
         Accounts.find_or_create_from_oauth("github", %{
@@ -155,13 +127,13 @@ defmodule CritWeb.DeviceControllerTest do
         conn
         |> init_test_session(%{"user_id" => user.id, device_code_id: device_code.id})
         |> assign(:current_user, user)
-        |> post(~p"/device/authorize")
+        |> post(~p"/auth/cli/authorize")
 
-      assert redirected_to(conn) == ~p"/device/success"
+      assert redirected_to(conn) == ~p"/auth/cli/success"
       assert get_session(conn, :device_code_id) == nil
     end
 
-    test "redirects to /device with error when device code is expired", %{conn: conn} do
+    test "redirects to /auth/cli with error when device code is expired", %{conn: conn} do
       {:ok, user} =
         Accounts.find_or_create_from_oauth("github", %{
           "sub" => "uid_expired",
@@ -170,7 +142,6 @@ defmodule CritWeb.DeviceControllerTest do
           "picture" => nil
         })
 
-      # Use a non-existent device_code_id to trigger a :not_found error
       conn =
         conn
         |> init_test_session(%{
@@ -178,13 +149,13 @@ defmodule CritWeb.DeviceControllerTest do
           device_code_id: Ecto.UUID.generate()
         })
         |> assign(:current_user, user)
-        |> post(~p"/device/authorize")
+        |> post(~p"/auth/cli/authorize")
 
-      assert redirected_to(conn) == ~p"/device"
+      assert redirected_to(conn) == ~p"/auth/cli"
       assert get_session(conn, :device_code_id) == nil
     end
 
-    test "redirects to /device when session is missing device_code_id", %{conn: conn} do
+    test "redirects to /auth/cli when session is missing device_code_id", %{conn: conn} do
       {:ok, user} =
         Accounts.find_or_create_from_oauth("github", %{
           "sub" => "uid_missing",
@@ -197,40 +168,40 @@ defmodule CritWeb.DeviceControllerTest do
         conn
         |> init_test_session(%{"user_id" => user.id})
         |> assign(:current_user, user)
-        |> post(~p"/device/authorize")
+        |> post(~p"/auth/cli/authorize")
 
-      assert redirected_to(conn) == ~p"/device"
+      assert redirected_to(conn) == ~p"/auth/cli"
     end
 
-    test "redirects to /device when user is not logged in", %{conn: conn} do
+    test "redirects to /auth/cli when user is not logged in", %{conn: conn} do
       {:ok, %{record: device_code}} = DeviceCodes.create_device_code()
 
       conn =
         conn
         |> init_test_session(%{device_code_id: device_code.id})
-        |> post(~p"/device/authorize")
+        |> post(~p"/auth/cli/authorize")
 
-      assert redirected_to(conn) == ~p"/device"
+      assert redirected_to(conn) == ~p"/auth/cli"
     end
   end
 
-  describe "POST /device/cancel" do
-    test "clears device_code_id from session and redirects to /device", %{conn: conn} do
+  describe "POST /auth/cli/cancel" do
+    test "clears device_code_id from session and redirects to /auth/cli", %{conn: conn} do
       {:ok, %{record: device_code}} = DeviceCodes.create_device_code()
 
       conn =
         conn
         |> init_test_session(%{device_code_id: device_code.id})
-        |> post(~p"/device/cancel")
+        |> post(~p"/auth/cli/cancel")
 
-      assert redirected_to(conn) == ~p"/device"
+      assert redirected_to(conn) == ~p"/auth/cli"
       assert get_session(conn, :device_code_id) == nil
     end
   end
 
-  describe "GET /device/success" do
+  describe "GET /auth/cli/success" do
     test "renders the success page", %{conn: conn} do
-      conn = get(conn, ~p"/device/success")
+      conn = get(conn, ~p"/auth/cli/success")
       assert html_response(conn, 200) =~ "signed in"
       assert html_response(conn, 200) =~ "close this tab"
     end

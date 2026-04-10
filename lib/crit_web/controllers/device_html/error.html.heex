@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Link Expired - Crit</title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script>
+      (() => {
+        const t = localStorage.getItem("phx:theme");
+        if (t && t !== "system") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--crit-bg-primary)] text-[var(--crit-fg-primary)] min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-[360px] px-6">
+      <div class="text-center mb-8">
+        <a
+          href="/"
+          class="inline-block font-mono text-2xl font-bold text-[var(--crit-accent)] tracking-tight"
+        >
+          Crit
+        </a>
+      </div>
+
+      <div class="border border-[var(--crit-border)] rounded-lg bg-[var(--crit-bg-secondary)] p-6 text-center">
+        <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-[var(--crit-red)]/10 border border-[var(--crit-red)]/20 flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-[var(--crit-red)]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+
+        <h1 class="text-lg font-semibold text-[var(--crit-fg-primary)]">
+          Link expired
+        </h1>
+        <p class="text-sm text-[var(--crit-fg-muted)] mt-2 leading-relaxed">
+          {@message}
+        </p>
+      </div>
+
+      <p class="text-xs text-[var(--crit-fg-dimmed)] text-center mt-5">
+        Run
+        <code class="font-mono text-[var(--crit-fg-muted)] bg-[var(--crit-bg-secondary)] border border-[var(--crit-border)] px-1.5 py-0.5 rounded text-[11px]">
+          crit auth login
+        </code>
+        in your terminal to try again.
+      </p>
+    </div>
+  </body>
+</html>

@@ -52,7 +52,7 @@ defmodule CritWeb.OAuthControllerTest do
       assert get_session(conn, "user_id") != nil
     end
 
-    test "redirects to /device/authorize when device_code_id is in session" do
+    test "redirects to /auth/cli/authorize when device_code_id is in session" do
       {:ok, %{record: device_code}} = DeviceCodes.create_device_code()
 
       conn =
@@ -63,7 +63,7 @@ defmodule CritWeb.OAuthControllerTest do
         })
         |> get(~p"/auth/login/callback", %{"code" => "test_code"})
 
-      assert redirected_to(conn) == ~p"/device/authorize"
+      assert redirected_to(conn) == ~p"/auth/cli/authorize"
       assert get_session(conn, "user_id") != nil
       assert get_session(conn, :device_code_id) == device_code.id
     end
