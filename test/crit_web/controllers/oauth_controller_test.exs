@@ -42,13 +42,13 @@ defmodule CritWeb.OAuthControllerTest do
       :ok
     end
 
-    test "logs in user, sets session user_id, and redirects to dashboard" do
+    test "logs in user, sets session user_id, and redirects to settings" do
       conn =
         build_conn()
         |> init_test_session(%{oauth_session_params: %{}})
         |> get(~p"/auth/login/callback", %{"code" => "test_code"})
 
-      assert redirected_to(conn) == ~p"/dashboard"
+      assert redirected_to(conn) == ~p"/settings"
       assert get_session(conn, "user_id") != nil
     end
 
