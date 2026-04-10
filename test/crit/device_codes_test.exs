@@ -16,17 +16,14 @@ defmodule Crit.DeviceCodesTest do
   end
 
   describe "create_device_code/0" do
-    test "creates a device code with pending status" do
-      assert {:ok, %{device_code: dc, user_code: uc, record: record}} =
+    test "creates a device code with pending status and session_code" do
+      assert {:ok, %{device_code: dc, session_code: sc, record: record}} =
                DeviceCodes.create_device_code()
 
       assert is_binary(dc)
       assert String.length(dc) > 0
-      # User code is formatted as XXXX-XXXX
-      assert String.match?(
-               uc,
-               ~r/^[BCDFGHJKMNPQRSTVWXYZ2346789]{4}-[BCDFGHJKMNPQRSTVWXYZ2346789]{4}$/
-             )
+      assert is_binary(sc)
+      assert String.length(sc) > 20
 
       assert record.status == :pending
       assert record.expires_at != nil
@@ -36,59 +33,55 @@ defmodule Crit.DeviceCodesTest do
     test "stores device_code as SHA256 hash, not plaintext" do
       {:ok, %{device_code: raw, record: record}} = DeviceCodes.create_device_code()
       refute record.device_code == raw
-      # Verify it's a hash of the raw code
       expected_hash = Base.url_encode64(:crypto.hash(:sha256, raw), padding: false)
       assert record.device_code == expected_hash
+    end
+
+    test "stores session_code as SHA256 hash, not plaintext" do
+      {:ok, %{session_code: raw, record: record}} = DeviceCodes.create_device_code()
+      refute record.session_code == raw
+      expected_hash = Base.url_encode64(:crypto.hash(:sha256, raw), padding: false)
+      assert record.session_code == expected_hash
     end
 
     test "sets expires_at to approximately 15 minutes from now" do
       {:ok, %{record: record}} = DeviceCodes.create_device_code()
       diff = DateTime.diff(record.expires_at, DateTime.utc_now(), :second)
-      # Should be between 899 and 901 seconds (15 min with some clock tolerance)
       assert diff >= 898 and diff <= 901
     end
   end
 
-  describe "verify_user_code/1" do
-    test "finds a pending, non-expired device code by user_code" do
-      {:ok, %{user_code: user_code, record: original}} = DeviceCodes.create_device_code()
-      assert {:ok, found} = DeviceCodes.verify_user_code(user_code)
+  describe "verify_session_code/1" do
+    test "finds a pending, non-expired device code by session_code" do
+      {:ok, %{session_code: session_code, record: original}} = DeviceCodes.create_device_code()
+      assert {:ok, found} = DeviceCodes.verify_session_code(session_code)
       assert found.id == original.id
     end
 
-    test "normalizes user_code: strips hyphens and ignores case" do
-      {:ok, %{user_code: user_code, record: original}} = DeviceCodes.create_device_code()
-      # Try with lowercase and no hyphen
-      lowercase = user_code |> String.replace("-", "") |> String.downcase()
-      assert {:ok, found} = DeviceCodes.verify_user_code(lowercase)
-      assert found.id == original.id
-    end
-
-    test "returns error for non-existent user_code" do
-      assert {:error, :not_found} = DeviceCodes.verify_user_code("ZZZZ-ZZZZ")
+    test "returns error for non-existent session_code" do
+      assert {:error, :not_found} = DeviceCodes.verify_session_code("nonexistent")
     end
 
     test "returns error for expired device code" do
-      {:ok, %{user_code: user_code, record: record}} = DeviceCodes.create_device_code()
+      {:ok, %{session_code: session_code, record: record}} = DeviceCodes.create_device_code()
 
-      # Manually expire it
       record
       |> Ecto.Changeset.change(
         expires_at: DateTime.utc_now() |> DateTime.add(-1, :second) |> DateTime.truncate(:second)
       )
       |> Repo.update!()
 
-      assert {:error, :not_found} = DeviceCodes.verify_user_code(user_code)
+      assert {:error, :not_found} = DeviceCodes.verify_session_code(session_code)
     end
 
     test "returns error for authorized (non-pending) device code" do
-      {:ok, %{user_code: user_code, record: record}} = DeviceCodes.create_device_code()
+      {:ok, %{session_code: session_code, record: record}} = DeviceCodes.create_device_code()
 
       record
       |> Ecto.Changeset.change(status: :authorized)
       |> Repo.update!()
 
-      assert {:error, :not_found} = DeviceCodes.verify_user_code(user_code)
+      assert {:error, :not_found} = DeviceCodes.verify_session_code(session_code)
     end
   end
 

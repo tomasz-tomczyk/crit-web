@@ -14,10 +14,6 @@ defmodule Crit.DeviceCodes do
 
   @expires_in_seconds 900
   @poll_interval_seconds 5
-  # Consonants + unambiguous digits (no 0/O, 1/I/L)
-  @user_code_chars ~c"BCDFGHJKMNPQRSTVWXYZ2346789"
-  @user_code_length 8
-  @max_retries 5
 
   @doc """
   Returns the standard poll interval in seconds.
@@ -30,25 +26,19 @@ defmodule Crit.DeviceCodes do
   def expires_in, do: @expires_in_seconds
 
   @doc """
-  Generates a new device code and user code pair.
+  Generates a new device code and session code pair.
 
-  The device_code is stored as a SHA256 hash; the raw value is returned to the caller.
-  The user_code is stored in plaintext (it's short-lived and needs exact-match lookup).
+  Both are stored as SHA256 hashes; raw values are returned to the caller.
+  The session_code is embedded in the browser URL so the user doesn't need
+  to type anything manually.
 
-  Retries on user_code unique constraint violations (up to #{@max_retries} times).
-
-  Returns `{:ok, %{device_code: raw_device_code, user_code: formatted_code, record: %DeviceCode{}}}`.
+  Returns `{:ok, %{device_code: raw_device_code, session_code: raw_session_code, record: %DeviceCode{}}}`.
   """
-  def create_device_code, do: create_device_code(0)
-
-  defp create_device_code(retry) when retry >= @max_retries do
-    {:error, :too_many_retries}
-  end
-
-  defp create_device_code(retry) do
+  def create_device_code do
     raw_device_code = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
-    device_code_hash = hash_device_code(raw_device_code)
-    user_code = generate_user_code()
+    raw_session_code = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
+    device_code_hash = hash_code(raw_device_code)
+    session_code_hash = hash_code(raw_session_code)
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     expires_at = DateTime.add(now, @expires_in_seconds, :second)
@@ -57,7 +47,7 @@ defmodule Crit.DeviceCodes do
       %DeviceCode{}
       |> DeviceCode.changeset(%{
         device_code: device_code_hash,
-        user_code: user_code,
+        session_code: session_code_hash,
         status: :pending,
         expires_at: expires_at
       })
@@ -67,32 +57,29 @@ defmodule Crit.DeviceCodes do
         {:ok,
          %{
            device_code: raw_device_code,
-           user_code: format_user_code(user_code),
+           session_code: raw_session_code,
            record: record
          }}
 
-      {:error, %Ecto.Changeset{errors: errors}} ->
-        if Keyword.has_key?(errors, :user_code) do
-          create_device_code(retry + 1)
-        else
-          {:error, :insert_failed}
-        end
+      {:error, _changeset} ->
+        {:error, :insert_failed}
     end
   end
 
   @doc """
-  Looks up a pending, non-expired device code by user_code.
+  Looks up a pending, non-expired device code by raw session_code.
 
   Returns `{:ok, %DeviceCode{}}` or `{:error, :not_found}`.
   """
-  def verify_user_code(user_code) do
-    # Normalize: strip hyphens and upcase
-    normalized = user_code |> String.replace("-", "") |> String.upcase() |> String.trim()
+  def verify_session_code(raw_session_code) do
+    session_code_hash = hash_code(raw_session_code)
     now = DateTime.utc_now()
 
     case Repo.one(
            from d in DeviceCode,
-             where: d.user_code == ^normalized and d.status == :pending and d.expires_at > ^now
+             where:
+               d.session_code == ^session_code_hash and d.status == :pending and
+                 d.expires_at > ^now
          ) do
       nil -> {:error, :not_found}
       device_code -> {:ok, device_code}
@@ -155,7 +142,7 @@ defmodule Crit.DeviceCodes do
   - `{:error, :not_found}` — unknown device code
   """
   def poll_device_code(raw_device_code) do
-    device_code_hash = hash_device_code(raw_device_code)
+    device_code_hash = hash_code(raw_device_code)
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     case Repo.one(
@@ -235,20 +222,8 @@ defmodule Crit.DeviceCodes do
 
   # --- Private helpers ---
 
-  defp hash_device_code(raw) do
+  defp hash_code(raw) do
     Base.url_encode64(:crypto.hash(:sha256, raw), padding: false)
-  end
-
-  defp generate_user_code do
-    1..@user_code_length
-    |> Enum.map(fn _ -> Enum.random(@user_code_chars) end)
-    |> List.to_string()
-  end
-
-  defp format_user_code(code) when byte_size(code) == @user_code_length do
-    first = String.slice(code, 0, 4)
-    second = String.slice(code, 4, 4)
-    "#{first}-#{second}"
   end
 
   defp polling_too_fast?(%DeviceCode{last_polled_at: nil}, _now), do: false
