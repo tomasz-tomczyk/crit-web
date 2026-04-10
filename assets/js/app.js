@@ -19,6 +19,26 @@
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
+
+// phoenix_html.js only handles data-confirm for data-method links, not
+// LiveView phx-click buttons. This capture-phase handler adds support for
+// data-confirm on phx-click elements: it shows the confirm dialog and
+// blocks the event if the user cancels. On confirm it temporarily strips
+// data-confirm so phoenix_html.js doesn't show a duplicate dialog.
+window.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-confirm][phx-click]")
+  if (!el) return
+  const message = el.getAttribute("data-confirm")
+  if (!message) return
+  if (!window.confirm(message)) {
+    e.preventDefault()
+    e.stopImmediatePropagation()
+    return
+  }
+  el.removeAttribute("data-confirm")
+  requestAnimationFrame(() => el.setAttribute("data-confirm", message))
+}, true)
+
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
