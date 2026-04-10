@@ -36,7 +36,9 @@ defmodule CritWeb.DeviceControllerTest do
   end
 
   describe "GET /auth/cli/authorize" do
-    test "renders consent page when session has device_code_id and user is logged in", %{conn: conn} do
+    test "renders consent page when session has device_code_id and user is logged in", %{
+      conn: conn
+    } do
       {:ok, user} =
         Accounts.find_or_create_from_oauth("github", %{
           "sub" => "uid_authorize",

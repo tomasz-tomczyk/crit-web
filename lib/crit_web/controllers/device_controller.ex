@@ -20,14 +20,18 @@ defmodule CritWeb.DeviceController do
       {:error, :not_found} ->
         conn
         |> put_status(400)
-        |> render(:error, message: "This link is invalid or expired. Please run crit auth login again.")
+        |> render(:error,
+          message: "This link is invalid or expired. Please run crit auth login again."
+        )
     end
   end
 
   def index(conn, _params) do
     conn
     |> put_status(400)
-    |> render(:error, message: "This link is invalid or expired. Please run crit auth login again.")
+    |> render(:error,
+      message: "This link is invalid or expired. Please run crit auth login again."
+    )
   end
 
   @doc "GET /auth/cli/authorize — shows consent screen with user identity."

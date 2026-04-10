@@ -11,7 +11,9 @@ defmodule CritWeb.DeviceApiControllerTest do
   }
 
   describe "POST /api/device/code" do
-    test "creates a device code and returns response with verification_uri_complete", %{conn: conn} do
+    test "creates a device code and returns response with verification_uri_complete", %{
+      conn: conn
+    } do
       conn = post(conn, "/api/device/code")
 
       assert %{
