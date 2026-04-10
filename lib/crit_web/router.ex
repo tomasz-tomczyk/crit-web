@@ -88,6 +88,12 @@ defmodule CritWeb.Router do
       live "/dashboard", DashboardLive, :index
       live "/tokens", TokensLive, :index
     end
+
+    live_session :settings,
+      on_mount: [],
+      session: {CritWeb.SettingsLive, :session_opts, []} do
+      live "/settings", SettingsLive, :index
+    end
   end
 
   # Device flow API — unauthenticated (exempt from ApiAuth)

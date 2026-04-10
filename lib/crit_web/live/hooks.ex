@@ -72,4 +72,24 @@ defmodule CritWeb.Live.Hooks do
       {:halt, redirect(socket, to: "/")}
     end
   end
+
+  def on_mount(:require_user, _params, session, socket) do
+    current_user =
+      case Map.get(session, "user_id") do
+        nil ->
+          nil
+
+        user_id ->
+          case Accounts.get_user(user_id) do
+            {:ok, user} -> user
+            {:error, :not_found} -> nil
+          end
+      end
+
+    if current_user do
+      {:cont, assign(socket, :current_user, current_user)}
+    else
+      {:halt, redirect(socket, to: "/auth/login?return_to=/settings")}
+    end
+  end
 end
