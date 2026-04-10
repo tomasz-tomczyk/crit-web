@@ -35,6 +35,7 @@ defmodule CritWeb.OAuthController do
         case Accounts.find_or_create_from_oauth(provider, user_params) do
           {:ok, user} ->
             device_code_id = get_session(conn, :device_code_id)
+
             default_redirect =
               if Application.get_env(:crit, :selfhosted),
                 do: ~p"/dashboard",

@@ -227,5 +227,4 @@ defmodule CritWeb.DashboardLiveTest do
       assert html =~ "No reviews yet"
     end
   end
-
 end

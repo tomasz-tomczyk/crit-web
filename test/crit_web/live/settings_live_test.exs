@@ -5,11 +5,11 @@ defmodule CritWeb.SettingsLiveTest do
 
   setup do
     # Ensure OAuth is configured so the hook can redirect to login
-    Application.put_env(:crit, :oauth_provider, [
+    Application.put_env(:crit, :oauth_provider,
       strategy: Assent.Strategy.Github,
       client_id: "test",
       client_secret: "test"
-    ])
+    )
 
     on_exit(fn ->
       Application.delete_env(:crit, :oauth_provider)
