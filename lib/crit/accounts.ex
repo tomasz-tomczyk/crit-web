@@ -131,4 +131,25 @@ defmodule Crit.Accounts do
         order_by: [desc: t.inserted_at]
     )
   end
+
+  @doc """
+  Deletes a user account. PostgreSQL cascade handles:
+  - API tokens (deleted)
+  - Device codes (deleted)
+  - Reviews (user_id set to nil, reviews preserved)
+
+  Returns `:ok` or `{:error, :not_found}`.
+  """
+  def delete_account(%User{id: id}) do
+    case Repo.get(User, id) do
+      nil ->
+        {:error, :not_found}
+
+      user ->
+        case Repo.delete(user) do
+          {:ok, _} -> :ok
+          {:error, _} -> {:error, :delete_failed}
+        end
+    end
+  end
 end
