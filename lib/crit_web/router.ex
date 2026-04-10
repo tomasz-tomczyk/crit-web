@@ -86,7 +86,6 @@ defmodule CritWeb.Router do
       on_mount: [],
       session: {CritWeb.DashboardLive, :session_opts, []} do
       live "/dashboard", DashboardLive, :index
-      live "/tokens", TokensLive, :index
     end
 
     live_session :settings,

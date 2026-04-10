@@ -225,10 +225,10 @@ defmodule CritWeb.Layouts do
                     {@current_user.name || @current_user.email}
                   </span>
                   <.link
-                    href={~p"/tokens"}
+                    href={~p"/settings"}
                     class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"
                   >
-                    API Tokens
+                    Settings
                   </.link>
                   <.link
                     href={~p"/auth/logout"}
@@ -287,10 +287,10 @@ defmodule CritWeb.Layouts do
             </.link>
             <%= if @current_user do %>
               <.link
-                href={~p"/tokens"}
+                href={~p"/settings"}
                 class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-2"
               >
-                API Tokens
+                Settings
               </.link>
               <.link
                 href={~p"/auth/logout"}
