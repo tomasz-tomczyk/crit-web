@@ -5,8 +5,6 @@ defmodule CritWeb.SettingsLive do
 
   import CritWeb.Helpers, only: [time_ago: 1]
 
-  on_mount {CritWeb.Live.Hooks, :require_user}
-
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
@@ -89,10 +87,5 @@ defmodule CritWeb.SettingsLive do
 
   defp delete_confirmation_text(user) do
     user.email || user.name || "delete my account"
-  end
-
-  @doc false
-  def session_opts(conn) do
-    %{"user_id" => Plug.Conn.get_session(conn, "user_id")}
   end
 end

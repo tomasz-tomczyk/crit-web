@@ -87,6 +87,8 @@ defmodule CritWeb.Layouts do
   @doc """
   Shared site header with navigation links, used across all public pages.
   """
+  attr :current_user, :any, default: nil
+
   def site_header(assigns) do
     ~H"""
     <header class="border-b border-[var(--crit-border)] bg-[var(--crit-bg-secondary)]">
@@ -131,6 +133,43 @@ defmodule CritWeb.Layouts do
             </svg>
             GitHub
           </a>
+          <%= if @current_user do %>
+            <a
+              href={~p"/dashboard"}
+              class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors"
+            >
+              Dashboard
+            </a>
+            <div class="flex items-center gap-3">
+              <%= if @current_user.avatar_url do %>
+                <img
+                  src={@current_user.avatar_url}
+                  alt={@current_user.name}
+                  class="h-6 w-6 rounded-full"
+                />
+              <% end %>
+              <a
+                href={~p"/settings"}
+                class="text-sm text-[var(--crit-fg-primary)] no-underline hover:text-[var(--crit-accent)] transition-colors"
+              >
+                {@current_user.name || @current_user.email}
+              </a>
+              <.link
+                href={~p"/auth/logout"}
+                method="delete"
+                class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+              >
+                Sign out
+              </.link>
+            </div>
+          <% else %>
+            <a
+              href={~p"/auth/login?return_to=/dashboard"}
+              class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] transition-colors"
+            >
+              Sign in
+            </a>
+          <% end %>
           <.theme_toggle />
         </nav>
         <%!-- Mobile: theme toggle + hamburger --%>
@@ -181,6 +220,43 @@ defmodule CritWeb.Layouts do
             </svg>
             GitHub
           </a>
+          <%= if @current_user do %>
+            <a
+              href={~p"/dashboard"}
+              class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-1.5"
+            >
+              Dashboard
+            </a>
+            <a
+              href={~p"/settings"}
+              class="flex items-center gap-2 py-1.5 no-underline"
+            >
+              <%= if @current_user.avatar_url do %>
+                <img
+                  src={@current_user.avatar_url}
+                  alt={@current_user.name}
+                  class="h-5 w-5 rounded-full"
+                />
+              <% end %>
+              <span class="text-sm text-[var(--crit-fg-primary)] hover:text-[var(--crit-accent)]">
+                {@current_user.name || @current_user.email}
+              </span>
+            </a>
+            <.link
+              href={~p"/auth/logout"}
+              method="delete"
+              class="text-sm text-red-400 hover:text-red-300 no-underline py-1.5"
+            >
+              Sign out
+            </.link>
+          <% else %>
+            <a
+              href={~p"/auth/login?return_to=/dashboard"}
+              class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-1.5"
+            >
+              Sign in
+            </a>
+          <% end %>
         </div>
       </div>
     </header>
@@ -188,11 +264,15 @@ defmodule CritWeb.Layouts do
   end
 
   @doc """
-  Simplified header for self-hosted dashboard. No marketing nav links.
+  Header for dashboard and admin pages. No marketing nav links.
+  Used in both public and selfhosted modes.
   """
-  attr :authenticated, :boolean, default: false
+  attr :authenticated, :boolean, default: true
   attr :password_required, :boolean, default: false
   attr :current_user, :any, default: nil
+  attr :show_admin_link, :boolean, default: false
+  attr :show_my_reviews_link, :boolean, default: false
+  attr :show_settings_link, :boolean, default: false
 
   def dashboard_header(assigns) do
     ~H"""
@@ -205,101 +285,109 @@ defmodule CritWeb.Layouts do
           >
             Crit
           </a>
-          <span class="text-xs text-[var(--crit-fg-muted)] border border-[var(--crit-border)] px-2 py-0.5 rounded">
-            self-hosted
-          </span>
         </div>
         <nav class="flex items-center gap-4">
-          <%= if @password_required do %>
-            <%= if @authenticated do %>
-              <%= if @current_user do %>
-                <div class="flex items-center gap-3">
-                  <%= if @current_user.avatar_url do %>
-                    <img
-                      src={@current_user.avatar_url}
-                      alt={@current_user.name}
-                      class="h-8 w-8 rounded-full"
-                    />
-                  <% end %>
-                  <span class="text-sm text-[var(--crit-fg-primary)] max-sm:hidden">
-                    {@current_user.name || @current_user.email}
-                  </span>
-                  <.link
-                    href={~p"/settings"}
-                    class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"
-                  >
-                    Settings
-                  </.link>
-                  <.link
-                    href={~p"/auth/logout"}
-                    method="delete"
-                    class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"
-                  >
-                    Sign out
-                  </.link>
-                </div>
-              <% else %>
-                <.form
-                  for={%{}}
-                  action={~p"/auth/logout"}
-                  method="post"
-                  id="logout-form"
-                  class="max-sm:hidden"
-                >
-                  <button
-                    type="submit"
-                    class="text-sm text-red-400 hover:text-red-300 transition-colors cursor-pointer"
-                  >
-                    Sign out
-                  </button>
-                </.form>
+          <%= if @current_user do %>
+            <div class="flex items-center gap-3 max-sm:hidden">
+              <%= if @current_user.avatar_url do %>
+                <img
+                  src={@current_user.avatar_url}
+                  alt={@current_user.name}
+                  class="h-8 w-8 rounded-full"
+                />
               <% end %>
-            <% else %>
+              <span class="text-sm text-[var(--crit-fg-primary)]">
+                {@current_user.name || @current_user.email}
+              </span>
+              <%= if @show_my_reviews_link do %>
+                <.link
+                  href={~p"/dashboard"}
+                  class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)]"
+                >
+                  My Reviews
+                </.link>
+              <% end %>
+              <%= if @show_admin_link do %>
+                <.link
+                  href={~p"/admin"}
+                  class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)]"
+                >
+                  Admin
+                </.link>
+              <% end %>
+              <%= if @show_settings_link do %>
+                <.link
+                  navigate={~p"/settings"}
+                  class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)]"
+                >
+                  Settings
+                </.link>
+              <% end %>
+              <.link
+                href={~p"/auth/logout"}
+                method="delete"
+                class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)]"
+              >
+                Sign out
+              </.link>
+            </div>
+          <% else %>
+            <%= if @password_required and not @authenticated do %>
               <a
                 href="#login"
-                class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+                class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors max-sm:hidden"
               >
                 Sign in
               </a>
             <% end %>
           <% end %>
           <.theme_toggle />
-          <%= if @authenticated do %>
-            <button
-              id="dashboard-nav-toggle"
-              class="sm:hidden p-1 text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] cursor-pointer"
-              aria-label="Toggle menu"
-            >
-              <.icon name="hero-bars-3" class="size-5" />
-            </button>
-          <% end %>
+          <button
+            id="dashboard-nav-toggle"
+            class="sm:hidden p-1 text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] cursor-pointer"
+            aria-label="Toggle menu"
+          >
+            <.icon name="hero-bars-3" class="size-5" />
+          </button>
         </nav>
       </div>
       <%!-- Mobile nav dropdown --%>
-      <%= if @authenticated do %>
-        <div id="dashboard-nav" class="hidden sm:hidden border-t border-[var(--crit-border)]">
-          <div class="flex flex-col px-5 py-2">
+      <div id="dashboard-nav" class="hidden sm:hidden border-t border-[var(--crit-border)]">
+        <div class="flex flex-col px-5 py-2">
+          <%= if @show_my_reviews_link do %>
             <.link
               href={~p"/dashboard"}
               class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-2"
             >
-              Dashboard
+              My Reviews
             </.link>
-            <%= if @current_user do %>
-              <.link
-                href={~p"/settings"}
-                class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-2"
-              >
-                Settings
-              </.link>
-              <.link
-                href={~p"/auth/logout"}
-                method="delete"
-                class="text-sm text-red-400 hover:text-red-300 no-underline py-2"
-              >
-                Sign out
-              </.link>
-            <% else %>
+          <% end %>
+          <%= if @show_admin_link do %>
+            <.link
+              href={~p"/admin"}
+              class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-2"
+            >
+              Admin
+            </.link>
+          <% end %>
+          <%= if @show_settings_link do %>
+            <.link
+              navigate={~p"/settings"}
+              class="text-sm text-[var(--crit-fg-muted)] no-underline hover:text-[var(--crit-fg-primary)] py-2"
+            >
+              Settings
+            </.link>
+          <% end %>
+          <%= if @current_user do %>
+            <.link
+              href={~p"/auth/logout"}
+              method="delete"
+              class="text-sm text-red-400 hover:text-red-300 no-underline py-2"
+            >
+              Sign out
+            </.link>
+          <% else %>
+            <%= if @password_required and @authenticated do %>
               <.form for={%{}} action={~p"/auth/logout"} method="post" id="logout-form-mobile">
                 <button
                   type="submit"
@@ -309,9 +397,9 @@ defmodule CritWeb.Layouts do
                 </button>
               </.form>
             <% end %>
-          </div>
+          <% end %>
         </div>
-      <% end %>
+      </div>
     </header>
     """
   end

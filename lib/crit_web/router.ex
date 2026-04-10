@@ -82,16 +82,17 @@ defmodule CritWeb.Router do
       live "/r/:token", ReviewLive, :show
     end
 
-    live_session :dashboard,
-      on_mount: [],
-      session: {CritWeb.DashboardLive, :session_opts, []} do
+    live_session :user,
+      on_mount: [{CritWeb.Live.Hooks, :require_user}],
+      session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
       live "/dashboard", DashboardLive, :index
+      live "/settings", SettingsLive, :index
     end
 
-    live_session :settings,
-      on_mount: [],
-      session: {CritWeb.SettingsLive, :session_opts, []} do
-      live "/settings", SettingsLive, :index
+    live_session :admin,
+      on_mount: [{CritWeb.Live.Hooks, :require_selfhosted_auth}],
+      session: {CritWeb.Live.SessionHelper, :admin_session_opts, []} do
+      live "/admin", AdminLive, :index
     end
   end
 

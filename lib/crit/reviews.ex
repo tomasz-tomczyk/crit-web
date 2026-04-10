@@ -491,6 +491,46 @@ defmodule Crit.Reviews do
   end
 
   @doc """
+  Returns reviews for a specific user as plain maps with comment/file counts.
+  Same as `list_reviews_with_counts/0` but filtered to the given user_id.
+  """
+  def list_user_reviews_with_counts(user_id) do
+    first_file_subquery =
+      from(rf in ReviewRoundSnapshot,
+        where: rf.review_id == parent_as(:review).id,
+        order_by: [asc: rf.position],
+        limit: 1,
+        select: rf.file_path
+      )
+
+    from(r in Review, as: :review)
+    |> where([r], r.user_id == ^user_id)
+    |> join(:left, [r], c in Comment, on: c.review_id == r.id)
+    |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
+    |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
+    |> group_by([r, _c, _rf, fp], [
+      r.id,
+      r.token,
+      r.inserted_at,
+      r.last_activity_at,
+      r.user_id,
+      fp.file_path
+    ])
+    |> select([r, c, rf, fp], %{
+      id: r.id,
+      token: r.token,
+      inserted_at: r.inserted_at,
+      last_activity_at: r.last_activity_at,
+      user_id: r.user_id,
+      comment_count: count(c.id, :distinct),
+      file_count: count(rf.id, :distinct),
+      first_file_path: fp.file_path
+    })
+    |> order_by([r], desc: r.last_activity_at)
+    |> Repo.all()
+  end
+
+  @doc """
   Delete a review by its id.
 
   Accepts an optional `owner_id` keyword argument. When provided, deletion is

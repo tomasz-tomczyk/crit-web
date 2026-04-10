@@ -17,7 +17,7 @@ defmodule CritWeb.OAuthController do
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Could not reach OAuth provider.")
-        |> redirect(to: ~p"/dashboard")
+        |> redirect(to: ~p"/")
     end
   end
 
@@ -36,12 +36,7 @@ defmodule CritWeb.OAuthController do
           {:ok, user} ->
             device_code_id = get_session(conn, :device_code_id)
 
-            default_redirect =
-              if Application.get_env(:crit, :selfhosted),
-                do: ~p"/dashboard",
-                else: ~p"/settings"
-
-            return_to = get_session(conn, :oauth_return_to) || default_redirect
+            return_to = get_session(conn, :oauth_return_to) || ~p"/dashboard"
 
             conn =
               conn
@@ -62,13 +57,13 @@ defmodule CritWeb.OAuthController do
           {:error, _changeset} ->
             conn
             |> put_flash(:error, "Could not complete sign-in. Please try again.")
-            |> redirect(to: ~p"/dashboard")
+            |> redirect(to: ~p"/")
         end
 
       {:error, _reason} ->
         conn
         |> put_flash(:error, "OAuth callback failed. Please try again.")
-        |> redirect(to: ~p"/dashboard")
+        |> redirect(to: ~p"/")
     end
   end
 

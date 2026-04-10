@@ -5,19 +5,26 @@ defmodule CritWeb.Plugs.ApiAuth do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if enforced?(conn) do
-      case get_req_header(conn, "authorization") do
-        ["Bearer " <> token] ->
-          case Accounts.verify_token(token) do
-            {:ok, user} -> assign(conn, :current_user, user)
-            {:error, :invalid} -> conn |> send_resp(401, ~s({"error":"invalid token"})) |> halt()
-          end
+    case get_req_header(conn, "authorization") do
+      ["Bearer " <> token] ->
+        case Accounts.verify_token(token) do
+          {:ok, user} ->
+            assign(conn, :current_user, user)
 
-        _ ->
+          {:error, :invalid} ->
+            if enforced?(conn) do
+              conn |> send_resp(401, ~s({"error":"invalid token"})) |> halt()
+            else
+              conn
+            end
+        end
+
+      _ ->
+        if enforced?(conn) do
           conn |> send_resp(401, ~s({"error":"authentication required"})) |> halt()
-      end
-    else
-      conn
+        else
+          conn
+        end
     end
   end
 
