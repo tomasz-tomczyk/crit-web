@@ -11,22 +11,22 @@ defmodule CritWeb.DeviceApiControllerTest do
   }
 
   describe "POST /api/device/code" do
-    test "creates a device code and returns RFC 8628 response", %{conn: conn} do
+    test "creates a device code and returns response with verification_uri_complete", %{conn: conn} do
       conn = post(conn, "/api/device/code")
 
       assert %{
                "device_code" => dc,
-               "user_code" => uc,
-               "verification_uri" => uri,
+               "verification_uri_complete" => uri_complete,
                "interval" => interval,
                "expires_in" => expires_in
              } = json_response(conn, 201)
 
       assert is_binary(dc)
-      assert String.match?(uc, ~r/^[A-Z0-9]{4}-[A-Z0-9]{4}$/)
-      assert String.ends_with?(uri, "/device")
+      assert String.contains?(uri_complete, "/auth/cli?code=")
       assert interval == 5
       assert expires_in == 900
+      refute Map.has_key?(json_response(conn, 201), "user_code")
+      refute Map.has_key?(json_response(conn, 201), "verification_uri")
     end
 
     test "returns 404 when no OAuth provider is configured", %{conn: conn} do

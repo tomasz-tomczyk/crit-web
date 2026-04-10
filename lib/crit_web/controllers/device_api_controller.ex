@@ -8,23 +8,24 @@ defmodule CritWeb.DeviceApiController do
   @doc """
   POST /api/device/code — creates a new device code.
 
-  Returns RFC 8628-shaped response with device_code, user_code,
-  verification_uri, interval, and expires_in.
+  Returns device_code, verification_uri_complete (with embedded session code),
+  interval, and expires_in. The CLI opens verification_uri_complete in the
+  browser — no manual code entry required.
 
   Returns 404 if no OAuth provider is configured.
   """
   def create(conn, _params) do
     if oauth_configured?() do
       case DeviceCodes.create_device_code() do
-        {:ok, %{device_code: device_code, user_code: user_code}} ->
-          verification_uri = CritWeb.Endpoint.url() <> "/device"
+        {:ok, %{device_code: device_code, session_code: session_code}} ->
+          verification_uri_complete =
+            CritWeb.Endpoint.url() <> "/auth/cli?" <> URI.encode_query(%{code: session_code})
 
           conn
           |> put_status(201)
           |> json(%{
             device_code: device_code,
-            user_code: user_code,
-            verification_uri: verification_uri,
+            verification_uri_complete: verification_uri_complete,
             interval: DeviceCodes.poll_interval(),
             expires_in: DeviceCodes.expires_in()
           })
