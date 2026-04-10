@@ -89,7 +89,11 @@ defmodule CritWeb.Live.Hooks do
     if current_user do
       {:cont, assign(socket, :current_user, current_user)}
     else
-      {:halt, redirect(socket, to: "/auth/login?return_to=/settings")}
+      if Application.get_env(:crit, :oauth_provider) do
+        {:halt, redirect(socket, to: "/auth/login?return_to=/settings")}
+      else
+        {:halt, redirect(socket, to: "/")}
+      end
     end
   end
 end
