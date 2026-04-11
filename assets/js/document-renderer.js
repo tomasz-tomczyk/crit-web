@@ -1739,7 +1739,6 @@ function renderFileSection(ctx, file) {
       section.open = false
       file.collapsed = true
     }
-    header.blur()
   })
   section.addEventListener('toggle', function() {
     file.collapsed = !section.open

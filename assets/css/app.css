@@ -866,8 +866,8 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 .btn { font-family: var(--font-body); font-size: 13px; line-height: normal; font-weight: 500; padding: 8px 16px; border: 1px solid var(--crit-border); border-radius: 6px; cursor: pointer; background: var(--crit-bg-tertiary); color: var(--crit-fg-primary); transition: all 0.15s; }
 .btn:hover { background: var(--crit-bg-hover); }
 .btn:focus-visible { outline: 2px solid var(--crit-accent); outline-offset: 1px; }
-.btn-primary { background: #5b8def; color: #fff; border-color: #5b8def; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
-.btn-primary:hover { background: #6e9af2; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.btn-primary { background: var(--crit-accent); color: #fff; border-color: var(--crit-accent); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.btn-primary:hover { background: var(--crit-accent-hover); box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 .btn-sm { font-size: 12px; padding: 3px 10px; }
 
 /* ===== User Pill (logged-in identity) ===== */
@@ -1567,10 +1567,16 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 
 /* File-level comments (between file header and file body) */
 .file-comments {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 12px 24px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--crit-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.file-comments > * {
+  width: 100%;
+  max-width: 900px;
 }
 .file-comments .comment-card { margin-bottom: 8px; }
 .file-comments .comment-card:last-child { margin-bottom: 0; }
