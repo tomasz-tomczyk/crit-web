@@ -3568,6 +3568,245 @@ function navigateToComment(ctx, direction) {
   setTimeout(() => target.classList.remove('comment-nav-highlight'), 1000)
 }
 
+// ---- Content Width ----------------------------------------------------------
+
+function initWidth() {
+  const saved = localStorage.getItem('crit-width') || 'default'
+  applyWidth(saved)
+}
+
+function applyWidth(choice) {
+  localStorage.setItem('crit-width', choice)
+  if (choice === 'compact') document.documentElement.setAttribute('data-width', 'compact')
+  else if (choice === 'wide') document.documentElement.setAttribute('data-width', 'wide')
+  else document.documentElement.setAttribute('data-width', 'default')
+}
+
+// ---- Settings Panel ---------------------------------------------------------
+
+let settingsPanelOpen = false
+let settingsPanelTab = 'settings'
+
+function openSettingsPanel(tab) {
+  settingsPanelTab = tab || 'settings'
+  settingsPanelOpen = true
+  const overlay = document.getElementById('settingsOverlay')
+  if (!overlay) return
+  overlay.classList.add('active')
+  // Ensure the sliding underline element exists
+  if (!overlay.querySelector('.settings-tab-underline')) {
+    const underline = document.createElement('div')
+    underline.className = 'settings-tab-underline'
+    overlay.querySelector('.settings-tabs').appendChild(underline)
+  }
+  switchSettingsTab(settingsPanelTab)
+  renderShortcutsPane()
+}
+
+function closeSettingsPanel() {
+  settingsPanelOpen = false
+  const overlay = document.getElementById('settingsOverlay')
+  if (overlay) overlay.classList.remove('active')
+}
+
+function switchSettingsTab(tab) {
+  settingsPanelTab = tab
+  let activeBtn = null
+  document.querySelectorAll('.settings-tab[data-tab]').forEach(function(t) {
+    const isActive = t.dataset.tab === tab
+    t.classList.toggle('active', isActive)
+    if (isActive) activeBtn = t
+  })
+  document.querySelectorAll('.settings-pane').forEach(function(p) {
+    p.classList.toggle('active', p.dataset.pane === tab)
+  })
+  // Position the sliding underline
+  const underline = document.querySelector('.settings-tab-underline')
+  if (underline && activeBtn) {
+    const tabsRect = activeBtn.parentElement.getBoundingClientRect()
+    const btnRect = activeBtn.getBoundingClientRect()
+    underline.style.left = (btnRect.left - tabsRect.left) + 'px'
+    underline.style.width = btnRect.width + 'px'
+  }
+  // Render the active pane content
+  if (tab === 'settings') renderSettingsPane()
+  else if (tab === 'about') renderAboutPane()
+}
+
+function updatePillIndicator(indicatorId, values, current) {
+  const indicator = document.getElementById(indicatorId)
+  if (!indicator) return
+  const idx = values.indexOf(current)
+  if (idx >= 0) {
+    indicator.style.left = (idx * (100 / values.length)) + '%'
+    indicator.style.width = (100 / values.length) + '%'
+  }
+}
+
+function renderSettingsPane() {
+  const pane = document.getElementById('settingsPane')
+  if (!pane) return
+
+  const currentTheme = localStorage.getItem('phx:theme') || 'system'
+  const currentWidth = localStorage.getItem('crit-width') || 'default'
+
+  let html = ''
+
+  // Display section
+  html += '<div class="settings-section-label">Display</div>'
+  html += '<div class="settings-display-group">'
+
+  // Theme row
+  html += '<div class="settings-display-row">'
+  html += '<span class="settings-display-label">Theme</span>'
+  html += '<div class="settings-pill settings-pill--theme" id="settingsThemePill" role="group" aria-label="Theme">'
+  html += '<div class="settings-pill-indicator" id="settingsThemeIndicator"></div>'
+  const themeIcons = {
+    system: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 0 1 4.25 2h7.5A2.25 2.25 0 0 1 14 4.25v5.5A2.25 2.25 0 0 1 11.75 12h-1.312c.1.128.21.248.328.36a.75.75 0 0 1 .234.545v.345a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-.345a.75.75 0 0 1 .234-.545c.118-.111.228-.232.328-.36H4.25A2.25 2.25 0 0 1 2 9.75v-5.5Zm2.25-.75a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-7.5Z" clip-rule="evenodd"/></svg>',
+    light: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 1ZM10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM12.95 4.11a.75.75 0 1 0-1.06-1.06l-1.062 1.06a.75.75 0 0 0 1.061 1.062l1.06-1.061ZM15 8a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 15 8ZM11.89 12.95a.75.75 0 0 0 1.06-1.06l-1.06-1.062a.75.75 0 0 0-1.062 1.061l1.061 1.06ZM8 12a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 12ZM5.172 11.89a.75.75 0 0 0-1.061-1.062L3.05 11.89a.75.75 0 1 0 1.06 1.06l1.06-1.06ZM4 8a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 4 8ZM4.11 5.172A.75.75 0 0 0 5.173 4.11L4.11 3.05a.75.75 0 1 0-1.06 1.06l1.06 1.06Z"/></svg>',
+    dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M14.438 10.148c.19-.425-.321-.787-.748-.601A5.5 5.5 0 0 1 6.453 2.31c.186-.427-.176-.938-.6-.748a6.501 6.501 0 1 0 8.585 8.586Z"/></svg>'
+  }
+  ;['system', 'light', 'dark'].forEach(function(theme) {
+    const active = theme === currentTheme ? ' active' : ''
+    html += '<button class="settings-pill-btn' + active + '" data-settings-theme="' + theme + '" title="' + theme.charAt(0).toUpperCase() + theme.slice(1) + ' theme">' + themeIcons[theme] + '</button>'
+  })
+  html += '</div></div>'
+
+  // Width row
+  html += '<div class="settings-display-row">'
+  html += '<span class="settings-display-label">Content Width</span>'
+  html += '<div class="settings-pill settings-pill--width" id="settingsWidthPill" role="group" aria-label="Content width">'
+  html += '<div class="settings-pill-indicator" id="settingsWidthIndicator"></div>'
+  ;['compact', 'default', 'wide'].forEach(function(w) {
+    const active = w === currentWidth ? ' active' : ''
+    html += '<button class="settings-pill-btn' + active + '" data-settings-width="' + w + '">' + w.charAt(0).toUpperCase() + w.slice(1) + '</button>'
+  })
+  html += '</div></div>'
+  html += '</div>' // close settings-display-group
+
+  pane.innerHTML = html
+
+  // Wire up theme pill clicks — call the same setTheme that app.js uses
+  pane.querySelectorAll('[data-settings-theme]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const theme = btn.dataset.settingsTheme
+      // Dispatch the same event that the header theme pill uses
+      const event = new CustomEvent('phx:set-theme', { bubbles: true })
+      btn.dataset.phxTheme = theme
+      btn.dispatchEvent(event)
+      pane.querySelectorAll('[data-settings-theme]').forEach(function(b) { b.classList.toggle('active', b.dataset.settingsTheme === theme) })
+      updatePillIndicator('settingsThemeIndicator', ['system', 'light', 'dark'], theme)
+    })
+  })
+  updatePillIndicator('settingsThemeIndicator', ['system', 'light', 'dark'], currentTheme)
+
+  // Wire up width pill clicks
+  pane.querySelectorAll('[data-settings-width]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const w = btn.dataset.settingsWidth
+      applyWidth(w)
+      pane.querySelectorAll('[data-settings-width]').forEach(function(b) { b.classList.toggle('active', b.dataset.settingsWidth === w) })
+      updatePillIndicator('settingsWidthIndicator', ['compact', 'default', 'wide'], w)
+    })
+  })
+  updatePillIndicator('settingsWidthIndicator', ['compact', 'default', 'wide'], currentWidth)
+}
+
+function renderShortcutsPane() {
+  const pane = document.getElementById('shortcutsPane')
+  if (!pane) return
+
+  const groups = [
+    { label: 'Navigation', shortcuts: [
+      { key: '<kbd>j</kbd>', action: 'Next block' },
+      { key: '<kbd>k</kbd>', action: 'Previous block' },
+      { key: '<kbd>]</kbd>', action: 'Next comment' },
+      { key: '<kbd>[</kbd>', action: 'Previous comment' },
+    ]},
+    { label: 'Comments', shortcuts: [
+      { key: '<kbd>c</kbd>', action: 'Comment on focused block' },
+      { key: '<kbd>e</kbd>', action: 'Edit comment on focused block' },
+      { key: '<kbd>d</kbd>', action: 'Delete comment on focused block' },
+      { key: '<kbd>Shift</kbd>+<kbd>G</kbd>', action: 'General comment' },
+      { key: '<kbd>Ctrl</kbd>+<kbd>Enter</kbd>', action: 'Submit comment' },
+    ]},
+    { label: 'Review', shortcuts: [
+      { key: '<kbd>Shift</kbd>+<kbd>C</kbd>', action: 'Toggle comments panel' },
+    ]},
+    { label: 'View', shortcuts: [
+      { key: '<kbd>t</kbd>', action: 'Toggle table of contents' },
+      { key: '<kbd>Esc</kbd>', action: 'Cancel / clear focus' },
+      { key: '<kbd>?</kbd>', action: 'Toggle shortcuts' },
+    ]},
+  ]
+
+  let html = ''
+  groups.forEach(function(group) {
+    html += '<div class="shortcuts-group-label">' + group.label + '</div>'
+    html += '<table class="shortcuts-table">'
+    group.shortcuts.forEach(function(s) {
+      const modeTag = s.mode ? '<span class="shortcut-mode-badge">' + s.mode + '</span>' : ''
+      html += '<tr><td>' + s.key + '</td><td>' + s.action + modeTag + '</td></tr>'
+    })
+    html += '</table>'
+  })
+
+  pane.innerHTML = html
+}
+
+function renderAboutPane() {
+  const pane = document.getElementById('aboutPane')
+  if (!pane) return
+
+  let html = ''
+
+  // Header
+  html += '<div class="about-header">'
+  html += '<h2>Crit Web</h2>'
+  html += '<div class="about-version">Your feedback loop with the agent.</div>'
+  html += '</div>'
+
+  // Links
+  html += '<div class="settings-section-label">Links</div>'
+  html += '<div class="about-links">'
+  html += '<a class="about-link" href="https://crit.md" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1v4M5.5 3h5M3 7h10v6.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7Z"/></svg>Homepage</a>'
+  html += '<a class="about-link" href="https://github.com/tomasz-tomczyk/crit-web" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>GitHub</a>'
+  html += '<a class="about-link" href="https://crit.md/changelog" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg>Changelog</a>'
+  html += '</div>'
+
+  pane.innerHTML = html
+}
+
+function initSettingsPanel() {
+  // Gear icon opens Settings tab
+  const settingsToggle = document.getElementById('settingsToggle')
+  if (settingsToggle) {
+    settingsToggle.addEventListener('click', function() {
+      if (settingsPanelOpen) closeSettingsPanel()
+      else openSettingsPanel('settings')
+    })
+  }
+
+  // Close button
+  const settingsClose = document.getElementById('settingsClose')
+  if (settingsClose) {
+    settingsClose.addEventListener('click', closeSettingsPanel)
+  }
+
+  // Click outside to close
+  const overlay = document.getElementById('settingsOverlay')
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeSettingsPanel()
+    })
+  }
+
+  // Tab switching
+  document.querySelectorAll('.settings-tab[data-tab]').forEach(function(tab) {
+    tab.addEventListener('click', function() { switchSettingsTab(tab.dataset.tab) })
+  })
+}
+
 // ---- Phoenix LiveView hook --------------------------------------------------
 
 export const DocumentRenderer = {
@@ -3591,6 +3830,10 @@ export const DocumentRenderer = {
     ctx.showRoundDiff = false
     ctx.diffMode = 'split'
     ctx._navCommentId = null
+
+    // Initialize content width and settings panel
+    initWidth()
+    initSettingsPanel()
 
     const rawContent = ctx.el.dataset.content || ""
     ctx.rawContent = rawContent
@@ -3657,42 +3900,6 @@ export const DocumentRenderer = {
       })
     }
     window.addEventListener("scroll", ctx._scrollHandler, { passive: true })
-
-    // Keyboard shortcuts overlay
-    const shortcutsOverlay = document.createElement('div')
-    shortcutsOverlay.className = 'shortcuts-overlay'
-    shortcutsOverlay.innerHTML = `
-      <div class="shortcuts-dialog">
-        <h3>Keyboard Shortcuts</h3>
-        <table class="shortcuts-table">
-          <tr><td><kbd>j</kbd></td><td>Next block</td></tr>
-          <tr><td><kbd>k</kbd></td><td>Previous block</td></tr>
-          <tr><td><kbd>]</kbd></td><td>Next comment</td></tr>
-          <tr><td><kbd>[</kbd></td><td>Previous comment</td></tr>
-          <tr><td><kbd>c</kbd></td><td>Comment on focused block</td></tr>
-          <tr><td><kbd>e</kbd></td><td>Edit comment on focused block</td></tr>
-          <tr><td><kbd>d</kbd></td><td>Delete comment on focused block</td></tr>
-          <tr><td><kbd>t</kbd></td><td>Toggle table of contents</td></tr>
-          <tr><td><kbd>Shift</kbd>+<kbd>C</kbd></td><td>Toggle comments panel</td></tr>
-          <tr><td><kbd>Shift</kbd>+<kbd>G</kbd></td><td>Add review comment</td></tr>
-          <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Submit comment</td></tr>
-          <tr><td><kbd>Esc</kbd></td><td>Cancel / clear focus</td></tr>
-          <tr><td><kbd>?</kbd></td><td>Toggle this help</td></tr>
-        </table>
-      </div>
-    `
-    shortcutsOverlay.addEventListener('click', (e) => {
-      if (e.target === shortcutsOverlay) shortcutsOverlay.classList.remove('visible')
-    })
-    document.body.appendChild(shortcutsOverlay)
-    ctx._shortcutsOverlay = shortcutsOverlay
-
-    const shortcutsBtn = document.getElementById('shortcuts-btn')
-    if (shortcutsBtn) {
-      shortcutsBtn.addEventListener('click', () => {
-        ctx._shortcutsOverlay.classList.toggle('visible')
-      })
-    }
 
     const prevBtn = document.getElementById('comment-nav-prev')
     if (prevBtn) prevBtn.addEventListener('click', () => navigateToComment(ctx, -1))
@@ -4015,16 +4222,17 @@ export const DocumentRenderer = {
       // Allow Shift (for Shift+C) but block other modifiers
       if (e.metaKey || e.ctrlKey || e.altKey) return
 
-      // Shortcuts overlay
+      // Settings panel (shortcuts tab via ?)
       if (e.key === '?') {
         e.preventDefault()
-        ctx._shortcutsOverlay.classList.toggle('visible')
+        if (settingsPanelOpen) closeSettingsPanel()
+        else openSettingsPanel('shortcuts')
         return
       }
-      if (ctx._shortcutsOverlay.classList.contains('visible')) {
+      if (settingsPanelOpen) {
         if (e.key === 'Escape') {
           e.preventDefault()
-          ctx._shortcutsOverlay.classList.remove('visible')
+          closeSettingsPanel()
         }
         return
       }
@@ -4151,9 +4359,8 @@ export const DocumentRenderer = {
     if (this._resizeHandler) {
       window.removeEventListener("resize", this._resizeHandler)
     }
-    if (this._shortcutsOverlay) {
-      this._shortcutsOverlay.remove()
-    }
+    // Close settings panel if open
+    closeSettingsPanel()
     if (this._commentsPanel) {
       this._commentsPanel.remove()
     }
