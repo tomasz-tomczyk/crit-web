@@ -92,7 +92,7 @@ defmodule CritWeb.Layouts do
   def site_header(assigns) do
     ~H"""
     <header class="border-b border-[var(--crit-border)] bg-[var(--crit-bg-secondary)]">
-      <div class="max-w-[1100px] mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
         <a
           href={~p"/"}
           class="font-mono text-xl font-bold text-[var(--crit-accent)] tracking-tight no-underline hover:text-[var(--crit-accent-hover)] transition-colors"
@@ -277,7 +277,7 @@ defmodule CritWeb.Layouts do
   def dashboard_header(assigns) do
     ~H"""
     <header class="border-b border-[var(--crit-border)] bg-[var(--crit-bg-secondary)]">
-      <div class="max-w-[1100px] mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
         <div class="flex items-center gap-3">
           <a
             href={~p"/dashboard"}

@@ -3,245 +3,54 @@
 <div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.site_header current_user={@current_user} />
 
-  <section class="max-w-[1100px] mx-auto my-10 px-10 w-full max-sm:px-5 max-sm:mt-12">
-    <div class="flex items-start gap-14 max-lg:flex-col max-lg:gap-10">
-      <div class="flex-1 min-w-0">
-        <p class="font-mono text-xs tracking-widest max-sm:tracking-normal uppercase text-(--crit-accent) mb-3">
-          Local-first · No login · Works with any agent
-        </p>
-        <h1 class="text-6xl font-bold leading-[1.05] tracking-tighter mb-6 max-sm:text-4xl">
-          Your feedback loop<br />with the
-          <span class="whitespace-nowrap">
-            agent<span class="text-(--crit-accent)">.</span>
-            <span class="crit-blink-cursor">
-              ▍
-            </span>
+  <section class="max-w-7xl mx-auto pt-24 pb-16 px-10 w-full max-sm:px-5 max-sm:pt-14 max-sm:pb-10">
+    <div class="text-center max-w-3xl mx-auto mb-14 max-sm:mb-10">
+      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-5">
+        Local-first · No login · Works with any agent
+      </p>
+      <h1 class="text-[4.5rem] font-extrabold leading-[1.02] tracking-[-0.035em] mb-7 max-lg:text-6xl max-sm:text-[2.75rem]">
+        Your feedback loop<br />with the
+        <span class="whitespace-nowrap">
+          agent<span class="text-(--crit-accent)">.</span>
+          <span class="crit-blink-cursor">
+            ▍
           </span>
-        </h1>
-        <p class="text-lg max-sm:text-base leading-relaxed text-(--crit-fg-secondary) max-w-[480px] mb-8">
-          Review plans before your agent writes code. Review code before you ship it.
-          Leave inline comments in a browser-based UI, click Finish Review, and your agent
-          picks up the feedback automatically. It iterates. You review the diff. Repeat.
-        </p>
-        <div class="flex gap-3 flex-wrap max-sm:grid max-sm:grid-cols-2">
+        </span>
+      </h1>
+      <p class="text-xl max-sm:text-base leading-relaxed text-(--crit-fg-secondary) max-w-2xl mx-auto mb-10">
+        Review plans before your agent writes code. Review code before you ship it.
+        Leave inline comments, click Finish Review, and your agent
+        picks up the feedback automatically.
+      </p>
+      <div class="flex gap-3 justify-center flex-wrap max-sm:grid max-sm:grid-cols-2">
+        <a
+          href={~p"/getting-started"}
+          class="inline-flex items-center justify-center px-7 py-3 bg-(--crit-accent) text-(--crit-bg-primary) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-accent-hover) transition-colors"
+        >
+          Get started
+        </a>
+        <%= if @demo_token do %>
           <a
-            href={~p"/getting-started"}
-            class="inline-flex items-center justify-center px-6 py-2.5 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold no-underline hover:bg-(--crit-accent-hover) transition-colors"
+            href={~p"/r/#{@demo_token}"}
+            class="inline-flex items-center justify-center px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           >
-            Get started
+            See demo
           </a>
-          <%= if @demo_token do %>
-            <a
-              href={~p"/r/#{@demo_token}"}
-              class="inline-flex items-center justify-center px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
-            >
-              See demo
-            </a>
-          <% end %>
-          <a
-            href="https://github.com/tomasz-tomczyk/crit"
-            class="inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors max-sm:col-span-2"
-          >
-            <svg viewBox="0 0 16 16" class="size-3.5 fill-current opacity-70" aria-hidden="true">
-              <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
-            </svg>
-            Star on GitHub
-          </a>
-        </div>
-      </div>
-
-      <div class="w-[440px] shrink-0 max-lg:w-full">
-        <div class="border border-(--crit-border) rounded-lg overflow-hidden bg-(--crit-bg-secondary)">
-          <div class="flex items-center gap-2 px-4 py-2.5 border-b border-(--crit-border) bg-(--crit-bg-tertiary)">
-            <span class="font-mono text-xs font-semibold text-(--crit-fg-secondary)">
-              Crit
-            </span>
-            <span class="text-(--crit-fg-dimmed) text-xs">/</span>
-            <span class="font-mono text-xs text-(--crit-fg-muted) bg-(--crit-bg-secondary) px-2 py-0.5 rounded">
-              plan.md
-            </span>
-            <div class="ml-auto">
-              <span class="font-mono text-xs text-(--crit-fg-muted)">
-                <strong class="text-(--crit-accent) ">2</strong> comments
-              </span>
-            </div>
-          </div>
-
-          <div class="font-mono text-xs leading-6 select-none">
-            <div class="flex border-l-[3px] border-transparent">
-              <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">
-                1
-              </div>
-              <div class="flex-1 px-3 py-0.5 font-sans font-bold text-sm text-(--crit-fg-primary)">
-                # Implement auth system
-              </div>
-            </div>
-            <div class="flex border-l-[3px] border-transparent">
-              <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">
-                2
-              </div>
-              <div class="flex-1 px-3 py-0.5">&nbsp;</div>
-            </div>
-            <div class="flex border-l-[3px] border-transparent">
-              <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">
-                3
-              </div>
-              <div class="flex-1 px-3 py-0.5 font-sans font-semibold text-xs text-(--crit-fg-primary)">
-                ## Backend
-              </div>
-            </div>
-            <div class="flex border-l-[3px] border-(--crit-accent) bg-(--crit-accent-subtle)">
-              <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-accent) ">
-                4
-              </div>
-              <div class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
-                Use JWT tokens for sessions.
-              </div>
-            </div>
-            <div class="mx-3 mb-1 mt-0.5 border border-(--crit-border-comment) rounded text-xs overflow-hidden bg-(--crit-comment-bg)">
-              <div class="px-3 py-1.5 border-b border-(--crit-border) flex items-center gap-2 bg-(--crit-accent-subtle)">
-                <svg
-                  viewBox="0 0 16 16"
-                  class="size-3 fill-(--crit-accent) shrink-0"
-                  aria-hidden="true"
-                >
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                </svg>
-                <span class="font-sans font-semibold text-(--crit-accent) ">You</span>
-                <span class="text-(--crit-fg-dimmed)">·</span>
-                <span class="font-sans text-(--crit-fg-muted)">Line 4</span>
-                <span class="text-(--crit-fg-dimmed)">·</span>
-                <span class="font-sans text-(--crit-fg-muted)">14:22</span>
-                <span class="ml-auto font-sans text-(--crit-fg-muted)">Edit · Delete</span>
-              </div>
-              <div class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed">
-                Consider OAuth2 instead. Simpler for users, no token refresh logic needed.
-              </div>
-            </div>
-            <div class="flex border-l-[3px] border-transparent">
-              <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">
-                5
-              </div>
-              <div class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
-                Rate limit all endpoints.
-              </div>
-            </div>
-            <div class="flex border-l-[3px] border-(--crit-accent) bg-(--crit-accent-subtle)">
-              <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-accent) ">
-                6
-              </div>
-              <div class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
-                Store passwords with bcrypt.
-              </div>
-            </div>
-            <div class="mx-3 mb-3 mt-0.5 border border-(--crit-border-comment) rounded text-xs overflow-hidden bg-(--crit-comment-bg)">
-              <div class="px-3 py-1.5 border-b border-(--crit-border) flex items-center gap-2 bg-(--crit-accent-subtle)">
-                <svg
-                  viewBox="0 0 16 16"
-                  class="size-3 fill-(--crit-accent) shrink-0"
-                  aria-hidden="true"
-                >
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                </svg>
-                <span class="font-sans font-semibold text-(--crit-accent) ">You</span>
-                <span class="text-(--crit-fg-dimmed)">·</span>
-                <span class="font-sans text-(--crit-fg-muted)">Line 6</span>
-                <span class="text-(--crit-fg-dimmed)">·</span>
-                <span class="font-sans text-(--crit-fg-muted)">14:23</span>
-                <span class="ml-auto font-sans text-(--crit-fg-muted)">Edit · Delete</span>
-              </div>
-              <div class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed">
-                bcrypt is fine but argon2id is the current recommendation.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  
-<!-- ===== How it works ===== -->
-  <section class="max-w-[1100px] mx-auto mt-16 px-10 max-sm:px-5 w-full" id="how-it-works">
-    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
-      How it works
-    </p>
-    <h2 class="text-3xl font-bold tracking-tight mb-10 max-sm:text-2xl max-sm:mb-8">
-      You direct. Your agent executes<span class="text-(--crit-accent)">.</span>
-    </h2>
-
-    <div class="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
-      <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
-        <div class="font-mono text-xs text-(--crit-accent) mb-2">01</div>
-        <h3 class="text-sm font-semibold mb-2">Open for review</h3>
-        <pre class="rounded-md border border-(--crit-border) bg-(--crit-code-bg) p-2.5 text-xs font-mono leading-5 text-(--crit-fg-secondary) select-none m-0 overflow-hidden"><span class="text-(--crit-fg-muted)">$</span> crit plan.md
-<span class="text-(--crit-fg-muted)">$</span> crit</pre>
-        <p class="text-xs text-(--crit-fg-muted) mt-1.5 leading-snug">
-          Any file, or no args to auto-detect changes.
-        </p>
-      </div>
-
-      <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
-        <div class="font-mono text-xs text-(--crit-accent) mb-2">02</div>
-        <h3 class="text-sm font-semibold mb-2">Finish review</h3>
-        <div class="rounded-md border border-(--crit-border) bg-(--crit-code-bg) p-2.5 text-xs font-mono leading-5 text-(--crit-fg-secondary) select-none">
-          <div>
-            <span class="text-(--crit-green)">&rarr;</span>
-            Agent notified <span class="text-(--crit-green)">&check;</span>
-          </div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Waiting for updates&hellip;</div>
-        </div>
-      </div>
-
-      <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
-        <div class="font-mono text-xs text-(--crit-accent) mb-2">03</div>
-        <h3 class="text-sm font-semibold mb-2">Agent edits &amp; signals done</h3>
-        <div class="rounded-md border border-(--crit-border) bg-(--crit-code-bg) p-2.5 text-xs font-mono leading-5 text-(--crit-fg-secondary) select-none">
-          <div class="text-(--crit-fg-muted)">&nbsp; Agent addresses feedback&hellip;</div>
-          <div><span class="text-(--crit-fg-muted)">$</span> crit go 3247</div>
-        </div>
-      </div>
-
-      <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
-        <div class="font-mono text-xs text-(--crit-accent) mb-2">04</div>
-        <h3 class="text-sm font-semibold mb-2">Diff &amp; repeat</h3>
-        <div class="rounded-md border border-(--crit-border) bg-(--crit-code-bg) p-2.5 text-xs font-mono leading-5 text-(--crit-fg-secondary) select-none">
-          <div><span class="text-(--crit-accent)">&rarr;</span> Round 2: diff ready</div>
-          <div><span class="text-(--crit-green)">&rarr;</span> 2 resolved, 1 open</div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Review again&hellip;</div>
-        </div>
+        <% end %>
+        <a
+          href="https://github.com/tomasz-tomczyk/crit"
+          class="inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors max-sm:col-span-2"
+        >
+          <svg viewBox="0 0 16 16" class="size-3.5 fill-current opacity-70" aria-hidden="true">
+            <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
+          </svg>
+          Star on GitHub
+        </a>
       </div>
     </div>
 
-    <p class="text-sm text-(--crit-fg-muted) mt-5 text-center">
-      Works with Claude Code, Cursor, GitHub Copilot, Aider, Cline, Windsurf, or any agent that reads files.
-      <a href={~p"/integrations"} class="text-(--crit-accent) no-underline hover:underline">
-        Set up your agent &rarr;
-      </a>
-    </p>
-  </section>
-  
-<!-- ===== Install ===== -->
-  <section class="max-w-[1100px] mx-auto mt-10 px-10 max-sm:px-5 w-full" id="install">
-    <div class="flex gap-14 items-start max-lg:flex-col max-lg:gap-6">
-      <div class="w-[280px] shrink-0 max-lg:w-full">
-        <h2 class="text-2xl font-bold tracking-tight mb-3">Install</h2>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-          Single binary, zero dependencies. Pick your package manager and start reviewing in seconds.
-        </p>
-      </div>
-      <div class="flex-1 min-w-0 max-lg:w-full">
-        <CritWeb.PageHTML.install_widget />
-      </div>
-    </div>
-  </section>
-  
-<!-- ===== Demo Video ===== -->
-  <section class="max-w-[1100px] mx-auto mt-10 px-10 max-sm:px-5 w-full">
-    <p class="text-sm text-(--crit-fg-muted) mb-3">
-      2-minute walkthrough of plan review: leaving inline comments and handing off to an agent. Branch review uses the same UI with git diffs.
-    </p>
     <div
-      class="relative w-full rounded-lg overflow-hidden border border-(--crit-border) cursor-pointer group"
+      class="relative w-full rounded-xl overflow-hidden border border-(--crit-border) cursor-pointer group"
       style="aspect-ratio: 16/9;"
       id="yt-facade"
       aria-label="Play Crit demo video"
@@ -264,26 +73,50 @@
         </svg>
       </div>
     </div>
+    <p class="text-sm text-(--crit-fg-muted) mt-6 text-center">
+      Works with Claude Code, Cursor, GitHub Copilot, Aider, Cline, Windsurf, or any agent that reads files.
+      <a href={~p"/integrations"} class="text-(--crit-accent) no-underline hover:underline">
+        Set up your agent &rarr;
+      </a>
+    </p>
+  </section>
+
+<!-- ===== Install ===== -->
+  <section class="max-w-7xl mx-auto mt-24 px-10 max-sm:px-5 max-sm:mt-16 w-full" id="install">
+    <div class="flex gap-14 items-start max-lg:flex-col max-lg:gap-6">
+      <div class="w-[300px] shrink-0 max-lg:w-full">
+        <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+          Quick start
+        </p>
+        <h2 class="text-2xl font-extrabold tracking-tight mb-3">Install</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Single binary, zero dependencies. Pick your package manager and start reviewing in seconds.
+        </p>
+      </div>
+      <div class="flex-1 min-w-0 max-lg:w-full">
+        <CritWeb.PageHTML.install_widget />
+      </div>
+    </div>
   </section>
   
 <!-- ===== Features ===== -->
   <section
-    class="max-w-[1100px] mx-auto mt-14 mb-16 px-10 max-sm:px-5 max-sm:mt-10 w-full"
+    class="max-w-7xl mx-auto mt-28 mb-20 px-10 max-sm:px-5 max-sm:mt-16 w-full"
     id="features"
   >
-    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+    <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-4">
       Features
     </p>
-    <h2 class="text-3xl font-bold tracking-tight mb-10 max-sm:text-2xl max-sm:mb-8">
+    <h2 class="text-4xl font-extrabold tracking-tight mb-12 max-sm:text-2xl max-sm:mb-8">
       Built for the feedback loop<span class="text-(--crit-accent) ">.</span>
     </h2>
 
-    <div class="grid grid-cols-3 gap-3 max-lg:grid-cols-2 max-sm:grid-cols-1" id="features-grid">
+    <div class="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1" id="features-grid">
       
 <!-- Inline Comments -->
       <a
         href={~p"/features/inline-comments"}
-        class="feature-card col-span-2 max-lg:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card col-span-2 max-lg:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Inline Comments</h3>
@@ -329,7 +162,7 @@
 <!-- Diff Viewer -->
       <a
         href={~p"/features/split-unified-diff"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Git Diffs & Round Diffs</h3>
@@ -385,7 +218,7 @@
 <!-- AI Review Loop -->
       <a
         href={~p"/features/ai-review-loop"}
-        class="feature-card col-span-2 max-sm:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card col-span-2 max-sm:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">AI Review Loop</h3>
@@ -425,7 +258,7 @@
 <!-- Vim Keybindings -->
       <a
         href={~p"/features/vim-keybindings"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Vim Keybindings</h3>
@@ -466,7 +299,7 @@
 <!-- Share Reviews -->
       <a
         href={~p"/features/share-reviews"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Share Reviews</h3>
@@ -494,7 +327,7 @@
 <!-- Syntax Highlighting -->
       <a
         href={~p"/features/syntax-highlighting"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Syntax Highlighting</h3>
@@ -527,7 +360,7 @@
 <!-- Mermaid Diagrams -->
       <a
         href={~p"/features/mermaid-diagrams"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Mermaid Diagrams</h3>
@@ -596,9 +429,9 @@
   </section>
 
   <%!-- ===== Testimonials ===== --%>
-  <section class="w-full mt-14 mb-8 py-12 bg-(--crit-bg-secondary)">
-    <div class="max-w-[1100px] mx-auto px-10 max-sm:px-5">
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-10">
+  <section class="w-full mt-8 py-16 bg-(--crit-bg-secondary) max-sm:py-12">
+    <div class="max-w-7xl mx-auto px-10 max-sm:px-5">
+      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-12">
         What engineers are saying
       </p>
       <div class="grid grid-cols-2 gap-12 max-sm:grid-cols-1 max-sm:gap-10" id="testimonials-grid">
@@ -693,7 +526,7 @@
   </section>
   <!-- ===== Self-Hosting ===== -->
   <section
-    class="max-w-[1100px] mx-auto mt-10 mb-16 px-10 max-sm:px-5 w-full"
+    class="max-w-7xl mx-auto mt-16 mb-20 px-10 max-sm:px-5 w-full"
     id="self-hosting-card"
   >
     <a
@@ -702,7 +535,7 @@
     >
       <div class="flex items-center justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4">
         <div>
-          <h3 class="text-lg font-semibold tracking-tight mb-1">Self-Host Crit Web</h3>
+          <h3 class="text-lg font-bold tracking-tight mb-1">Self-Host Crit Web</h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed max-w-[520px]">
             Run your own instance with Docker. One command to start, automatic migrations, works with any Postgres database.
           </p>

@@ -18,6 +18,7 @@
 /* Use the data attribute for dark mode  */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
@@ -181,7 +182,7 @@
     --crit-bg-tertiary: #eeeeee;
     --crit-bg-hover: #e8e8e8;
     --crit-fg-primary: #24292f;
-    --crit-fg-secondary: #57606a;
+      --crit-fg-secondary: #57606a;
     --crit-fg-muted: #8b949e;
     --crit-fg-dimmed: #586069;
     --crit-accent: #0969da;

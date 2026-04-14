@@ -1,12 +1,12 @@
 <div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_user={@current_user} />
-  <div class="max-w-[1100px] mx-auto px-10 pb-20 max-sm:px-5 max-sm:pb-12">
+  <div class="max-w-7xl mx-auto px-10 pb-20 max-sm:px-5 max-sm:pb-12">
     <%!-- Hero --%>
     <section class="mt-16 mb-14 max-sm:mt-10 max-sm:mb-10">
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
         Self-Hosting
       </p>
-      <h1 class="text-4xl font-bold leading-[1.1] tracking-tight mb-4 max-sm:text-3xl">
+      <h1 class="text-4xl font-extrabold leading-[1.1] tracking-tight mb-4 max-sm:text-3xl">
         Your infrastructure,<br />your reviews<span class="text-(--crit-accent)">.</span>
       </h1>
       <p class="text-base leading-relaxed text-(--crit-fg-secondary) max-w-[520px]">
@@ -53,7 +53,7 @@
       </div>
 
       <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex items-start gap-4">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex items-start gap-4">
           <span class="text-(--crit-accent) text-lg leading-none mt-0.5 select-none">
             &#9654;
           </span>
@@ -64,7 +64,7 @@
             </p>
           </div>
         </div>
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 flex items-start gap-4">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex items-start gap-4">
           <span class="text-(--crit-accent) text-lg leading-none mt-0.5 select-none">
             &#9654;
           </span>
@@ -101,7 +101,7 @@
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
-        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
           <div class="text-(--crit-fg-muted) text-xs mb-2 select-none">
             # Download config files
           </div>
@@ -164,7 +164,7 @@
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
-        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
           <div>
             <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker compose up -d</span>
           </div>
@@ -473,7 +473,7 @@
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
-        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
           <div>
             <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker run -d \</span>
           </div>
@@ -526,7 +526,7 @@
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
-        <div class="bg-(--crit-code-bg) p-5 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
           <div>
             <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker compose pull</span>
           </div>
@@ -543,10 +543,10 @@
 
     <%!-- Docker image tags --%>
     <section class="mb-16 max-sm:mb-12">
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
         Docker Image
       </p>
-      <h2 class="text-2xl font-bold tracking-tight mb-2 max-sm:text-xl">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-2 max-sm:text-xl">
         Available tags<span class="text-(--crit-accent)">.</span>
       </h2>
       <p class="text-sm text-(--crit-fg-muted) mb-6 leading-relaxed">
@@ -557,7 +557,7 @@
       </p>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6">
           <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">
             latest
           </code>
@@ -565,13 +565,13 @@
             Latest stable release. Recommended for production.
           </p>
         </div>
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6">
           <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">main</code>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
             Bleeding edge. Built from the main branch on every push.
           </p>
         </div>
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6">
           <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">1.2.3</code>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
             Pin a specific version. Use for reproducible deployments.
@@ -582,17 +582,17 @@
 
     <%!-- What's next --%>
     <section>
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
         What's next
       </p>
-      <h2 class="text-2xl font-bold tracking-tight mb-6 max-sm:text-xl">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-6 max-sm:text-xl">
         Keep going<span class="text-(--crit-accent)">.</span>
       </h2>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
         <a
           href={~p"/getting-started"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
         >
           <h3 class="text-sm font-semibold mb-1.5">Getting started</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
@@ -603,7 +603,7 @@
 
         <a
           href={~p"/integrations"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
         >
           <h3 class="text-sm font-semibold mb-1.5">Integrations</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
@@ -614,7 +614,7 @@
 
         <a
           href={~p"/features"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-5 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
         >
           <h3 class="text-sm font-semibold mb-1.5">All features</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">

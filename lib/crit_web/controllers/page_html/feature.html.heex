@@ -4,7 +4,7 @@
   <Layouts.site_header current_user={@current_user} />
   
 <!-- Breadcrumb -->
-  <div class="max-w-[1100px] mx-auto w-full px-10 mt-10 max-sm:px-5 max-sm:mt-5">
+  <div class="max-w-7xl mx-auto w-full px-10 mt-10 max-sm:px-5 max-sm:mt-5">
     <a
       href={~p"/features"}
       class="text-sm text-(--crit-fg-muted) no-underline hover:text-(--crit-fg-primary) transition-colors"
@@ -14,11 +14,11 @@
   </div>
   
 <!-- Hero -->
-  <section class="max-w-[1100px] mx-auto w-full px-10 mt-6 max-sm:px-5">
-    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-accent) mb-3">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-5">
+    <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
       Feature
     </p>
-    <h1 class="text-4xl font-bold leading-tight tracking-tighter mb-4 max-sm:text-3xl">
+    <h1 class="text-4xl font-extrabold leading-tight tracking-tighter mb-4 max-sm:text-3xl">
       {@feature.title}<span class="text-(--crit-accent)">.</span>
     </h1>
     <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
@@ -27,7 +27,7 @@
   </section>
   
 <!-- Visual widget -->
-  <section class="max-w-[1100px] mx-auto w-full px-10 mt-10 max-sm:px-5 max-sm:mt-8">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
     <%= case @slug do %>
       <% "inline-comments" -> %>
         <div
@@ -229,7 +229,7 @@
         </div>
       <% "ai-review-loop" -> %>
         <div
-          class="rounded-lg border border-(--crit-border) bg-(--crit-code-bg) p-5 text-xs font-mono leading-7 text-(--crit-fg-secondary) select-none"
+          class="rounded-lg border border-(--crit-border) bg-(--crit-code-bg) p-6 text-xs font-mono leading-7 text-(--crit-fg-secondary) select-none"
           aria-hidden="true"
         >
           <div><span class="text-(--crit-fg-muted)">$</span> crit</div>
@@ -344,7 +344,7 @@
         </div>
       <% "syntax-highlighting" -> %>
         <div
-          class="rounded-lg border border-(--crit-border) bg-(--crit-code-bg) p-5 text-xs font-mono leading-7 overflow-hidden select-none"
+          class="rounded-lg border border-(--crit-border) bg-(--crit-code-bg) p-6 text-xs font-mono leading-7 overflow-hidden select-none"
           aria-hidden="true"
         >
           <div>
@@ -428,9 +428,9 @@
   </section>
   
 <!-- Details -->
-  <section class="max-w-[1100px] mx-auto w-full px-10 mt-12 max-sm:px-5 max-sm:mt-8">
-    <h2 class="text-xl font-bold tracking-tight mb-6">How it works</h2>
-    <div class="grid gap-4">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
+    <h2 class="text-xl font-extrabold tracking-tight mb-6">How it works</h2>
+    <div class="grid gap-5">
       <%= for {detail, idx} <- Enum.with_index(@feature.details) do %>
         <div class="flex gap-4 items-start">
           <span class="shrink-0 w-7 h-7 rounded-full bg-(--crit-accent-subtle) border border-(--crit-accent) text-(--crit-accent) text-xs font-mono font-bold flex items-center justify-center mt-0.5">
@@ -446,8 +446,8 @@
   
 <!-- Why this matters -->
   <%= if @feature[:why_this_matters] do %>
-    <section class="max-w-[1100px] mx-auto w-full px-10 mt-12 max-sm:px-5 max-sm:mt-8">
-      <h2 class="text-xl font-bold tracking-tight mb-6">Why this matters</h2>
+    <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
+      <h2 class="text-xl font-extrabold tracking-tight mb-6">Why this matters</h2>
       <div class="flex flex-col gap-4">
         <%= for paragraph <- @feature.why_this_matters do %>
           <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
@@ -460,8 +460,8 @@
   
 <!-- How Crit compares -->
   <%= if @feature[:how_crit_compares] do %>
-    <section class="max-w-[1100px] mx-auto w-full px-10 mt-10 max-sm:px-5 max-sm:mt-8">
-      <h2 class="text-lg font-bold tracking-tight mb-4">How Crit compares</h2>
+    <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
+      <h2 class="text-lg font-extrabold tracking-tight mb-4">How Crit compares</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         {CritWeb.PageHTML.inline_code(@feature.how_crit_compares)}
       </p>
@@ -469,9 +469,9 @@
   <% end %>
   
 <!-- Demo + Install CTA -->
-  <section class="max-w-[1100px] mx-auto w-full px-10 mt-14 mb-16 max-sm:px-5 max-sm:mt-10">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-14 mb-16 max-sm:px-5 max-sm:mt-10">
     <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-8 max-sm:p-5">
-      <h2 class="text-xl font-bold tracking-tight mb-2">Try it out</h2>
+      <h2 class="text-xl font-extrabold tracking-tight mb-2">Try it out</h2>
       <p class="text-sm text-(--crit-fg-secondary) mb-6">
         Install Crit and start reviewing agent output in seconds.
       </p>
@@ -501,8 +501,8 @@
   </section>
   
 <!-- Other features -->
-  <section class="max-w-[1100px] mx-auto w-full px-10 mb-16 max-sm:px-5">
-    <h2 class="text-lg font-bold tracking-tight mb-4 text-(--crit-fg-muted)">
+  <section class="max-w-7xl mx-auto w-full px-10 mb-16 max-sm:px-5">
+    <h2 class="text-lg font-extrabold tracking-tight mb-4 text-(--crit-fg-muted)">
       More features
     </h2>
     <div class="flex flex-wrap gap-2">
