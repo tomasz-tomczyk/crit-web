@@ -18,33 +18,33 @@ defmodule Crit.Integrations do
     %{
       id: "claude-code",
       name: "Claude Code",
-      file_path: ".claude/commands/crit.md",
-      source: "claude-code/commands/crit.md",
+      file_path: ".claude/skills/crit/SKILL.md",
+      source: "claude-code/skills/crit/SKILL.md",
       description:
         "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
+      secondary_label: "CLI Skill",
       secondary_file_path: ".claude/skills/crit-cli/SKILL.md",
       secondary_source: "claude-code/skills/crit-cli/SKILL.md"
     },
     %{
       id: "cursor",
       name: "Cursor",
-      file_path: ".cursor/commands/crit.md",
-      source: "cursor/commands/crit.md",
+      file_path: ".cursor/skills/crit/SKILL.md",
+      source: "cursor/skills/crit/SKILL.md",
       description:
         "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
+      secondary_label: "CLI Skill",
       secondary_file_path: ".cursor/skills/crit-cli/SKILL.md",
       secondary_source: "cursor/skills/crit-cli/SKILL.md"
     },
     %{
       id: "github-copilot",
       name: "GitHub Copilot",
-      file_path: ".github/prompts/crit.prompt.md",
-      source: "github-copilot/commands/crit.prompt.md",
+      file_path: ".github/skills/crit/SKILL.md",
+      source: "github-copilot/skills/crit/SKILL.md",
       description:
         "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
+      secondary_label: "CLI Skill",
       secondary_file_path: ".github/skills/crit-cli/SKILL.md",
       secondary_source: "github-copilot/skills/crit-cli/SKILL.md"
     },
