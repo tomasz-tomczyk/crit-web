@@ -256,7 +256,7 @@ defmodule CritWeb.PageHTML do
             <% else %>
               <div class="select-none">
                 <span class="text-[var(--crit-green)]">&#10003;</span>
-                <span class="text-[var(--crit-fg-muted)]"> {line.text}</span>
+                <span class="text-[var(--crit-fg-muted)]">{line.text}</span>
               </div>
             <% end %>
           </div>
