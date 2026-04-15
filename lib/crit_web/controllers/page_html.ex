@@ -140,4 +140,143 @@ defmodule CritWeb.PageHTML do
     </p>
     """
   end
+
+  @agent_installs [
+    %{
+      id: "claude-code",
+      name: "Claude Code",
+      copy: "/plugin marketplace add tomasz-tomczyk/crit\n/plugin install crit",
+      lines: [
+        %{type: :cmd, prompt: "> ", text: "/plugin marketplace add tomasz-tomczyk/crit"},
+        %{type: :cmd, prompt: "> ", text: "/plugin install crit"},
+        %{type: :output, text: "Installed crit (skills: crit, crit-cli)"}
+      ]
+    },
+    %{
+      id: "cursor",
+      name: "Cursor",
+      copy: "/install-plugin tomasz-tomczyk/crit",
+      lines: [
+        %{type: :cmd, prompt: "> ", text: "/install-plugin tomasz-tomczyk/crit"},
+        %{type: :output, text: "Installed crit (skills: crit, crit-cli)"}
+      ]
+    },
+    %{
+      id: "copilot",
+      name: "Copilot",
+      copy: "crit install github-copilot",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install github-copilot"},
+        %{type: :output, text: "Installed .github/skills/crit/SKILL.md"}
+      ]
+    },
+    %{
+      id: "codex",
+      name: "Codex",
+      copy: "crit install codex",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install codex"},
+        %{type: :output, text: "Installed .agents/skills/crit/SKILL.md"}
+      ]
+    },
+    %{
+      id: "windsurf",
+      name: "Windsurf",
+      copy: "crit install windsurf",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install windsurf"},
+        %{type: :output, text: "Installed .windsurf/rules/crit.md"}
+      ]
+    },
+    %{
+      id: "opencode",
+      name: "OpenCode",
+      copy: "crit install opencode",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install opencode"},
+        %{type: :output, text: "Installed .opencode/commands/crit.md"}
+      ]
+    },
+    %{
+      id: "cline",
+      name: "Cline",
+      copy: "crit install cline",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install cline"},
+        %{type: :output, text: "Installed .clinerules/crit.md"}
+      ]
+    },
+    %{
+      id: "aider",
+      name: "Aider",
+      copy: "crit install aider",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install aider"},
+        %{type: :output, text: "Installed CONVENTIONS.md"}
+      ]
+    }
+  ]
+
+  def agent_setup_widget(assigns) do
+    assigns = assign(assigns, :agents, @agent_installs)
+
+    ~H"""
+    <div class="flex gap-0 border-b border-[var(--crit-border)] overflow-x-auto">
+      <button
+        :for={{agent, idx} <- Enum.with_index(@agents)}
+        class={[
+          "agent-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 transition-colors cursor-pointer bg-transparent whitespace-nowrap",
+          if(idx == 0,
+            do: "border-(--crit-accent) text-(--crit-accent)",
+            else: "border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary)"
+          )
+        ]}
+        data-target={"agent-#{agent.id}"}
+      >
+        {agent.name}
+      </button>
+    </div>
+
+    <div
+      :for={{agent, idx} <- Enum.with_index(@agents)}
+      id={"agent-#{agent.id}"}
+      class={[
+        "agent-panel border border-t-0 border-[var(--crit-border)] rounded-b-md overflow-hidden",
+        idx != 0 && "hidden"
+      ]}
+    >
+      <div class="flex items-start bg-[var(--crit-code-bg)]">
+        <div class="flex-1 px-5 py-3.5 font-mono text-sm min-w-0">
+          <div :for={line <- agent.lines}>
+            <%= if line.type == :cmd do %>
+              <div>
+                <span class="text-[var(--crit-fg-muted)] select-none">{line.prompt}</span>
+                <span class="text-[var(--crit-fg-primary)]">{line.text}</span>
+              </div>
+            <% else %>
+              <div class="select-none">
+                <span class="text-[var(--crit-green)]">&#10003;</span>
+                <span class="text-[var(--crit-fg-muted)]"> {line.text}</span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <button
+          class="agent-copy-btn shrink-0 p-3 mt-0.5 cursor-pointer text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+          aria-label="Copy to clipboard"
+          data-copy={agent.copy}
+        >
+          <.icon name="hero-clipboard" class="size-4 icon-default" />
+          <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+        </button>
+      </div>
+    </div>
+
+    <p class="text-sm text-[var(--crit-fg-muted)] mt-3">
+      <a href="/integrations" class="text-[var(--crit-accent)] no-underline hover:underline">
+        Full setup docs &rarr;
+      </a>
+    </p>
+    """
+  end
 end

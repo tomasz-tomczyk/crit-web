@@ -25,23 +25,23 @@
       <div class="flex gap-3 justify-center flex-wrap max-sm:grid max-sm:grid-cols-2">
         <a
           href={~p"/getting-started"}
-          class="inline-flex items-center justify-center px-7 py-3 bg-(--crit-accent) text-(--crit-bg-primary) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-accent-hover) transition-colors"
+          class="inline-flex items-center justify-center px-7 py-3 bg-(--crit-accent) text-(--crit-bg-primary) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-accent-hover) hover:-translate-y-px active:translate-y-px transition-all"
         >
           Get started
         </a>
         <%= if @demo_token do %>
           <a
             href={~p"/r/#{@demo_token}"}
-            class="inline-flex items-center justify-center px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+            class="inline-flex items-center justify-center px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:-translate-y-px active:translate-y-px transition-all"
           >
             See demo
           </a>
         <% end %>
         <a
           href="https://github.com/tomasz-tomczyk/crit"
-          class="inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors max-sm:col-span-2"
+          class="group/star inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) hover:-translate-y-px hover:shadow-[0_4px_16px_var(--crit-yellow-subtle)] active:translate-y-px transition-all max-sm:col-span-2"
         >
-          <svg viewBox="0 0 16 16" class="size-3.5 fill-current opacity-70" aria-hidden="true">
+          <svg viewBox="0 0 16 16" class="size-4 fill-current opacity-60 group-hover/star:opacity-100 group-hover/star:text-(--crit-yellow) group-hover/star:scale-110 transition-all duration-200" aria-hidden="true">
             <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
           </svg>
           Star on GitHub
@@ -58,7 +58,7 @@
       tabindex="0"
     >
       <img
-        src="https://i.ytimg.com/vi/w_Dswm2Ft-o/maxresdefault.jpg"
+        src="/images/video-thumbnail.png"
         alt="Crit demo video thumbnail"
         class="absolute inset-0 w-full h-full object-cover"
         loading="lazy"
@@ -99,6 +99,24 @@
     </div>
   </section>
   
+<!-- ===== Agent Setup ===== -->
+  <section class="max-w-7xl mx-auto mt-14 px-10 max-sm:px-5 max-sm:mt-10 w-full" id="agent-setup">
+    <div class="flex gap-14 items-start max-lg:flex-col max-lg:gap-6">
+      <div class="w-[300px] shrink-0 max-lg:w-full">
+        <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+          Agent plugin
+        </p>
+        <h2 class="text-2xl font-extrabold tracking-tight mb-3">Connect your agent</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          One command adds a skill file so your agent can launch Crit, listen for feedback, and iterate automatically.
+        </p>
+      </div>
+      <div class="flex-1 min-w-0 max-lg:w-full">
+        <CritWeb.PageHTML.agent_setup_widget />
+      </div>
+    </div>
+  </section>
+
 <!-- ===== Features ===== -->
   <section
     class="max-w-7xl mx-auto mt-28 mb-20 px-10 max-sm:px-5 max-sm:mt-16 w-full"

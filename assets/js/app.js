@@ -123,7 +123,7 @@ const ytFacade = document.getElementById("yt-facade")
 if (ytFacade) {
   const activate = () => {
     const iframe = document.createElement("iframe")
-    iframe.src = "https://www.youtube.com/embed/w_Dswm2Ft-o?autoplay=1"
+    iframe.src = "https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1"
     iframe.title = "Crit demo"
     iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     iframe.allowFullscreen = true
@@ -261,6 +261,38 @@ document.querySelectorAll(".install-tab").forEach(tab => {
       t.classList.add("border-transparent", "text-(--crit-fg-muted)")
     })
     document.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"))
+    tab.classList.add("border-(--crit-accent)", "text-(--crit-accent)")
+    tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
+    document.getElementById(tab.dataset.target).classList.remove("hidden")
+  })
+})
+
+// Home page: agent setup copy buttons
+document.querySelectorAll(".agent-copy-btn").forEach(btn => {
+  const defaultIcon = btn.querySelector(".icon-default")
+  const copiedIcon = btn.querySelector(".icon-copied")
+  btn.addEventListener("click", () => {
+    navigator.clipboard.writeText(btn.dataset.copy).then(() => {
+      btn.style.color = "var(--crit-green)"
+      defaultIcon.classList.add("hidden")
+      copiedIcon.classList.remove("hidden")
+      setTimeout(() => {
+        btn.style.color = ""
+        defaultIcon.classList.remove("hidden")
+        copiedIcon.classList.add("hidden")
+      }, 2000)
+    })
+  })
+})
+
+// Home page: agent setup tab switcher
+document.querySelectorAll(".agent-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".agent-tab").forEach(t => {
+      t.classList.remove("border-(--crit-accent)", "text-(--crit-accent)")
+      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
+    })
+    document.querySelectorAll(".agent-panel").forEach(p => p.classList.add("hidden"))
     tab.classList.add("border-(--crit-accent)", "text-(--crit-accent)")
     tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
     document.getElementById(tab.dataset.target).classList.remove("hidden")

@@ -27,6 +27,13 @@
         </div>
       </div>
       <CritWeb.PageHTML.install_widget />
+
+      <div class="mt-8">
+        <p class="text-sm font-semibold text-(--crit-fg-primary) mb-3">
+          Then connect your agent
+        </p>
+        <CritWeb.PageHTML.agent_setup_widget />
+      </div>
     </section>
 
     <%!-- Step 2: Open for review --%>
@@ -203,7 +210,7 @@
         <div>
           <h2 class="text-lg font-semibold tracking-tight">Finish review and hand off</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Click <strong class="text-(--crit-fg-secondary)">Finish Review</strong>. A structured prompt is copied to your clipboard &mdash; paste it back to your agent.
+            Click <strong class="text-(--crit-fg-secondary)">Finish Review</strong>. Your agent gets notified automatically.
           </p>
         </div>
       </div>
@@ -225,10 +232,7 @@
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            Finish review &mdash; prompt copied <span class="text-(--crit-green)">&check;</span>
-          </div>
-          <div class="text-(--crit-fg-muted)">
-            &nbsp; Paste into your agent, it reads .crit.json&hellip;
+            Finish review &mdash; agent notified <span class="text-(--crit-green)">&check;</span>
           </div>
           <div class="mt-2">
             <span class="text-(--crit-green)">&rarr;</span>
@@ -245,108 +249,11 @@
       </div>
 
       <p class="text-sm text-(--crit-fg-muted) mt-4 leading-relaxed">
-        The agent reads <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.crit.json</code>, addresses your comments, and runs
-        <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">crit go</code>
-        when done. Crit reloads with a diff of what changed. Repeat until you're satisfied.
-      </p>
-      <p class="text-sm text-(--crit-fg-muted) mt-2 leading-relaxed">
-        With an <a
-          href={~p"/integrations"}
-          class="text-(--crit-accent) no-underline hover:underline"
-        >agent integration</a>, this loop is fully automatic &mdash; the agent listens for your review and iterates without manual copy-paste.
+        The agent reads your review, addresses your comments, and updates the file.
+        Crit reloads with a diff of what changed. Repeat until you're satisfied.
       </p>
     </section>
 
-    <%!-- Connect your agent --%>
-    <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
-          05
-        </span>
-        <div>
-          <h2 class="text-lg font-semibold tracking-tight">Automate with your agent</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Install a slash command so your agent handles the full loop &mdash; launching Crit, listening for your review, and iterating automatically.
-          </p>
-        </div>
-      </div>
-
-      <%!-- Install terminal --%>
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
-          <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-          </div>
-          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
-        </div>
-        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
-          <div>
-            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit install claude-code</span>
-          </div>
-          <div>
-            <span class="text-(--crit-green)">&check;</span>
-            <span class="text-(--crit-fg-muted)"> Installed</span> .claude/skills/crit/SKILL.md
-          </div>
-        </div>
-      </div>
-
-      <%!-- Then use the slash command --%>
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden mt-3">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
-          <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-          </div>
-          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Claude Code</span>
-        </div>
-        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
-          <div>
-            <span class="text-(--crit-accent) select-none">&gt; </span><span class="text-(--crit-fg-primary)">/crit</span>
-          </div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Opening plan.md for review&hellip;</div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Listening for your comments&hellip;</div>
-          <div class="mt-1">
-            <span class="text-(--crit-green)">&rarr;</span>
-            Review received &mdash; addressing 2 comments
-          </div>
-          <div class="text-(--crit-fg-muted)">&nbsp; Running crit go&hellip;</div>
-          <div>
-            <span class="text-(--crit-accent)">&rarr;</span> Round 2 ready for review
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap gap-2 mt-4">
-        <span class="inline-flex items-center gap-1.5 text-xs font-mono border border-(--crit-border) rounded-md px-2.5 py-1.5 text-(--crit-fg-secondary) bg-(--crit-bg-secondary)">
-          Claude Code
-        </span>
-        <span class="inline-flex items-center gap-1.5 text-xs font-mono border border-(--crit-border) rounded-md px-2.5 py-1.5 text-(--crit-fg-secondary) bg-(--crit-bg-secondary)">
-          Cursor
-        </span>
-        <span class="inline-flex items-center gap-1.5 text-xs font-mono border border-(--crit-border) rounded-md px-2.5 py-1.5 text-(--crit-fg-secondary) bg-(--crit-bg-secondary)">
-          GitHub Copilot
-        </span>
-        <span class="inline-flex items-center gap-1.5 text-xs font-mono border border-(--crit-border) rounded-md px-2.5 py-1.5 text-(--crit-fg-secondary) bg-(--crit-bg-secondary)">
-          Windsurf
-        </span>
-        <span class="inline-flex items-center gap-1.5 text-xs font-mono border border-(--crit-border) rounded-md px-2.5 py-1.5 text-(--crit-fg-secondary) bg-(--crit-bg-secondary)">
-          Aider
-        </span>
-        <span class="inline-flex items-center gap-1.5 text-xs font-mono border border-(--crit-border) rounded-md px-2.5 py-1.5 text-(--crit-fg-secondary) bg-(--crit-bg-secondary)">
-          Cline
-        </span>
-      </div>
-
-      <p class="text-sm text-(--crit-fg-muted) mt-3">
-        See all config files and setup instructions on the <a
-          href={~p"/integrations"}
-          class="text-(--crit-accent) no-underline hover:underline"
-        >integrations page</a>.
-      </p>
-    </section>
 
     <%!-- What's next --%>
     <section>
