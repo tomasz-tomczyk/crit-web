@@ -96,13 +96,49 @@ if config_env() == :prod do
       false
     end
 
-  config :crit, Crit.Repo,
-    ssl: ssl_opts,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    # For machines with several cores, consider starting multiple pools of `pool_size`
-    # pool_count: 4,
-    socket_options: maybe_ipv6
+  # Handle Cloud SQL unix socket format used by Taskforce Vibe:
+  #   postgresql://role:pw@/dbname?host=/cloudsql/project:region:instance
+  # Ecto's URL parser rejects URLs without a hostname (host: nil),
+  # so for Cloud SQL we parse the URL ourselves into individual options.
+  repo_opts =
+    case URI.parse(database_url) do
+      %URI{query: query} = uri when is_binary(query) ->
+        params = URI.decode_query(query)
+
+        case params["host"] do
+          "/cloudsql/" <> _ = socket_path ->
+            [user, password] =
+              case uri.userinfo do
+                nil -> [nil, nil]
+                info -> String.split(info, ":", parts: 2)
+              end
+
+            database = String.trim_leading(uri.path || "", "/")
+
+            [
+              username: user,
+              password: password,
+              database: database,
+              socket_dir: socket_path
+            ]
+
+          _ ->
+            [url: database_url]
+        end
+
+      _ ->
+        [url: database_url]
+    end
+
+  repo_opts =
+    repo_opts ++
+      [
+        ssl: ssl_opts,
+        pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+        socket_options: maybe_ipv6
+      ]
+
+  config :crit, Crit.Repo, repo_opts
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
