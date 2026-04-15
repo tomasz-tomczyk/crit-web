@@ -60,6 +60,10 @@
         do: ~s(<script type="application/ld+json">#{JSON.encode!(assigns[:json_ld])}</script>),
         else: ""
     )}
+    <link rel="icon" type="image/png" sizes="96x96" href={~p"/favicon-96x96.png"} />
+    <link rel="icon" type="image/svg+xml" href={~p"/favicon.svg"} />
+    <link rel="apple-touch-icon" sizes="180x180" href={~p"/apple-touch-icon.png"} />
+    <link rel="manifest" href={~p"/site.webmanifest"} />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script phx-track-static type="module" src={~p"/assets/js/app.js"}>
     </script>
