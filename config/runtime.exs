@@ -96,13 +96,51 @@ if config_env() == :prod do
       false
     end
 
-  config :crit, Crit.Repo,
-    ssl: ssl_opts,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    # For machines with several cores, consider starting multiple pools of `pool_size`
-    # pool_count: 4,
-    socket_options: maybe_ipv6
+  # Handle unix socket DATABASE_URLs (e.g. Cloud SQL on Google Cloud Run):
+  #   postgresql://role:pw@/dbname?host=/cloudsql/project:region:instance
+  # Ecto's URL parser rejects URLs without a hostname (host: nil),
+  # so we parse the URL ourselves and pass options directly to Postgrex.
+  pool_size = String.to_integer(System.get_env("POOL_SIZE") || "10")
+
+  repo_opts =
+    case URI.parse(database_url) do
+      %URI{query: query} = uri when is_binary(query) ->
+        params = URI.decode_query(query)
+
+        case params["host"] do
+          "/" <> _ = socket_path ->
+            {user, password} =
+              case uri.userinfo do
+                nil ->
+                  {nil, nil}
+
+                info ->
+                  case String.split(info, ":", parts: 2) do
+                    [u, p] -> {URI.decode(u), URI.decode(p)}
+                    [u] -> {URI.decode(u), nil}
+                  end
+              end
+
+            database = String.trim_leading(uri.path || "", "/")
+
+            [
+              username: user,
+              password: password,
+              database: database,
+              socket_dir: socket_path,
+              ssl: false,
+              pool_size: pool_size
+            ]
+
+          _ ->
+            [url: database_url, ssl: ssl_opts, pool_size: pool_size, socket_options: maybe_ipv6]
+        end
+
+      _ ->
+        [url: database_url, ssl: ssl_opts, pool_size: pool_size, socket_options: maybe_ipv6]
+    end
+
+  config :crit, Crit.Repo, repo_opts
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
