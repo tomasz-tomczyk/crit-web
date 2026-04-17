@@ -96,21 +96,29 @@ if config_env() == :prod do
       false
     end
 
-  # Handle Cloud SQL unix socket format used by Taskforce Vibe:
+  # Handle unix socket DATABASE_URLs (e.g. Cloud SQL on Google Cloud Run):
   #   postgresql://role:pw@/dbname?host=/cloudsql/project:region:instance
   # Ecto's URL parser rejects URLs without a hostname (host: nil),
-  # so for Cloud SQL we parse the URL ourselves into individual options.
+  # so we parse the URL ourselves and pass options directly to Postgrex.
+  pool_size = String.to_integer(System.get_env("POOL_SIZE") || "10")
+
   repo_opts =
     case URI.parse(database_url) do
       %URI{query: query} = uri when is_binary(query) ->
         params = URI.decode_query(query)
 
         case params["host"] do
-          "/cloudsql/" <> _ = socket_path ->
-            [user, password] =
+          "/" <> _ = socket_path ->
+            {user, password} =
               case uri.userinfo do
-                nil -> [nil, nil]
-                info -> String.split(info, ":", parts: 2)
+                nil ->
+                  {nil, nil}
+
+                info ->
+                  case String.split(info, ":", parts: 2) do
+                    [u, p] -> {URI.decode(u), URI.decode(p)}
+                    [u] -> {URI.decode(u), nil}
+                  end
               end
 
             database = String.trim_leading(uri.path || "", "/")
@@ -119,24 +127,18 @@ if config_env() == :prod do
               username: user,
               password: password,
               database: database,
-              socket_dir: socket_path
+              socket_dir: socket_path,
+              ssl: false,
+              pool_size: pool_size
             ]
 
           _ ->
-            [url: database_url]
+            [url: database_url, ssl: ssl_opts, pool_size: pool_size, socket_options: maybe_ipv6]
         end
 
       _ ->
-        [url: database_url]
+        [url: database_url, ssl: ssl_opts, pool_size: pool_size, socket_options: maybe_ipv6]
     end
-
-  repo_opts =
-    repo_opts ++
-      [
-        ssl: ssl_opts,
-        pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-        socket_options: maybe_ipv6
-      ]
 
   config :crit, Crit.Repo, repo_opts
 
