@@ -927,7 +927,7 @@ function buildLineBlocks(md, rawContent) {
       }
 
       let highlighted
-      if (lang && hljs.getLanguage(lang)) {
+      if (lang && lang !== 'markdown' && lang !== 'md' && hljs.getLanguage(lang)) {
         try { highlighted = hljs.highlight(code, { language: lang }).value } catch (_) { highlighted = escapeHtml(code) }
       } else {
         highlighted = escapeHtml(code)
