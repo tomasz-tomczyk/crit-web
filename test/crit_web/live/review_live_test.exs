@@ -862,6 +862,290 @@ defmodule CritWeb.ReviewLiveTest do
     end
   end
 
+  describe "add_comment with scope" do
+    test "creates a file-scoped comment", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "main.go", "content" => "pkg main"}],
+          0,
+          []
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_comment", %{
+        "start_line" => 0,
+        "end_line" => 0,
+        "body" => "File-level feedback",
+        "file_path" => "main.go",
+        "scope" => "file"
+      })
+
+      comments = Reviews.list_comments(review)
+      assert length(comments) == 1
+      assert hd(comments).scope == "file"
+      assert hd(comments).file_path == "main.go"
+    end
+
+    test "creates a review-scoped comment", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "main.go", "content" => "pkg main"}],
+          0,
+          []
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_comment", %{
+        "start_line" => 0,
+        "end_line" => 0,
+        "body" => "Overall review comment",
+        "scope" => "review"
+      })
+
+      comments = Reviews.list_comments(review)
+      assert length(comments) == 1
+      assert hd(comments).scope == "review"
+    end
+  end
+
+  describe "add_comment with quote" do
+    test "creates a comment with a quoted snippet", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_comment", %{
+        "start_line" => 1,
+        "end_line" => 2,
+        "body" => "This snippet needs work",
+        "quote" => "# Test Document\n\nLine 1"
+      })
+
+      comments = Reviews.list_comments(review)
+      assert length(comments) == 1
+      assert hd(comments).quote == "# Test Document\n\nLine 1"
+    end
+
+    test "quote is included in comment_added push event", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_comment", %{
+        "start_line" => 1,
+        "end_line" => 1,
+        "body" => "Quoted comment",
+        "quote" => "some code"
+      })
+
+      assert_push_event view, "comment_added", %{comment: comment}
+      assert comment.quote == "some code"
+    end
+  end
+
+  describe "toggle_round_diff" do
+    test "enables round diff when previous round exists", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "main.go", "content" => "v1 content"}],
+          0,
+          []
+        )
+
+      # Create round 1 snapshot (the previous round)
+      Reviews.create_round_snapshot(review.id, 1, "main.go", "v1 content")
+
+      # Update review to round 2
+      review
+      |> Ecto.Changeset.change(review_round: 2)
+      |> Crit.Repo.update!()
+
+      # Create round 2 snapshot (the current round)
+      Reviews.create_round_snapshot(review.id, 2, "main.go", "v2 content")
+
+      review = Reviews.get_by_token(review.token)
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      render_click(view, "toggle_round_diff")
+
+      assert_push_event view, "round_diff_updated", %{enabled: true, snapshots: snapshots}
+      assert snapshots["main.go"] == "v1 content"
+    end
+
+    test "disables round diff on second toggle", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "main.go", "content" => "v1 content"}],
+          0,
+          []
+        )
+
+      Reviews.create_round_snapshot(review.id, 1, "main.go", "v1 content")
+
+      review
+      |> Ecto.Changeset.change(review_round: 2)
+      |> Crit.Repo.update!()
+
+      Reviews.create_round_snapshot(review.id, 2, "main.go", "v2 content")
+
+      review = Reviews.get_by_token(review.token)
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      # Enable then disable
+      render_click(view, "toggle_round_diff")
+      render_click(view, "toggle_round_diff")
+
+      assert_push_event view, "round_diff_updated", %{enabled: false, snapshots: %{}}
+    end
+  end
+
+  describe "set_diff_mode" do
+    test "switches to unified mode and pushes event", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      render_click(view, "set_diff_mode", %{"mode" => "unified"})
+
+      assert_push_event view, "diff_mode_updated", %{mode: "unified"}
+    end
+
+    test "switches back to split mode", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      render_click(view, "set_diff_mode", %{"mode" => "unified"})
+      render_click(view, "set_diff_mode", %{"mode" => "split"})
+
+      assert_push_event view, "diff_mode_updated", %{mode: "split"}
+    end
+  end
+
+  describe "authenticated user mount" do
+    test "uses current_user identity and name", %{conn: conn, review: review} do
+      {:ok, user} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "review_uid_#{System.unique_integer()}",
+          "email" => "reviewer@example.com",
+          "name" => "Reviewer"
+        })
+
+      conn = init_test_session(conn, %{user_id: user.id})
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      # Add a comment — it should use the user's name
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_comment", %{
+        "start_line" => 1,
+        "end_line" => 1,
+        "body" => "Auth comment"
+      })
+
+      [comment] = Reviews.list_comments(review)
+      assert comment.author_display_name == "Reviewer"
+      assert comment.author_identity == user.id
+    end
+  end
+
+  describe "reply permissions" do
+    test "cannot edit another user's reply", %{conn: conn, review: review} do
+      other_identity = Ecto.UUID.generate()
+
+      {:ok, parent} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "Parent comment"},
+          other_identity,
+          nil
+        )
+
+      {:ok, reply} =
+        Reviews.create_reply(
+          parent.id,
+          %{"body" => "Other's reply"},
+          other_identity,
+          nil,
+          review.id
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("edit_reply", %{"id" => reply.id, "body" => "Hacked reply"})
+
+      [updated_parent] = Reviews.list_comments(review)
+      [unchanged_reply] = updated_parent.replies
+      assert unchanged_reply.body == "Other's reply"
+    end
+
+    test "cannot delete another user's reply", %{conn: conn, review: review} do
+      other_identity = Ecto.UUID.generate()
+
+      {:ok, parent} =
+        Reviews.create_comment(
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "Parent comment"},
+          other_identity,
+          nil
+        )
+
+      {:ok, _reply} =
+        Reviews.create_reply(
+          parent.id,
+          %{"body" => "Other's reply"},
+          other_identity,
+          nil,
+          review.id
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      [parent] = Reviews.list_comments(review)
+      [reply] = parent.replies
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("delete_reply", %{"id" => reply.id})
+
+      [updated_parent] = Reviews.list_comments(review)
+      assert length(updated_parent.replies) == 1
+    end
+  end
+
+  describe "resolve_comment permissions" do
+    test "can unresolve a previously resolved comment", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_comment", %{
+        "start_line" => 1,
+        "end_line" => 1,
+        "body" => "To resolve"
+      })
+
+      [comment] = Reviews.list_comments(review)
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("resolve_comment", %{"id" => comment.id, "resolved" => true})
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("resolve_comment", %{"id" => comment.id, "resolved" => false})
+
+      assert_push_event view, "comment_resolved", %{id: _, resolved: false}
+
+      [updated] = Reviews.list_comments(review)
+      assert updated.resolved == false
+    end
+  end
+
   describe "demo mode filtering in handle_info" do
     setup %{conn: conn} do
       Application.put_env(:crit, :demo_review_token, "demo-token-123")
@@ -1004,6 +1288,91 @@ defmodule CritWeb.ReviewLiveTest do
       )
 
       assert_push_event view, "reply_added", %{reply: %{body: "own reply"}}
+    end
+
+    test "filters comments_full_sync to only own and imported in demo mode", %{
+      conn: conn,
+      demo_review: review
+    } do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      own_identity = :sys.get_state(view.pid).socket.assigns.identity
+      foreign_identity = Ecto.UUID.generate()
+
+      comments = [
+        %{
+          id: Ecto.UUID.generate(),
+          body: "imported comment",
+          author_identity: "imported",
+          replies: []
+        },
+        %{
+          id: Ecto.UUID.generate(),
+          body: "own comment",
+          author_identity: own_identity,
+          replies: []
+        },
+        %{
+          id: Ecto.UUID.generate(),
+          body: "foreign comment",
+          author_identity: foreign_identity,
+          replies: []
+        }
+      ]
+
+      Phoenix.PubSub.broadcast(
+        Crit.PubSub,
+        "review:#{review.token}",
+        {:comments_full_sync, comments}
+      )
+
+      assert_push_event view, "comments_full_sync", %{comments: filtered}
+      assert length(filtered) == 2
+      bodies = Enum.map(filtered, & &1.body)
+      assert "imported comment" in bodies
+      assert "own comment" in bodies
+      refute "foreign comment" in bodies
+    end
+
+    test "filters replies inside comments_full_sync in demo mode", %{
+      conn: conn,
+      demo_review: review
+    } do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      own_identity = :sys.get_state(view.pid).socket.assigns.identity
+
+      comments = [
+        %{
+          id: Ecto.UUID.generate(),
+          body: "parent",
+          author_identity: "imported",
+          replies: [
+            %{
+              id: Ecto.UUID.generate(),
+              body: "own reply",
+              author_identity: own_identity
+            },
+            %{
+              id: Ecto.UUID.generate(),
+              body: "foreign reply",
+              author_identity: Ecto.UUID.generate()
+            }
+          ]
+        }
+      ]
+
+      Phoenix.PubSub.broadcast(
+        Crit.PubSub,
+        "review:#{review.token}",
+        {:comments_full_sync, comments}
+      )
+
+      assert_push_event view, "comments_full_sync", %{comments: filtered}
+      assert length(filtered) == 1
+      [parent] = filtered
+      assert length(parent.replies) == 1
+      assert hd(parent.replies).body == "own reply"
     end
   end
 end

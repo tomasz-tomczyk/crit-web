@@ -139,6 +139,92 @@ defmodule CritWeb.AdminLiveTest do
     end
   end
 
+  describe "admin empty state" do
+    setup :without_oauth
+
+    test "shows empty message when no reviews", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/admin")
+
+      assert html =~ "All Reviews (0)"
+      assert html =~ "No reviews yet"
+    end
+  end
+
+  describe "stats update after delete" do
+    setup :without_oauth
+
+    test "stats refresh after deleting a review", %{conn: conn} do
+      review = review_fixture()
+      comment_fixture(review)
+
+      {:ok, view, html} = live(conn, ~p"/admin")
+      assert html =~ "All Reviews (1)"
+
+      view
+      |> element("button[phx-value-id='#{review.id}']")
+      |> render_click()
+
+      html = render(view)
+      assert html =~ "All Reviews (0)"
+    end
+  end
+
+  describe "with admin password and no OAuth" do
+    setup do
+      Application.put_env(:crit, :admin_password, "secret123")
+    end
+
+    test "authenticated via password session shows reviews", %{conn: conn} do
+      without_oauth(%{})
+      review = review_fixture()
+
+      conn = init_test_session(conn, %{admin_authenticated: true})
+      {:ok, _view, html} = live(conn, ~p"/admin")
+
+      assert html =~ "All Reviews"
+      assert html =~ hd(review.files).file_path
+    end
+
+    test "unauthenticated password session shows login form", %{conn: conn} do
+      without_oauth(%{})
+
+      {:ok, _view, html} = live(conn, ~p"/admin")
+
+      assert html =~ "password"
+      refute html =~ "All Reviews"
+    end
+  end
+
+  describe "admin page title" do
+    test "page title is Admin - Crit", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin")
+
+      assert page_title(view) =~ "Admin - Crit"
+    end
+  end
+
+  describe "admin with review metadata" do
+    setup :without_oauth
+
+    test "shows comment and file counts for reviews", %{conn: conn} do
+      review = review_fixture()
+      comment_fixture(review)
+
+      {:ok, _view, html} = live(conn, ~p"/admin")
+
+      assert html =~ "1 comment"
+      assert html =~ "1 file"
+    end
+
+    test "review links to /r/:token", %{conn: conn} do
+      review = review_fixture()
+
+      {:ok, _view, html} = live(conn, ~p"/admin")
+
+      assert html =~ ~p"/r/#{review.token}"
+    end
+  end
+
   describe "delete_review with OAuth" do
     test "owner can delete their own review", %{conn: conn} do
       {conn, user} = login_user_with_record(conn)

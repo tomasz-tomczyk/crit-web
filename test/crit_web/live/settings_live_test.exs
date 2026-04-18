@@ -153,4 +153,76 @@ defmodule CritWeb.SettingsLiveTest do
       assert html =~ "github"
     end
   end
+
+  describe "dismiss_token" do
+    test "hides the plaintext after dismissal", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      view
+      |> element("#create-token-form")
+      |> render_submit(%{name: "ephemeral"})
+
+      html = render(view)
+      assert html =~ "copy it now"
+
+      render_click(view, "dismiss_token")
+
+      html = render(view)
+      refute html =~ "copy it now"
+      # Token should still be listed
+      assert html =~ "ephemeral"
+    end
+  end
+
+  describe "multiple tokens" do
+    test "lists all tokens", %{conn: conn} do
+      {conn, user} = login_user(conn)
+      {:ok, {_pt1, _t1}} = Crit.Accounts.create_token(user, "laptop")
+      {:ok, {_pt2, _t2}} = Crit.Accounts.create_token(user, "desktop")
+
+      {:ok, _view, html} = live(conn, ~p"/settings")
+
+      assert html =~ "laptop"
+      assert html =~ "desktop"
+      refute html =~ "No tokens yet"
+    end
+
+    test "revoking one token keeps others", %{conn: conn} do
+      {conn, user} = login_user(conn)
+      {:ok, {_pt1, token1}} = Crit.Accounts.create_token(user, "aaarevokeme")
+      {:ok, {_pt2, _token2}} = Crit.Accounts.create_token(user, "bbbkeepmeplease")
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      view
+      |> element("button[phx-value-id='#{token1.id}']")
+      |> render_click()
+
+      html = render(view)
+      refute html =~ "aaarevokeme"
+      assert html =~ "bbbkeepmeplease"
+    end
+  end
+
+  describe "empty tokens state" do
+    test "shows empty message when no tokens", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+
+      {:ok, _view, html} = live(conn, ~p"/settings")
+
+      assert html =~ "No tokens yet"
+    end
+  end
+
+  describe "settings page title" do
+    test "page title is Settings - Crit", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      assert page_title(view) =~ "Settings - Crit"
+    end
+  end
 end
