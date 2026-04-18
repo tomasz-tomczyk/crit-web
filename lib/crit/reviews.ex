@@ -309,13 +309,17 @@ defmodule Crit.Reviews do
   defp insert_round_snapshots(review, round_number, files_attrs) do
     Enum.with_index(files_attrs)
     |> Enum.reduce_while(:ok, fn {file_attrs, idx}, :ok ->
+      orphaned = file_attrs["orphaned"] == true
+
       result =
         %ReviewRoundSnapshot{}
         |> ReviewRoundSnapshot.changeset(%{
           "file_path" => file_attrs["path"],
-          "content" => file_attrs["content"],
+          "content" => file_attrs["content"] || "",
           "round_number" => round_number,
-          "position" => idx
+          "position" => idx,
+          "status" => file_attrs["status"] || "modified",
+          "orphaned" => orphaned
         })
         |> Ecto.Changeset.put_change(:review_id, review.id)
         |> Repo.insert()
