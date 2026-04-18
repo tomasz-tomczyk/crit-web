@@ -1,0 +1,30 @@
+{
+  "name": "crit-web",
+  "version": "1.0.0",
+  "description": "[![CI](https://github.com/tomasz-tomczyk/crit-web/actions/workflows/ci.yml/badge.svg)](https://github.com/tomasz-tomczyk/crit-web/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Docker](https://img.shields.io/badge/ghcr.io-crit--web-blue)](https://ghcr.io/tomasz-tomczyk/crit-web)",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:ui": "npx playwright test --ui"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomasz-tomczyk/crit-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tomasz-tomczyk/crit-web/issues"
+  },
+  "homepage": "https://github.com/tomasz-tomczyk/crit-web#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}
