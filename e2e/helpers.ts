@@ -1,4 +1,4 @@
-import { type Page, type APIRequestContext, expect } from "@playwright/test";
+import { type Page, type APIRequestContext, type Locator, expect } from "@playwright/test";
 
 const BASE_URL = `http://localhost:${process.env.CRIT_WEB_TEST_PORT || "4003"}`;
 
@@ -109,5 +109,34 @@ export async function waitForCommentCard(page: Page, bodyText?: string) {
     await expect(page.locator(".comment-card").first()).toBeVisible({
       timeout: 10_000,
     });
+  }
+}
+
+/**
+ * Add a comment via the UI (click gutter, type, submit with Ctrl+Enter).
+ * The comment is owned by the current session identity, so edit/delete/resolve
+ * buttons will be visible.
+ *
+ * @param waitText - text to wait for in the comment card. Use when the body
+ *   contains markdown that transforms (e.g. `**bold**` renders as `<strong>`),
+ *   so the raw body won't appear as text in the card.
+ */
+export async function addCommentViaUI(
+  page: Page,
+  body: string,
+  opts: { lineIndex?: number; waitText?: string } = {}
+) {
+  const gutter = page.locator(".line-gutter").nth(opts.lineIndex ?? 0);
+  await gutter.click();
+
+  const textarea = page.locator(".comment-form textarea");
+  await expect(textarea).toBeVisible({ timeout: 5_000 });
+  await textarea.fill(body);
+  await textarea.press("Control+Enter");
+
+  if (opts.waitText) {
+    await waitForCommentCard(page, opts.waitText);
+  } else {
+    await waitForCommentCard(page, body);
   }
 }

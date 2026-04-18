@@ -1,25 +1,11 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   createReview,
   deleteReview,
   loadReview,
   waitForCommentCard,
+  addCommentViaUI,
 } from "./helpers";
-
-/**
- * Add a comment via the UI on a given page.
- */
-async function addCommentViaUI(page: Page, body: string) {
-  const gutter = page.locator(".line-gutter").first();
-  await gutter.click();
-
-  const textarea = page.locator(".comment-form textarea");
-  await expect(textarea).toBeVisible({ timeout: 5_000 });
-  await textarea.fill(body);
-  await textarea.press("Control+Enter");
-
-  await waitForCommentCard(page, body);
-}
 
 test.describe("Multi-User PubSub Sync", () => {
   let token: string;

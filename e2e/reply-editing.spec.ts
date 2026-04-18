@@ -3,24 +3,9 @@ import {
   createReview,
   deleteReview,
   loadReview,
-  seedComment,
   waitForCommentCard,
+  addCommentViaUI,
 } from "./helpers";
-
-/**
- * Add a comment via the UI so it is owned by the current session identity.
- */
-async function addCommentViaUI(page: Page, body: string) {
-  const gutter = page.locator(".line-gutter").first();
-  await gutter.click();
-
-  const textarea = page.locator(".comment-form textarea");
-  await expect(textarea).toBeVisible({ timeout: 5_000 });
-  await textarea.fill(body);
-  await textarea.press("Control+Enter");
-
-  await waitForCommentCard(page, body);
-}
 
 /**
  * Add a reply to the first comment card via the UI.

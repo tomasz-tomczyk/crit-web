@@ -1,35 +1,10 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   createReview,
   deleteReview,
   loadReview,
-  waitForCommentCard,
+  addCommentViaUI,
 } from "./helpers";
-
-/**
- * Add a comment via the UI and wait for it to appear.
- * Uses a stable identifier to wait for the card, since markdown
- * rendering transforms the raw text (e.g. **bold** becomes <strong>).
- */
-async function addCommentViaUI(page: Page, body: string, waitText?: string) {
-  const gutter = page.locator(".line-gutter").first();
-  await gutter.click();
-
-  const textarea = page.locator(".comment-form textarea");
-  await expect(textarea).toBeVisible({ timeout: 5_000 });
-  await textarea.fill(body);
-  await textarea.press("Control+Enter");
-
-  // Wait for a comment card to appear. Use waitText if provided,
-  // otherwise wait for any card.
-  if (waitText) {
-    await waitForCommentCard(page, waitText);
-  } else {
-    await expect(page.locator(".comment-card").first()).toBeVisible({
-      timeout: 10_000,
-    });
-  }
-}
 
 test.describe("Comment Markdown Rendering", () => {
   let token: string;
@@ -47,7 +22,7 @@ test.describe("Comment Markdown Rendering", () => {
 
   test("renders bold text as <strong>", async ({ page }) => {
     await loadReview(page, token);
-    await addCommentViaUI(page, "This is **bold text** here", "bold text");
+    await addCommentViaUI(page, "This is **bold text** here", { waitText: "bold text" });
 
     const body = page.locator(".comment-card .comment-body");
     await expect(body.locator("strong")).toHaveText("bold text");
@@ -55,7 +30,7 @@ test.describe("Comment Markdown Rendering", () => {
 
   test("renders inline code as <code>", async ({ page }) => {
     await loadReview(page, token);
-    await addCommentViaUI(page, "Use `inline code` here", "inline code");
+    await addCommentViaUI(page, "Use `inline code` here", { waitText: "inline code" });
 
     const body = page.locator(".comment-card .comment-body");
     await expect(body.locator("code")).toHaveText("inline code");
@@ -63,7 +38,7 @@ test.describe("Comment Markdown Rendering", () => {
 
   test("renders links as <a> tags", async ({ page }) => {
     await loadReview(page, token);
-    await addCommentViaUI(page, "See [the docs](https://example.com) for details", "the docs");
+    await addCommentViaUI(page, "See [the docs](https://example.com) for details", { waitText: "the docs" });
 
     const body = page.locator(".comment-card .comment-body");
     const link = body.locator("a");
@@ -87,7 +62,8 @@ test.describe("Comment Markdown Rendering", () => {
     await loadReview(page, token);
     await addCommentViaUI(
       page,
-      'Check this:\n```javascript\nconsole.log("hello")\n```'
+      'Check this:\n```javascript\nconsole.log("hello")\n```',
+      { waitText: "Check this" }
     );
 
     const body = page.locator(".comment-card .comment-body");
@@ -107,7 +83,7 @@ test.describe("Comment Markdown Rendering", () => {
     await addCommentViaUI(
       page,
       "**bold text** and `inline code` and [a link](https://example.com)",
-      "bold text"
+      { waitText: "bold text" }
     );
 
     const body = page.locator(".comment-card .comment-body");

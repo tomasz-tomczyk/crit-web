@@ -1,26 +1,11 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   createReview,
   deleteReview,
   loadReview,
-  seedComment,
   waitForCommentCard,
+  addCommentViaUI,
 } from "./helpers";
-
-/**
- * Add a comment via the UI so it is owned by the current session identity.
- */
-async function addCommentViaUI(page: Page, body: string, lineIndex = 0) {
-  const gutter = page.locator(".line-gutter").nth(lineIndex);
-  await gutter.click();
-
-  const textarea = page.locator(".comment-form textarea");
-  await expect(textarea).toBeVisible({ timeout: 5_000 });
-  await textarea.fill(body);
-  await textarea.press("Control+Enter");
-
-  await waitForCommentCard(page, body);
-}
 
 test.describe("Comment Editing", () => {
   let token: string;
