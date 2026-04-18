@@ -38,13 +38,7 @@ defmodule CritWeb.ReviewLive do
 
         files_data =
           Enum.map(review.files, fn f ->
-            base = %{path: f.file_path, content: f.content, position: f.position}
-
-            if f.orphaned do
-              Map.merge(base, %{status: f.status, orphaned: true})
-            else
-              base
-            end
+            %{path: f.file_path, content: f.content, position: f.position, status: f.status}
           end)
 
         socket =

@@ -409,15 +409,14 @@ defmodule CritWeb.ApiControllerTest do
       assert response(conn, 204)
     end
 
-    test "creates a review with orphaned files", %{conn: conn} do
+    test "creates a review with removed (orphaned) files", %{conn: conn} do
       payload = %{
         "files" => [
           %{"path" => "active.go", "content" => "package main"},
           %{
             "path" => "removed.md",
             "content" => "",
-            "status" => "deleted",
-            "orphaned" => true
+            "status" => "removed"
           }
         ],
         "review_round" => 2,
@@ -435,21 +434,37 @@ defmodule CritWeb.ApiControllerTest do
       assert %{"url" => url} = json_response(conn, 201)
       token = url |> String.split("/") |> List.last()
 
-      # Document endpoint includes orphaned metadata
+      # Document endpoint includes status for all files
       conn = get(build_conn(), ~p"/api/reviews/#{token}/document")
       result = json_response(conn, 200)
       assert length(result["files"]) == 2
 
-      orphaned_file = Enum.find(result["files"], &(&1["path"] == "removed.md"))
+      removed_file = Enum.find(result["files"], &(&1["path"] == "removed.md"))
       active_file = Enum.find(result["files"], &(&1["path"] == "active.go"))
 
-      assert orphaned_file["orphaned"] == true
-      assert orphaned_file["status"] == "deleted"
-      assert orphaned_file["content"] == ""
+      assert removed_file["status"] == "removed"
+      assert removed_file["content"] == ""
 
-      # Active files don't include orphaned/status keys
-      refute Map.has_key?(active_file, "orphaned")
-      refute Map.has_key?(active_file, "status")
+      assert active_file["status"] == "modified"
+    end
+
+    test "backwards compat: orphaned: true maps to status removed", %{conn: conn} do
+      payload = %{
+        "files" => [
+          %{"path" => "old.md", "content" => "", "orphaned" => true}
+        ],
+        "review_round" => 1,
+        "comments" => []
+      }
+
+      conn = post(conn, ~p"/api/reviews", payload)
+      assert %{"url" => url} = json_response(conn, 201)
+      token = url |> String.split("/") |> List.last()
+
+      conn = get(build_conn(), ~p"/api/reviews/#{token}/document")
+      result = json_response(conn, 200)
+      file = hd(result["files"])
+      assert file["status"] == "removed"
     end
   end
 

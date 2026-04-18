@@ -6,19 +6,20 @@ defmodule Crit.ReviewRoundSnapshot do
     field :file_path, :string
     field :content, :string
     field :position, :integer, default: 0
-    field :status, :string, default: "modified"
-    field :orphaned, :boolean, default: false
+    field :status, Ecto.Enum,
+      values: [:added, :modified, :deleted, :renamed, :removed],
+      default: :modified
     belongs_to :review, Crit.Review
     timestamps(updated_at: false)
   end
 
   def changeset(snapshot, attrs) do
     snapshot
-    |> cast(attrs, [:round_number, :file_path, :content, :position, :status, :orphaned])
+    |> cast(attrs, [:round_number, :file_path, :content, :position, :status])
     |> validate_required([:round_number, :file_path])
     |> then(fn cs ->
-      if Ecto.Changeset.get_field(cs, :orphaned) do
-        # Orphaned files may have empty content; default to "" if nil
+      if Ecto.Changeset.get_field(cs, :status) == :removed do
+        # Removed (orphaned) files may have empty content; default to "" if nil
         cs
         |> Ecto.Changeset.put_change(:content, Ecto.Changeset.get_field(cs, :content) || "")
       else

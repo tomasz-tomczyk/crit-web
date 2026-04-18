@@ -87,10 +87,7 @@ defmodule CritWeb.ApiController do
       review ->
         files =
           Enum.map(review.files, fn f ->
-            %{path: f.file_path, content: f.content}
-            |> then(fn m ->
-              if f.orphaned, do: Map.merge(m, %{status: f.status, orphaned: true}), else: m
-            end)
+            %{path: f.file_path, content: f.content, status: f.status}
           end)
 
         json(conn, %{files: files})
