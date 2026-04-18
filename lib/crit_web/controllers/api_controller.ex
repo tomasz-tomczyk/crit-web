@@ -227,19 +227,24 @@ defmodule CritWeb.ApiController do
   def options(conn, _params), do: send_resp(conn, 204, "")
 
   # Rate-limit POST /api/reviews: 30 per minute per IP.
+  # Disabled in E2E test mode to avoid test flakiness.
   defp rate_limit_write(conn, _opts) do
-    ip = conn.remote_ip |> :inet.ntoa() |> to_string()
+    if System.get_env("E2E") == "true" do
+      conn
+    else
+      ip = conn.remote_ip |> :inet.ntoa() |> to_string()
 
-    case Crit.RateLimit.hit("write:#{ip}", :timer.minutes(1), 30) do
-      {:allow, _} ->
-        conn
+      case Crit.RateLimit.hit("write:#{ip}", :timer.minutes(1), 30) do
+        {:allow, _} ->
+          conn
 
-      {:deny, retry_after} ->
-        conn
-        |> put_resp_header("retry-after", Integer.to_string(div(retry_after, 1000)))
-        |> put_status(429)
-        |> json(%{error: "Too many requests"})
-        |> halt()
+        {:deny, retry_after} ->
+          conn
+          |> put_resp_header("retry-after", Integer.to_string(div(retry_after, 1000)))
+          |> put_status(429)
+          |> json(%{error: "Too many requests"})
+          |> halt()
+      end
     end
   end
 
