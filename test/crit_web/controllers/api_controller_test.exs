@@ -408,6 +408,45 @@ defmodule CritWeb.ApiControllerTest do
       conn = delete(build_conn(), ~p"/api/reviews", %{"delete_token" => dt})
       assert response(conn, 204)
     end
+
+    test "creates a review with removed (orphaned) files", %{conn: conn} do
+      payload = %{
+        "files" => [
+          %{"path" => "active.go", "content" => "package main"},
+          %{
+            "path" => "removed.md",
+            "content" => "",
+            "status" => "removed"
+          }
+        ],
+        "review_round" => 2,
+        "comments" => [
+          %{
+            "file" => "removed.md",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "this was here before"
+          }
+        ]
+      }
+
+      conn = post(conn, ~p"/api/reviews", payload)
+      assert %{"url" => url} = json_response(conn, 201)
+      token = url |> String.split("/") |> List.last()
+
+      # Document endpoint includes status for all files
+      conn = get(build_conn(), ~p"/api/reviews/#{token}/document")
+      result = json_response(conn, 200)
+      assert length(result["files"]) == 2
+
+      removed_file = Enum.find(result["files"], &(&1["path"] == "removed.md"))
+      active_file = Enum.find(result["files"], &(&1["path"] == "active.go"))
+
+      assert removed_file["status"] == "removed"
+      assert removed_file["content"] == ""
+
+      assert active_file["status"] == "modified"
+    end
   end
 
   describe "PUT /api/reviews/:token" do

@@ -85,7 +85,11 @@ defmodule CritWeb.ApiController do
         not_found(conn)
 
       review ->
-        files = Enum.map(review.files, fn f -> %{path: f.file_path, content: f.content} end)
+        files =
+          Enum.map(review.files, fn f ->
+            %{path: f.file_path, content: f.content, status: f.status}
+          end)
+
         json(conn, %{files: files})
     end
   end

@@ -1994,6 +1994,19 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 }
 .file-header-name .dir { color: var(--crit-fg-muted); }
 
+.file-header-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.file-header-badge.removed {
+  background: var(--crit-badge-removed-bg);
+  color: var(--crit-badge-removed-color);
+  border: 1px solid var(--crit-badge-removed-border);
+}
 
 /* Viewed checkbox in file header */
 .file-header-viewed {
@@ -2053,6 +2066,11 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 .file-body.diff-split {
   max-width: none;
   padding: 0;
+}
+.orphaned-placeholder {
+  font-style: italic;
+  color: var(--crit-fg-dimmed);
+  padding: 12px 16px;
 }
 
 /* ===== File Tree Panel (multi-file mode) ===== */
