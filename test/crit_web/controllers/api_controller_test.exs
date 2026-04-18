@@ -447,7 +447,6 @@ defmodule CritWeb.ApiControllerTest do
 
       assert active_file["status"] == "modified"
     end
-
   end
 
   describe "PUT /api/reviews/:token" do

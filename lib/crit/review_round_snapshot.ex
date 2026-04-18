@@ -6,9 +6,11 @@ defmodule Crit.ReviewRoundSnapshot do
     field :file_path, :string
     field :content, :string
     field :position, :integer, default: 0
+
     field :status, Ecto.Enum,
       values: [:added, :modified, :deleted, :renamed, :removed],
       default: :modified
+
     belongs_to :review, Crit.Review
     timestamps(updated_at: false)
   end
