@@ -448,24 +448,6 @@ defmodule CritWeb.ApiControllerTest do
       assert active_file["status"] == "modified"
     end
 
-    test "backwards compat: orphaned: true maps to status removed", %{conn: conn} do
-      payload = %{
-        "files" => [
-          %{"path" => "old.md", "content" => "", "orphaned" => true}
-        ],
-        "review_round" => 1,
-        "comments" => []
-      }
-
-      conn = post(conn, ~p"/api/reviews", payload)
-      assert %{"url" => url} = json_response(conn, 201)
-      token = url |> String.split("/") |> List.last()
-
-      conn = get(build_conn(), ~p"/api/reviews/#{token}/document")
-      result = json_response(conn, 200)
-      file = hd(result["files"])
-      assert file["status"] == "removed"
-    end
   end
 
   describe "PUT /api/reviews/:token" do

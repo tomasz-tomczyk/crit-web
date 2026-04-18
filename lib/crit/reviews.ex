@@ -309,13 +309,7 @@ defmodule Crit.Reviews do
   defp insert_round_snapshots(review, round_number, files_attrs) do
     Enum.with_index(files_attrs)
     |> Enum.reduce_while(:ok, fn {file_attrs, idx}, :ok ->
-      # Backwards compat: old payloads send orphaned: true instead of status: "removed"
-      status =
-        if file_attrs["orphaned"] == true do
-          "removed"
-        else
-          file_attrs["status"] || "modified"
-        end
+      status = file_attrs["status"] || "modified"
 
       result =
         %ReviewRoundSnapshot{}
