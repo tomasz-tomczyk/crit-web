@@ -68,7 +68,7 @@ jobs:
       - name: Compile (with E2E pool config)
         run: mix compile
         env:
-          PHX_SERVER: "true"
+          E2E: "true"
 
       - name: Install Playwright dependencies
         run: npm ci
@@ -85,7 +85,7 @@ jobs:
       - name: Run Playwright tests
         run: npx playwright test
         env:
-          PHX_SERVER: "true"
+          E2E: "true"
           CI: "true"
 
       - name: Upload test artifacts

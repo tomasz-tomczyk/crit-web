@@ -31,7 +31,7 @@ export default defineConfig({
     env: {
       MIX_ENV: "test",
       PORT: PORT,
-      PHX_SERVER: "true",
+      E2E: "true",
     },
   },
 });
