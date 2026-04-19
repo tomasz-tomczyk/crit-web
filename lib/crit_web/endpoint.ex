@@ -25,6 +25,7 @@ defmodule CritWeb.Endpoint do
     from: :crit,
     gzip: not code_reloading?,
     only: CritWeb.static_paths(),
+    only_matching: CritWeb.static_paths_matching(),
     raise_on_missing_only: code_reloading?
 
   # Code reloading can be explicitly enabled under the

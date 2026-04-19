@@ -21,6 +21,10 @@ defmodule CritWeb do
     do:
       ~w(assets fonts images favicon.ico favicon.svg favicon-96x96.png apple-touch-icon.png web-app-manifest-192x192.png web-app-manifest-512x512.png site.webmanifest robots.txt sitemap.xml)
 
+  def static_paths_matching,
+    do:
+      ~w(favicon apple-touch-icon web-app-manifest site)
+
   def router do
     quote do
       use Phoenix.Router, helpers: false
