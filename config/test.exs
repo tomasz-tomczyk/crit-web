@@ -5,12 +5,16 @@ import Config
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
+# When E2E=true (Playwright), use a real connection pool so the
+# web server process can access the database. ExUnit tests keep the sandbox.
+e2e_mode? = System.get_env("E2E") == "true"
+
 config :crit, Crit.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
   database: "crit_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool: Ecto.Adapters.SQL.Sandbox,
+  pool: if(e2e_mode?, do: DBConnection.ConnectionPool, else: Ecto.Adapters.SQL.Sandbox),
   pool_size: System.schedulers_online() * 2
 
 # We don't run a server during test. If one is required,
