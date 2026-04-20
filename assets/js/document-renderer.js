@@ -1753,10 +1753,10 @@ function renderFileSection(ctx, file) {
     '<div class="file-header-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg></div>' +
     '<svg class="file-header-icon" viewBox="0 0 16 16" fill="var(--crit-fg-dimmed)"><path fill-rule="evenodd" d="M3.75 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75zm5.75.56v2.19c0 .138.112.25.25.25h2.19L9.5 2.06zM2 1.75C2 .784 2.784 0 3.75 0h5.086c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25V1.75z"/></svg>' +
     '<span class="file-header-name"><span class="dir">' + escapeHtml(dirPath) + '</span>' + escapeHtml(fileName) + '</span>' +
-    (file.status === 'removed' ? '<span class="file-header-badge removed">Removed</span>' : '')
+    (file.orphaned ? '<span class="file-header-badge removed">Removed</span>' : '')
 
-  // File comment button — not for removed files (no point adding comments to removed files)
-  if (file.status !== 'removed') {
+  // File comment button — not for orphaned files (no point adding comments to removed files)
+  if (!file.orphaned) {
     const fileCommentBtn = document.createElement('button')
     fileCommentBtn.className = 'file-comment-btn'
     fileCommentBtn.title = 'Add file comment'
@@ -1785,10 +1785,10 @@ function renderFileSection(ctx, file) {
   section.appendChild(header)
 
   // File-level comments (between header and body)
-  // For removed files, render ALL comments here (no line blocks to anchor to)
-  const isRemoved = file.status === 'removed'
-  const displayComments = isRemoved ? file.comments : fileComments
-  if (displayComments.length > 0 || (!isRemoved && ctx.activeForms.some(f => f.scope === 'file' && f.filePath === file.path))) {
+  // For orphaned files, render ALL comments here (no line blocks to anchor to)
+  const isOrphaned = file.orphaned
+  const displayComments = isOrphaned ? file.comments : fileComments
+  if (displayComments.length > 0 || (!isOrphaned && ctx.activeForms.some(f => f.scope === 'file' && f.filePath === file.path))) {
     const fileCommentsContainer = document.createElement('div')
     fileCommentsContainer.className = 'file-comments'
     for (const c of displayComments) {
@@ -1796,8 +1796,8 @@ function renderFileSection(ctx, file) {
       card.style.cursor = ''
       fileCommentsContainer.appendChild(card)
     }
-    // Render file comment form if active (not for removed files)
-    if (!isRemoved) {
+    // Render file comment form if active (not for orphaned files)
+    if (!isOrphaned) {
       const fileForm = ctx.activeForms.find(f => f.scope === 'file' && f.filePath === file.path)
       if (fileForm) {
         fileCommentsContainer.appendChild(renderCommentFormUI(ctx, fileForm))
@@ -1810,10 +1810,10 @@ function renderFileSection(ctx, file) {
   const body = document.createElement('div')
   body.className = 'file-body' + (file.fileType === 'code' ? ' code-document' : '')
 
-  if (file.status === 'removed') {
-    // Removed files show a placeholder instead of content
+  if (file.orphaned) {
+    // Orphaned files show a placeholder instead of content
     const placeholder = document.createElement('div')
-    placeholder.className = 'orphaned-placeholder'
+    placeholder.className = 'diff-deleted-placeholder orphaned-placeholder'
     placeholder.textContent = 'This file is no longer part of the review.'
     body.appendChild(placeholder)
   } else {
@@ -3971,19 +3971,23 @@ export const DocumentRenderer = {
 
       if (files && files.length > 1) {
         ctx.multiFile = true
-        ctx.files = files.map(f => ({
-          path: f.path,
-          content: f.content,
-          position: f.position,
-          fileType: isCodeFile(f.path) ? 'code' : 'markdown',
-          lineBlocks: f.status === 'removed' ? [] : (isCodeFile(f.path)
-            ? buildCodeLineBlocks(f.content, f.path)
-            : buildLineBlocks(md, f.content)),
-          comments: comments.filter(c => c.file_path === f.path),
-          collapsed: f.status === 'removed',
-          viewed: false,
-          status: f.status || 'modified',
-        }))
+        ctx.files = files.map(f => {
+          const orphaned = f.status === 'removed'
+          return {
+            path: f.path,
+            content: f.content,
+            position: f.position,
+            fileType: isCodeFile(f.path) ? 'code' : 'markdown',
+            lineBlocks: orphaned ? [] : (isCodeFile(f.path)
+              ? buildCodeLineBlocks(f.content, f.path)
+              : buildLineBlocks(md, f.content)),
+            comments: comments.filter(c => c.file_path === f.path),
+            collapsed: orphaned,
+            viewed: false,
+            status: f.status || 'modified',
+            orphaned,
+          }
+        })
         restoreViewedState(ctx)
       } else if (files && files.length === 1) {
         const f = files[0]
