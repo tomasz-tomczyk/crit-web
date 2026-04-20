@@ -2069,6 +2069,12 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   max-width: none;
   padding: 0;
 }
+.diff-deleted-placeholder {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--crit-fg-muted);
+  font-size: 14px;
+}
 .orphaned-placeholder {
   font-style: italic;
   color: var(--crit-fg-dimmed);
