@@ -1,6 +1,6 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.site_header current_user={@current_user} />
   
 <!-- Breadcrumb -->
@@ -15,13 +15,13 @@
   
 <!-- Hero -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-5">
-    <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
       Integrations
     </p>
-    <h1 class="text-4xl font-extrabold leading-tight tracking-tighter mb-4 max-sm:text-3xl">
-      Connect Crit to your agent<span class="text-(--crit-accent)">.</span>
+    <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
+      Connect Crit to your agent<span class="text-(--crit-brand)">.</span>
     </h1>
-    <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
+    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
       Drop one file into your project. Your agent writes a plan, launches Crit for review,
       and waits for your feedback before writing code. The same integration works for reviewing
       code changes after your agent writes them.
@@ -34,7 +34,7 @@
     <div class="flex gap-0 border-b border-(--crit-border) overflow-x-auto">
       <%= for {integration, idx} <- Enum.with_index(@integrations) do %>
         <button
-          class={"integration-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 transition-colors cursor-pointer bg-transparent whitespace-nowrap #{if idx == 0, do: "border-(--crit-accent) text-(--crit-accent)", else: "border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary)"}"}
+          class={"integration-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 transition-colors cursor-pointer bg-transparent whitespace-nowrap #{if idx == 0, do: "border-(--crit-brand) text-(--crit-brand)", else: "border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary)"}"}
           data-target={"integration-#{integration.id}"}
         >
           {integration.name}
@@ -54,7 +54,7 @@
           </p>
           <p class="font-mono text-xs text-(--crit-fg-muted)">
             Copy to
-            <code class="text-(--crit-accent) bg-(--crit-bg-tertiary) px-1.5 py-0.5 rounded">
+            <code class="text-(--crit-brand) bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
               {integration.file_path}
             </code>
           </p>
@@ -62,7 +62,7 @@
         
 <!-- Snippet -->
         <div class="border border-(--crit-border) rounded-md overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-2 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+          <div class="flex items-center justify-between px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
             <span class="font-mono text-xs text-(--crit-fg-muted)">{integration.file_path}</span>
             <button
               class="copy-snippet-btn shrink-0 px-3 py-1 text-xs font-mono text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer bg-transparent border border-(--crit-border) rounded transition-colors"
@@ -89,7 +89,7 @@
           </div>
 
           <div class="border border-(--crit-border) rounded-md overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-2 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+            <div class="flex items-center justify-between px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
               <span class="font-mono text-xs text-(--crit-fg-muted)">CLAUDE.md</span>
               <button
                 class="copy-snippet-btn shrink-0 px-3 py-1 text-xs font-mono text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer bg-transparent border border-(--crit-border) rounded transition-colors"
@@ -111,7 +111,7 @@
     <div class="mt-8 text-center">
       <a
         href="https://github.com/tomasz-tomczyk/crit/tree/main/integrations"
-        class="text-sm text-(--crit-accent) no-underline hover:underline"
+        class="text-sm crit-link"
       >
         View all integration files on GitHub &rarr;
       </a>

@@ -16,24 +16,24 @@
       })();
     </script>
   </head>
-  <body class="bg-[var(--crit-bg-primary)] text-[var(--crit-fg-primary)] min-h-screen flex items-center justify-center">
+  <body class="bg-(--crit-bg-page) text-(--crit-fg-primary) min-h-screen flex items-center justify-center">
     <div class="w-full max-w-[360px] px-6">
       <%!-- Logo mark --%>
       <div class="text-center mb-8">
         <a
           href="/"
-          class="inline-block font-mono text-2xl font-bold text-[var(--crit-accent)] tracking-tight"
+          class="inline-block font-mono text-2xl font-bold text-(--crit-brand) tracking-tight"
         >
           Crit
         </a>
       </div>
 
       <%!-- Card --%>
-      <div class="border border-[var(--crit-border)] rounded-lg bg-[var(--crit-bg-secondary)] p-6 text-center">
+      <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 text-center">
         <%!-- Checkmark --%>
-        <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-[var(--crit-green)]/10 border border-[var(--crit-green)]/20 flex items-center justify-center">
+        <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-(--crit-green)/10 border border-(--crit-green)/20 flex items-center justify-center">
           <svg
-            class="w-6 h-6 text-[var(--crit-green)]"
+            class="w-6 h-6 text-(--crit-green)"
             fill="none"
             viewBox="0 0 24 24"
             stroke-width="2.5"
@@ -43,10 +43,10 @@
           </svg>
         </div>
 
-        <h1 class="text-lg font-semibold text-[var(--crit-fg-primary)]">
+        <h1 class="text-lg font-semibold text-(--crit-fg-primary)">
           You're signed in
         </h1>
-        <p class="text-sm text-[var(--crit-fg-muted)] mt-2 leading-relaxed">
+        <p class="text-sm text-(--crit-fg-muted) mt-2 leading-relaxed">
           You can close this tab and return to your terminal.
         </p>
       </div>

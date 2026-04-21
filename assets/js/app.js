@@ -177,11 +177,11 @@ if (testimonialsGrid) {
 document.querySelectorAll(".integration-tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".integration-tab").forEach(t => {
-      t.classList.remove("border-(--crit-accent)", "text-(--crit-accent)")
+      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
       t.classList.add("border-transparent", "text-(--crit-fg-muted)")
     })
     document.querySelectorAll(".integration-panel").forEach(p => p.classList.add("hidden"))
-    tab.classList.add("border-(--crit-accent)", "text-(--crit-accent)")
+    tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
     tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
     document.getElementById(tab.dataset.target).classList.remove("hidden")
   })
@@ -257,11 +257,11 @@ if (platformStats) {
 document.querySelectorAll(".install-tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".install-tab").forEach(t => {
-      t.classList.remove("border-(--crit-accent)", "text-(--crit-accent)")
+      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
       t.classList.add("border-transparent", "text-(--crit-fg-muted)")
     })
     document.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"))
-    tab.classList.add("border-(--crit-accent)", "text-(--crit-accent)")
+    tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
     tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
     document.getElementById(tab.dataset.target).classList.remove("hidden")
   })
@@ -289,11 +289,11 @@ document.querySelectorAll(".agent-copy-btn").forEach(btn => {
 document.querySelectorAll(".agent-tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".agent-tab").forEach(t => {
-      t.classList.remove("border-(--crit-accent)", "text-(--crit-accent)")
+      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
       t.classList.add("border-transparent", "text-(--crit-fg-muted)")
     })
     document.querySelectorAll(".agent-panel").forEach(p => p.classList.add("hidden"))
-    tab.classList.add("border-(--crit-accent)", "text-(--crit-accent)")
+    tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
     tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
     document.getElementById(tab.dataset.target).classList.remove("hidden")
   })

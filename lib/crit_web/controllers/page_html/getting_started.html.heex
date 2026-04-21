@@ -1,15 +1,15 @@
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_user={@current_user} />
   <div class="max-w-7xl mx-auto mt-16 px-10 pb-20 max-sm:px-5 max-sm:pb-12">
     <%!-- Hero --%>
     <section class="mb-14 max-sm:mt-10 max-sm:mb-10">
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
         Getting Started
       </p>
-      <h1 class="text-4xl font-extrabold leading-[1.1] tracking-tight mb-4 max-sm:text-3xl">
-        First review in<br />under a minute<span class="text-(--crit-accent)">.</span>
+      <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
+        First review in under a minute<span class="text-(--crit-brand)">.</span>
       </h1>
-      <p class="text-base leading-relaxed text-(--crit-fg-secondary) max-w-[520px]">
+      <p class="text-xl leading-relaxed text-(--crit-fg-secondary) max-w-[520px]">
         Install Crit, open a file, leave comments, hand off to your agent.
         No config, no login, no daemon.
       </p>
@@ -18,20 +18,18 @@
     <%!-- Install --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           01
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Install</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Install</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">Single binary, zero dependencies.</p>
         </div>
       </div>
       <CritWeb.PageHTML.install_widget />
 
       <div class="mt-8">
-        <p class="text-sm font-semibold text-(--crit-fg-primary) mb-3">
-          Then connect your agent
-        </p>
+        <h3 class="text-xl font-bold tracking-tight mb-3">Connect your agent</h3>
         <CritWeb.PageHTML.agent_setup_widget />
       </div>
     </section>
@@ -39,14 +37,14 @@
     <%!-- Step 2: Open for review --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           02
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Open a file for review</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Open a file for review</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             Pass any file, or run
-            <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">crit</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit</code>
             with no args to auto-detect changes in your repo.
           </p>
         </div>
@@ -54,11 +52,11 @@
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
         <%!-- Terminal title bar --%>
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
@@ -68,7 +66,7 @@
             <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit plan.md</span>
           </div>
           <div class="mt-1">
-            <span class="text-(--crit-fg-muted)"> Opening </span><span class="text-(--crit-accent)">plan.md</span><span class="text-(--crit-fg-muted)"> for review...</span>
+            <span class="text-(--crit-fg-muted)"> Opening </span><span class="text-(--crit-brand)">plan.md</span><span class="text-(--crit-fg-muted)"> for review...</span>
           </div>
           <div>
             <span class="text-(--crit-fg-muted)"> Listening on </span><span class="text-(--crit-fg-primary)">http://localhost:3247</span>
@@ -80,7 +78,7 @@
             <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit</span><span class="text-(--crit-fg-muted)"> # auto-detect changed files</span>
           </div>
           <div class="mt-1">
-            <span class="text-(--crit-fg-muted)"> Found </span><span class="text-(--crit-accent)">3</span><span class="text-(--crit-fg-muted)"> changed files on branch </span><span class="text-(--crit-fg-primary)">feat/auth</span>
+            <span class="text-(--crit-fg-muted)"> Found </span><span class="text-(--crit-brand)">3</span><span class="text-(--crit-fg-muted)"> changed files on branch </span><span class="text-(--crit-fg-primary)">feat/auth</span>
           </div>
           <div>
             <span class="text-(--crit-fg-muted)"> Listening on </span><span class="text-(--crit-fg-primary)">http://localhost:3247</span>
@@ -88,7 +86,7 @@
         </div>
       </div>
 
-      <p class="text-sm text-(--crit-fg-muted) mt-3 leading-relaxed">
+      <p class="text-sm text-(--crit-fg-secondary) mt-3 leading-relaxed">
         Your browser opens automatically. Markdown files render as documents. Code files show
         syntax-highlighted source with line numbers.
       </p>
@@ -97,11 +95,11 @@
     <%!-- Step 3: Leave comments --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           03
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Leave inline comments</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Leave inline comments</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             Click a line number or drag across a range. GitHub-style review UI.
           </p>
@@ -109,19 +107,19 @@
       </div>
 
       <%!-- Mock review UI --%>
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden bg-(--crit-bg-secondary)">
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden bg-(--crit-bg-card)">
         <%!-- File header bar --%>
-        <div class="flex items-center gap-2 px-4 py-2.5 border-b border-(--crit-border) bg-(--crit-bg-tertiary)">
+        <div class="flex items-center gap-2 px-4 py-2.5 border-b border-(--crit-border) bg-(--crit-bg-elevated)">
           <span class="font-mono text-xs font-semibold text-(--crit-fg-secondary)">
             Crit
           </span>
-          <span class="text-(--crit-fg-dimmed) text-xs">/</span>
-          <span class="font-mono text-xs text-(--crit-fg-muted) bg-(--crit-bg-secondary) px-2 py-0.5 rounded">
+          <span class="text-(--crit-fg-muted) text-xs">/</span>
+          <span class="font-mono text-xs text-(--crit-fg-muted) bg-(--crit-bg-card) px-2 py-0.5 rounded">
             plan.md
           </span>
           <div class="ml-auto flex items-center gap-3">
             <span class="font-mono text-xs text-(--crit-fg-muted)">
-              <strong class="text-(--crit-accent)">1</strong> comment
+              <strong class="text-(--crit-brand)">1</strong> comment
             </span>
           </div>
         </div>
@@ -129,32 +127,32 @@
         <%!-- Document lines --%>
         <div class="font-mono text-xs leading-6 select-none">
           <div class="flex border-l-[3px] border-transparent">
-            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">1</div>
+            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-muted)">1</div>
             <div class="flex-1 px-3 py-0.5 font-sans font-bold text-sm text-(--crit-fg-primary)">
               # Add rate limiting
             </div>
           </div>
           <div class="flex border-l-[3px] border-transparent">
-            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">2</div>
+            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-muted)">2</div>
             <div class="flex-1 px-3 py-0.5">&nbsp;</div>
           </div>
-          <div class="flex border-l-[3px] border-(--crit-accent) bg-(--crit-accent-subtle)">
-            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-accent)">3</div>
+          <div class="flex border-l-[3px] border-(--crit-brand) bg-(--crit-brand-subtle)">
+            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-brand)">3</div>
             <div class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
               Apply a global rate limit of 100 req/s per IP.
             </div>
           </div>
-          <div class="flex border-l-[3px] border-(--crit-accent) bg-(--crit-accent-subtle)">
-            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-accent)">4</div>
+          <div class="flex border-l-[3px] border-(--crit-brand) bg-(--crit-brand-subtle)">
+            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-brand)">4</div>
             <div class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
               Use a fixed window counter stored in Redis.
             </div>
           </div>
           <%!-- Comment --%>
           <div class="mx-3 mb-1 mt-0.5 border border-(--crit-border-comment) rounded text-xs overflow-hidden bg-(--crit-comment-bg)">
-            <div class="px-3 py-1.5 border-b border-(--crit-border) flex items-center gap-2 bg-(--crit-accent-subtle)">
-              <span class="font-sans font-semibold text-(--crit-accent)">You</span>
-              <span class="text-(--crit-fg-dimmed)">&middot;</span>
+            <div class="px-3 py-1.5 border-b border-(--crit-border) flex items-center gap-2 bg-(--crit-brand-subtle)">
+              <span class="font-sans font-semibold text-(--crit-brand)">You</span>
+              <span class="text-(--crit-fg-muted)">&middot;</span>
               <span class="font-sans text-(--crit-fg-muted)">Lines 3-4</span>
             </div>
             <div class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed">
@@ -162,13 +160,13 @@
             </div>
           </div>
           <div class="flex border-l-[3px] border-transparent">
-            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">5</div>
+            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-muted)">5</div>
             <div class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
               Return 429 with a Retry-After header.
             </div>
           </div>
           <div class="flex border-l-[3px] border-transparent">
-            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-dimmed)">6</div>
+            <div class="w-[42px] shrink-0 text-right pr-3 py-0.5 text-(--crit-fg-muted)">6</div>
             <div class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
               Log blocked requests to stdout.
             </div>
@@ -178,22 +176,22 @@
 
       <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-sm text-(--crit-fg-muted)">
         <span class="flex items-center gap-1.5">
-          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">
+          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-elevated) text-(--crit-fg-secondary)">
             j
           </kbd>
-          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">
+          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-elevated) text-(--crit-fg-secondary)">
             k
           </kbd>
           navigate
         </span>
         <span class="flex items-center gap-1.5">
-          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">
+          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-elevated) text-(--crit-fg-secondary)">
             c
           </kbd>
           comment
         </span>
         <span class="flex items-center gap-1.5">
-          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-tertiary) text-(--crit-fg-secondary)">
+          <kbd class="inline-flex items-center justify-center font-mono text-xs min-w-[20px] h-5 px-1.5 rounded border border-(--crit-border) bg-(--crit-bg-elevated) text-(--crit-fg-secondary)">
             ?
           </kbd>
           all shortcuts
@@ -204,11 +202,11 @@
     <%!-- Step 4: Hand off and iterate --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           04
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Finish review and hand off</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Finish review and hand off</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             Click <strong class="text-(--crit-fg-secondary)">Finish Review</strong>. Your agent gets notified automatically.
           </p>
@@ -216,18 +214,18 @@
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Crit</span>
         </div>
         <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
           <div>
-            <span class="text-(--crit-accent)">&rarr;</span>
-            Round 1: <span class="text-(--crit-accent)">2</span>
+            <span class="text-(--crit-brand)">&rarr;</span>
+            Round 1: <span class="text-(--crit-brand)">2</span>
             comments added
           </div>
           <div>
@@ -236,10 +234,10 @@
           </div>
           <div class="mt-2">
             <span class="text-(--crit-green)">&rarr;</span>
-            File updated (<span class="text-(--crit-accent)">5</span> edits detected)
+            File updated (<span class="text-(--crit-brand)">5</span> edits detected)
           </div>
           <div>
-            <span class="text-(--crit-accent)">&rarr;</span>
+            <span class="text-(--crit-brand)">&rarr;</span>
             Round 2: diff ready &mdash; <span class="text-(--crit-green)">2 resolved</span>
           </div>
           <div class="text-(--crit-fg-muted)">
@@ -248,7 +246,7 @@
         </div>
       </div>
 
-      <p class="text-sm text-(--crit-fg-muted) mt-4 leading-relaxed">
+      <p class="text-sm text-(--crit-fg-secondary) mt-4 leading-relaxed">
         The agent reads your review, addresses your comments, and updates the file.
         Crit reloads with a diff of what changed. Repeat until you're satisfied.
       </p>
@@ -256,45 +254,45 @@
 
     <%!-- What's next --%>
     <section>
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
         What's next
       </p>
       <h2 class="text-2xl font-extrabold tracking-tight mb-6 max-sm:text-xl">
-        Go deeper<span class="text-(--crit-accent)">.</span>
+        Go deeper<span class="text-(--crit-brand)">.</span>
       </h2>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
         <a
           href={~p"/features"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150 flex flex-col"
         >
-          <h3 class="text-sm font-semibold mb-1.5">All features</h3>
+          <h3 class="text-base font-semibold tracking-tight mb-1.5">All features</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
             Diffs, vim keybindings, mermaid diagrams, syntax highlighting, and more.
           </p>
-          <span class="text-xs text-(--crit-accent) mt-3">Explore &rarr;</span>
+          <span class="text-xs text-(--crit-brand) mt-3">Explore &rarr;</span>
         </a>
 
         <a
           href={~p"/features/share-reviews"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150 flex flex-col"
         >
-          <h3 class="text-sm font-semibold mb-1.5">Share reviews</h3>
+          <h3 class="text-base font-semibold tracking-tight mb-1.5">Share reviews</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
             One click to generate a public link. Get a second opinion before handing off.
           </p>
-          <span class="text-xs text-(--crit-accent) mt-3">Learn more &rarr;</span>
+          <span class="text-xs text-(--crit-brand) mt-3">Learn more &rarr;</span>
         </a>
 
         <a
           href={~p"/self-hosting"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150 flex flex-col"
         >
-          <h3 class="text-sm font-semibold mb-1.5">Self-host</h3>
+          <h3 class="text-base font-semibold tracking-tight mb-1.5">Self-host</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
             Run your own Crit Web instance with Docker. Share reviews on your own infrastructure.
           </p>
-          <span class="text-xs text-(--crit-accent) mt-3">Set up &rarr;</span>
+          <span class="text-xs text-(--crit-brand) mt-3">Set up &rarr;</span>
         </a>
       </div>
     </section>

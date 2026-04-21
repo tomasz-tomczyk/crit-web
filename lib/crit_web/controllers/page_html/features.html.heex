@@ -1,16 +1,16 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.site_header current_user={@current_user} />
 
   <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-10">
-    <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
       Features
     </p>
-    <h1 class="text-4xl font-extrabold leading-tight tracking-tighter mb-4 max-sm:text-3xl">
-      Built for the feedback loop<span class="text-(--crit-accent)">.</span>
+    <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
+      Built for the feedback loop<span class="text-(--crit-brand)">.</span>
     </h1>
-    <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
+    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
       Inline comments on plans and code diffs. A structured prompt back to your agent.
       Multi-round iteration until the output is right. Everything below is built for that loop.
     </p>
@@ -22,15 +22,15 @@
         <% feature = @features[slug] %>
         <a
           href={~p"/features/#{slug}"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-2 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit group"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-2 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit group"
         >
-          <h2 class="text-base font-semibold tracking-tight group-hover:text-(--crit-accent) transition-colors">
+          <h3 class="text-base font-semibold tracking-tight group-hover:text-(--crit-brand) transition-colors">
             {feature.title}
-          </h2>
+          </h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
             {feature.tagline}
           </p>
-          <span class="text-xs text-(--crit-fg-muted) mt-auto pt-2 group-hover:text-(--crit-accent) transition-colors">
+          <span class="text-xs text-(--crit-fg-muted) mt-auto pt-2 group-hover:text-(--crit-brand) transition-colors">
             Learn more &rarr;
           </span>
         </a>

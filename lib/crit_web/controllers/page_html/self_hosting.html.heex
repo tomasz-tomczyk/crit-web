@@ -1,15 +1,15 @@
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_user={@current_user} />
   <div class="max-w-7xl mx-auto px-10 pb-20 max-sm:px-5 max-sm:pb-12">
     <%!-- Hero --%>
     <section class="mt-16 mb-14 max-sm:mt-10 max-sm:mb-10">
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
         Self-Hosting
       </p>
-      <h1 class="text-4xl font-extrabold leading-[1.1] tracking-tight mb-4 max-sm:text-3xl">
-        Your infrastructure,<br />your reviews<span class="text-(--crit-accent)">.</span>
+      <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
+        Your infrastructure, your reviews<span class="text-(--crit-brand)">.</span>
       </h1>
-      <p class="text-base leading-relaxed text-(--crit-fg-secondary) max-w-[520px]">
+      <p class="text-xl leading-relaxed text-(--crit-fg-secondary) max-w-[520px]">
         Run Crit Web on your own server with Docker. Share reviews within your
         team without sending data to a third party.
       </p>
@@ -18,7 +18,7 @@
     <%!-- GitHub banner --%>
     <a
       href="https://github.com/tomasz-tomczyk/crit-web"
-      class="flex items-center gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) px-6 py-4 mb-14 max-sm:mb-10 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 group"
+      class="flex items-center gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-6 py-4 mb-14 max-sm:mb-10 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150 group"
     >
       <svg
         viewBox="0 0 16 16"
@@ -33,7 +33,7 @@
           Source code, Dockerfile, example configs, and issue tracker.
         </p>
       </div>
-      <span class="text-xs font-mono text-(--crit-accent) shrink-0">
+      <span class="text-xs font-mono text-(--crit-brand) shrink-0">
         View on GitHub &rarr;
       </span>
     </a>
@@ -41,11 +41,11 @@
     <%!-- Prerequisites --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           01
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Prerequisites</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Prerequisites</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             Docker with Compose. That's it.
           </p>
@@ -53,23 +53,23 @@
       </div>
 
       <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex items-start gap-4">
-          <span class="text-(--crit-accent) text-lg leading-none mt-0.5 select-none">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex items-start gap-4">
+          <span class="text-(--crit-brand) text-lg leading-none mt-0.5 select-none">
             &#9654;
           </span>
           <div>
-            <h3 class="text-sm font-semibold mb-1">Docker</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Docker</h3>
             <p class="text-xs text-(--crit-fg-muted) leading-relaxed">
               With Compose plugin (included in Docker Desktop and most server installs).
             </p>
           </div>
         </div>
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex items-start gap-4">
-          <span class="text-(--crit-accent) text-lg leading-none mt-0.5 select-none">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex items-start gap-4">
+          <span class="text-(--crit-brand) text-lg leading-none mt-0.5 select-none">
             &#9654;
           </span>
           <div>
-            <h3 class="text-sm font-semibold mb-1">PostgreSQL 17</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">PostgreSQL 17</h3>
             <p class="text-xs text-(--crit-fg-muted) leading-relaxed">
               Bundled in the docker-compose file, or bring your own.
             </p>
@@ -81,11 +81,11 @@
     <%!-- Quick start --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           02
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Download and configure</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Download and configure</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             Grab the example files and generate a secret key.
           </p>
@@ -93,11 +93,11 @@
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
@@ -130,13 +130,13 @@
         </div>
       </div>
 
-      <p class="text-sm text-(--crit-fg-muted) mt-3 leading-relaxed">
+      <p class="text-sm text-(--crit-fg-secondary) mt-3 leading-relaxed">
         Set
-        <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">
+        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
           SECRET_KEY_BASE
         </code>
-        and <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">PHX_HOST</code>
-        in your <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>
+        and <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>
+        in your <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code>
         file.
       </p>
     </section>
@@ -144,11 +144,11 @@
     <%!-- Start --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           03
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Start the services</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Start the services</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             One command. Database migrations run automatically.
           </p>
@@ -156,11 +156,11 @@
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
@@ -189,19 +189,19 @@
     <%!-- Environment variables --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           04
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Environment variables</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Environment variables</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            All configuration lives in <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">.env</code>.
+            All configuration lives in <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code>.
           </p>
         </div>
       </div>
 
       <%!-- Table column headers --%>
-      <div class="hidden sm:grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 px-4 pb-2 text-xs font-mono tracking-widest uppercase text-(--crit-fg-dimmed)">
+      <div class="hidden sm:grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 px-4 pb-2 text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
         <span>Variable</span>
         <span>Description</span>
         <span class="text-right">Required</span>
@@ -209,242 +209,242 @@
 
       <%!-- Database group --%>
       <div class="border border-(--crit-border) rounded-lg overflow-hidden mb-3">
-        <div class="px-4 py-2 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
-          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-dimmed)">
+        <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
             Database
           </span>
         </div>
-        <div class="px-4 py-2.5 bg-(--crit-bg-secondary) border-b border-(--crit-border) flex items-center gap-2">
-          <span class="text-(--crit-accent) text-sm leading-none select-none">&#9432;</span>
+        <div class="px-4 py-2.5 bg-(--crit-bg-card) border-b border-(--crit-border) flex items-center gap-2">
+          <span class="text-(--crit-brand) text-sm leading-none select-none">&#9432;</span>
           <p class="text-sm text-(--crit-fg-secondary)">
-            Set <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DATABASE_URL</code>
+            Set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DATABASE_URL</code>
             <em>or</em>
-            all four of <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DB_HOST</code>, <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DB_USER</code>, <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DB_PASSWORD</code>, <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DB_NAME</code>.
+            all four of <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_HOST</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_USER</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_PASSWORD</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_NAME</code>.
           </p>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DATABASE_URL</code>
             <p class="text-sm text-(--crit-fg-secondary)">
-              PostgreSQL connection URL, e.g. <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">ecto://user:pass@host/db</code>. Use this
+              PostgreSQL connection URL, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">ecto://user:pass@host/db</code>. Use this
               <em>or</em>
               the individual
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DB_*</code>
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_*</code>
               vars.
             </p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required*</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_HOST</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Database host — alternative to
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DATABASE_URL</code>
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DATABASE_URL</code>
             </p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required*</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_USER</code>
             <p class="text-sm text-(--crit-fg-secondary)">Database user</p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required*</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_PASSWORD</code>
             <p class="text-sm text-(--crit-fg-secondary)">Database password</p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required*</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_NAME</code>
             <p class="text-sm text-(--crit-fg-secondary)">Database name</p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required*</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">DB_PORT</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-dimmed)">5432</span>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">5432</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">Database port</p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">DB_SSL</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-dimmed)">false</span>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">false</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">
-              Set to <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">true</code>
-              to enable SSL. Without <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DB_SSL_CA_CERT</code>, connects encrypted without certificate verification (recommended for AWS RDS)
+              Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code>
+              to enable SSL. Without <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_SSL_CA_CERT</code>, connects encrypted without certificate verification (recommended for AWS RDS)
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_SSL_CA_CERT</code>
             <p class="text-sm text-(--crit-fg-secondary)">
-              Path to a CA certificate file. When set alongside <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">DB_SSL=true</code>, enables full
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">verify_peer</code>
+              Path to a CA certificate file. When set alongside <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_SSL=true</code>, enables full
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">verify_peer</code>
               verification. In Docker, mount the file as a volume and pass the container path.
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">POOL_SIZE</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-dimmed)">10</span>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">10</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">Database connection pool size</p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
         </div>
       </div>
 
       <%!-- Application group --%>
       <div class="border border-(--crit-border) rounded-lg overflow-hidden mb-3">
-        <div class="px-4 py-2 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
-          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-dimmed)">
+        <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
             Application
           </span>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">SECRET_KEY_BASE</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               64+ byte secret for signing cookies. Generate with
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
                 openssl rand -base64 64
               </code>
             </p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">PHX_HOST</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Hostname where crit-web is served, e.g.
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">crit.example.com</code>
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">crit.example.com</code>
             </p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">PHX_SERVER</code>
             <p class="text-sm text-(--crit-fg-secondary)">
-              Set to <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">true</code>
+              Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code>
               to start the web server
             </p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">SELFHOSTED</code>
             <p class="text-sm text-(--crit-fg-secondary)">
-              Set to <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">true</code>
+              Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code>
               to enable self-hosted mode (dashboard, no marketing pages)
             </p>
-            <span class="text-xs font-mono text-(--crit-accent) sm:text-right">required</span>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">ADMIN_PASSWORD</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Password for the admin dashboard. If unset and no OAuth configured, dashboard is open to anyone.
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
         </div>
       </div>
 
       <%!-- OAuth group --%>
       <div class="border border-(--crit-border) rounded-lg overflow-hidden mb-3">
-        <div class="px-4 py-2 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
-          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-dimmed)">
+        <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
             OAuth
           </span>
         </div>
-        <div class="px-4 py-2.5 bg-(--crit-bg-secondary) border-b border-(--crit-border) flex items-center gap-2">
-          <span class="text-(--crit-accent) text-sm leading-none select-none">&#9432;</span>
+        <div class="px-4 py-2.5 bg-(--crit-bg-card) border-b border-(--crit-border) flex items-center gap-2">
+          <span class="text-(--crit-brand) text-sm leading-none select-none">&#9432;</span>
           <p class="text-sm text-(--crit-fg-secondary)">
-            Use <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">GITHUB_*</code>
-            or <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">OAUTH_*</code>
+            Use <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_*</code>
+            or <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_*</code>
             — not both.
             When either is set, OAuth login is required to access the dashboard and view reviews.
           </p>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">GITHUB_CLIENT_ID</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               GitHub OAuth App client ID. Set alongside
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
                 GITHUB_CLIENT_SECRET
               </code>
               to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews.
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">GITHUB_CLIENT_SECRET</code>
             <p class="text-sm text-(--crit-fg-secondary)">GitHub OAuth App client secret</p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_CLIENT_ID</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Generic OIDC/OAuth2 client ID. Use with
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
                 OAUTH_CLIENT_SECRET
               </code>
-              and <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">OAUTH_BASE_URL</code>
-              for providers like Google, GitLab, or Okta. Mutually exclusive with <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">GITHUB_CLIENT_ID</code>.
+              and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code>
+              for providers like Google, GitLab, or Okta. Mutually exclusive with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code>.
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_CLIENT_SECRET</code>
             <p class="text-sm text-(--crit-fg-secondary)">Generic OAuth2 client secret</p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_BASE_URL</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               OIDC discovery base URL, e.g.
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
                 https://accounts.google.com
               </code>
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
         </div>
       </div>
 
       <%!-- Network group --%>
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="px-4 py-2 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
-          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-dimmed)">
+        <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
             Network
           </span>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">PORT</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-dimmed)">4000</span>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">4000</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">HTTP port the server listens on</p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">PHX_SCHEME</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-dimmed)">https</span>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">https</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">URL scheme used in generated links</p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-secondary) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">FORCE_SSL</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-dimmed)">false</span>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">false</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">
-              Set to <code class="text-xs bg-(--crit-bg-tertiary) px-1 rounded">true</code>
+              Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code>
               to force HTTPS redirects. Not needed when running behind a reverse proxy.
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-dimmed) sm:text-right">optional</span>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
         </div>
       </div>
@@ -453,11 +453,11 @@
     <%!-- Bring your own Postgres --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           05
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Using your own Postgres</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Using your own Postgres</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             Skip the bundled database and point to an existing instance.
           </p>
@@ -465,11 +465,11 @@
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
@@ -506,11 +506,11 @@
     <%!-- Updating --%>
     <section class="mb-16 max-sm:mb-12">
       <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-accent) leading-none select-none">
+        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
           06
         </span>
         <div>
-          <h2 class="text-lg font-semibold tracking-tight">Updating</h2>
+          <h2 class="text-2xl font-extrabold tracking-tight">Updating</h2>
           <p class="text-sm text-(--crit-fg-muted) mt-0.5">
             Pull the latest image and restart.
           </p>
@@ -518,11 +518,11 @@
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-tertiary) border-b border-(--crit-border)">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-dimmed) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
           </div>
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
@@ -543,36 +543,36 @@
 
     <%!-- Docker image tags --%>
     <section class="mb-16 max-sm:mb-12">
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
         Docker Image
       </p>
       <h2 class="text-2xl font-extrabold tracking-tight mb-2 max-sm:text-xl">
-        Available tags<span class="text-(--crit-accent)">.</span>
+        Available tags<span class="text-(--crit-brand)">.</span>
       </h2>
-      <p class="text-sm text-(--crit-fg-muted) mb-6 leading-relaxed">
+      <p class="text-sm text-(--crit-fg-secondary) mb-6 leading-relaxed">
         Images are published to <a
           href="https://github.com/tomasz-tomczyk/crit-web/pkgs/container/crit-web"
-          class="text-(--crit-accent) no-underline hover:underline"
+          class="crit-link"
         >GitHub Container Registry</a>.
       </p>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6">
-          <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6">
+          <code class="text-sm font-mono bg-(--crit-bg-elevated) px-2 py-0.5 rounded">
             latest
           </code>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
             Latest stable release. Recommended for production.
           </p>
         </div>
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6">
-          <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">main</code>
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6">
+          <code class="text-sm font-mono bg-(--crit-bg-elevated) px-2 py-0.5 rounded">main</code>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
             Bleeding edge. Built from the main branch on every push.
           </p>
         </div>
-        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6">
-          <code class="text-sm font-mono bg-(--crit-bg-tertiary) px-2 py-0.5 rounded">1.2.3</code>
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6">
+          <code class="text-sm font-mono bg-(--crit-bg-elevated) px-2 py-0.5 rounded">1.2.3</code>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed mt-2">
             Pin a specific version. Use for reproducible deployments.
           </p>
@@ -582,45 +582,45 @@
 
     <%!-- What's next --%>
     <section>
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
         What's next
       </p>
       <h2 class="text-2xl font-extrabold tracking-tight mb-6 max-sm:text-xl">
-        Keep going<span class="text-(--crit-accent)">.</span>
+        Keep going<span class="text-(--crit-brand)">.</span>
       </h2>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
         <a
           href={~p"/getting-started"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150 flex flex-col"
         >
-          <h3 class="text-sm font-semibold mb-1.5">Getting started</h3>
+          <h3 class="text-base font-semibold tracking-tight mb-1.5">Getting started</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
             Install the CLI and leave your first inline review in under a minute.
           </p>
-          <span class="text-xs text-(--crit-accent) mt-3">Start &rarr;</span>
+          <span class="text-xs text-(--crit-brand) mt-3">Start &rarr;</span>
         </a>
 
         <a
           href={~p"/integrations"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150 flex flex-col"
         >
-          <h3 class="text-sm font-semibold mb-1.5">Integrations</h3>
+          <h3 class="text-base font-semibold tracking-tight mb-1.5">Integrations</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
             Connect Crit to Claude Code, Cursor, Copilot, and more.
           </p>
-          <span class="text-xs text-(--crit-accent) mt-3">Set up &rarr;</span>
+          <span class="text-xs text-(--crit-brand) mt-3">Set up &rarr;</span>
         </a>
 
         <a
           href={~p"/features"}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 no-underline text-inherit hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 flex flex-col"
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150 flex flex-col"
         >
-          <h3 class="text-sm font-semibold mb-1.5">All features</h3>
+          <h3 class="text-base font-semibold tracking-tight mb-1.5">All features</h3>
           <p class="text-xs text-(--crit-fg-muted) leading-relaxed flex-1">
             Diffs, vim keybindings, mermaid diagrams, syntax highlighting, and more.
           </p>
-          <span class="text-xs text-(--crit-accent) mt-3">Explore &rarr;</span>
+          <span class="text-xs text-(--crit-brand) mt-3">Explore &rarr;</span>
         </a>
       </div>
     </section>

@@ -15,7 +15,7 @@ defmodule CritWeb.PageHTML do
       case Regex.run(~r/^`([^`]+)`$/, part) do
         [_, code] ->
           Phoenix.HTML.raw(
-            "<code class=\"font-mono text-[0.9em] text-[var(--crit-accent)] bg-[var(--crit-bg-tertiary)] px-1 py-0.5 rounded\">#{Phoenix.HTML.html_escape(code) |> Phoenix.HTML.safe_to_string()}</code>"
+            "<code class=\"font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-bg-elevated) px-1 py-0.5 rounded\">#{Phoenix.HTML.html_escape(code) |> Phoenix.HTML.safe_to_string()}</code>"
           )
 
         nil ->
@@ -47,9 +47,9 @@ defmodule CritWeb.PageHTML do
 
   def install_widget(assigns) do
     ~H"""
-    <div class="flex gap-0 border-b border-[var(--crit-border)]">
+    <div class="flex gap-0 border-b border-(--crit-border)">
       <button
-        class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-(--crit-accent) text-(--crit-accent) transition-colors cursor-pointer bg-transparent"
+        class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-(--crit-brand) text-(--crit-brand) transition-colors cursor-pointer bg-transparent"
         data-target="tab-brew"
       >
         Homebrew
@@ -70,12 +70,12 @@ defmodule CritWeb.PageHTML do
 
     <div
       id="tab-brew"
-      class="install-panel border border-t-0 border-[var(--crit-border)] rounded-b-md overflow-hidden"
+      class="install-panel border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
-      <div class="flex items-center bg-[var(--crit-code-bg)]">
-        <pre class="flex-1 font-mono text-sm text-[var(--crit-fg-primary)] m-0 px-5 py-3.5 overflow-x-auto"><span class="text-[var(--crit-fg-muted)] select-none">$ </span>brew install tomasz-tomczyk/tap/crit</pre>
+      <div class="flex items-center bg-(--crit-code-bg)">
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>brew install tomasz-tomczyk/tap/crit</pre>
         <button
-          class="copy-btn shrink-0 p-3 cursor-pointer text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+          class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
@@ -86,12 +86,12 @@ defmodule CritWeb.PageHTML do
 
     <div
       id="tab-go"
-      class="install-panel hidden border border-t-0 border-[var(--crit-border)] rounded-b-md overflow-hidden"
+      class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
-      <div class="flex items-center bg-[var(--crit-code-bg)]">
-        <pre class="flex-1 font-mono text-sm text-[var(--crit-fg-primary)] m-0 px-5 py-3.5 overflow-x-auto"><span class="text-[var(--crit-fg-muted)] select-none">$ </span>go install github.com/tomasz-tomczyk/crit@latest</pre>
+      <div class="flex items-center bg-(--crit-code-bg)">
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>go install github.com/tomasz-tomczyk/crit@latest</pre>
         <button
-          class="copy-btn shrink-0 p-3 cursor-pointer text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+          class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
@@ -102,12 +102,12 @@ defmodule CritWeb.PageHTML do
 
     <div
       id="tab-nix"
-      class="install-panel hidden border border-t-0 border-[var(--crit-border)] rounded-b-md overflow-hidden"
+      class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
-      <div class="flex items-center bg-[var(--crit-code-bg)]">
-        <pre class="flex-1 font-mono text-sm text-[var(--crit-fg-primary)] m-0 px-5 py-3.5 overflow-x-auto"><span class="text-[var(--crit-fg-muted)] select-none">$ </span>nix profile install github:tomasz-tomczyk/crit</pre>
+      <div class="flex items-center bg-(--crit-code-bg)">
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>nix profile install github:tomasz-tomczyk/crit</pre>
         <button
-          class="copy-btn shrink-0 p-3 cursor-pointer text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+          class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
@@ -117,13 +117,13 @@ defmodule CritWeb.PageHTML do
     </div>
 
     <div class="mt-3 flex items-center gap-4">
-      <div class="font-mono text-xs text-[var(--crit-fg-muted)] w-[70px] shrink-0 text-right">
+      <div class="font-mono text-xs text-(--crit-fg-muted) w-[70px] shrink-0 text-right">
         then run
       </div>
-      <div class="flex-1 flex items-center border border-[var(--crit-border)] rounded-md overflow-hidden bg-[var(--crit-code-bg)]">
-        <pre class="flex-1 font-mono text-sm text-[var(--crit-fg-primary)] m-0 px-5 py-3.5 overflow-x-auto"><span class="text-[var(--crit-fg-muted)] select-none">$ </span>crit<span class="text-[var(--crit-fg-muted)]"> or </span>crit plan.md</pre>
+      <div class="flex-1 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>crit<span class="text-(--crit-fg-muted)"> or </span>crit plan.md</pre>
         <button
-          class="copy-btn shrink-0 p-3 cursor-pointer text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+          class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
@@ -132,10 +132,10 @@ defmodule CritWeb.PageHTML do
       </div>
     </div>
 
-    <p class="text-sm text-[var(--crit-fg-muted)] mt-3">
+    <p class="text-sm text-(--crit-fg-secondary) mt-3">
       Or download a pre-built binary from <a
         href="https://github.com/tomasz-tomczyk/crit/releases"
-        class="text-[var(--crit-accent)] no-underline hover:underline"
+        class="crit-link"
       >GitHub Releases</a>.
     </p>
     """
@@ -221,13 +221,13 @@ defmodule CritWeb.PageHTML do
     assigns = assign(assigns, :agents, @agent_installs)
 
     ~H"""
-    <div class="flex gap-0 border-b border-[var(--crit-border)] overflow-x-auto">
+    <div class="flex gap-0 border-b border-(--crit-border) overflow-x-auto">
       <button
         :for={{agent, idx} <- Enum.with_index(@agents)}
         class={[
           "agent-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 transition-colors cursor-pointer bg-transparent whitespace-nowrap",
           if(idx == 0,
-            do: "border-(--crit-accent) text-(--crit-accent)",
+            do: "border-(--crit-brand) text-(--crit-brand)",
             else: "border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary)"
           )
         ]}
@@ -241,28 +241,28 @@ defmodule CritWeb.PageHTML do
       :for={{agent, idx} <- Enum.with_index(@agents)}
       id={"agent-#{agent.id}"}
       class={[
-        "agent-panel border border-t-0 border-[var(--crit-border)] rounded-b-md overflow-hidden",
+        "agent-panel border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden",
         idx != 0 && "hidden"
       ]}
     >
-      <div class="flex items-start bg-[var(--crit-code-bg)]">
+      <div class="flex items-start bg-(--crit-code-bg)">
         <div class="flex-1 px-5 py-3.5 font-mono text-sm min-w-0">
           <div :for={line <- agent.lines}>
             <%= if line.type == :cmd do %>
               <div>
-                <span class="text-[var(--crit-fg-muted)] select-none">{line.prompt}</span>
-                <span class="text-[var(--crit-fg-primary)]">{line.text}</span>
+                <span class="text-(--crit-fg-muted) select-none">{line.prompt}</span>
+                <span class="text-(--crit-fg-primary)">{line.text}</span>
               </div>
             <% else %>
               <div class="select-none">
-                <span class="text-[var(--crit-green)]">&#10003;</span>
-                <span class="text-[var(--crit-fg-muted)]">{line.text}</span>
+                <span class="text-(--crit-green)">&#10003;</span>
+                <span class="text-(--crit-fg-muted)">{line.text}</span>
               </div>
             <% end %>
           </div>
         </div>
         <button
-          class="agent-copy-btn shrink-0 p-3 mt-0.5 cursor-pointer text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] transition-colors"
+          class="agent-copy-btn shrink-0 p-3 mt-0.5 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
           data-copy={agent.copy}
         >
@@ -272,8 +272,8 @@ defmodule CritWeb.PageHTML do
       </div>
     </div>
 
-    <p class="text-sm text-[var(--crit-fg-muted)] mt-3">
-      <a href="/integrations" class="text-[var(--crit-accent)] no-underline hover:underline">
+    <p class="text-sm text-(--crit-fg-muted) mt-3">
+      <a href="/integrations" class="crit-link">
         Full setup docs &rarr;
       </a>
     </p>

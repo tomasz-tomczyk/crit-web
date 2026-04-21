@@ -1,6 +1,6 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.dashboard_header
     authenticated={@authenticated}
     password_required={@password_required}
@@ -13,73 +13,73 @@
     <%!-- Stats cards --%>
     <%!-- Desktop: 3 separate cards. Mobile: single unified strip with dividers. --%>
     <div class="sm:grid sm:grid-cols-3 sm:gap-4 hidden">
-      <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">Reviews</div>
-        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
+      <div class="border border-(--crit-border) bg-(--crit-bg-card) rounded-lg p-5">
+        <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted)">Reviews</div>
+        <div class="text-3xl font-bold text-(--crit-fg-primary) mt-1">
           {@stats.total_reviews}
         </div>
         <div class="text-xs text-green-400 mt-1">+{@stats.reviews_this_week} this week</div>
       </div>
-      <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">Comments</div>
-        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
+      <div class="border border-(--crit-border) bg-(--crit-bg-card) rounded-lg p-5">
+        <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted)">Comments</div>
+        <div class="text-3xl font-bold text-(--crit-fg-primary) mt-1">
           {@stats.total_comments}
         </div>
         <div class="text-xs text-green-400 mt-1">
           ~{Float.round(@stats.avg_comments_per_review, 1)} per review
         </div>
       </div>
-      <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">Files</div>
-        <div class="text-3xl font-bold text-[var(--crit-fg-primary)] mt-1">
+      <div class="border border-(--crit-border) bg-(--crit-bg-card) rounded-lg p-5">
+        <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted)">Files</div>
+        <div class="text-3xl font-bold text-(--crit-fg-primary) mt-1">
           {@stats.total_files}
         </div>
-        <div class="text-xs text-[var(--crit-fg-muted)] mt-1">
+        <div class="text-xs text-(--crit-fg-muted) mt-1">
           {format_bytes(@stats.total_storage_bytes)} total
         </div>
       </div>
     </div>
     <%!-- Mobile strip --%>
-    <div class="flex sm:hidden border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg overflow-hidden">
+    <div class="flex sm:hidden border border-(--crit-border) bg-(--crit-bg-card) rounded-lg overflow-hidden">
       <div class="flex-1 px-4 py-3">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">
+        <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) mb-1">
           Reviews
         </div>
-        <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">{@stats.total_reviews}</div>
+        <div class="text-2xl font-bold text-(--crit-fg-primary)">{@stats.total_reviews}</div>
         <div class="text-xs text-green-400 mt-0.5">+{@stats.reviews_this_week} wk</div>
       </div>
-      <div class="w-px bg-[var(--crit-border)]"></div>
+      <div class="w-px bg-(--crit-border)"></div>
       <div class="flex-1 px-4 py-3">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">
+        <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) mb-1">
           Comments
         </div>
-        <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">
+        <div class="text-2xl font-bold text-(--crit-fg-primary)">
           {@stats.total_comments}
         </div>
         <div class="text-xs text-green-400 mt-0.5">
           ~{Float.round(@stats.avg_comments_per_review, 1)}/review
         </div>
       </div>
-      <div class="w-px bg-[var(--crit-border)]"></div>
+      <div class="w-px bg-(--crit-border)"></div>
       <div class="flex-1 px-4 py-3">
-        <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-1">Files</div>
-        <div class="text-2xl font-bold text-[var(--crit-fg-primary)]">{@stats.total_files}</div>
-        <div class="text-xs text-[var(--crit-fg-muted)] mt-0.5">
+        <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) mb-1">Files</div>
+        <div class="text-2xl font-bold text-(--crit-fg-primary)">{@stats.total_files}</div>
+        <div class="text-xs text-(--crit-fg-muted) mt-0.5">
           {format_bytes(@stats.total_storage_bytes)}
         </div>
       </div>
     </div>
 
     <%!-- Activity chart --%>
-    <div class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-5 mt-4">
-      <div class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)] mb-3">
+    <div class="border border-(--crit-border) bg-(--crit-bg-card) rounded-lg p-5 mt-4">
+      <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) mb-3">
         Activity &middot; Last 30 days
       </div>
       <div class="flex items-end gap-[3px] h-16">
         <div
           :for={{_date, count} <- @chart_data}
           class="flex-1 rounded-sm min-h-[2px]"
-          style={"height: #{if @max_count > 0, do: max(round(count / @max_count * 100), 3), else: 3}%; background: color-mix(in srgb, var(--crit-accent) #{if @max_count > 0, do: max(round(count / @max_count * 100), 15), else: 15}%, transparent);"}
+          style={"height: #{if @max_count > 0, do: max(round(count / @max_count * 100), 3), else: 3}%; background: color-mix(in srgb, var(--crit-brand) #{if @max_count > 0, do: max(round(count / @max_count * 100), 15), else: 15}%, transparent);"}
           title={"#{count} reviews"}
         />
       </div>
@@ -89,9 +89,9 @@
     <%= if not @authenticated do %>
       <div
         id="login"
-        class="border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg p-8 mt-6 text-center"
+        class="border border-(--crit-border) bg-(--crit-bg-card) rounded-lg p-8 mt-6 text-center"
       >
-        <div class="text-[var(--crit-fg-muted)] text-sm mb-4">
+        <div class="text-(--crit-fg-muted) text-sm mb-4">
           <.icon name="hero-lock-closed" class="size-4 inline-block mr-1 -mt-0.5" />
           Sign in to view and manage reviews
         </div>
@@ -115,11 +115,11 @@
               type="password"
               name="password"
               placeholder="Admin password"
-              class="flex-1 bg-[var(--crit-bg-primary)] border border-[var(--crit-border)] rounded-md px-3 py-2 text-sm text-[var(--crit-fg-primary)] placeholder-[var(--crit-fg-muted)] focus:outline-none focus:border-[var(--crit-accent)]"
+              class="flex-1 bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand)"
             />
             <button
               type="submit"
-              class="px-5 py-2 bg-[var(--crit-accent)] text-[var(--crit-bg-primary)] rounded-md text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+              class="px-5 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-all cursor-pointer"
             >
               Sign in
             </button>
@@ -129,25 +129,25 @@
     <% else %>
       <div class="mt-6">
         <div class="flex justify-between items-center mb-3">
-          <span class="text-xs uppercase tracking-wider text-[var(--crit-fg-muted)]">
+          <span class="text-xs uppercase tracking-wider text-(--crit-fg-muted)">
             All Reviews ({@review_count})
           </span>
-          <span class="text-xs text-[var(--crit-fg-muted)]">sorted by recent activity</span>
+          <span class="text-xs text-(--crit-fg-muted)">sorted by recent activity</span>
         </div>
         <div id="reviews-list" class="flex flex-col gap-2" phx-update="stream">
           <div
             :for={{dom_id, review} <- @streams.reviews}
             id={dom_id}
-            class="flex items-center justify-between p-3 border border-[var(--crit-border)] bg-[var(--crit-bg-secondary)] rounded-lg hover:border-[var(--crit-accent)] transition-colors group"
+            class="flex items-center justify-between p-3 border border-(--crit-border) bg-(--crit-bg-card) rounded-lg hover:border-(--crit-brand) transition-colors group"
           >
             <div class="min-w-0">
               <a
                 href={~p"/r/#{review.token}"}
-                class="text-sm font-semibold text-[var(--crit-accent)] no-underline hover:underline truncate block"
+                class="text-sm font-semibold crit-link truncate block"
               >
                 {review.first_file_path || "Untitled"}
               </a>
-              <div class="text-xs text-[var(--crit-fg-muted)] mt-0.5 flex items-center gap-3 flex-wrap">
+              <div class="text-xs text-(--crit-fg-muted) mt-0.5 flex items-center gap-3 flex-wrap">
                 <span class="flex items-center gap-1">
                   <.icon name="hero-chat-bubble-left-micro" class="size-3.5" />{review.comment_count} {if review.comment_count ==
                                                                                                             1,
@@ -164,12 +164,12 @@
                                                                                                     else:
                                                                                                       "files"}
                 </span>
-                <span class="flex items-center gap-1 text-[var(--crit-fg-dimmed)]">
+                <span class="flex items-center gap-1 text-(--crit-fg-muted)">
                   <.icon name="hero-plus-circle-micro" class="size-3.5" />created {time_ago(
                     review.inserted_at
                   )}
                 </span>
-                <span class="flex items-center gap-1 text-[var(--crit-fg-dimmed)]">
+                <span class="flex items-center gap-1 text-(--crit-fg-muted)">
                   <.icon name="hero-clock-micro" class="size-3.5" />active {time_ago(
                     review.last_activity_at
                   )}
@@ -181,7 +181,7 @@
                 phx-click="delete_review"
                 phx-value-id={review.id}
                 data-confirm="Delete this review? This cannot be undone."
-                class="text-[var(--crit-fg-muted)] hover:text-red-400 transition-colors cursor-pointer shrink-0 ml-4"
+                class="text-(--crit-fg-muted) hover:text-red-400 transition-colors cursor-pointer shrink-0 ml-4"
               >
                 <.icon name="hero-trash" class="size-4" />
               </button>
@@ -190,7 +190,7 @@
         </div>
 
         <%= if @review_count == 0 do %>
-          <div class="text-center py-12 text-[var(--crit-fg-muted)] text-sm">
+          <div class="text-center py-12 text-(--crit-fg-muted) text-sm">
             No reviews yet. Share a review from the Crit CLI to see it here.
           </div>
         <% end %>

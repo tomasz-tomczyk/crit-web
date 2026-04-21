@@ -1,30 +1,30 @@
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_user={@current_user} />
   <div class="max-w-[900px] mx-auto px-10 pb-15 max-sm:px-5 max-sm:pb-10">
     <main class="mt-12">
-      <h1 class="text-3xl font-bold tracking-tight mb-2">Privacy Policy</h1>
+      <h1 class="text-4xl font-extrabold tracking-tight mb-2">Privacy Policy</h1>
       <p class="text-sm text-(--crit-fg-muted) mb-10">Last updated: March 2026</p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Who operates this</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Who operates this</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         Crit is operated by Tomasz Tomczyk as an independent open-source project.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Local use</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Local use</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         When you use Crit locally (without sharing), no data leaves your machine.
         Documents and comments are stored only in files on your computer.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">CLI update check</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">CLI update check</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         On startup, the Crit CLI contacts api.github.com to check for a new version.
         This request includes your IP address and current Crit version as the User-Agent
         header. GitHub's privacy policy governs how GitHub handles this data. You can
-        disable the update check by setting <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded">CRIT_NO_UPDATE_CHECK=1</code>.
+        disable the update check by setting <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">CRIT_NO_UPDATE_CHECK=1</code>.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Shared reviews</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Shared reviews</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         When you share a review, the following is stored on our servers:
       </p>
@@ -43,7 +43,7 @@
         view or comment on shared reviews.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">GitHub login</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">GitHub login</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         On crit.md, you can optionally sign in with your GitHub account. If you do, we store:
       </p>
@@ -58,18 +58,18 @@
         on reviews and comments you create. We do not share it with third parties.
         You can delete your account by emailing <a
           href="mailto:tom@crit.live"
-          class="text-(--crit-accent) no-underline hover:underline"
+          class="crit-link"
         >tom@crit.live</a>.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Anonymous session</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Anonymous session</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         When you view a shared review, we set a session cookie containing a randomly generated
         anonymous identifier. This lets you edit or delete comments you left in that session.
         The identifier is not linked to any personal information and is not used for tracking.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Tracking</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Tracking</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         We do not use analytics or advertising trackers on this site.
       </p>
@@ -77,7 +77,7 @@
         The homepage includes an embedded YouTube video. If you visit the homepage,
         YouTube (Google) may set cookies and collect data according to <a
           href="https://policies.google.com/privacy"
-          class="text-(--crit-accent) no-underline hover:underline"
+          class="crit-link"
         >Google's privacy policy</a>.
       </p>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
@@ -85,7 +85,7 @@
         GitHub's
         <a
           href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
-          class="text-(--crit-accent) no-underline hover:underline"
+          class="crit-link"
         >
           privacy policy
         </a>
@@ -93,7 +93,7 @@
         No other third-party embeds or auth providers are used anywhere on this site.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Server logs</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Server logs</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         Our server records standard HTTP access logs (IP address, timestamp, path, response code).
         These are used solely for debugging and abuse prevention. IP addresses are also used
@@ -101,29 +101,29 @@
         Server logs are retained for approximately 30 days and then deleted.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Infrastructure</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Infrastructure</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         This service runs on <a
           href="https://fly.io/legal/privacy-policy/"
-          class="text-(--crit-accent) no-underline hover:underline"
+          class="crit-link"
         >Fly.io</a>. Fly.io may retain their own infrastructure-level logs.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Data retention</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Data retention</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         Shared reviews are retained for 30 days from the date of last activity, then
         deleted automatically. You can delete a shared review at any time using the
         Unpublish button in Crit.
       </p>
 
-      <h2 class="text-base font-semibold mt-8 mb-2">Contact</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Contact</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         For privacy questions, open an issue on <a
           href="https://github.com/tomasz-tomczyk/crit"
-          class="text-(--crit-accent) no-underline hover:underline"
+          class="crit-link"
         >GitHub</a>. For sensitive requests (such as data deletion), email <a
           href="mailto:tom@crit.live"
-          class="text-(--crit-accent) no-underline hover:underline"
+          class="crit-link"
         >tom@crit.live</a>.
       </p>
     </main>

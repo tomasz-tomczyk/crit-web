@@ -1,6 +1,6 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.site_header current_user={@current_user} />
   
 <!-- Breadcrumb -->
@@ -15,13 +15,13 @@
   
 <!-- Hero -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-5">
-    <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
       Feature
     </p>
-    <h1 class="text-4xl font-extrabold leading-tight tracking-tighter mb-4 max-sm:text-3xl">
-      {@feature.title}<span class="text-(--crit-accent)">.</span>
+    <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
+      {@feature.title}<span class="text-(--crit-brand)">.</span>
     </h1>
-    <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
+    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
       {CritWeb.PageHTML.inline_code(@feature.description)}
     </p>
   </section>
@@ -31,11 +31,11 @@
     <%= case @slug do %>
       <% "inline-comments" -> %>
         <div
-          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-secondary) overflow-hidden font-mono text-xs leading-7 select-none"
+          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-card) overflow-hidden font-mono text-xs leading-7 select-none"
           aria-hidden="true"
         >
           <div class="flex">
-            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-dimmed) shrink-0">
+            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-muted) shrink-0">
               1
             </span>
             <span class="flex-1 px-3 py-0.5 font-sans font-bold text-base text-(--crit-fg-primary)">
@@ -43,21 +43,21 @@
             </span>
           </div>
           <div class="flex">
-            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-dimmed) shrink-0">
+            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-muted) shrink-0">
               2
             </span>
             <span class="flex-1 px-3 py-0.5">&nbsp;</span>
           </div>
           <div class="flex">
-            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-dimmed) shrink-0">
+            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-muted) shrink-0">
               3
             </span>
             <span class="flex-1 px-3 py-0.5 font-sans font-semibold text-sm text-(--crit-fg-primary)">
               ## Backend
             </span>
           </div>
-          <div class="flex border-l-[3px] border-(--crit-accent) bg-(--crit-accent-subtle)">
-            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-accent) shrink-0">4</span>
+          <div class="flex border-l-[3px] border-(--crit-brand) bg-(--crit-brand-subtle)">
+            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-brand) shrink-0">4</span>
             <span class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
               Use JWT tokens for sessions.
             </span>
@@ -72,7 +72,7 @@
               style="background: rgba(122, 162, 247, 0.1);"
             >
               <span class="font-sans font-semibold" style="color: hsl(220 70% 65%);">alice</span>
-              <span class="text-(--crit-fg-dimmed)">&middot;</span>
+              <span class="text-(--crit-fg-muted)">&middot;</span>
               <span class="font-sans text-(--crit-fg-muted)">Line 4</span>
               <span class="ml-auto font-sans text-(--crit-fg-muted)">
                 Edit &middot; Delete
@@ -93,7 +93,7 @@
               style="background: rgba(158, 206, 106, 0.1);"
             >
               <span class="font-sans font-semibold" style="color: hsl(140 70% 65%);">bob</span>
-              <span class="text-(--crit-fg-dimmed)">&middot;</span>
+              <span class="text-(--crit-fg-muted)">&middot;</span>
               <span class="font-sans text-(--crit-fg-muted)">Line 4</span>
               <span class="ml-auto font-sans text-(--crit-fg-muted)">
                 Edit &middot; Delete
@@ -101,22 +101,22 @@
             </div>
             <div class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed">
               +1 on OAuth2. See the
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded text-(--crit-accent)">
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded text-(--crit-brand)">
                 passport.js
               </code>
               docs for examples.
             </div>
           </div>
           <div class="flex">
-            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-dimmed) shrink-0">
+            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-fg-muted) shrink-0">
               5
             </span>
             <span class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
               Rate limit all endpoints.
             </span>
           </div>
-          <div class="flex border-l-[3px] border-(--crit-accent) bg-(--crit-accent-subtle)">
-            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-accent) shrink-0">6</span>
+          <div class="flex border-l-[3px] border-(--crit-brand) bg-(--crit-brand-subtle)">
+            <span class="w-10 text-right pr-3 py-0.5 text-(--crit-brand) shrink-0">6</span>
             <span class="flex-1 px-3 py-0.5 font-sans text-xs text-(--crit-fg-secondary)">
               Store passwords with bcrypt.
             </span>
@@ -130,7 +130,7 @@
               style="background: rgba(122, 162, 247, 0.1);"
             >
               <span class="font-sans font-semibold" style="color: hsl(220 70% 65%);">alice</span>
-              <span class="text-(--crit-fg-dimmed)">&middot;</span>
+              <span class="text-(--crit-fg-muted)">&middot;</span>
               <span class="font-sans text-(--crit-fg-muted)">Line 6</span>
               <span class="ml-auto font-sans text-(--crit-fg-muted)">
                 Edit &middot; Delete
@@ -138,7 +138,7 @@
             </div>
             <div class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed">
               bcrypt is fine but
-              <code class="text-xs bg-(--crit-bg-tertiary) px-1 py-0.5 rounded text-(--crit-accent)">
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded text-(--crit-brand)">
                 argon2id
               </code>
               is the <em>current</em>
@@ -154,7 +154,7 @@
           <!-- Split view -->
           <div>
             <div class="flex items-center gap-2 mb-2">
-              <span class="text-xs font-semibold text-(--crit-accent) bg-(--crit-accent-subtle) px-2 py-0.5 rounded font-mono">
+              <span class="text-xs font-semibold text-(--crit-brand) bg-(--crit-brand-subtle) px-2 py-0.5 rounded font-mono">
                 Split
               </span>
               <span class="text-xs text-(--crit-fg-muted)">Side-by-side comparison</span>
@@ -164,10 +164,10 @@
               aria-hidden="true"
             >
               <div class="grid grid-cols-2">
-                <div class="px-4 py-2 bg-(--crit-bg-tertiary) text-(--crit-fg-muted) border-b border-r border-(--crit-border) font-sans font-semibold text-xs">
+                <div class="px-4 py-2 bg-(--crit-bg-elevated) text-(--crit-fg-muted) border-b border-r border-(--crit-border) font-sans font-semibold text-xs">
                   Previous
                 </div>
-                <div class="px-4 py-2 bg-(--crit-bg-tertiary) text-(--crit-fg-muted) border-b border-(--crit-border) font-sans font-semibold text-xs">
+                <div class="px-4 py-2 bg-(--crit-bg-elevated) text-(--crit-fg-muted) border-b border-(--crit-border) font-sans font-semibold text-xs">
                   Current
                 </div>
               </div>
@@ -180,10 +180,10 @@
                 </div>
               </div>
               <div class="grid grid-cols-2">
-                <div class="px-4 py-1 bg-(--crit-bg-primary) text-(--crit-fg-secondary) border-r border-(--crit-border)">
+                <div class="px-4 py-1 bg-(--crit-bg-page) text-(--crit-fg-secondary) border-r border-(--crit-border)">
                   Rate limit all endpoints.
                 </div>
-                <div class="px-4 py-1 bg-(--crit-bg-primary) text-(--crit-fg-secondary)">
+                <div class="px-4 py-1 bg-(--crit-bg-page) text-(--crit-fg-secondary)">
                   Rate limit all endpoints.
                 </div>
               </div>
@@ -200,7 +200,7 @@
           <!-- Unified view -->
           <div>
             <div class="flex items-center gap-2 mb-2">
-              <span class="text-xs font-semibold text-(--crit-fg-muted) bg-(--crit-bg-tertiary) px-2 py-0.5 rounded font-mono">
+              <span class="text-xs font-semibold text-(--crit-fg-muted) bg-(--crit-bg-elevated) px-2 py-0.5 rounded font-mono">
                 Unified
               </span>
               <span class="text-xs text-(--crit-fg-muted)">Inline comparison</span>
@@ -215,7 +215,7 @@
               <div class="px-4 py-1 diff-added-bg text-(--crit-green)">
                 Use OAuth2 for sessions.
               </div>
-              <div class="px-4 py-1 bg-(--crit-bg-primary) text-(--crit-fg-secondary)">
+              <div class="px-4 py-1 bg-(--crit-bg-page) text-(--crit-fg-secondary)">
                 Rate limit all endpoints.
               </div>
               <div class="px-4 py-1 diff-removed-bg text-(--crit-red) line-through opacity-70">
@@ -235,8 +235,8 @@
           <div><span class="text-(--crit-fg-muted)">$</span> crit</div>
           <div class="text-(--crit-fg-muted)">&nbsp; Listening on http://localhost:3247</div>
           <div class="mt-2">
-            <span class="text-(--crit-accent)">&rarr;</span>
-            Round 1: <span class="text-(--crit-accent)">3</span>
+            <span class="text-(--crit-brand)">&rarr;</span>
+            Round 1: <span class="text-(--crit-brand)">3</span>
             comments added
           </div>
           <div>
@@ -248,10 +248,10 @@
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            File updated (<span class="text-(--crit-accent)">8</span> edits detected)
+            File updated (<span class="text-(--crit-brand)">8</span> edits detected)
           </div>
           <div class="mt-2">
-            <span class="text-(--crit-accent)">&rarr;</span>
+            <span class="text-(--crit-brand)">&rarr;</span>
             Round 2: diff ready - <span class="text-(--crit-green)">2 resolved</span>, 1 open
           </div>
           <div><span class="text-(--crit-green)">&rarr;</span> 1 new comment added</div>
@@ -264,17 +264,17 @@
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            File updated (<span class="text-(--crit-accent)">3</span> edits detected)
+            File updated (<span class="text-(--crit-brand)">3</span> edits detected)
           </div>
           <div class="mt-2">
-            <span class="text-(--crit-accent)">&rarr;</span>
+            <span class="text-(--crit-brand)">&rarr;</span>
             Round 3: diff ready - <span class="text-(--crit-green)">all resolved</span>
             <span class="text-(--crit-green)">&check;</span>
           </div>
         </div>
       <% "vim-keybindings" -> %>
         <div
-          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-secondary) p-6 select-none"
+          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-card) p-6 select-none"
           aria-hidden="true"
         >
           <div class="grid grid-cols-2 gap-x-10 gap-y-3 text-xs max-sm:grid-cols-1">
@@ -318,14 +318,14 @@
         </div>
       <% "share-reviews" -> %>
         <div
-          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-secondary) overflow-hidden select-none"
+          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-card) overflow-hidden select-none"
           aria-hidden="true"
         >
-          <div class="px-5 py-3 border-b border-(--crit-border) bg-(--crit-accent-subtle) flex items-center gap-3">
-            <svg viewBox="0 0 16 16" class="size-4 fill-(--crit-accent)" aria-hidden="true">
+          <div class="px-5 py-3 border-b border-(--crit-border) bg-(--crit-brand-subtle) flex items-center gap-3">
+            <svg viewBox="0 0 16 16" class="size-4 fill-(--crit-brand)" aria-hidden="true">
               <path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25zm-.025 9.45a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25z" />
             </svg>
-            <span class="font-mono text-sm text-(--crit-accent) font-semibold">
+            <span class="font-mono text-sm text-(--crit-brand) font-semibold">
               Review shared
             </span>
           </div>
@@ -335,7 +335,7 @@
               Copied &check;
             </span>
           </div>
-          <div class="px-5 py-3 border-t border-(--crit-border) bg-(--crit-bg-tertiary) text-xs text-(--crit-fg-muted) flex items-center gap-4">
+          <div class="px-5 py-3 border-t border-(--crit-border) bg-(--crit-bg-elevated) text-xs text-(--crit-fg-muted) flex items-center gap-4">
             <span>Anyone with the link can view and comment</span>
             <span class="ml-auto text-(--crit-red) cursor-pointer hover:underline">
               Unpublish
@@ -349,44 +349,44 @@
         >
           <div>
             <span class="text-(--crit-red)">func</span>
-            <span class="text-(--crit-accent)">handler</span><span class="text-(--crit-fg-secondary)">(w http.ResponseWriter, r *http.Request) &#123;</span>
+            <span class="text-(--crit-brand)">handler</span><span class="text-(--crit-fg-secondary)">(w http.ResponseWriter, r *http.Request) &#123;</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-secondary)">&nbsp; token := r.</span><span class="text-(--crit-accent)">Header</span><span class="text-(--crit-fg-secondary)">.</span><span class="text-(--crit-accent)">Get</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-green)">"Authorization"</span><span class="text-(--crit-fg-secondary)">)</span>
+            <span class="text-(--crit-fg-secondary)">&nbsp; token := r.</span><span class="text-(--crit-brand)">Header</span><span class="text-(--crit-fg-secondary)">.</span><span class="text-(--crit-brand)">Get</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-green)">"Authorization"</span><span class="text-(--crit-fg-secondary)">)</span>
           </div>
           <div>
             <span class="text-(--crit-fg-secondary)">&nbsp; </span><span class="text-(--crit-red)">if</span><span class="text-(--crit-fg-secondary)"> token == </span><span class="text-(--crit-green)">""</span><span class="text-(--crit-fg-secondary)"> &#123;</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-secondary)">&nbsp;&nbsp;&nbsp; w.</span><span class="text-(--crit-accent)">WriteHeader</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-accent)">401</span><span class="text-(--crit-fg-secondary)">)</span>
+            <span class="text-(--crit-fg-secondary)">&nbsp;&nbsp;&nbsp; w.</span><span class="text-(--crit-brand)">WriteHeader</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-brand)">401</span><span class="text-(--crit-fg-secondary)">)</span>
           </div>
           <div>
             <span class="text-(--crit-fg-secondary)">&nbsp;&nbsp;&nbsp; </span><span class="text-(--crit-red)">return</span>
           </div>
           <div><span class="text-(--crit-fg-secondary)">&nbsp; &#125;</span></div>
           <div>
-            <span class="text-(--crit-fg-secondary)">&nbsp; user, err := </span><span class="text-(--crit-accent)">validateToken</span><span class="text-(--crit-fg-secondary)">(token)</span>
+            <span class="text-(--crit-fg-secondary)">&nbsp; user, err := </span><span class="text-(--crit-brand)">validateToken</span><span class="text-(--crit-fg-secondary)">(token)</span>
           </div>
           <div>
             <span class="text-(--crit-fg-secondary)">&nbsp; </span><span class="text-(--crit-red)">if</span><span class="text-(--crit-fg-secondary)"> err != nil &#123;</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-secondary)">&nbsp;&nbsp;&nbsp; </span><span class="text-(--crit-accent)">log</span><span class="text-(--crit-fg-secondary)">.</span><span class="text-(--crit-accent)">Printf</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-green)">"auth failed: %v"</span><span class="text-(--crit-fg-secondary)">, err)</span>
+            <span class="text-(--crit-fg-secondary)">&nbsp;&nbsp;&nbsp; </span><span class="text-(--crit-brand)">log</span><span class="text-(--crit-fg-secondary)">.</span><span class="text-(--crit-brand)">Printf</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-green)">"auth failed: %v"</span><span class="text-(--crit-fg-secondary)">, err)</span>
           </div>
           <div><span class="text-(--crit-fg-secondary)">&nbsp; &#125;</span></div>
           <div><span class="text-(--crit-fg-secondary)">&#125;</span></div>
         </div>
       <% "mermaid-diagrams" -> %>
         <div
-          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-primary) p-8 flex items-center justify-center select-none"
+          class="rounded-lg border border-(--crit-border) bg-(--crit-bg-page) p-8 flex items-center justify-center select-none"
           aria-hidden="true"
         >
           <div class="flex items-center gap-4 text-xs font-mono">
-            <div class="border-2 border-(--crit-accent) rounded-lg px-5 py-3 text-(--crit-accent) font-semibold">
+            <div class="border-2 border-(--crit-brand) rounded-lg px-5 py-3 text-(--crit-brand) font-semibold">
               Auth
             </div>
             <svg
-              class="w-6 h-4 text-(--crit-fg-dimmed)"
+              class="w-6 h-4 text-(--crit-fg-muted)"
               viewBox="0 0 16 12"
               fill="none"
               stroke="currentColor"
@@ -398,7 +398,7 @@
               API Gateway
             </div>
             <svg
-              class="w-6 h-4 text-(--crit-fg-dimmed)"
+              class="w-6 h-4 text-(--crit-fg-muted)"
               viewBox="0 0 16 12"
               fill="none"
               stroke="currentColor"
@@ -410,7 +410,7 @@
               Service
             </div>
             <svg
-              class="w-6 h-4 text-(--crit-fg-dimmed)"
+              class="w-6 h-4 text-(--crit-fg-muted)"
               viewBox="0 0 16 12"
               fill="none"
               stroke="currentColor"
@@ -429,11 +429,11 @@
   
 <!-- Details -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
-    <h2 class="text-xl font-extrabold tracking-tight mb-6">How it works</h2>
+    <h2 class="text-2xl font-extrabold tracking-tight mb-6">How it works</h2>
     <div class="grid gap-5">
       <%= for {detail, idx} <- Enum.with_index(@feature.details) do %>
         <div class="flex gap-4 items-start">
-          <span class="shrink-0 w-7 h-7 rounded-full bg-(--crit-accent-subtle) border border-(--crit-accent) text-(--crit-accent) text-xs font-mono font-bold flex items-center justify-center mt-0.5">
+          <span class="shrink-0 w-7 h-7 rounded-full bg-(--crit-brand-subtle) border border-(--crit-brand) text-(--crit-brand) text-xs font-mono font-bold flex items-center justify-center mt-0.5">
             {idx + 1}
           </span>
           <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
@@ -447,7 +447,7 @@
 <!-- Why this matters -->
   <%= if @feature[:why_this_matters] do %>
     <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
-      <h2 class="text-xl font-extrabold tracking-tight mb-6">Why this matters</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mb-6">Why this matters</h2>
       <div class="flex flex-col gap-4">
         <%= for paragraph <- @feature.why_this_matters do %>
           <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
@@ -461,7 +461,7 @@
 <!-- How Crit compares -->
   <%= if @feature[:how_crit_compares] do %>
     <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
-      <h2 class="text-lg font-extrabold tracking-tight mb-4">How Crit compares</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">How Crit compares</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         {CritWeb.PageHTML.inline_code(@feature.how_crit_compares)}
       </p>
@@ -470,8 +470,8 @@
   
 <!-- Demo + Install CTA -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-14 mb-16 max-sm:px-5 max-sm:mt-10">
-    <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-8 max-sm:p-5">
-      <h2 class="text-xl font-extrabold tracking-tight mb-2">Try it out</h2>
+    <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-8 max-sm:p-5">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-2">Try it out</h2>
       <p class="text-sm text-(--crit-fg-secondary) mb-6">
         Install Crit and start reviewing agent output in seconds.
       </p>
@@ -480,7 +480,7 @@
         <%= if @demo_token do %>
           <a
             href={~p"/r/#{@demo_token}"}
-            class="inline-flex items-center px-6 py-2.5 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold no-underline hover:bg-(--crit-accent-hover) transition-colors"
+            class="inline-flex items-center px-6 py-2.5 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-brand-cta-hover) transition-all"
           >
             See live demo
           </a>
@@ -502,14 +502,14 @@
   
 <!-- Other features -->
   <section class="max-w-7xl mx-auto w-full px-10 mb-16 max-sm:px-5">
-    <h2 class="text-lg font-extrabold tracking-tight mb-4 text-(--crit-fg-muted)">
+    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-4">
       More features
-    </h2>
+    </p>
     <div class="flex flex-wrap gap-2">
       <%= for other_slug <- @feature_order, other_slug != @slug do %>
         <a
           href={~p"/features/#{other_slug}"}
-          class="feat-pill no-underline hover:border-(--crit-fg-dimmed)"
+          class="feat-pill no-underline hover:border-(--crit-fg-muted)"
         >
           {@features[other_slug].title}
         </a>

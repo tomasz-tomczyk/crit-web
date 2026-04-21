@@ -61,9 +61,9 @@ defmodule CritWeb.CoreComponents do
     >
       <div class={[
         "flex items-start gap-3 w-80 sm:w-96 max-w-[calc(100vw-2rem)] p-4 rounded-lg shadow-lg cursor-pointer text-sm",
-        "bg-[var(--crit-bg-secondary)] border text-[var(--crit-fg-primary)]",
-        @kind == :info && "border-[var(--crit-accent)]",
-        @kind == :error && "border-[var(--crit-red)]"
+        "bg-(--crit-bg-card) border text-(--crit-fg-primary)",
+        @kind == :info && "border-(--crit-brand)",
+        @kind == :error && "border-(--crit-red)"
       ]}>
         <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
         <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />

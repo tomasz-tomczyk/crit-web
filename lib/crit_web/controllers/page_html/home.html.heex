@@ -1,17 +1,17 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.site_header current_user={@current_user} />
 
   <section class="max-w-7xl mx-auto pt-24 pb-16 px-10 w-full max-sm:px-5 max-sm:pt-14 max-sm:pb-10">
     <div class="text-center max-w-3xl mx-auto mb-14 max-sm:mb-10">
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-5">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-5">
         Local-first · No login · Works with any agent
       </p>
-      <h1 class="text-[4.5rem] font-extrabold leading-[1.02] tracking-[-0.035em] mb-7 max-lg:text-6xl max-sm:text-[2.75rem]">
-        Your feedback loop<br />with the
+      <h1 class="text-7xl font-extrabold leading-none tracking-tight mb-7 max-lg:text-6xl max-sm:text-5xl">
+        Your feedback loop with the
         <span class="whitespace-nowrap">
-          agent<span class="text-(--crit-accent)">.</span>
+          agent<span class="text-(--crit-brand)">.</span>
           <span class="crit-blink-cursor">
             ▍
           </span>
@@ -25,21 +25,21 @@
       <div class="flex gap-3 justify-center flex-wrap max-sm:grid max-sm:grid-cols-2">
         <a
           href={~p"/getting-started"}
-          class="inline-flex items-center justify-center px-7 py-3 bg-(--crit-accent) text-(--crit-bg-primary) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-accent-hover) hover:-translate-y-px active:translate-y-px transition-all"
+          class="inline-flex items-center justify-center px-7 py-3 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-brand-cta-hover) transition-all"
         >
           Get started
         </a>
         <%= if @demo_token do %>
           <a
             href={~p"/r/#{@demo_token}"}
-            class="inline-flex items-center justify-center px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:-translate-y-px active:translate-y-px transition-all"
+            class="inline-flex items-center justify-center px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-all"
           >
             See demo
           </a>
         <% end %>
         <a
           href="https://github.com/tomasz-tomczyk/crit"
-          class="group/star inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) hover:-translate-y-px hover:shadow-[0_4px_16px_var(--crit-yellow-subtle)] active:translate-y-px transition-all max-sm:col-span-2"
+          class="group/star inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all max-sm:col-span-2"
         >
           <svg
             viewBox="0 0 16 16"
@@ -79,7 +79,7 @@
     </div>
     <p class="text-sm text-(--crit-fg-muted) mt-6 text-center">
       Works with Claude Code, Cursor, GitHub Copilot, Aider, Cline, Windsurf, or any agent that reads files.
-      <a href={~p"/integrations"} class="text-(--crit-accent) no-underline hover:underline">
+      <a href={~p"/integrations"} class="crit-link">
         Set up your agent &rarr;
       </a>
     </p>
@@ -89,7 +89,7 @@
   <section class="max-w-7xl mx-auto mt-24 px-10 max-sm:px-5 max-sm:mt-16 w-full" id="install">
     <div class="flex gap-14 items-start max-lg:flex-col max-lg:gap-6">
       <div class="w-[300px] shrink-0 max-lg:w-full">
-        <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
           Quick start
         </p>
         <h2 class="text-2xl font-extrabold tracking-tight mb-3">Install</h2>
@@ -107,7 +107,7 @@
   <section class="max-w-7xl mx-auto mt-14 px-10 max-sm:px-5 max-sm:mt-10 w-full" id="agent-setup">
     <div class="flex gap-14 items-start max-lg:flex-col max-lg:gap-6">
       <div class="w-[300px] shrink-0 max-lg:w-full">
-        <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-3">
+        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
           Agent plugin
         </p>
         <h2 class="text-2xl font-extrabold tracking-tight mb-3">Connect your agent</h2>
@@ -126,11 +126,11 @@
     class="max-w-7xl mx-auto mt-28 mb-20 px-10 max-sm:px-5 max-sm:mt-16 w-full"
     id="features"
   >
-    <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-4">
+    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-4">
       Features
     </p>
     <h2 class="text-4xl font-extrabold tracking-tight mb-12 max-sm:text-2xl max-sm:mb-8">
-      Built for the feedback loop<span class="text-(--crit-accent) ">.</span>
+      Built for the feedback loop<span class="text-(--crit-brand) ">.</span>
     </h2>
 
     <div class="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1" id="features-grid">
@@ -138,7 +138,7 @@
 <!-- Inline Comments -->
       <a
         href={~p"/features/inline-comments"}
-        class="feature-card col-span-2 max-lg:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card col-span-2 max-lg:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-4 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Inline Comments</h3>
@@ -147,25 +147,25 @@
           </p>
         </div>
         <div
-          class="rounded-md border border-(--crit-border) bg-(--crit-bg-primary) overflow-hidden text-xs font-mono leading-5 select-none"
+          class="rounded-md border border-(--crit-border) bg-(--crit-bg-page) overflow-hidden text-xs font-mono leading-5 select-none"
           aria-hidden="true"
         >
           <div class="flex">
-            <span class="w-7 text-right pr-2 py-px text-(--crit-fg-dimmed) shrink-0">3</span>
+            <span class="w-7 text-right pr-2 py-px text-(--crit-fg-muted) shrink-0">3</span>
             <span class="flex-1 px-2 py-px text-(--crit-fg-primary) font-sans font-semibold text-xs">
               ## Backend
             </span>
           </div>
-          <div class="flex border-l-2 border-(--crit-accent) bg-(--crit-accent-subtle)">
-            <span class="w-7 text-right pr-2 py-px text-(--crit-accent)  shrink-0">4</span>
+          <div class="flex border-l-2 border-(--crit-brand) bg-(--crit-brand-subtle)">
+            <span class="w-7 text-right pr-2 py-px text-(--crit-brand)  shrink-0">4</span>
             <span class="flex-1 px-2 py-px text-(--crit-fg-secondary) font-sans">
               Use JWT tokens for sessions.
             </span>
           </div>
           <div class="ml-7 mr-2 my-1 border border-(--crit-border-comment) rounded text-xs bg-(--crit-comment-bg) overflow-hidden">
-            <div class="px-2 py-1 bg-(--crit-accent-subtle) border-b border-(--crit-border) font-sans flex items-center gap-1.5">
-              <span class="text-(--crit-accent)  font-semibold">You</span>
-              <span class="text-(--crit-fg-dimmed)">&middot;</span>
+            <div class="px-2 py-1 bg-(--crit-brand-subtle) border-b border-(--crit-border) font-sans flex items-center gap-1.5">
+              <span class="text-(--crit-brand)  font-semibold">You</span>
+              <span class="text-(--crit-fg-muted)">&middot;</span>
               <span class="text-(--crit-fg-muted)">Line 4</span>
             </div>
             <div class="px-2 py-1.5 text-(--crit-fg-secondary) font-sans">
@@ -173,7 +173,7 @@
             </div>
           </div>
           <div class="flex">
-            <span class="w-7 text-right pr-2 py-px text-(--crit-fg-dimmed) shrink-0">5</span>
+            <span class="w-7 text-right pr-2 py-px text-(--crit-fg-muted) shrink-0">5</span>
             <span class="flex-1 px-2 py-px text-(--crit-fg-secondary) font-sans">
               Rate limit all endpoints.
             </span>
@@ -184,7 +184,7 @@
 <!-- Diff Viewer -->
       <a
         href={~p"/features/split-unified-diff"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-4 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Git Diffs & Round Diffs</h3>
@@ -197,18 +197,18 @@
           aria-hidden="true"
         >
           <div class="grid grid-cols-2">
-            <div class="px-2 py-1 bg-(--crit-bg-tertiary) text-(--crit-fg-muted) border-b border-r border-(--crit-border) font-sans font-semibold text-xs">
+            <div class="px-2 py-1 bg-(--crit-bg-elevated) text-(--crit-fg-muted) border-b border-r border-(--crit-border) font-sans font-semibold text-xs">
               Previous
             </div>
-            <div class="px-2 py-1 bg-(--crit-bg-tertiary) text-(--crit-fg-muted) border-b border-(--crit-border) font-sans font-semibold text-xs">
+            <div class="px-2 py-1 bg-(--crit-bg-elevated) text-(--crit-fg-muted) border-b border-(--crit-border) font-sans font-semibold text-xs">
               Current
             </div>
           </div>
           <div class="grid grid-cols-2">
-            <div class="px-2 py-0.5 bg-(--crit-bg-primary) text-(--crit-fg-secondary) border-r border-(--crit-border)">
+            <div class="px-2 py-0.5 bg-(--crit-bg-page) text-(--crit-fg-secondary) border-r border-(--crit-border)">
               Use JWT tokens
             </div>
-            <div class="px-2 py-0.5 bg-(--crit-bg-primary) text-(--crit-fg-secondary)">
+            <div class="px-2 py-0.5 bg-(--crit-bg-page) text-(--crit-fg-secondary)">
               Use JWT tokens
             </div>
           </div>
@@ -219,15 +219,15 @@
             <div class="px-2 py-0.5 diff-added-bg text-(--crit-green)">argon2id hashing</div>
           </div>
           <div class="grid grid-cols-2">
-            <div class="px-2 py-0.5 bg-(--crit-bg-primary) text-(--crit-fg-secondary) border-r border-(--crit-border)">
+            <div class="px-2 py-0.5 bg-(--crit-bg-page) text-(--crit-fg-secondary) border-r border-(--crit-border)">
               Rate limit all
             </div>
-            <div class="px-2 py-0.5 bg-(--crit-bg-primary) text-(--crit-fg-secondary)">
+            <div class="px-2 py-0.5 bg-(--crit-bg-page) text-(--crit-fg-secondary)">
               Rate limit all
             </div>
           </div>
           <div class="grid grid-cols-2">
-            <div class="px-2 py-0.5 bg-(--crit-bg-primary) border-r border-(--crit-border)">
+            <div class="px-2 py-0.5 bg-(--crit-bg-page) border-r border-(--crit-border)">
               &nbsp;
             </div>
             <div class="px-2 py-0.5 diff-added-bg text-(--crit-green)">
@@ -240,7 +240,7 @@
 <!-- AI Review Loop -->
       <a
         href={~p"/features/ai-review-loop"}
-        class="feature-card col-span-2 max-sm:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card col-span-2 max-sm:col-span-1 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-4 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">AI Review Loop</h3>
@@ -255,8 +255,8 @@
           <div><span class="text-(--crit-fg-muted)">$</span> crit</div>
           <div class="text-(--crit-fg-muted)">&nbsp; Listening on http://localhost:3247</div>
           <div>
-            <span class="text-(--crit-accent) ">&rarr;</span>
-            Round 1: <span class="text-(--crit-accent) ">3</span>
+            <span class="text-(--crit-brand) ">&rarr;</span>
+            Round 1: <span class="text-(--crit-brand) ">3</span>
             comments added
           </div>
           <div>
@@ -268,10 +268,10 @@
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            File updated (<span class="text-(--crit-accent) ">8</span> edits detected)
+            File updated (<span class="text-(--crit-brand) ">8</span> edits detected)
           </div>
           <div>
-            <span class="text-(--crit-accent) ">&rarr;</span>
+            <span class="text-(--crit-brand) ">&rarr;</span>
             Round 2: diff ready - <span class="text-(--crit-green)">2 resolved</span>, 1 open
           </div>
         </div>
@@ -280,7 +280,7 @@
 <!-- Vim Keybindings -->
       <a
         href={~p"/features/vim-keybindings"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-4 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Vim Keybindings</h3>
@@ -321,7 +321,7 @@
 <!-- Share Reviews -->
       <a
         href={~p"/features/share-reviews"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-4 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Share Reviews</h3>
@@ -330,14 +330,14 @@
           </p>
         </div>
         <div
-          class="rounded-md border border-(--crit-border) bg-(--crit-bg-primary) overflow-hidden text-xs select-none"
+          class="rounded-md border border-(--crit-border) bg-(--crit-bg-page) overflow-hidden text-xs select-none"
           aria-hidden="true"
         >
-          <div class="px-3 py-1.5 border-b border-(--crit-border) bg-(--crit-accent-subtle) flex items-center gap-2">
-            <svg viewBox="0 0 16 16" class="size-3 fill-(--crit-accent)" aria-hidden="true">
+          <div class="px-3 py-1.5 border-b border-(--crit-border) bg-(--crit-brand-subtle) flex items-center gap-2">
+            <svg viewBox="0 0 16 16" class="size-3 fill-(--crit-brand)" aria-hidden="true">
               <path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25zm-.025 9.45a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 1 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25z" />
             </svg>
-            <span class="font-mono text-(--crit-accent)  font-semibold">Shared</span>
+            <span class="font-mono text-(--crit-brand)  font-semibold">Shared</span>
           </div>
           <div class="px-3 py-2 flex items-center gap-2 font-mono text-(--crit-fg-secondary)">
             <span class="truncate">crit.md/r/a8f3k2x</span>
@@ -349,7 +349,7 @@
 <!-- Syntax Highlighting -->
       <a
         href={~p"/features/syntax-highlighting"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-4 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Syntax Highlighting</h3>
@@ -363,16 +363,16 @@
         >
           <div>
             <span class="text-(--crit-red)">func</span>
-            <span class="text-(--crit-accent) ">handler</span><span class="text-(--crit-fg-secondary)">(w, r) &#123;</span>
+            <span class="text-(--crit-brand) ">handler</span><span class="text-(--crit-fg-secondary)">(w, r) &#123;</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-secondary)">&nbsp; token := r.</span><span class="text-(--crit-accent) ">Header</span><span class="text-(--crit-fg-secondary)">.</span><span class="text-(--crit-accent) ">Get</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-green)">"Auth"</span><span class="text-(--crit-fg-secondary)">)</span>
+            <span class="text-(--crit-fg-secondary)">&nbsp; token := r.</span><span class="text-(--crit-brand) ">Header</span><span class="text-(--crit-fg-secondary)">.</span><span class="text-(--crit-brand) ">Get</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-green)">"Auth"</span><span class="text-(--crit-fg-secondary)">)</span>
           </div>
           <div>
             <span class="text-(--crit-fg-secondary)">&nbsp; </span><span class="text-(--crit-red)">if</span><span class="text-(--crit-fg-secondary)"> token == </span><span class="text-(--crit-green)">""</span><span class="text-(--crit-fg-secondary)"> &#123;</span>
           </div>
           <div>
-            <span class="text-(--crit-fg-secondary)">&nbsp;&nbsp;&nbsp; w.</span><span class="text-(--crit-accent) ">WriteHeader</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-accent) ">401</span><span class="text-(--crit-fg-secondary)">)</span>
+            <span class="text-(--crit-fg-secondary)">&nbsp;&nbsp;&nbsp; w.</span><span class="text-(--crit-brand) ">WriteHeader</span><span class="text-(--crit-fg-secondary)">(</span><span class="text-(--crit-brand) ">401</span><span class="text-(--crit-fg-secondary)">)</span>
           </div>
           <div><span class="text-(--crit-fg-secondary)">&nbsp; &#125;</span></div>
           <div><span class="text-(--crit-fg-secondary)">&#125;</span></div>
@@ -382,7 +382,7 @@
 <!-- Mermaid Diagrams -->
       <a
         href={~p"/features/mermaid-diagrams"}
-        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 flex flex-col gap-4 hover:border-(--crit-fg-dimmed) transition-[border-color] duration-150 no-underline text-inherit"
+        class="feature-card border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-4 hover:border-(--crit-fg-muted) transition-[border-color] duration-150 no-underline text-inherit"
       >
         <div>
           <h3 class="text-base font-semibold tracking-tight mb-1">Mermaid Diagrams</h3>
@@ -391,15 +391,15 @@
           </p>
         </div>
         <div
-          class="rounded-md border border-(--crit-border) bg-(--crit-bg-primary) p-4 flex items-center justify-center select-none"
+          class="rounded-md border border-(--crit-border) bg-(--crit-bg-page) p-4 flex items-center justify-center select-none"
           aria-hidden="true"
         >
           <div class="flex items-center gap-2.5 text-xs font-mono">
-            <div class="border border-(--crit-accent) rounded px-2.5 py-1 text-(--crit-accent) ">
+            <div class="border border-(--crit-brand) rounded px-2.5 py-1 text-(--crit-brand) ">
               Auth
             </div>
             <svg
-              class="w-4 h-3 text-(--crit-fg-dimmed)"
+              class="w-4 h-3 text-(--crit-fg-muted)"
               viewBox="0 0 16 12"
               fill="none"
               stroke="currentColor"
@@ -411,7 +411,7 @@
               API
             </div>
             <svg
-              class="w-4 h-3 text-(--crit-fg-dimmed)"
+              class="w-4 h-3 text-(--crit-fg-muted)"
               viewBox="0 0 16 12"
               fill="none"
               stroke="currentColor"
@@ -429,120 +429,104 @@
 <!-- Compact feature strip -->
       <div class="feature-card col-span-full flex flex-wrap justify-center gap-3 mt-1">
         <span class="feat-pill">
-          <span class="text-(--crit-accent) ">&#9776;</span> Table of Contents
+          <span class="text-(--crit-brand) ">&#9776;</span> Table of Contents
         </span>
         <span class="feat-pill">
-          <span class="text-(--crit-accent) ">&#9680;</span> Dark &amp; Light Themes
+          <span class="text-(--crit-brand) ">&#9680;</span> Dark &amp; Light Themes
         </span>
         <span class="feat-pill">
           <span class="text-(--crit-green)">&#8635;</span> Draft Autosave
         </span>
         <span class="feat-pill">
-          <span class="text-(--crit-accent) ">&#9166;</span> Insert Suggestions
+          <span class="text-(--crit-brand) ">&#9166;</span> Insert Suggestions
         </span>
         <span class="feat-pill">
           <span class="text-(--crit-green)">&#9673;</span> Single Binary
         </span>
         <span class="feat-pill">
-          <span class="text-(--crit-accent) ">&#8644;</span> Concurrent Reviews
+          <span class="text-(--crit-brand) ">&#8644;</span> Concurrent Reviews
         </span>
       </div>
     </div>
   </section>
 
   <%!-- ===== Testimonials ===== --%>
-  <section class="w-full mt-8 py-16 bg-(--crit-bg-secondary) max-sm:py-12">
-    <div class="max-w-7xl mx-auto px-10 max-sm:px-5">
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-accent) mb-12">
-        What engineers are saying
-      </p>
-      <div class="grid grid-cols-2 gap-12 max-sm:grid-cols-1 max-sm:gap-10" id="testimonials-grid">
-        <div :for={testimonial <- @testimonials} class="feature-card relative">
-          <span
-            class="absolute -top-4 -left-3 text-[8rem] leading-none text-(--crit-accent) opacity-10 select-none pointer-events-none"
-            aria-hidden="true"
-          >
-            &ldquo;
-          </span>
-          <p class="relative text-xl font-semibold leading-snug text-(--crit-fg-primary) mb-5">
-            {testimonial.highlight}
-          </p>
-          <div class="relative space-y-3 mb-5">
-            <p
-              :for={paragraph <- testimonial.body}
-              class="text-sm leading-relaxed text-(--crit-fg-muted)"
-            >
-              {paragraph}
-            </p>
-          </div>
-          <p class="relative font-mono text-xs text-(--crit-fg-muted)">
-            &mdash; <a
-              href={testimonial.link}
-              class="text-(--crit-fg-dimmed) hover:text-(--crit-accent) transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
-            >{testimonial.author}</a>, {testimonial.role}
-          </p>
-        </div>
-      </div>
-      <p class="mt-10 text-xs text-(--crit-fg-dimmed)">
-        Using crit? I'd love to hear from you.
-        <a
-          href="mailto:me@tomasztomczyk.com?subject=Crit%20testimonial"
-          class="underline underline-offset-2 hover:text-(--crit-fg-muted) transition-colors"
-        >
-          me@tomasztomczyk.com
-        </a>
-      </p>
-      <%!-- ===== Platform Stats ===== --%>
+  <section class="max-w-7xl mx-auto mt-28 mb-20 px-10 max-sm:px-5 max-sm:mt-16 w-full">
+    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-4">
+      What engineers are saying
+    </p>
+    <div class="grid grid-cols-2 gap-8 max-sm:grid-cols-1 max-sm:gap-6" id="testimonials-grid">
       <div
-        class="mt-12 pt-10 border-t border-(--crit-border)"
-        id="platform-stats"
+        :for={testimonial <- @testimonials}
+        class="feature-card"
       >
-        <p class="font-mono text-xs text-(--crit-fg-dimmed) text-center mb-6">
-          Shared to {CritWeb.Endpoint.host()}
+        <p class="text-base font-semibold leading-snug text-(--crit-fg-primary) mb-4">
+          {testimonial.highlight}
         </p>
-        <div class="flex items-center justify-center gap-12 max-sm:gap-6 max-sm:flex-col">
-          <div class="stat-item text-center">
-            <div
-              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
-              data-count-to={@stats.reviews_created}
-            >
-              {format_stat(@stats.reviews_created)}
-            </div>
-            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">reviews</div>
-          </div>
-          <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
-          <div class="stat-item text-center">
-            <div
-              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
-              data-count-to={@stats.comments_created}
-            >
-              {format_stat(@stats.comments_created)}
-            </div>
-            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">comments</div>
-          </div>
-          <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
-          <div class="stat-item text-center">
-            <div
-              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
-              data-count-to={@stats.lines_reviewed}
-            >
-              {format_stat(@stats.lines_reviewed)}
-            </div>
-            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">lines</div>
-          </div>
-          <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
-          <div class="stat-item text-center">
-            <div
-              class="text-4xl font-mono font-bold tracking-tight text-(--crit-accent) tabular-nums"
-              data-count-bytes={@stats.bytes_stored}
-            >
-              {format_bytes(@stats.bytes_stored)}
-            </div>
-            <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">data</div>
-          </div>
+        <div class="space-y-2 mb-4">
+          <p
+            :for={paragraph <- testimonial.body}
+            class="text-sm leading-relaxed text-(--crit-fg-secondary)"
+          >
+            {paragraph}
+          </p>
         </div>
+        <p class="font-mono text-xs text-(--crit-fg-muted)">
+          <a
+            href={testimonial.link}
+            class="text-(--crit-fg-secondary) hover:text-(--crit-brand) transition-colors no-underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{testimonial.author}</a>, {testimonial.role}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ===== Platform Stats ===== --%>
+  <section class="w-full py-12 border-t border-(--crit-border)" id="platform-stats">
+    <p class="font-mono text-xs text-(--crit-fg-muted) text-center mb-6">
+      Shared to {CritWeb.Endpoint.host()}
+    </p>
+    <div class="flex items-center justify-center gap-12 max-sm:gap-6 max-sm:flex-col">
+      <div class="stat-item text-center">
+        <div
+          class="text-4xl font-mono font-bold tracking-tight text-(--crit-fg-primary) tabular-nums"
+          data-count-to={@stats.reviews_created}
+        >
+          {format_stat(@stats.reviews_created)}
+        </div>
+        <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">reviews</div>
+      </div>
+      <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
+      <div class="stat-item text-center">
+        <div
+          class="text-4xl font-mono font-bold tracking-tight text-(--crit-fg-primary) tabular-nums"
+          data-count-to={@stats.comments_created}
+        >
+          {format_stat(@stats.comments_created)}
+        </div>
+        <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">comments</div>
+      </div>
+      <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
+      <div class="stat-item text-center">
+        <div
+          class="text-4xl font-mono font-bold tracking-tight text-(--crit-fg-primary) tabular-nums"
+          data-count-to={@stats.lines_reviewed}
+        >
+          {format_stat(@stats.lines_reviewed)}
+        </div>
+        <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">lines</div>
+      </div>
+      <div class="stat-divider w-px h-8 bg-(--crit-border) max-sm:hidden"></div>
+      <div class="stat-item text-center">
+        <div
+          class="text-4xl font-mono font-bold tracking-tight text-(--crit-fg-primary) tabular-nums"
+          data-count-bytes={@stats.bytes_stored}
+        >
+          {format_bytes(@stats.bytes_stored)}
+        </div>
+        <div class="font-mono text-xs text-(--crit-fg-muted) mt-1.5">data</div>
       </div>
     </div>
   </section>
@@ -553,11 +537,11 @@
   >
     <a
       href="/self-hosting"
-      class="feature-card block border border-(--crit-border) rounded-lg bg-(--crit-bg-secondary) p-6 hover:border-(--crit-accent) transition-colors"
+      class="feature-card block border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 hover:border-(--crit-brand) transition-colors"
     >
       <div class="flex items-center justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4">
         <div>
-          <h3 class="text-lg font-bold tracking-tight mb-1">Self-Host Crit Web</h3>
+          <h3 class="text-base font-semibold tracking-tight mb-1">Self-Host Crit Web</h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed max-w-[520px]">
             Run your own instance with Docker. One command to start, automatic migrations, works with any Postgres database.
           </p>

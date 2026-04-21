@@ -1,18 +1,18 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans flex flex-col">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <%!-- Header --%>
-  <header class="border-b border-[var(--crit-border)] bg-[var(--crit-bg-secondary)]">
-    <div class="max-w-[1100px] mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
+  <header class="border-b border-(--crit-border) bg-(--crit-bg-card)">
+    <div class="max-w-7xl mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
       <div class="flex items-center gap-3">
         <a
           href={if @selfhosted, do: ~p"/dashboard", else: ~p"/"}
-          class="font-mono text-xl font-bold text-[var(--crit-accent)] tracking-tight no-underline hover:text-[var(--crit-accent-hover)] transition-colors"
+          class="text-xl font-bold text-(--crit-fg-primary) tracking-tighter no-underline transition-colors"
         >
-          Crit
+          crit<span class="text-(--crit-brand)">.</span>
         </a>
         <%= if @selfhosted do %>
-          <span class="text-xs text-[var(--crit-fg-muted)] border border-[var(--crit-border)] px-2 py-0.5 rounded">
+          <span class="text-xs text-(--crit-fg-muted) border border-(--crit-border) px-2 py-0.5 rounded">
             self-hosted
           </span>
         <% end %>
@@ -26,13 +26,13 @@
               class="h-8 w-8 rounded-full"
             />
           <% end %>
-          <span class="text-sm text-[var(--crit-fg-primary)] max-sm:hidden">
+          <span class="text-sm text-(--crit-fg-primary) max-sm:hidden">
             {@current_user.name || @current_user.email}
           </span>
           <%= if @selfhosted do %>
             <.link
               href={~p"/dashboard"}
-              class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"
+              class="text-sm text-(--crit-fg-muted) hover:text-(--crit-fg-primary) max-sm:hidden"
             >
               Dashboard
             </.link>
@@ -40,7 +40,7 @@
           <.link
             href={~p"/auth/logout"}
             method="delete"
-            class="text-sm text-[var(--crit-fg-muted)] hover:text-[var(--crit-fg-primary)] max-sm:hidden"
+            class="text-sm text-(--crit-fg-muted) hover:text-(--crit-fg-primary) max-sm:hidden"
           >
             Sign out
           </.link>
@@ -57,11 +57,11 @@
     <div class="flex gap-10 max-md:flex-col">
       <%!-- Sidebar nav --%>
       <nav class="w-48 shrink-0 max-md:w-full">
-        <ul class="flex flex-col gap-1 max-md:flex-row max-md:gap-0 max-md:border-b max-md:border-[var(--crit-border)]">
+        <ul class="flex flex-col gap-1 max-md:flex-row max-md:gap-0 max-md:border-b max-md:border-(--crit-border)">
           <li>
             <a
               href="#account"
-              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-primary) bg-(--crit-bg-secondary) font-medium max-md:rounded-none max-md:border-b-2 max-md:border-[var(--crit-accent)]"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-primary) bg-(--crit-bg-card) font-medium max-md:rounded-none max-md:border-b-2 max-md:border-(--crit-brand)"
             >
               Account
             </a>
@@ -69,7 +69,7 @@
           <li>
             <a
               href="#tokens"
-              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-secondary) transition-colors max-md:rounded-none"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
             >
               API Tokens
             </a>
@@ -77,7 +77,7 @@
           <li>
             <a
               href="#danger-zone"
-              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-secondary) transition-colors max-md:rounded-none"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
             >
               Danger Zone
             </a>
@@ -138,11 +138,11 @@
               placeholder="Token name (e.g. my laptop)"
               maxlength="80"
               required
-              class="flex-1 bg-(--crit-bg-primary) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-accent)"
+              class="flex-1 bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand)"
             />
             <button
               type="submit"
-              class="shrink-0 px-4 py-2 bg-(--crit-accent) text-(--crit-bg-primary) rounded-md text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+              class="shrink-0 px-4 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-all cursor-pointer"
             >
               Create
             </button>
@@ -157,12 +157,12 @@
                 Token created — copy it now. It won't be shown again.
               </div>
               <div class="flex items-center gap-2">
-                <code class="flex-1 text-xs font-mono bg-(--crit-bg-primary) border border-(--crit-border) rounded px-3 py-2 text-(--crit-fg-primary) break-all">
+                <code class="flex-1 text-xs font-mono bg-(--crit-bg-page) border border-(--crit-border) rounded px-3 py-2 text-(--crit-fg-primary) break-all">
                   {@new_token_plaintext}
                 </code>
                 <button
                   phx-click={JS.dispatch("clipboard:copy", detail: %{text: @new_token_plaintext})}
-                  class="shrink-0 text-xs px-3 py-2 bg-(--crit-bg-secondary) border border-(--crit-border) rounded hover:border-(--crit-accent) transition-colors cursor-pointer"
+                  class="shrink-0 text-xs px-3 py-2 bg-(--crit-bg-card) border border-(--crit-border) rounded hover:border-(--crit-brand) transition-colors cursor-pointer"
                 >
                   Copy
                 </button>
@@ -185,7 +185,7 @@
               <div
                 :for={token <- @tokens}
                 id={"token-#{token.id}"}
-                class="flex items-center justify-between p-4 border border-(--crit-border) bg-(--crit-bg-secondary) rounded-lg"
+                class="flex items-center justify-between p-4 border border-(--crit-border) bg-(--crit-bg-card) rounded-lg"
               >
                 <div>
                   <div class="text-sm font-medium text-(--crit-fg-primary)">{token.name}</div>
@@ -237,7 +237,7 @@
                 name="confirmation"
                 value={@delete_confirmation}
                 autocomplete="off"
-                class="w-full max-w-sm bg-(--crit-bg-primary) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) focus:outline-none focus:border-red-500 mb-4"
+                class="w-full max-w-sm bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) focus:outline-none focus:border-red-500 mb-4"
               />
               <div>
                 <button

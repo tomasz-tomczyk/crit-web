@@ -1,14 +1,14 @@
-<div class="min-h-screen bg-(--crit-bg-primary) text-(--crit-fg-primary) font-sans antialiased">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_user={@current_user} />
   <div class="max-w-7xl mx-auto w-full px-10 mt-16 pb-20 max-sm:px-5 max-sm:pb-10">
     <header class="mb-14 max-sm:mt-10 max-sm:mb-10">
-      <p class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-3">
         Releases
       </p>
       <h1 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl">
-        Changelog<span class="text-(--crit-accent)">.</span>
+        Changelog<span class="text-(--crit-brand)">.</span>
       </h1>
-      <p class="text-(--crit-fg-secondary) mt-3 leading-relaxed max-w-lg">
+      <p class="text-xl text-(--crit-fg-secondary) mt-3 leading-relaxed max-w-lg">
         What's new in Crit. Release notes pulled automatically from GitHub.
       </p>
     </header>
@@ -16,13 +16,13 @@
     <%!-- CLI Releases --%>
     <section :if={@cli_releases != []}>
       <div class="flex items-center gap-3 mb-8">
-        <h2 class="font-mono text-sm font-semibold tracking-wide uppercase text-(--crit-fg-primary)">
+        <span class="font-mono text-xs tracking-widest uppercase text-(--crit-brand)">
           CLI
-        </h2>
+        </span>
         <div class="flex-1 h-px bg-(--crit-border)"></div>
         <a
           href="https://github.com/tomasz-tomczyk/crit/releases"
-          class="font-mono text-xs text-(--crit-fg-muted) hover:text-(--crit-accent) transition-colors"
+          class="font-mono text-xs text-(--crit-fg-muted) hover:text-(--crit-brand) transition-colors"
           target="_blank"
           rel="noopener"
         >
@@ -42,7 +42,7 @@
           <div class="max-sm:flex max-sm:items-baseline max-sm:gap-3">
             <a
               href={release.url}
-              class="font-mono text-lg font-semibold text-(--crit-accent) hover:underline block"
+              class="font-mono text-lg font-semibold crit-link block"
               target="_blank"
               rel="noopener"
             >
@@ -70,7 +70,7 @@
                 <a
                   :for={username <- release.contributors}
                   href={"https://github.com/#{username}"}
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-secondary) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-card) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
                   target="_blank"
                   rel="noopener"
                 >
@@ -92,13 +92,13 @@
     <%!-- Web Releases --%>
     <section :if={@web_releases != []} class="mt-16">
       <div class="flex items-center gap-3 mb-8">
-        <h2 class="font-mono text-sm font-semibold tracking-wide uppercase text-(--crit-fg-primary)">
+        <span class="font-mono text-xs tracking-widest uppercase text-(--crit-brand)">
           Web
-        </h2>
+        </span>
         <div class="flex-1 h-px bg-(--crit-border)"></div>
         <a
           href="https://github.com/tomasz-tomczyk/crit-web/releases"
-          class="font-mono text-xs text-(--crit-fg-muted) hover:text-(--crit-accent) transition-colors"
+          class="font-mono text-xs text-(--crit-fg-muted) hover:text-(--crit-brand) transition-colors"
           target="_blank"
           rel="noopener"
         >
@@ -118,7 +118,7 @@
           <div class="max-sm:flex max-sm:items-baseline max-sm:gap-3">
             <a
               href={release.url}
-              class="font-mono text-lg font-semibold text-(--crit-accent) hover:underline block"
+              class="font-mono text-lg font-semibold crit-link block"
               target="_blank"
               rel="noopener"
             >
@@ -146,7 +146,7 @@
                 <a
                   :for={username <- release.contributors}
                   href={"https://github.com/#{username}"}
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-secondary) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-(--crit-border) bg-(--crit-bg-card) text-xs text-(--crit-fg-secondary) hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors no-underline"
                   target="_blank"
                   rel="noopener"
                 >
