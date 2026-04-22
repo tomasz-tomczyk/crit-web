@@ -55,8 +55,8 @@
   --crit-brand-hover:     #89b4fa;
   --crit-brand-subtle:    rgba(122,162,247,0.10);
   --crit-brand-bg:        rgba(122,162,247,0.15);
-  --crit-brand-cta:       #5b8def;
-  --crit-brand-cta-hover: #6d9af3;
+  --crit-brand-cta:       #406fcc;
+  --crit-brand-cta-hover: #4574cc;
 
   /* ---- Semantic ---- */
   --crit-green:  #56d364;
@@ -169,8 +169,8 @@
   --crit-brand-hover:     #89b4fa;
   --crit-brand-subtle:    rgba(122,162,247,0.10);
   --crit-brand-bg:        rgba(122,162,247,0.15);
-  --crit-brand-cta:       #5b8def;
-  --crit-brand-cta-hover: #6d9af3;
+  --crit-brand-cta:       #406fcc;
+  --crit-brand-cta-hover: #4574cc;
 
   /* ---- Semantic ---- */
   --crit-green:  #56d364;
@@ -279,7 +279,7 @@
   --crit-brand-subtle:    rgba(58,114,212,0.08);
   --crit-brand-bg:        rgba(58,114,212,0.12);
   --crit-brand-cta:       #3a72d4;
-  --crit-brand-cta-hover: #4a80de;
+  --crit-brand-cta-hover: #3568c8;
 
   /* ---- Semantic ---- */
   --crit-green:  #1a7f37;
@@ -390,7 +390,7 @@
     --crit-brand-subtle:    rgba(58,114,212,0.08);
     --crit-brand-bg:        rgba(58,114,212,0.12);
     --crit-brand-cta:       #3a72d4;
-    --crit-brand-cta-hover: #4a80de;
+    --crit-brand-cta-hover: #3568c8;
 
     /* ---- Semantic ---- */
     --crit-green:  #1a7f37;
