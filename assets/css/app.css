@@ -47,7 +47,7 @@
   /* ---- Foreground ---- */
   --crit-fg-primary:   #e8ebf5;
   --crit-fg-secondary: #9ba3bf;
-  --crit-fg-muted:     #646c85;
+  --crit-fg-muted:     #7a8399;
   --crit-fg-on-brand:  #ffffff;
 
   /* ---- Brand ---- */
@@ -55,8 +55,8 @@
   --crit-brand-hover:     #89b4fa;
   --crit-brand-subtle:    rgba(122,162,247,0.10);
   --crit-brand-bg:        rgba(122,162,247,0.15);
-  --crit-brand-cta:       #5b8def;
-  --crit-brand-cta-hover: #6d9af3;
+  --crit-brand-cta:       #406fcc;
+  --crit-brand-cta-hover: #4574cc;
 
   /* ---- Semantic ---- */
   --crit-green:  #56d364;
@@ -139,7 +139,7 @@
   --crit-editor-comment-bg:      #1a1f36;
   --crit-editor-fg:              #c0caf5;
   --crit-editor-fg-secondary:    #a9b1d6;
-  --crit-editor-fg-muted:        #868fba;
+  --crit-editor-fg-muted:        #9aa1c8;
   --crit-editor-scrollbar-bg:    #1a1b26;
   --crit-editor-scrollbar-thumb: #3b4261;
 }
@@ -161,7 +161,7 @@
   /* ---- Foreground ---- */
   --crit-fg-primary:   #e8ebf5;
   --crit-fg-secondary: #9ba3bf;
-  --crit-fg-muted:     #646c85;
+  --crit-fg-muted:     #7a8399;
   --crit-fg-on-brand:  #ffffff;
 
   /* ---- Brand ---- */
@@ -169,8 +169,8 @@
   --crit-brand-hover:     #89b4fa;
   --crit-brand-subtle:    rgba(122,162,247,0.10);
   --crit-brand-bg:        rgba(122,162,247,0.15);
-  --crit-brand-cta:       #5b8def;
-  --crit-brand-cta-hover: #6d9af3;
+  --crit-brand-cta:       #406fcc;
+  --crit-brand-cta-hover: #4574cc;
 
   /* ---- Semantic ---- */
   --crit-green:  #56d364;
@@ -253,7 +253,7 @@
   --crit-editor-comment-bg:      #1a1f36;
   --crit-editor-fg:              #c0caf5;
   --crit-editor-fg-secondary:    #a9b1d6;
-  --crit-editor-fg-muted:        #868fba;
+  --crit-editor-fg-muted:        #9aa1c8;
   --crit-editor-scrollbar-bg:    #1a1b26;
   --crit-editor-scrollbar-thumb: #3b4261;
 }
@@ -270,16 +270,16 @@
   /* ---- Foreground ---- */
   --crit-fg-primary:   #1a1d23;
   --crit-fg-secondary: #57606a;
-  --crit-fg-muted:     #8892a6;
+  --crit-fg-muted:     #656e80;
   --crit-fg-on-brand:  #ffffff;
 
   /* ---- Brand ---- */
-  --crit-brand:           #3a72d4;
-  --crit-brand-hover:     #4a80de;
-  --crit-brand-subtle:    rgba(58,114,212,0.08);
-  --crit-brand-bg:        rgba(58,114,212,0.12);
+  --crit-brand:           #2960bc;
+  --crit-brand-hover:     #396ec6;
+  --crit-brand-subtle:    rgba(41,96,188,0.08);
+  --crit-brand-bg:        rgba(41,96,188,0.12);
   --crit-brand-cta:       #3a72d4;
-  --crit-brand-cta-hover: #4a80de;
+  --crit-brand-cta-hover: #3568c8;
 
   /* ---- Semantic ---- */
   --crit-green:  #1a7f37;
@@ -362,7 +362,7 @@
   --crit-editor-comment-bg:      #f0f6ff;
   --crit-editor-fg:              #24292f;
   --crit-editor-fg-secondary:    #57606a;
-  --crit-editor-fg-muted:        #656d76;
+  --crit-editor-fg-muted:        #5a626b;
   --crit-editor-scrollbar-bg:    #ffffff;
   --crit-editor-scrollbar-thumb: #d0d0d0;
 }
@@ -381,16 +381,16 @@
     /* ---- Foreground ---- */
     --crit-fg-primary:   #1a1d23;
     --crit-fg-secondary: #57606a;
-    --crit-fg-muted:     #8892a6;
+    --crit-fg-muted:     #656e80;
     --crit-fg-on-brand:  #ffffff;
 
     /* ---- Brand ---- */
-    --crit-brand:           #3a72d4;
+    --crit-brand:           #2960bc;
     --crit-brand-hover:     #4a80de;
     --crit-brand-subtle:    rgba(58,114,212,0.08);
     --crit-brand-bg:        rgba(58,114,212,0.12);
     --crit-brand-cta:       #3a72d4;
-    --crit-brand-cta-hover: #4a80de;
+    --crit-brand-cta-hover: #3568c8;
 
     /* ---- Semantic ---- */
     --crit-green:  #1a7f37;
@@ -473,7 +473,7 @@
     --crit-editor-comment-bg:      #f0f6ff;
     --crit-editor-fg:              #24292f;
     --crit-editor-fg-secondary:    #57606a;
-    --crit-editor-fg-muted:        #656d76;
+    --crit-editor-fg-muted:        #5a626b;
     --crit-editor-scrollbar-bg:    #ffffff;
     --crit-editor-scrollbar-thumb: #d0d0d0;
   }
@@ -1188,8 +1188,8 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   color: var(--crit-editor-fg-muted);
 }
 .crit-signin-btn {
-  background: var(--crit-brand);
-  color: #fff;
+  background: var(--crit-brand-cta);
+  color: var(--crit-fg-on-brand);
   border-radius: 6px;
   padding: 5px 12px;
   font-size: 13px;
@@ -1197,7 +1197,7 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   text-decoration: none;
 }
 .crit-signin-btn:hover {
-  opacity: 0.85;
+  background: var(--crit-brand-cta-hover);
 }
 
 /* ===== Name Pill ===== */
