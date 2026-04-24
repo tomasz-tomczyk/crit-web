@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@sanity/diff-match-patch": "^3.2.0",
     "@tailwindcss/typography": "^0.5.19",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.1",
