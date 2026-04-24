@@ -4038,7 +4038,7 @@ export const DocumentRenderer = {
           </div>
         </div>
         <div class="comments-panel-header-row2">
-          <div class="comments-filter-toggle crit-toggle-group" id="commentsFilterPill" role="group" aria-label="Filter comments">
+          <div class="comments-filter-toggle crit-diff-mode-toggle" id="commentsFilterPill" role="group" aria-label="Filter comments">
             <button class="crit-toggle-btn crit-toggle-btn--active" data-filter="all">All <span class="filter-count">0</span></button>
             <button class="crit-toggle-btn" data-filter="open">Open <span class="filter-count">0</span></button>
             <button class="crit-toggle-btn" data-filter="resolved">Resolved <span class="filter-count">0</span></button>
