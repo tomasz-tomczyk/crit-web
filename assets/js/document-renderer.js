@@ -1301,6 +1301,7 @@ function render(ctx) {
   } else {
     renderDocument(ctx)
   }
+  applyHideResolved()
 }
 
 // ---- Multi-file rendering ---------------------------------------------------
@@ -3649,6 +3650,16 @@ function switchSettingsTab(tab) {
   else if (tab === 'about') renderAboutPane()
 }
 
+function applyHideResolved() {
+  const hide = localStorage.getItem('crit-hide-resolved') === 'true'
+  document.querySelectorAll('.comment-block:not(.panel-comment-block)').forEach(function(block) {
+    const card = block.querySelector('.resolved-card')
+    if (card) {
+      block.style.display = hide ? 'none' : ''
+    }
+  })
+}
+
 function updatePillIndicator(indicatorId, values, current) {
   const indicator = document.getElementById(indicatorId)
   if (!indicator) return
@@ -3665,6 +3676,7 @@ function renderSettingsPane() {
 
   const currentTheme = localStorage.getItem('phx:theme') || 'system'
   const currentWidth = localStorage.getItem('crit-width') || 'default'
+  const hideResolved = localStorage.getItem('crit-hide-resolved') === 'true'
 
   let html = ''
 
@@ -3698,9 +3710,28 @@ function renderSettingsPane() {
     html += '<button class="settings-pill-btn' + active + '" data-settings-width="' + w + '">' + w.charAt(0).toUpperCase() + w.slice(1) + '</button>'
   })
   html += '</div></div>'
+
+  // Hide resolved row
+  html += '<div class="settings-display-row">'
+  html += '<span class="settings-display-label">Hide resolved</span>'
+  html += '<label class="comments-panel-switch">'
+  html += '<input type="checkbox" id="hideResolvedToggle"' + (hideResolved ? ' checked' : '') + '>'
+  html += '<span class="comments-panel-switch-track"><span class="comments-panel-switch-thumb"></span></span>'
+  html += '</label>'
+  html += '</div>'
+
   html += '</div>' // close settings-display-group
 
   pane.innerHTML = html
+
+  // Wire up hide-resolved toggle
+  const hideResolvedToggle = pane.querySelector('#hideResolvedToggle')
+  if (hideResolvedToggle) {
+    hideResolvedToggle.addEventListener('change', function() {
+      localStorage.setItem('crit-hide-resolved', hideResolvedToggle.checked ? 'true' : 'false')
+      applyHideResolved()
+    })
+  }
 
   // Wire up theme pill clicks — call the same setTheme that app.js uses
   pane.querySelectorAll('[data-settings-theme]').forEach(function(btn) {
@@ -3751,6 +3782,7 @@ function renderShortcutsPane() {
     ]},
     { label: 'View', shortcuts: [
       { key: '<kbd>t</kbd>', action: 'Toggle table of contents' },
+      { key: '<kbd>h</kbd>', action: 'Toggle hide resolved' },
       { key: '<kbd>Esc</kbd>', action: 'Cancel / clear focus' },
       { key: '<kbd>?</kbd>', action: 'Toggle shortcuts' },
     ]},
@@ -4262,6 +4294,18 @@ export const DocumentRenderer = {
       if (e.key === 'C' && e.shiftKey) {
         e.preventDefault()
         toggleCommentsPanel(ctx)
+        return
+      }
+
+      // Hide resolved toggle
+      if (e.key === 'h') {
+        e.preventDefault()
+        const current = localStorage.getItem('crit-hide-resolved') === 'true'
+        localStorage.setItem('crit-hide-resolved', current ? 'false' : 'true')
+        applyHideResolved()
+        // Sync settings pane toggle if open
+        const toggle = document.getElementById('hideResolvedToggle')
+        if (toggle) toggle.checked = !current
         return
       }
 
