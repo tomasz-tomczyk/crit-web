@@ -3266,7 +3266,7 @@ function renderCommentsPanel(ctx) {
   if (badge) badge.textContent = totalCount
 
   // Update pill counts
-  const pillBtns = panel.querySelectorAll('.comments-filter-pill-btn')
+  const pillBtns = panel.querySelectorAll('.toggle-btn')
   pillBtns.forEach(btn => {
     const countEl = btn.querySelector('.filter-count')
     if (!countEl) return
@@ -3275,7 +3275,7 @@ function renderCommentsPanel(ctx) {
     else if (f === 'open') countEl.textContent = openCount
     else if (f === 'resolved') countEl.textContent = resolvedCount
   })
-  updateCommentsFilterIndicator(panel)
+
 
   // Filter function based on active pill
   const visibleFilter = c => {
@@ -3399,19 +3399,7 @@ function createFileGroupHeader(label, count, groupEl) {
   return groupName
 }
 
-function updateCommentsFilterIndicator(panel) {
-  const indicator = panel.querySelector('#commentsFilterIndicator')
-  const pill = panel.querySelector('#commentsFilterPill')
-  if (!indicator || !pill) return
-  const btns = pill.querySelectorAll('.comments-filter-pill-btn')
-  const activeBtn = pill.querySelector('.comments-filter-pill-btn.active')
-  if (!activeBtn) return
-  // Calculate position relative to pill
-  const pillRect = pill.getBoundingClientRect()
-  const btnRect = activeBtn.getBoundingClientRect()
-  indicator.style.left = (btnRect.left - pillRect.left) + 'px'
-  indicator.style.width = btnRect.width + 'px'
-}
+
 
 function updateExpandAllLabel(ctx) {
   const panel = ctx._commentsPanel
@@ -4050,11 +4038,10 @@ export const DocumentRenderer = {
           </div>
         </div>
         <div class="comments-panel-header-row2">
-          <div class="comments-filter-pill" id="commentsFilterPill" role="group" aria-label="Filter comments">
-            <div class="comments-filter-pill-indicator" id="commentsFilterIndicator"></div>
-            <button class="comments-filter-pill-btn active" data-filter="all">All <span class="filter-count">0</span></button>
-            <button class="comments-filter-pill-btn" data-filter="open">Open <span class="filter-count">0</span></button>
-            <button class="comments-filter-pill-btn" data-filter="resolved">Resolved <span class="filter-count">0</span></button>
+          <div class="comments-filter-toggle" id="commentsFilterPill" role="group" aria-label="Filter comments">
+            <button class="toggle-btn active" data-filter="all">All <span class="filter-count">0</span></button>
+            <button class="toggle-btn" data-filter="open">Open <span class="filter-count">0</span></button>
+            <button class="toggle-btn" data-filter="resolved">Resolved <span class="filter-count">0</span></button>
           </div>
           <button class="comments-panel-expand-all" id="commentsPanelExpandAll">Expand all</button>
         </div>
@@ -4076,13 +4063,12 @@ export const DocumentRenderer = {
     // Segmented pill filter
     const filterPill = commentsPanel.querySelector('#commentsFilterPill')
     filterPill.addEventListener('click', (e) => {
-      const btn = e.target.closest('.comments-filter-pill-btn')
+      const btn = e.target.closest('.toggle-btn')
       if (!btn) return
       const filter = btn.dataset.filter
       commentsPanel._activeFilter = filter
-      filterPill.querySelectorAll('.comments-filter-pill-btn').forEach(b => b.classList.remove('active'))
+      filterPill.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
-      updateCommentsFilterIndicator(commentsPanel)
       renderCommentsPanel(ctx)
     })
 
