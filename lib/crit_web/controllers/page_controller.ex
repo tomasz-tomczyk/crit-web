@@ -15,7 +15,7 @@ defmodule CritWeb.PageController do
       ],
       why_this_matters: [
         "AI coding agents are fast, but they're also opaque. When Claude Code or Cursor rewrites a function, you don't get a natural place to say \"this is wrong at line 12\" unless you're already in a PR workflow. Most people end up pasting chunks of code into the chat and hoping the agent understands which part they mean. That's slow and error-prone.",
-        "Inline comments let you anchor feedback to the exact lines that need it. Instead of writing \"the error handling in the auth function looks wrong,\" you select lines 34-41 and leave a comment there. The agent reads `.crit.json` (the review state file) and knows precisely what you're reacting to. No ambiguity, no re-explaining context.",
+        "Inline comments let you anchor feedback to the exact lines that need it. Instead of writing \"the error handling in the auth function looks wrong,\" you select lines 34-41 and leave a comment there. The agent reads the review file and knows precisely what you're reacting to. No ambiguity, no re-explaining context.",
         "This also matters when reviewing plans, not just code. If your agent writes a markdown spec or a step-by-step plan before executing, you can review that document the same way you'd review a PR. Comment on the parts that need changing, approve the parts that look right, and hand it back."
       ],
       how_crit_compares:
@@ -44,17 +44,17 @@ defmodule CritWeb.PageController do
       title: "AI Review Loop",
       tagline: "Review, hand off to your agent, iterate",
       description:
-        "Leave comments, click Finish Review, and your agent is notified automatically via `crit listen`. The agent reads `.crit.json`, makes edits, and runs `crit go <port>` when done. Crit reloads with a diff, and you review again.",
+        "Leave comments, click Finish Review, and your agent is notified automatically via `crit listen`. The agent reads the review file, makes edits, and runs `crit go <port>` when done. Crit reloads with a diff, and you review again.",
       details: [
-        "When you click \"Finish Review\", Crit writes `.crit.json` - structured comment data with per-file sections. Your agent is notified automatically if it was listening via `crit listen`.",
-        "The prompt tells the agent to read `.crit.json`, address unresolved comments, and run `crit go <port>` when done. No copy-paste needed — `crit listen` delivers it directly.",
+        "When you click \"Finish Review\", Crit writes the review file — structured comment data with per-file sections. Your agent is notified automatically if it was listening via `crit listen`.",
+        "The prompt tells the agent to read the review file, address unresolved comments, and run `crit go <port>` when done. No copy-paste needed — `crit listen` delivers it directly.",
         "When the agent runs `crit go`, the browser starts a new round with a diff of what changed. Previous comments show as resolved or still open.",
         "Add new comments on the updated version and repeat. When all comments are resolved, Crit detects it and generates a clean confirmation prompt — the loop ends when you're satisfied."
       ],
       why_this_matters: [
         "The default interaction with AI coding agents is conversational: you type, it responds, you type again. That works for small tasks. For anything involving real code changes across multiple files, it breaks down because the conversation history gets long, context is lost, and you can't easily point back to \"that thing you changed in round 2.\"",
         "Crit replaces the conversation loop with a structured review loop. You review the output, leave comments on specific lines, submit Finish Review, and `crit listen` notifies the agent. The agent reads exactly what you wrote and where you wrote it, then runs `crit go` when it's done. You get a diff. You review again. The loop has a clear state at each step.",
-        "This structure also makes it easier to stop and resume. The state lives in `.crit.json`, so if you close your terminal and come back the next day, the review is still there. You're not reconstructing context from a chat thread."
+        "This structure also makes it easier to stop and resume. The state lives in the review file, so if you close your terminal and come back the next day, the review is still there. You're not reconstructing context from a chat thread."
       ],
       how_crit_compares:
         "Most AI agent workflows treat human feedback as a free-text prompt injected into the conversation. That works, but it's informal — there's no enforced structure around what the human reviewed, what they approved, and what they asked to change. Crit externalizes that state into a file the agent reads directly, which is more reliable and easier to audit after the fact."

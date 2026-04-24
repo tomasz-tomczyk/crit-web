@@ -142,7 +142,7 @@ defmodule CritWeb.ApiControllerTest do
   end
 
   describe "GET /api/export/:token/comments" do
-    test "returns .crit.json compatible shape with top-level fields", %{conn: conn} do
+    test "returns review file compatible shape with top-level fields", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
           [%{"path" => "plan.md", "content" => "# Plan"}],
@@ -162,7 +162,7 @@ defmodule CritWeb.ApiControllerTest do
       conn = get(conn, ~p"/api/export/#{review.token}/comments")
       body = json_response(conn, 200)
 
-      # Top-level .crit.json fields
+      # Top-level review file fields
       assert body["review_round"] == 1
       assert body["share_url"] =~ review.token
       assert body["delete_token"] == review.delete_token

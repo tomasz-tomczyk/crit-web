@@ -16,7 +16,7 @@ The `POST /api/reviews` endpoint is intentionally open (no API key required). Th
 
 ### Token-based deletion
 
-Reviews are deleted by presenting a `delete_token` (returned at creation time). The crit CLI stores this in `.crit.json`. There are no user accounts.
+Reviews are deleted by presenting a `delete_token` (returned at creation time). The crit CLI stores this in the review file (`~/.crit/reviews/`). There are no user accounts.
 
 ### Identity
 
