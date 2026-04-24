@@ -177,9 +177,18 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
     page,
     request,
   }) => {
-    await seedComment(request, token, { body: "File comment", startLine: 1 });
+    // Create a multi-file review so file group headers are rendered
+    const multiFileReview = await createReview(request, {
+      files: [
+        { path: "alpha.ts", content: "Line 1\nLine 2\nLine 3\n" },
+        { path: "beta.ts", content: "Line 1\nLine 2\nLine 3\n" },
+      ],
+    });
+    const mfToken = multiFileReview.token;
 
-    await loadReview(page, token);
+    await seedComment(request, mfToken, { body: "File comment", startLine: 1, file: "alpha.ts" });
+
+    await loadReview(page, mfToken);
     await waitForCommentCard(page, "File comment");
 
     const panel = await openPanel(page);
@@ -201,6 +210,9 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
     // Click again to expand
     await fileHeader.click();
     await expect(fileGroup).not.toHaveClass(/collapsed/);
+
+    // Clean up the multi-file review
+    await deleteReview(request, multiFileReview.deleteToken);
   });
 
   test("Expand all / Collapse all toggles all comment cards", async ({

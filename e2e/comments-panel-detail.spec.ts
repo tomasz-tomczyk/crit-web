@@ -142,12 +142,10 @@ test.describe("Comments Panel — Detail", () => {
     const panel = page.locator(".comments-panel");
     await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
 
-    // The "Show resolved" toggle label should become visible now
-    const filterLabel = panel.locator(".comments-panel-switch");
-    await expect(filterLabel).toBeVisible({ timeout: 5_000 });
-
-    // Click the label to toggle the checkbox (checkbox itself is visually hidden)
-    await filterLabel.click();
+    // Click the "Resolved" filter button to show only resolved comments
+    const resolvedBtn = panel.locator('.crit-toggle-btn[data-filter="resolved"]');
+    await expect(resolvedBtn).toBeVisible({ timeout: 5_000 });
+    await resolvedBtn.click();
 
     // Panel should now contain the resolved comment
     await expect(panel).toContainText("Will be resolved for panel", { timeout: 5_000 });
