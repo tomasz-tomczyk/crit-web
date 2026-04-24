@@ -225,6 +225,25 @@ defmodule CritWeb.ApiController do
           json(conn, Reviews.serialize_comment(comment))
       end
     end
+
+    def seed_reply(conn, %{"token" => token, "comment_id" => comment_id} = params) do
+      case Reviews.get_by_token(token) do
+        nil ->
+          not_found(conn)
+
+        review ->
+          {:ok, reply} =
+            Reviews.create_reply(
+              comment_id,
+              %{"body" => params["body"] || "web reviewer reply"},
+              "integration-test",
+              params["author"] || "WebReviewer",
+              review.id
+            )
+
+          json(conn, Reviews.serialize_reply(reply))
+      end
+    end
   end
 
   # Handled by LocalhostCors plug — this action is never reached.
