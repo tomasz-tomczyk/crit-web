@@ -1,3 +1,6 @@
 # Copy build caches from source branch worktree
 [pre-start]
 copy = "wt step copy-ignored --from {{ base }}"
+
+[post-start]
+mise-trust = "mise trust ."
