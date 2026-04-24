@@ -1,0 +1,3 @@
+# Copy build caches from source branch worktree
+[pre-start]
+copy = "wt step copy-ignored --from {{ base }}"
