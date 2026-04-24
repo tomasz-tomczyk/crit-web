@@ -3715,7 +3715,7 @@ function renderSettingsPane() {
   html += '<div class="settings-display-row">'
   html += '<span class="settings-display-label">Hide resolved</span>'
   html += '<label class="comments-panel-switch">'
-  html += '<input type="checkbox" id="hideResolvedToggle"' + (hideResolved ? ' checked' : '') + '>'
+  html += '<input type="checkbox" id="hideResolvedToggle" aria-label="Hide resolved"' + (hideResolved ? ' checked' : '') + '>'
   html += '<span class="comments-panel-switch-track"><span class="comments-panel-switch-thumb"></span></span>'
   html += '</label>'
   html += '</div>'
