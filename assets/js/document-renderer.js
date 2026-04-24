@@ -3254,13 +3254,35 @@ function renderCommentsPanel(ctx) {
   const savedScroll = body.scrollTop
   body.innerHTML = ''
 
-  const showResolvedEl = panel.querySelector('#showResolvedToggle')
-  const showResolved = showResolvedEl ? showResolvedEl.checked : false
+  const activeFilter = panel._activeFilter || 'all'
 
-  // Show/hide filter bar based on whether any resolved comments exist
-  const hasResolved = ctx.comments.some(c => c.resolved)
-  const filterBar = panel.querySelector('.comments-panel-filter')
-  if (filterBar) filterBar.style.display = hasResolved ? '' : 'none'
+  // Compute counts for badge and pill
+  const totalCount = ctx.comments.length
+  const openCount = ctx.comments.filter(c => !c.resolved).length
+  const resolvedCount = ctx.comments.filter(c => c.resolved).length
+
+  // Update count badge
+  const badge = panel.querySelector('#commentsPanelCountBadge')
+  if (badge) badge.textContent = totalCount
+
+  // Update pill counts
+  const pillBtns = panel.querySelectorAll('.comments-filter-pill-btn')
+  pillBtns.forEach(btn => {
+    const countEl = btn.querySelector('.filter-count')
+    if (!countEl) return
+    const f = btn.dataset.filter
+    if (f === 'all') countEl.textContent = totalCount
+    else if (f === 'open') countEl.textContent = openCount
+    else if (f === 'resolved') countEl.textContent = resolvedCount
+  })
+  updateCommentsFilterIndicator(panel)
+
+  // Filter function based on active pill
+  const visibleFilter = c => {
+    if (activeFilter === 'open') return !c.resolved
+    if (activeFilter === 'resolved') return c.resolved
+    return true
+  }
 
   // Review comment form at top
   const reviewForm = ctx.activeForms.find(f => f.scope === 'review')
@@ -3269,12 +3291,20 @@ function renderCommentsPanel(ctx) {
   }
 
   // Separate and filter comments by scope
-  const visibleFilter = c => showResolved ? true : !c.resolved
   const reviewComments = ctx.comments.filter(c => c.scope === 'review').filter(visibleFilter)
   const fileAndLineComments = ctx.comments.filter(c => c.scope !== 'review').filter(visibleFilter)
 
   if (ctx.comments.length === 0 && !reviewForm) {
     body.innerHTML += '<div class="comments-panel-empty">No comments yet</div>'
+    updateExpandAllLabel(ctx)
+    return
+  }
+
+  const filteredTotal = reviewComments.length + fileAndLineComments.length
+  if (filteredTotal === 0 && !reviewForm) {
+    const emptyMsg = activeFilter === 'open' ? 'No open comments' : activeFilter === 'resolved' ? 'No resolved comments' : 'No comments yet'
+    body.innerHTML += '<div class="comments-panel-empty">' + emptyMsg + '</div>'
+    updateExpandAllLabel(ctx)
     return
   }
 
@@ -3283,14 +3313,15 @@ function renderCommentsPanel(ctx) {
     const group = document.createElement('div')
     group.className = 'comments-panel-file-group'
 
-    const groupName = document.createElement('div')
-    groupName.className = 'comments-panel-file-name'
-    groupName.textContent = 'Review'
+    const groupName = createFileGroupHeader('Review', reviewComments.length, group)
     group.appendChild(groupName)
 
+    const cards = document.createElement('div')
+    cards.className = 'comments-panel-file-cards'
     for (const c of reviewComments) {
-      group.appendChild(renderPanelCard(ctx, c, null))
+      cards.appendChild(renderPanelCard(ctx, c, null))
     }
+    group.appendChild(cards)
     body.appendChild(group)
   }
 
@@ -3313,27 +3344,108 @@ function renderCommentsPanel(ctx) {
         const group = document.createElement('div')
         group.className = 'comments-panel-file-group'
 
-        const groupName = document.createElement('div')
-        groupName.className = 'comments-panel-file-name'
-        groupName.textContent = file.path
+        const groupName = createFileGroupHeader(file.path, fileComments.length, group)
         group.appendChild(groupName)
 
+        const cards = document.createElement('div')
+        cards.className = 'comments-panel-file-cards'
         for (const c of fileComments) {
-          group.appendChild(renderPanelCard(ctx, c, file.path))
+          cards.appendChild(renderPanelCard(ctx, c, file.path))
         }
+        group.appendChild(cards)
         body.appendChild(group)
       }
     } else {
       const group = document.createElement('div')
       group.className = 'comments-panel-file-group'
+      const cards = document.createElement('div')
+      cards.className = 'comments-panel-file-cards'
       for (const c of sorted) {
-        group.appendChild(renderPanelCard(ctx, c, null))
+        cards.appendChild(renderPanelCard(ctx, c, null))
       }
+      group.appendChild(cards)
       body.appendChild(group)
     }
   }
 
   body.scrollTop = savedScroll
+  updateExpandAllLabel(ctx)
+}
+
+function createFileGroupHeader(label, count, groupEl) {
+  const groupName = document.createElement('div')
+  groupName.className = 'comments-panel-file-name'
+
+  const chevron = document.createElement('span')
+  chevron.className = 'comments-panel-file-chevron'
+  chevron.textContent = '\u25BC'
+  groupName.appendChild(chevron)
+
+  const nameText = document.createElement('span')
+  nameText.className = 'comments-panel-file-name-text'
+  nameText.textContent = label
+  nameText.title = label
+  groupName.appendChild(nameText)
+
+  const countEl = document.createElement('span')
+  countEl.className = 'comments-panel-file-count'
+  countEl.textContent = count
+  groupName.appendChild(countEl)
+
+  groupName.addEventListener('click', () => {
+    groupEl.classList.toggle('collapsed')
+  })
+
+  return groupName
+}
+
+function updateCommentsFilterIndicator(panel) {
+  const indicator = panel.querySelector('#commentsFilterIndicator')
+  const pill = panel.querySelector('#commentsFilterPill')
+  if (!indicator || !pill) return
+  const btns = pill.querySelectorAll('.comments-filter-pill-btn')
+  const activeBtn = pill.querySelector('.comments-filter-pill-btn.active')
+  if (!activeBtn) return
+  // Calculate position relative to pill
+  const pillRect = pill.getBoundingClientRect()
+  const btnRect = activeBtn.getBoundingClientRect()
+  indicator.style.left = (btnRect.left - pillRect.left) + 'px'
+  indicator.style.width = btnRect.width + 'px'
+}
+
+function updateExpandAllLabel(ctx) {
+  const panel = ctx._commentsPanel
+  if (!panel) return
+  const btn = panel.querySelector('#commentsPanelExpandAll')
+  if (!btn) return
+  // Check if any visible card is expanded (not collapsed)
+  const panelCards = panel.querySelectorAll('.comment-card')
+  const inlineCards = document.querySelectorAll('.comment-block:not(.panel-comment-block) .comment-card')
+  const allCards = [...panelCards, ...inlineCards]
+  const anyExpanded = allCards.some(c => !c.classList.contains('collapsed'))
+  btn.textContent = anyExpanded ? 'Collapse all' : 'Expand all'
+}
+
+function toggleExpandAllComments(ctx) {
+  const panel = ctx._commentsPanel
+  if (!panel) return
+  const panelCards = panel.querySelectorAll('.comment-card')
+  const inlineCards = document.querySelectorAll('.comment-block:not(.panel-comment-block) .comment-card')
+  const allCards = [...panelCards, ...inlineCards]
+  const anyExpanded = allCards.some(c => !c.classList.contains('collapsed'))
+
+  allCards.forEach(card => {
+    if (anyExpanded) {
+      card.classList.add('collapsed')
+    } else {
+      card.classList.remove('collapsed')
+    }
+    // Sync override state
+    const id = card.dataset.commentId
+    if (id) commentCollapseOverrides[id] = anyExpanded
+  })
+
+  updateExpandAllLabel(ctx)
 }
 
 function renderPanelCard(ctx, comment, filePath) {
@@ -3927,21 +4039,31 @@ export const DocumentRenderer = {
     commentsPanel.className = 'comments-panel'
     commentsPanel.innerHTML = `
       <div class="comments-panel-header">
-        <span>Comments</span>
-        <div class="comments-panel-header-actions">
-          <button class="comments-panel-add-btn" title="Add a general comment (Shift+G)">+ Add</button>
-          <button class="comments-panel-close" title="Close comments panel" aria-label="Close comments panel">&#x2715;</button>
+        <div class="comments-panel-header-row1">
+          <div class="comments-panel-header-left">
+            <span class="comments-panel-title">Comments</span>
+            <span class="comments-panel-count-badge" id="commentsPanelCountBadge">0</span>
+          </div>
+          <div class="comments-panel-header-actions">
+            <button class="comments-panel-add-btn" title="Add a general comment (Shift+G)">+ Add</button>
+            <button class="comments-panel-close" title="Close comments panel" aria-label="Close comments panel">&#x2715;</button>
+          </div>
         </div>
-      </div>
-      <div class="comments-panel-filter" style="display:none">
-        <label class="comments-panel-switch">
-          <input type="checkbox" id="showResolvedToggle">
-          <span class="comments-panel-switch-track"><span class="comments-panel-switch-thumb"></span></span>
-          <span class="comments-panel-switch-text">Show resolved</span>
-        </label>
+        <div class="comments-panel-header-row2">
+          <div class="comments-filter-pill" id="commentsFilterPill" role="group" aria-label="Filter comments">
+            <div class="comments-filter-pill-indicator" id="commentsFilterIndicator"></div>
+            <button class="comments-filter-pill-btn active" data-filter="all">All <span class="filter-count">0</span></button>
+            <button class="comments-filter-pill-btn" data-filter="open">Open <span class="filter-count">0</span></button>
+            <button class="comments-filter-pill-btn" data-filter="resolved">Resolved <span class="filter-count">0</span></button>
+          </div>
+          <button class="comments-panel-expand-all" id="commentsPanelExpandAll">Expand all</button>
+        </div>
       </div>
       <div class="comments-panel-body"></div>
     `
+    // Track active filter: 'all', 'open', 'resolved'
+    commentsPanel._activeFilter = 'all'
+
     commentsPanel.querySelector('.comments-panel-add-btn').addEventListener('click', () => {
       openReviewCommentForm(ctx)
     })
@@ -3950,8 +4072,23 @@ export const DocumentRenderer = {
       syncCommentsPanelAria(false)
       updateTocPosition(ctx)
     })
-    commentsPanel.querySelector('#showResolvedToggle').addEventListener('change', () => {
+
+    // Segmented pill filter
+    const filterPill = commentsPanel.querySelector('#commentsFilterPill')
+    filterPill.addEventListener('click', (e) => {
+      const btn = e.target.closest('.comments-filter-pill-btn')
+      if (!btn) return
+      const filter = btn.dataset.filter
+      commentsPanel._activeFilter = filter
+      filterPill.querySelectorAll('.comments-filter-pill-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      updateCommentsFilterIndicator(commentsPanel)
       renderCommentsPanel(ctx)
+    })
+
+    // Expand all / Collapse all
+    commentsPanel.querySelector('#commentsPanelExpandAll').addEventListener('click', () => {
+      toggleExpandAllComments(ctx)
     })
     const mainLayout = document.getElementById('crit-main-layout')
     mainLayout.appendChild(commentsPanel)

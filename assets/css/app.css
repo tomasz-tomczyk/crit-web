@@ -1701,26 +1701,46 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   display: flex;
 }
 
+/* Two-row panel header */
 .comments-panel-header {
+  border-bottom: 1px solid var(--crit-border);
+  flex-shrink: 0;
+}
+.comments-panel-header-row1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--crit-border);
-  font-weight: 600;
-  font-size: 11px;
-  line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--crit-editor-fg-muted);
+  padding: 12px 16px 0;
 }
-
+.comments-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.comments-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--crit-editor-fg);
+}
+.comments-panel-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--crit-editor-fg-muted);
+  background: var(--crit-editor-bg-elevated);
+  border-radius: 9999px;
+  line-height: 1;
+}
 .comments-panel-header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .comments-panel-add-btn {
   background: none;
   border: 1px solid var(--crit-border);
@@ -1730,15 +1750,12 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   padding: 3px 8px;
   border-radius: 4px;
   font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
   line-height: 1;
 }
 .comments-panel-add-btn:hover {
   color: var(--crit-editor-fg);
   border-color: var(--crit-editor-fg-muted);
 }
-
 .comments-panel-close {
   background: none;
   border: none;
@@ -1751,56 +1768,74 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
 }
 .comments-panel-close:hover { background: var(--crit-editor-bg-elevated); color: var(--crit-editor-fg); }
 
+.comments-panel-header-row2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 12px;
+}
+
+/* Segmented pill filter (reuses settings-pill visual pattern) */
+.comments-filter-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--crit-border);
+  background: var(--crit-editor-bg-card);
+  border-radius: 9999px;
+}
+.comments-filter-pill-indicator {
+  position: absolute;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--crit-editor-bg-elevated);
+  border: 1px solid var(--crit-border);
+  transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.comments-filter-pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--crit-editor-fg-muted);
+  position: relative;
+  z-index: 1;
+  transition: color 0.15s;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.comments-filter-pill-btn:hover { color: var(--crit-editor-fg); }
+.comments-filter-pill-btn.active { color: var(--crit-brand); }
+.comments-filter-pill-btn .filter-count {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+/* Expand all / Collapse all link */
+.comments-panel-expand-all {
+  background: none;
+  border: none;
+  color: var(--crit-editor-fg-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+.comments-panel-expand-all:hover { color: var(--crit-editor-fg); }
+
 .comments-panel-body {
   flex: 1;
   overflow-y: auto;
-}
-
-/* Show resolved toggle */
-.comments-panel-filter {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--crit-border);
-  flex-shrink: 0;
-}
-.comments-panel-switch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-.comments-panel-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
-.comments-panel-switch-track {
-  position: relative;
-  width: 28px;
-  height: 16px;
-  background: var(--crit-editor-bg-elevated);
-  border-radius: 8px;
-  border: 1px solid var(--crit-border);
-  transition: background 0.2s, border-color 0.2s;
-  flex-shrink: 0;
-}
-.comments-panel-switch-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 10px;
-  height: 10px;
-  background: var(--crit-editor-fg-muted);
-  border-radius: 50%;
-  transition: transform 0.2s, background 0.2s;
-}
-.comments-panel-switch input:checked + .comments-panel-switch-track {
-  background: var(--crit-brand-subtle);
-  border-color: var(--crit-brand);
-}
-.comments-panel-switch input:checked + .comments-panel-switch-track .comments-panel-switch-thumb {
-  transform: translateX(12px);
-  background: var(--crit-brand);
-}
-.comments-panel-switch-text {
-  font-size: 12px;
-  color: var(--crit-editor-fg-muted);
 }
 
 .comments-panel-empty {
@@ -1815,13 +1850,43 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   border-top: 1px solid var(--crit-border);
 }
 .comments-panel-file-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 10px 12px 2px;
   font-family: var(--crit-font-mono);
   font-size: 11px;
   color: var(--crit-editor-fg-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.comments-panel-file-name:hover {
+  color: var(--crit-editor-fg);
+}
+.comments-panel-file-chevron {
+  flex-shrink: 0;
+  font-size: 9px;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+.comments-panel-file-group.collapsed .comments-panel-file-chevron {
+  transform: rotate(-90deg);
+}
+.comments-panel-file-name-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+}
+.comments-panel-file-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--crit-editor-fg-muted);
+  opacity: 0.6;
+  margin-left: auto;
+}
+.comments-panel-file-group.collapsed .comments-panel-file-cards {
+  display: none;
 }
 
 /* Panel comment blocks — reuse inline .comment-card inside panel */
