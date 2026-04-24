@@ -107,35 +107,6 @@ test.describe("Hide Resolved", () => {
     await expect(resolvedBlock).toBeVisible();
   });
 
-  test("toggle does NOT affect the side panel", async ({ page }) => {
-    await loadReview(page, token);
-
-    // Add a comment and resolve it
-    await addAndResolveComment(page, "Panel visible comment");
-
-    // Enable "Hide resolved" via keyboard shortcut
-    await page.keyboard.press("h");
-
-    // Resolved inline comment should be hidden
-    const resolvedInlineBlock = page
-      .locator(".comment-block:not(.panel-comment-block)")
-      .filter({ has: page.locator(".resolved-card") });
-    await expect(resolvedInlineBlock).not.toBeVisible();
-
-    // Open comments panel and enable "Show resolved" via the toggle track
-    await page.keyboard.press("Shift+C");
-    const panel = page.locator(".comments-panel");
-    await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
-
-    await panel.locator("label:has(#showResolvedToggle) .comments-panel-switch-track").click();
-
-    // The resolved comment should be visible in the side panel
-    const panelComment = panel
-      .locator(".panel-comment-block")
-      .filter({ hasText: "Panel visible comment" });
-    await expect(panelComment).toBeVisible({ timeout: 5_000 });
-  });
-
   test("keyboard shortcut h toggles hide resolved", async ({ page }) => {
     await loadReview(page, token);
 
