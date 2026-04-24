@@ -145,10 +145,10 @@ defmodule CritWeb.PageHTML do
     %{
       id: "claude-code",
       name: "Claude Code",
-      copy: "/plugin marketplace add tomasz-tomczyk/crit\n/plugin install crit",
+      copy: "claude plugin marketplace add tomasz-tomczyk/crit\nclaude plugin install crit@crit",
       lines: [
-        %{type: :cmd, prompt: "> ", text: "/plugin marketplace add tomasz-tomczyk/crit"},
-        %{type: :cmd, prompt: "> ", text: "/plugin install crit"},
+        %{type: :cmd, prompt: "$ ", text: "claude plugin marketplace add tomasz-tomczyk/crit"},
+        %{type: :cmd, prompt: "$ ", text: "claude plugin install crit@crit"},
         %{type: :output, text: "Installed crit (skills: crit, crit-cli)"}
       ]
     },
