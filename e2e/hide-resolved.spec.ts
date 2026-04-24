@@ -20,9 +20,9 @@ async function addAndResolveComment(
   const card = page.locator(".comment-card").filter({ hasText: body });
   await card.locator(".resolve-btn").click();
 
-  // Wait for the resolved-card class to appear
+  // Wait for the resolved-card class to appear (card DOM is replaced on resolve)
   await expect(
-    card.locator(".resolve-btn--active")
+    page.locator(".comment-card.resolved-card")
   ).toBeVisible({ timeout: 5_000 });
 }
 
@@ -73,12 +73,12 @@ test.describe("Hide Resolved", () => {
     await openSettingsPane(page);
 
     const toggle = page.locator("#hideResolvedToggle");
-    await expect(toggle).toBeVisible();
+    await expect(toggle).toBeAttached();
 
     // Should be unchecked by default
     await expect(toggle).not.toBeChecked();
 
-    // Verify it is labeled
+    // Verify the label is visible
     await expect(
       page.locator(".settings-display-label", { hasText: "Hide resolved" })
     ).toBeVisible();
@@ -96,9 +96,10 @@ test.describe("Hide Resolved", () => {
       .filter({ has: page.locator(".resolved-card") });
     await expect(resolvedBlock).toBeVisible();
 
-    // Enable "Hide resolved" in settings
+    // Enable "Hide resolved" in settings (checkbox is visually hidden behind switch)
     await openSettingsPane(page);
-    await page.locator("#hideResolvedToggle").check();
+    const hideRow = page.locator(".settings-display-row").filter({ hasText: "Hide resolved" });
+    await hideRow.locator(".comments-panel-switch").click();
 
     // Close settings to see the document
     await page.locator("#settingsToggle").click();
@@ -128,9 +129,10 @@ test.describe("Hide Resolved", () => {
     const panel = page.locator(".comments-panel");
     await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
 
-    // Check "Show resolved" in the panel
-    const showResolvedToggle = panel.locator("#showResolvedToggle");
-    await showResolvedToggle.check();
+    // Click "Show resolved" label in the panel (checkbox is visually hidden)
+    const filterLabel = panel.locator(".comments-panel-switch");
+    await expect(filterLabel).toBeVisible({ timeout: 5_000 });
+    await filterLabel.click();
 
     // The resolved comment should be visible in the side panel
     const panelComment = panel
