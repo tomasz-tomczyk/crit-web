@@ -96,17 +96,15 @@ test.describe("Hide Resolved", () => {
       .filter({ has: page.locator(".resolved-card") });
     await expect(resolvedBlock).toBeVisible();
 
-    // Enable "Hide resolved" in settings (checkbox is visually hidden behind switch)
-    await openSettingsPane(page);
-    const hideRow = page.locator(".settings-display-row").filter({ hasText: "Hide resolved" });
-    await hideRow.locator(".comments-panel-switch-track").click();
-
-    // Close settings to see the document
-    await page.keyboard.press("Escape");
-    await expect(page.locator("#settingsOverlay.active")).not.toBeVisible();
+    // Enable "Hide resolved" via keyboard shortcut
+    await page.keyboard.press("h");
 
     // The resolved comment block should now be hidden
     await expect(resolvedBlock).not.toBeVisible();
+
+    // Press h again to verify it toggles back
+    await page.keyboard.press("h");
+    await expect(resolvedBlock).toBeVisible();
   });
 
   test("toggle does NOT affect the side panel", async ({ page }) => {
@@ -115,7 +113,7 @@ test.describe("Hide Resolved", () => {
     // Add a comment and resolve it
     await addAndResolveComment(page, "Panel visible comment");
 
-    // Enable "Hide resolved" via keyboard shortcut for speed
+    // Enable "Hide resolved" via keyboard shortcut
     await page.keyboard.press("h");
 
     // Resolved inline comment should be hidden
@@ -124,15 +122,12 @@ test.describe("Hide Resolved", () => {
       .filter({ has: page.locator(".resolved-card") });
     await expect(resolvedInlineBlock).not.toBeVisible();
 
-    // Open comments panel
+    // Open comments panel and enable "Show resolved" via the toggle track
     await page.keyboard.press("Shift+C");
     const panel = page.locator(".comments-panel");
     await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
 
-    // Click "Show resolved" label in the panel (checkbox is visually hidden)
-    const filterLabel = panel.locator(".comments-panel-switch");
-    await expect(filterLabel).toBeVisible({ timeout: 5_000 });
-    await filterLabel.click();
+    await panel.locator("#showResolvedToggle + .comments-panel-switch-track").click();
 
     // The resolved comment should be visible in the side panel
     const panelComment = panel
