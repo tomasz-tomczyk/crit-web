@@ -102,7 +102,7 @@ test.describe("Hide Resolved", () => {
     await hideRow.locator(".comments-panel-switch").click();
 
     // Close settings to see the document
-    await page.locator("#settingsToggle").click();
+    await page.keyboard.press("Escape");
     await expect(page.locator("#settingsOverlay.active")).not.toBeVisible();
 
     // The resolved comment block should now be hidden
