@@ -3254,7 +3254,7 @@ function renderCommentsPanel(ctx) {
   const savedScroll = body.scrollTop
   body.innerHTML = ''
 
-  const activeFilter = panel._activeFilter || 'all'
+  const activeFilter = ctx._commentsActiveFilter || 'all'
 
   // Compute counts for badge and pill
   const totalCount = ctx.comments.length
@@ -3392,8 +3392,22 @@ function createFileGroupHeader(label, count, groupEl) {
   countEl.textContent = count
   groupName.appendChild(countEl)
 
-  groupName.addEventListener('click', () => {
+  groupName.setAttribute('role', 'button')
+  groupName.setAttribute('tabindex', '0')
+  groupName.setAttribute('aria-expanded', 'true')
+
+  const toggleGroup = () => {
     groupEl.classList.toggle('collapsed')
+    const expanded = !groupEl.classList.contains('collapsed')
+    groupName.setAttribute('aria-expanded', String(expanded))
+  }
+
+  groupName.addEventListener('click', toggleGroup)
+  groupName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      toggleGroup()
+    }
   })
 
   return groupName
@@ -4039,9 +4053,9 @@ export const DocumentRenderer = {
         </div>
         <div class="comments-panel-header-row2">
           <div class="comments-filter-toggle crit-diff-mode-toggle" id="commentsFilterPill" role="group" aria-label="Filter comments">
-            <button class="crit-toggle-btn crit-toggle-btn--active" data-filter="all">All <span class="filter-count">0</span></button>
-            <button class="crit-toggle-btn" data-filter="open">Open <span class="filter-count">0</span></button>
-            <button class="crit-toggle-btn" data-filter="resolved">Resolved <span class="filter-count">0</span></button>
+            <button class="crit-toggle-btn crit-toggle-btn--active" data-filter="all" aria-pressed="true">All <span class="filter-count">0</span></button>
+            <button class="crit-toggle-btn" data-filter="open" aria-pressed="false">Open <span class="filter-count">0</span></button>
+            <button class="crit-toggle-btn" data-filter="resolved" aria-pressed="false">Resolved <span class="filter-count">0</span></button>
           </div>
           <button class="comments-panel-expand-all" id="commentsPanelExpandAll">Expand all</button>
         </div>
@@ -4049,7 +4063,7 @@ export const DocumentRenderer = {
       <div class="comments-panel-body"></div>
     `
     // Track active filter: 'all', 'open', 'resolved'
-    commentsPanel._activeFilter = 'all'
+    ctx._commentsActiveFilter = 'all'
 
     commentsPanel.querySelector('.comments-panel-add-btn').addEventListener('click', () => {
       openReviewCommentForm(ctx)
@@ -4066,9 +4080,13 @@ export const DocumentRenderer = {
       const btn = e.target.closest('.crit-toggle-btn')
       if (!btn) return
       const filter = btn.dataset.filter
-      commentsPanel._activeFilter = filter
-      filterPill.querySelectorAll('.crit-toggle-btn').forEach(b => b.classList.remove('crit-toggle-btn--active'))
+      ctx._commentsActiveFilter = filter
+      filterPill.querySelectorAll('.crit-toggle-btn').forEach(b => {
+        b.classList.remove('crit-toggle-btn--active')
+        b.setAttribute('aria-pressed', 'false')
+      })
       btn.classList.add('crit-toggle-btn--active')
+      btn.setAttribute('aria-pressed', 'true')
       renderCommentsPanel(ctx)
     })
 
