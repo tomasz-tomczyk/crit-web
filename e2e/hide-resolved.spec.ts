@@ -99,7 +99,7 @@ test.describe("Hide Resolved", () => {
     // Enable "Hide resolved" in settings (checkbox is visually hidden behind switch)
     await openSettingsPane(page);
     const hideRow = page.locator(".settings-display-row").filter({ hasText: "Hide resolved" });
-    await hideRow.locator(".comments-panel-switch").click();
+    await hideRow.locator(".comments-panel-switch-track").click();
 
     // Close settings to see the document
     await page.keyboard.press("Escape");
