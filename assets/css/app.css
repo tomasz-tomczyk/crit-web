@@ -1775,18 +1775,8 @@ body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
   padding: 10px 16px 12px;
 }
 
-/* Comments filter — reuses .scope-toggle + .toggle-btn pattern */
-.comments-filter-toggle {
-  display: inline-flex;
-  background: var(--crit-editor-bg-elevated);
-  border: 1px solid var(--crit-border);
-  border-radius: 6px;
-  padding: 2px;
-  gap: 1px;
-}
-.comments-filter-toggle .toggle-btn {
-  font-size: 11px;
-  padding: 3px 10px;
+/* Comments filter — reuses .crit-toggle-btn pattern */
+.comments-filter-toggle .crit-toggle-btn {
   display: flex;
   align-items: center;
   gap: 4px;

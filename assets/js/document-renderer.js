@@ -3266,7 +3266,7 @@ function renderCommentsPanel(ctx) {
   if (badge) badge.textContent = totalCount
 
   // Update pill counts
-  const pillBtns = panel.querySelectorAll('.toggle-btn')
+  const pillBtns = panel.querySelectorAll('.crit-toggle-btn')
   pillBtns.forEach(btn => {
     const countEl = btn.querySelector('.filter-count')
     if (!countEl) return
@@ -4038,10 +4038,10 @@ export const DocumentRenderer = {
           </div>
         </div>
         <div class="comments-panel-header-row2">
-          <div class="comments-filter-toggle" id="commentsFilterPill" role="group" aria-label="Filter comments">
-            <button class="toggle-btn active" data-filter="all">All <span class="filter-count">0</span></button>
-            <button class="toggle-btn" data-filter="open">Open <span class="filter-count">0</span></button>
-            <button class="toggle-btn" data-filter="resolved">Resolved <span class="filter-count">0</span></button>
+          <div class="comments-filter-toggle crit-toggle-group" id="commentsFilterPill" role="group" aria-label="Filter comments">
+            <button class="crit-toggle-btn crit-toggle-btn--active" data-filter="all">All <span class="filter-count">0</span></button>
+            <button class="crit-toggle-btn" data-filter="open">Open <span class="filter-count">0</span></button>
+            <button class="crit-toggle-btn" data-filter="resolved">Resolved <span class="filter-count">0</span></button>
           </div>
           <button class="comments-panel-expand-all" id="commentsPanelExpandAll">Expand all</button>
         </div>
@@ -4063,12 +4063,12 @@ export const DocumentRenderer = {
     // Segmented pill filter
     const filterPill = commentsPanel.querySelector('#commentsFilterPill')
     filterPill.addEventListener('click', (e) => {
-      const btn = e.target.closest('.toggle-btn')
+      const btn = e.target.closest('.crit-toggle-btn')
       if (!btn) return
       const filter = btn.dataset.filter
       commentsPanel._activeFilter = filter
-      filterPill.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
+      filterPill.querySelectorAll('.crit-toggle-btn').forEach(b => b.classList.remove('crit-toggle-btn--active'))
+      btn.classList.add('crit-toggle-btn--active')
       renderCommentsPanel(ctx)
     })
 
