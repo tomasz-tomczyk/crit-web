@@ -67,7 +67,7 @@ crit-web/
 
 1. **Review page rendering** — the LiveView loads review data, then `document-renderer.js` (a Phoenix hook) renders the markdown client-side using markdown-it + highlight.js + mermaid. This mirrors how `crit` local renders.
 2. **API for CLI uploads** — `POST /api/reviews` accepts `{document, comments, metadata}` from the CLI's Share button. Returns `{url, delete_token}`.
-3. **Delete via token** — reviews are deleted by passing the `delete_token` (not auth). The CLI stores this in `.crit.json`.
+3. **Delete via token** — reviews are deleted by passing the `delete_token` (not auth). The CLI stores this in the review file.
 4. **Rate limiting** — Hammer-based, applied to API create/delete endpoints.
 5. **Identity** — session-based visitor ID via `Plugs.Identity`, used for display names on comments.
 6. **Comment threading** — comments support nested replies (`parent_id` self-referential FK) and a `resolved` boolean. The review LiveView handles reply CRUD and resolve/unresolve via `push_event`.

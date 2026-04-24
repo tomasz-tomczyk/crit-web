@@ -95,7 +95,7 @@ defmodule Crit.Output do
     |> Enum.join("\n\n---\n\n")
   end
 
-  @doc "Serialize review + comments to .crit.json shape for agent consumption."
+  @doc "Serialize review + comments to review file shape for agent consumption."
   def multi_file_comments_json(review, files, comments, base_url) do
     comments_by_file =
       comments
