@@ -127,7 +127,7 @@ test.describe("Hide Resolved", () => {
     const panel = page.locator(".comments-panel");
     await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
 
-    await panel.locator("#showResolvedToggle + .comments-panel-switch-track").click();
+    await panel.locator("label:has(#showResolvedToggle) .comments-panel-switch-track").click();
 
     // The resolved comment should be visible in the side panel
     const panelComment = panel
