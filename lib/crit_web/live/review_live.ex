@@ -66,12 +66,19 @@ defmodule CritWeb.ReviewLive do
             ""
           end
 
+        cli_args = review.cli_args || []
+
         local_prompt_text =
           "Run `crit fetch` to pull the latest review comments (it prints the review file path and each comment). " <>
             "If you need the full comment text, read the review file — run `crit status` to find its path. " <>
             "Address each unresolved comment in the relevant file at the referenced location, " <>
             "then reply with `crit comment --reply-to <id> --author 'Claude Code' '<what you did>'`. " <>
-            "When all comments are addressed, run `crit share #{file_paths}` to post the updated files and replies back."
+            "When all comments are addressed, run `crit share #{file_paths}` to post the updated files and replies back." <>
+            if(cli_args != [],
+              do:
+                " Then run `crit #{Enum.join(cli_args, " ")}` to refresh the local review session with your changes.",
+              else: ""
+            )
 
         export_url = CritWeb.Endpoint.url() <> ~p"/api/export/#{review.token}/review"
 

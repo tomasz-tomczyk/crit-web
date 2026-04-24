@@ -11,6 +11,7 @@ defmodule CritWeb.ApiController do
 
   def create(conn, %{"files" => files} = params) when is_list(files) and files != [] do
     review_round = params["review_round"]
+    cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
     user_id = conn.assigns[:current_user] && conn.assigns[:current_user].id
@@ -24,7 +25,8 @@ defmodule CritWeb.ApiController do
 
       true ->
         case Reviews.create_review(files, review_round, comments, review_comments,
-               user_id: user_id
+               user_id: user_id,
+               cli_args: cli_args
              ) do
           {:ok, review} ->
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
@@ -43,6 +45,7 @@ defmodule CritWeb.ApiController do
   def create(conn, %{"content" => content} = params) do
     filename = params["filename"]
     review_round = params["review_round"]
+    cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
     user_id = conn.assigns[:current_user] && conn.assigns[:current_user].id
@@ -59,7 +62,8 @@ defmodule CritWeb.ApiController do
 
       true ->
         case Reviews.create_review(files, review_round, comments_with_file, review_comments,
-               user_id: user_id
+               user_id: user_id,
+               cli_args: cli_args
              ) do
           {:ok, review} ->
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
@@ -153,7 +157,7 @@ defmodule CritWeb.ApiController do
 
   def update(conn, %{"token" => token} = params) do
     delete_token = params["delete_token"]
-    payload = Map.take(params, ["files", "comments", "review_round"])
+    payload = Map.take(params, ["files", "comments", "review_round", "cli_args"])
 
     case Reviews.upsert_review(token, delete_token, payload) do
       {:ok, :updated, review} ->

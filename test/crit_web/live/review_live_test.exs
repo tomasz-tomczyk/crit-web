@@ -306,6 +306,38 @@ defmodule CritWeb.ReviewLiveTest do
       assert html =~ "crit fetch"
       assert html =~ "Act on comments"
     end
+
+    test "local prompt includes cli_args when present", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "# Test"}],
+          1,
+          [],
+          [],
+          cli_args: ["plan.md", "design.md"]
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      html =
+        view
+        |> element("#crit-prompt-panel")
+        |> render()
+
+      assert html =~ "crit plan.md design.md"
+      assert html =~ "refresh the local review session"
+    end
+
+    test "local prompt omits refresh instruction when no cli_args", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      html =
+        view
+        |> element("#crit-prompt-panel")
+        |> render()
+
+      refute html =~ "refresh the local review session"
+    end
   end
 
   describe "PubSub handle_info forwarding" do

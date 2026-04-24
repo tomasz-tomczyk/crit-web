@@ -6,6 +6,7 @@ defmodule Crit.Review do
     field :delete_token, :string
     field :last_activity_at, :utc_datetime
     field :review_round, :integer, default: 0
+    field :cli_args, {:array, :string}, default: []
 
     belongs_to :user, Crit.User, type: :binary_id
 
@@ -20,7 +21,7 @@ defmodule Crit.Review do
   @doc "Changeset for creating a new review."
   def create_changeset(review, attrs) do
     review
-    |> cast(attrs, [:review_round])
+    |> cast(attrs, [:review_round, :cli_args])
     |> put_token()
     |> put_delete_token()
     |> put_last_activity_at()

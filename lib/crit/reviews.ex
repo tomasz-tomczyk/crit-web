@@ -130,13 +130,14 @@ defmodule Crit.Reviews do
       ) do
     total_size = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
     user_id = Keyword.get(opts, :user_id)
+    cli_args = Keyword.get(opts, :cli_args) || []
 
     if total_size > @max_total_size do
       {:error, :total_size_exceeded}
     else
       review_changeset =
         %Review{}
-        |> Review.create_changeset(%{"review_round" => review_round || 0})
+        |> Review.create_changeset(%{"review_round" => review_round || 0, "cli_args" => cli_args})
         |> then(fn cs ->
           if user_id, do: Ecto.Changeset.put_change(cs, :user_id, user_id), else: cs
         end)
@@ -199,9 +200,14 @@ defmodule Crit.Reviews do
     with {:ok, review} <- fetch_review_for_update(token, delete_token) do
       files = payload["files"] || []
       comments = payload["comments"] || []
+      cli_args = payload["cli_args"]
+
+      review_changes =
+        if cli_args, do: %{cli_args: cli_args}, else: %{}
 
       if content_changed?(review, files) do
         new_round = review.review_round + 1
+        review_changes = Map.put(review_changes, :review_round, new_round)
 
         Ecto.Multi.new()
         |> Ecto.Multi.run(:snapshots, fn _repo, _changes ->
@@ -216,7 +222,7 @@ defmodule Crit.Reviews do
             {:error, _} = error -> error
           end
         end)
-        |> Ecto.Multi.update(:review, Ecto.Changeset.change(review, review_round: new_round))
+        |> Ecto.Multi.update(:review, Ecto.Changeset.change(review, review_changes))
         |> Repo.transaction()
         |> case do
           {:ok, %{review: updated}} ->
@@ -234,15 +240,27 @@ defmodule Crit.Reviews do
             {:error, reason}
         end
       else
-        Ecto.Multi.new()
-        |> Ecto.Multi.run(:comments, fn _repo, _changes ->
-          case replace_comments(review, comments) do
-            :ok -> {:ok, :ok}
-            {:error, _} = error -> error
+        multi = Ecto.Multi.new()
+
+        multi =
+          Ecto.Multi.run(multi, :comments, fn _repo, _changes ->
+            case replace_comments(review, comments) do
+              :ok -> {:ok, :ok}
+              {:error, _} = error -> error
+            end
+          end)
+
+        multi =
+          if review_changes != %{} do
+            Ecto.Multi.update(multi, :review, Ecto.Changeset.change(review, review_changes))
+          else
+            multi
           end
-        end)
+
+        multi
         |> Repo.transaction()
         |> case do
+          {:ok, %{review: updated}} -> {:ok, :no_changes, updated}
           {:ok, _} -> {:ok, :no_changes, review}
           {:error, _step, reason, _changes} -> {:error, reason}
         end

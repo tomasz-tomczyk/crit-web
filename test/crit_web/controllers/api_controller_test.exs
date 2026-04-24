@@ -270,6 +270,105 @@ defmodule CritWeb.ApiControllerTest do
     end
   end
 
+  describe "POST /api/reviews with cli_args" do
+    test "stores cli_args through multi-file create", %{conn: conn} do
+      payload = %{
+        "files" => [%{"path" => "plan.md", "content" => "# Plan"}],
+        "review_round" => 1,
+        "cli_args" => ["plan.md", "design.md"]
+      }
+
+      conn = post(conn, ~p"/api/reviews", payload)
+      assert %{"url" => url} = json_response(conn, 201)
+      token = url |> String.split("/") |> List.last()
+
+      review = Reviews.get_by_token(token)
+      assert review.cli_args == ["plan.md", "design.md"]
+    end
+
+    test "stores cli_args through single-file create", %{conn: conn} do
+      payload = %{
+        "content" => "# Plan",
+        "filename" => "plan.md",
+        "cli_args" => ["plan.md"]
+      }
+
+      conn = post(conn, ~p"/api/reviews", payload)
+      assert %{"url" => url} = json_response(conn, 201)
+      token = url |> String.split("/") |> List.last()
+
+      review = Reviews.get_by_token(token)
+      assert review.cli_args == ["plan.md"]
+    end
+
+    test "defaults cli_args to empty list when not provided", %{conn: conn} do
+      payload = %{
+        "files" => [%{"path" => "plan.md", "content" => "# Plan"}]
+      }
+
+      conn = post(conn, ~p"/api/reviews", payload)
+      assert %{"url" => url} = json_response(conn, 201)
+      token = url |> String.split("/") |> List.last()
+
+      review = Reviews.get_by_token(token)
+      assert review.cli_args == []
+    end
+  end
+
+  describe "PUT /api/reviews/:token with cli_args" do
+    test "updates cli_args on content change", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "# v1"}],
+          1,
+          [],
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "plan.md", content: "# v2"}],
+          comments: [],
+          review_round: 1,
+          cli_args: ["plan.md"]
+        })
+
+      assert %{"changed" => true} = json_response(conn, 200)
+
+      updated = Reviews.get_by_token(review.token)
+      assert updated.cli_args == ["plan.md"]
+    end
+
+    test "updates cli_args even when content unchanged", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          [%{"path" => "plan.md", "content" => "same"}],
+          1,
+          [],
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "plan.md", content: "same"}],
+          comments: [],
+          review_round: 1,
+          cli_args: ["plan.md"]
+        })
+
+      assert %{"changed" => false} = json_response(conn, 200)
+
+      updated = Reviews.get_by_token(review.token)
+      assert updated.cli_args == ["plan.md"]
+    end
+  end
+
   describe "POST /api/reviews multi-file" do
     test "creates a multi-file review", %{conn: conn} do
       payload = %{
