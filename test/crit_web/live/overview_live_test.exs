@@ -135,7 +135,7 @@ defmodule CritWeb.OverviewLiveTest do
 
       html = render(view)
       refute html =~ hd(review.files).file_path
-      assert html =~ ~r/All Reviews.*?>0</
+      assert html =~ ~r/All Reviews[^<]*<[^>]*>0</
     end
   end
 
@@ -145,7 +145,7 @@ defmodule CritWeb.OverviewLiveTest do
     test "shows empty message when no reviews", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/overview")
 
-      assert html =~ ~r/All Reviews.*?>0</
+      assert html =~ ~r/All Reviews[^<]*<[^>]*>0</
       assert html =~ "No reviews yet"
     end
   end
@@ -158,14 +158,14 @@ defmodule CritWeb.OverviewLiveTest do
       comment_fixture(review)
 
       {:ok, view, html} = live(conn, ~p"/overview")
-      assert html =~ ~r/All Reviews.*?>1</
+      assert html =~ ~r/All Reviews[^<]*<[^>]*>1</
 
       view
       |> element("button[phx-value-id='#{review.id}']")
       |> render_click()
 
       html = render(view)
-      assert html =~ ~r/All Reviews.*?>0</
+      assert html =~ ~r/All Reviews[^<]*<[^>]*>0</
     end
   end
 
@@ -212,8 +212,8 @@ defmodule CritWeb.OverviewLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/overview")
 
-      assert html =~ ~r{>1</span>\s*comment}
-      assert html =~ ~r{>1</span>\s*file}
+      assert html =~ ~r{>\s*1\s*</span>\s*comment}
+      assert html =~ ~r{>\s*1\s*</span>\s*file}
     end
 
     test "review links to /r/:token", %{conn: conn} do
