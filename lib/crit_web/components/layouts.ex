@@ -108,17 +108,31 @@ defmodule CritWeb.Layouts do
   end
 
   @doc """
-  Shared site header with navigation links, used across all public pages.
+  Shared site header with marketing navigation, used across all public pages.
+
+  Layout mirrors `dashboard_header/1`: a single chrome row with the logo on
+  the left and (on desktop) primary marketing nav as pills, a vertical
+  divider, then the identity popover (or "Sign in"), theme toggle, and a
+  mobile hamburger. Pass `current_page` to mark the active marketing tab.
   """
   attr :current_user, :any, default: nil
 
+  attr :current_page, :atom,
+    default: nil,
+    doc: "one of :features, :getting_started, :self_hosting, :changelog, :integrations"
+
   def site_header(assigns) do
+    assigns =
+      assigns
+      |> assign(:user_initial, user_initial(assigns.current_user))
+      |> assign(:github_oauth?, github_oauth?())
+
     ~H"""
-    <header class="border-b border-(--crit-border) bg-(--crit-bg-card)">
-      <div class="max-w-7xl mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
+    <header class="bg-(--crit-bg-card) border-b border-(--crit-border)">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 px-8 py-3.5 max-sm:px-4 max-sm:py-3">
         <a
           href={~p"/"}
-          class="text-(--crit-fg-primary) no-underline transition-colors"
+          class="text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
         >
           <svg class="h-5 w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
             <g transform="scale(1,-1)">
@@ -145,163 +159,257 @@ defmodule CritWeb.Layouts do
             </g>
           </svg>
         </a>
-        <nav class="flex items-center gap-6 max-sm:hidden">
-          <a
-            href={~p"/features"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
-          >
-            Features
-          </a>
-          <a
-            href={~p"/getting-started"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
-          >
-            Get Started
-          </a>
-          <a
-            href={~p"/self-hosting"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
-          >
-            Self-Hosting
-          </a>
-          <a
-            href={~p"/changelog"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
-          >
-            Changelog
-          </a>
-          <a
-            href="https://github.com/tomasz-tomczyk/crit"
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors flex items-center gap-1.5"
-          >
-            <svg viewBox="0 0 16 16" class="size-4 fill-current" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            GitHub
-          </a>
-          <%= if @current_user do %>
+
+        <div class="flex items-center gap-1.5">
+          <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
+            <.nav_link href={~p"/features"} active={@current_page == :features}>
+              Features
+            </.nav_link>
+            <.nav_link href={~p"/getting-started"} active={@current_page == :getting_started}>
+              Get Started
+            </.nav_link>
+            <.nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
+              Self-Hosting
+            </.nav_link>
+            <.nav_link href={~p"/changelog"} active={@current_page == :changelog}>
+              Changelog
+            </.nav_link>
             <a
-              href={~p"/dashboard"}
-              class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+              href="https://github.com/tomasz-tomczyk/crit"
+              class="inline-flex items-center gap-1.5 h-[30px] px-2.5 rounded-md text-[13px] font-medium tracking-tight no-underline text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
             >
-              Dashboard
+              <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+              </svg>
+              GitHub
             </a>
-            <div class="flex items-center gap-3">
-              <%= if @current_user.avatar_url do %>
-                <img
-                  src={@current_user.avatar_url}
-                  alt={@current_user.name}
-                  class="h-6 w-6 rounded-full"
+          </nav>
+
+          <span
+            aria-hidden="true"
+            class="w-px h-4 bg-(--crit-border-strong) mx-1.5 max-sm:hidden"
+          >
+          </span>
+
+          <%= if @current_user do %>
+            <div class="max-sm:hidden">
+              <.nav_link href={~p"/dashboard"}>Dashboard</.nav_link>
+            </div>
+
+            <div class="relative max-sm:hidden">
+              <button
+                id="site-identity-toggle"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-controls="site-identity-popover"
+                phx-click={
+                  JS.toggle_attribute({"hidden", "hidden"}, to: "#site-identity-popover")
+                  |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+                }
+                class="group inline-flex items-center gap-1.5 h-[30px] pl-0.5 pr-1.5 rounded-md text-(--crit-fg-secondary) hover:bg-(--crit-row-hover) hover:text-(--crit-fg-primary) aria-expanded:bg-(--crit-bg-card) aria-expanded:text-(--crit-fg-primary) cursor-pointer transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]"
+                aria-label="Account menu"
+              >
+                <%= if @current_user.avatar_url do %>
+                  <img
+                    src={@current_user.avatar_url}
+                    alt=""
+                    class="h-6 w-6 rounded-full flex-shrink-0"
+                  />
+                <% else %>
+                  <span class="h-6 w-6 rounded-full bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[10.5px] font-semibold flex-shrink-0">
+                    {@user_initial}
+                  </span>
+                <% end %>
+                <.icon
+                  name="hero-chevron-down-micro"
+                  class="size-3 text-(--crit-fg-muted) transition-transform group-aria-expanded:rotate-180 group-aria-expanded:text-(--crit-fg-secondary) flex-shrink-0"
                 />
-              <% end %>
-              <a
-                href={~p"/settings"}
-                class="text-sm text-(--crit-fg-primary) no-underline hover:text-(--crit-brand) transition-colors"
+              </button>
+
+              <div
+                id="site-identity-popover"
+                role="menu"
+                aria-label="Account menu"
+                hidden
+                phx-hook=".SiteIdentityPopover"
+                class="absolute right-0 top-[calc(100%+8px)] min-w-[280px] bg-(--crit-popover-bg) border border-(--crit-border-strong) rounded-[10px] p-1.5 z-40 shadow-[var(--crit-popover-shadow)]"
               >
-                {@current_user.name || @current_user.email}
-              </a>
-              <.link
-                href={~p"/auth/logout"}
-                method="delete"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) transition-colors"
-              >
-                Sign out
-              </.link>
+                <script :type={Phoenix.LiveView.ColocatedHook} name=".SiteIdentityPopover">
+                  export default {
+                    mounted() {
+                      this.onDocClick = (e) => {
+                        if (this.el.hidden) return
+                        const trigger = document.getElementById("site-identity-toggle")
+                        if (this.el.contains(e.target) || trigger?.contains(e.target)) return
+                        this.el.hidden = true
+                        trigger?.setAttribute("aria-expanded", "false")
+                      }
+                      this.onKey = (e) => {
+                        if (e.key === "Escape" && !this.el.hidden) {
+                          this.el.hidden = true
+                          document.getElementById("site-identity-toggle")
+                            ?.setAttribute("aria-expanded", "false")
+                        }
+                      }
+                      document.addEventListener("click", this.onDocClick)
+                      document.addEventListener("keydown", this.onKey)
+                    },
+                    destroyed() {
+                      document.removeEventListener("click", this.onDocClick)
+                      document.removeEventListener("keydown", this.onKey)
+                    }
+                  }
+                </script>
+                <div class="flex gap-3 items-start px-3 pt-3 pb-3.5">
+                  <%= if @current_user.avatar_url do %>
+                    <img
+                      src={@current_user.avatar_url}
+                      alt=""
+                      class="h-9 w-9 rounded-md flex-shrink-0"
+                    />
+                  <% else %>
+                    <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                      {@user_initial}
+                    </span>
+                  <% end %>
+                  <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="text-[13px] font-semibold text-(--crit-fg-primary) leading-tight">
+                      {@current_user.name || @current_user.email}
+                    </span>
+                    <%= if @current_user.name && @current_user.email do %>
+                      <span class="text-xs text-(--crit-fg-muted) leading-tight truncate max-w-[200px]">
+                        {@current_user.email}
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="h-px bg-(--crit-border) my-0.5"></div>
+
+                <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-3 pt-2 pb-1">
+                  Account
+                </div>
+                <.link
+                  navigate={~p"/settings"}
+                  role="menuitem"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
+                >
+                  <.icon name="hero-cog-6-tooth-mini" class="size-3.5 text-(--crit-fg-muted)" />
+                  <span>Settings</span>
+                </.link>
+
+                <div class="h-px bg-(--crit-border) my-0.5"></div>
+
+                <.link
+                  href={~p"/auth/logout"}
+                  method="delete"
+                  role="menuitem"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
+                >
+                  <.icon name="hero-arrow-right-on-rectangle-mini" class="size-3.5" />
+                  <span>Sign out</span>
+                </.link>
+              </div>
             </div>
           <% else %>
             <a
               href={~p"/auth/login?return_to=/dashboard"}
-              class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+              class="inline-flex items-center gap-1.5 h-[30px] px-3 mr-1.5 rounded-md text-[13px] font-medium tracking-tight no-underline bg-(--crit-brand-cta) text-white hover:bg-(--crit-brand-cta-hover) transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]"
             >
+              <%= if @github_oauth? do %>
+                <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+              <% end %>
               Sign in
             </a>
           <% end %>
+
           <.theme_toggle />
-        </nav>
-        <%!-- Mobile: theme toggle + hamburger --%>
-        <div class="flex items-center gap-3 sm:hidden">
-          <.theme_toggle />
+
           <button
-            id="mobile-nav-toggle"
-            class="p-1 text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) cursor-pointer"
+            id="site-nav-toggle"
+            type="button"
+            phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#site-nav")}
+            class="sm:hidden p-1.5 rounded-md text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) cursor-pointer"
             aria-label="Toggle menu"
           >
             <.icon name="hero-bars-3" class="size-5" />
           </button>
         </div>
       </div>
-      <%!-- Mobile nav dropdown --%>
-      <div id="mobile-nav" class="hidden sm:hidden border-t border-(--crit-border)">
-        <div class="flex flex-col gap-1 px-10 py-3">
-          <a
-            href={~p"/features"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-1.5"
-          >
+
+      <%!-- Mobile drawer --%>
+      <div
+        id="site-nav"
+        hidden
+        class="sm:hidden bg-(--crit-bg-card) border-t border-(--crit-border)"
+      >
+        <div class="flex flex-col gap-px px-3 pt-2 pb-3.5">
+          <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+            Site
+          </div>
+          <.nav_mobile_link href={~p"/features"} active={@current_page == :features}>
             Features
-          </a>
-          <a
+          </.nav_mobile_link>
+          <.nav_mobile_link
             href={~p"/getting-started"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-1.5"
+            active={@current_page == :getting_started}
           >
             Get Started
-          </a>
-          <a
-            href={~p"/self-hosting"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-1.5"
-          >
+          </.nav_mobile_link>
+          <.nav_mobile_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
             Self-Hosting
-          </a>
-          <a
-            href={~p"/changelog"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-1.5"
-          >
+          </.nav_mobile_link>
+          <.nav_mobile_link href={~p"/changelog"} active={@current_page == :changelog}>
             Changelog
-          </a>
+          </.nav_mobile_link>
           <a
             href="https://github.com/tomasz-tomczyk/crit"
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-1.5 flex items-center gap-1.5"
+            class="flex items-center gap-3 px-2 py-2.5 rounded-md text-sm font-medium no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover)"
           >
             <svg viewBox="0 0 16 16" class="size-4 fill-current" aria-hidden="true">
               <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
             </svg>
-            GitHub
+            <span>GitHub</span>
           </a>
+
           <%= if @current_user do %>
-            <a
-              href={~p"/dashboard"}
-              class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-1.5"
-            >
-              Dashboard
-            </a>
-            <a
-              href={~p"/settings"}
-              class="flex items-center gap-2 py-1.5 no-underline"
-            >
+            <div class="flex items-center gap-3 px-3 py-3 border-y border-(--crit-border) mt-1.5 mb-1.5">
               <%= if @current_user.avatar_url do %>
-                <img
-                  src={@current_user.avatar_url}
-                  alt={@current_user.name}
-                  class="h-5 w-5 rounded-full"
-                />
+                <img src={@current_user.avatar_url} alt="" class="h-9 w-9 rounded-md flex-shrink-0" />
+              <% else %>
+                <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                  {@user_initial}
+                </span>
               <% end %>
-              <span class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand)">
-                {@current_user.name || @current_user.email}
-              </span>
-            </a>
+              <div class="flex flex-col gap-0.5 min-w-0">
+                <span class="text-sm font-semibold text-(--crit-fg-primary) truncate">
+                  {@current_user.name || @current_user.email}
+                </span>
+                <%= if @current_user.name && @current_user.email do %>
+                  <span class="text-xs text-(--crit-fg-muted) truncate">
+                    {@current_user.email}
+                  </span>
+                <% end %>
+              </div>
+            </div>
+
+            <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+              Account
+            </div>
+            <.nav_mobile_link href={~p"/dashboard"}>Dashboard</.nav_mobile_link>
+            <.nav_mobile_link navigate={~p"/settings"}>Settings</.nav_mobile_link>
+
             <.link
               href={~p"/auth/logout"}
               method="delete"
-              class="text-sm text-red-400 hover:text-red-300 no-underline py-1.5"
+              class="flex items-center gap-3 px-2 py-2.5 rounded-md text-sm text-(--crit-red) no-underline hover:bg-(--crit-btn-danger-hover-bg)"
             >
-              Sign out
+              <.icon name="hero-arrow-right-on-rectangle-mini" class="size-4" />
+              <span>Sign out</span>
             </.link>
-          <% else %>
-            <a
-              href={~p"/auth/login?return_to=/dashboard"}
-              class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-1.5"
-            >
-              Sign in
-            </a>
           <% end %>
         </div>
       </div>
@@ -341,7 +449,7 @@ defmodule CritWeb.Layouts do
             href={~p"/dashboard"}
             class="text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
           >
-            <svg class="h-[18px] w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
+            <svg class="h-5 w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
               <g transform="scale(1,-1)">
                 <path
                   d="M628 -22Q459 -22 336.5 50.5Q214 123 147.5 252.5Q81 382 81 554Q81 727 147.5 857.0Q214 987 336.5 1059.5Q459 1132 628 1132Q827 1132 960.0 1032.5Q1093 933 1125 760L846 708Q827 795 772.5 845.5Q718 896 631 896Q511 896 449.0 801.5Q387 707 387 555Q387 405 449.0 309.5Q511 214 631 214Q718 214 774.0 266.5Q830 319 848 409L1127 358Q1095 181 962.0 79.5Q829 -22 628 -22Z"
@@ -390,13 +498,13 @@ defmodule CritWeb.Layouts do
         <div class="flex items-center gap-1.5">
           <%= if @current_user do %>
             <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
-              <.dashboard_link href={~p"/dashboard"} active={@current_page == :dashboard}>
+              <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
                 Dashboard
-              </.dashboard_link>
+              </.nav_link>
               <%= if @show_overview_link do %>
-                <.dashboard_link href={~p"/overview"} active={@current_page == :overview}>
+                <.nav_link href={~p"/overview"} active={@current_page == :overview}>
                   Overview
-                </.dashboard_link>
+                </.nav_link>
               <% end %>
             </nav>
 
@@ -578,21 +686,21 @@ defmodule CritWeb.Layouts do
             <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Navigate
             </div>
-            <.dashboard_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
+            <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
               Dashboard
-            </.dashboard_mobile_link>
+            </.nav_mobile_link>
             <%= if @show_overview_link do %>
-              <.dashboard_mobile_link href={~p"/overview"} active={@current_page == :overview}>
+              <.nav_mobile_link href={~p"/overview"} active={@current_page == :overview}>
                 Overview
-              </.dashboard_mobile_link>
+              </.nav_mobile_link>
             <% end %>
 
             <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Account
             </div>
-            <.dashboard_mobile_link navigate={~p"/settings"} active={@current_page == :settings}>
+            <.nav_mobile_link navigate={~p"/settings"} active={@current_page == :settings}>
               Settings
-            </.dashboard_mobile_link>
+            </.nav_mobile_link>
 
             <.link
               href={~p"/auth/logout"}
@@ -625,7 +733,7 @@ defmodule CritWeb.Layouts do
   attr :active, :boolean, default: false
   slot :inner_block, required: true
 
-  defp dashboard_link(assigns) do
+  defp nav_link(assigns) do
     ~H"""
     <.link
       href={@href}
@@ -650,7 +758,7 @@ defmodule CritWeb.Layouts do
   attr :active, :boolean, default: false
   slot :inner_block, required: true
 
-  defp dashboard_mobile_link(assigns) do
+  defp nav_mobile_link(assigns) do
     ~H"""
     <.link
       href={@href}
@@ -667,6 +775,10 @@ defmodule CritWeb.Layouts do
       {render_slot(@inner_block)}
     </.link>
     """
+  end
+
+  defp github_oauth? do
+    Application.get_env(:crit, :oauth_provider, [])[:strategy] == Assent.Strategy.Github
   end
 
   defp user_initial(%{name: name}) when is_binary(name) and name != "",
