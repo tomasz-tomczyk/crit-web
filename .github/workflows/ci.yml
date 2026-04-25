@@ -64,7 +64,14 @@ jobs:
       - name: Dependency audit
         run: mix deps.audit
 
-      - name: Run tests
-        run: mix test
+      - name: Run tests with coverage
+        run: mix coveralls.json
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost/crit_test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: cover/excoveralls.json
+          flags: unit
+          token: ${{ secrets.CODECOV_TOKEN }}

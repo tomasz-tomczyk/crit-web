@@ -1,6 +1,7 @@
 # Crit Web
 
 [![CI](https://github.com/tomasz-tomczyk/crit-web/actions/workflows/ci.yml/badge.svg)](https://github.com/tomasz-tomczyk/crit-web/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/tomasz-tomczyk/crit-web/graph/badge.svg)](https://codecov.io/gh/tomasz-tomczyk/crit-web)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/ghcr.io-crit--web-blue)](https://ghcr.io/tomasz-tomczyk/crit-web)
 
