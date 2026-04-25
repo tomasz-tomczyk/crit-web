@@ -110,8 +110,9 @@ document.addEventListener('click', function(e) {
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
-// Home page: copy buttons
+// Home page: copy buttons (skip elements owned by the dashboard LiveView hook)
 document.querySelectorAll(".copy-btn").forEach(btn => {
+  if (btn.closest("#empty-state")) return
   const defaultIcon = btn.querySelector(".icon-default")
   const copiedIcon = btn.querySelector(".icon-copied")
   btn.addEventListener("click", () => {
@@ -265,8 +266,9 @@ if (platformStats) {
   statsObserver.observe(platformStats)
 }
 
-// Home page: install tab switcher
+// Home page: install tab switcher (skip elements owned by the dashboard LiveView hook)
 document.querySelectorAll(".install-tab").forEach(tab => {
+  if (tab.closest("#empty-state")) return
   tab.addEventListener("click", () => {
     document.querySelectorAll(".install-tab").forEach(t => {
       t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
@@ -279,8 +281,9 @@ document.querySelectorAll(".install-tab").forEach(tab => {
   })
 })
 
-// Home page: agent setup copy buttons
+// Home page: agent setup copy buttons (skip elements owned by the dashboard LiveView hook)
 document.querySelectorAll(".agent-copy-btn").forEach(btn => {
+  if (btn.closest("#empty-state")) return
   const defaultIcon = btn.querySelector(".icon-default")
   const copiedIcon = btn.querySelector(".icon-copied")
   btn.addEventListener("click", () => {
@@ -297,8 +300,9 @@ document.querySelectorAll(".agent-copy-btn").forEach(btn => {
   })
 })
 
-// Home page: agent setup tab switcher
+// Home page: agent setup tab switcher (skip elements owned by the dashboard LiveView hook)
 document.querySelectorAll(".agent-tab").forEach(tab => {
+  if (tab.closest("#empty-state")) return
   tab.addEventListener("click", () => {
     document.querySelectorAll(".agent-tab").forEach(t => {
       t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")

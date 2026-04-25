@@ -62,15 +62,16 @@
                     if (pre) text = pre.textContent.replace(/^\$ /, "").replace(/ or .*$/, "").split("\n")[0].trim()
                   }
                   if (text) {
-                    navigator.clipboard.writeText(text)
-                    const defaultIcon = copyBtn.querySelector(".icon-default")
-                    const copiedIcon = copyBtn.querySelector(".icon-copied")
-                    if (defaultIcon) defaultIcon.classList.add("hidden")
-                    if (copiedIcon) copiedIcon.classList.remove("hidden")
-                    setTimeout(() => {
-                      if (defaultIcon) defaultIcon.classList.remove("hidden")
-                      if (copiedIcon) copiedIcon.classList.add("hidden")
-                    }, 1500)
+                    navigator.clipboard.writeText(text).then(() => {
+                      const defaultIcon = copyBtn.querySelector(".icon-default")
+                      const copiedIcon = copyBtn.querySelector(".icon-copied")
+                      if (defaultIcon) defaultIcon.classList.add("hidden")
+                      if (copiedIcon) copiedIcon.classList.remove("hidden")
+                      setTimeout(() => {
+                        if (defaultIcon) defaultIcon.classList.remove("hidden")
+                        if (copiedIcon) copiedIcon.classList.add("hidden")
+                      }, 2000)
+                    }).catch(() => {})
                   }
                 }
               })
@@ -134,7 +135,9 @@
                 <div class="text-xl font-bold tracking-tight leading-8">Share to the web</div>
                 <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed">
                   When you're ready, run
-                  <code class="font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit share</code>
+                  <code class="font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">
+                    crit share
+                  </code>
                   to upload your review to a shareable URL.
                 </p>
 
@@ -147,21 +150,36 @@
                 <%!-- Share details --%>
                 <div class="mt-3 flex flex-col gap-1.5">
                   <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
-                    <.icon name="hero-arrows-right-left" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
+                    <.icon
+                      name="hero-arrows-right-left"
+                      class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5"
+                    />
                     <span>Comments sync bidirectionally — web replies flow back to your CLI</span>
                   </div>
                   <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
-                    <.icon name="hero-arrow-path" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
+                    <.icon
+                      name="hero-arrow-path"
+                      class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5"
+                    />
                     <span>Re-share anytime to update the web version with new changes</span>
                   </div>
                   <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
-                    <.icon name="hero-clock" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
+                    <.icon
+                      name="hero-clock"
+                      class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5"
+                    />
                     <span>Reviews expire after 30 days of inactivity</span>
                   </div>
                   <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
-                    <.icon name="hero-trash" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
-                    <span>Unpublish anytime with
-                      <code class="font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit unpublish</code>
+                    <.icon
+                      name="hero-trash"
+                      class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5"
+                    />
+                    <span>
+                      Unpublish anytime with
+                      <code class="font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">
+                        crit unpublish
+                      </code>
                     </span>
                   </div>
                 </div>
