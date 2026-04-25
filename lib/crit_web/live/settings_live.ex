@@ -17,9 +17,27 @@ defmodule CritWeb.SettingsLive do
       |> assign(:new_token_plaintext, nil)
       |> assign(:new_token_name, "")
       |> assign(:delete_confirmation, "")
+      |> assign(:keep_reviews, user.keep_reviews)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
 
     {:ok, socket, layout: false}
+  end
+
+  @impl true
+  def handle_event("toggle_keep_reviews", _params, socket) do
+    user = socket.assigns.current_user
+    new_value = !socket.assigns.keep_reviews
+
+    case Accounts.update_keep_reviews(user, new_value) do
+      {:ok, updated_user} ->
+        {:noreply,
+         socket
+         |> assign(:keep_reviews, new_value)
+         |> assign(:current_user, updated_user)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update setting.")}
+    end
   end
 
   @impl true

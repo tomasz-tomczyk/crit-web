@@ -2,7 +2,7 @@ defmodule Crit.Reviews do
   @moduledoc "Context for reviews and comments."
 
   import Ecto.Query
-  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Statistics}
+  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Statistics, User}
 
   @max_total_size 10_485_760
 
@@ -446,7 +446,14 @@ defmodule Crit.Reviews do
   """
   def delete_inactive(days) when is_integer(days) and days > 0 do
     cutoff = DateTime.add(DateTime.utc_now(), -days, :day)
-    base = from r in Review, where: r.last_activity_at < ^cutoff
+
+    kept_user_ids =
+      from(u in User, where: u.keep_reviews == true, select: u.id)
+
+    base =
+      from r in Review,
+        where: r.last_activity_at < ^cutoff,
+        where: r.user_id not in subquery(kept_user_ids) or is_nil(r.user_id)
 
     query =
       case Application.get_env(:crit, :demo_review_token) do

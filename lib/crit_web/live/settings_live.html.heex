@@ -25,6 +25,14 @@
           </li>
           <li>
             <a
+              href="#reviews"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
+            >
+              Reviews
+            </a>
+          </li>
+          <li>
+            <a
               href="#tokens"
               class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
             >
@@ -70,6 +78,41 @@
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <%!-- Reviews section --%>
+        <section :if={!@selfhosted} id="reviews" class="mb-12">
+          <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+            Reviews
+          </h2>
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="text-sm font-medium text-(--crit-fg-primary)">
+                Keep reviews
+              </div>
+              <div class="text-xs text-(--crit-fg-muted) mt-1">
+                Prevent your reviews from being automatically deleted after 30 days of inactivity.
+              </div>
+            </div>
+            <button
+              id="keep-reviews-toggle"
+              phx-click="toggle_keep_reviews"
+              role="switch"
+              aria-checked={to_string(@keep_reviews)}
+              class={[
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                if(@keep_reviews,
+                  do: "bg-(--crit-brand)",
+                  else: "bg-(--crit-border)"
+                )
+              ]}
+            >
+              <span class={[
+                "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out",
+                if(@keep_reviews, do: "translate-x-5", else: "translate-x-0")
+              ]} />
+            </button>
           </div>
         </section>
 

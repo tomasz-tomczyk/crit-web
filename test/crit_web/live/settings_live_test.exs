@@ -216,6 +216,61 @@ defmodule CritWeb.SettingsLiveTest do
     end
   end
 
+  describe "keep reviews toggle" do
+    test "shows toggle in off state by default", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      assert has_element?(view, "#keep-reviews-toggle[aria-checked='false']")
+    end
+
+    test "toggling updates the setting", %{conn: conn} do
+      {conn, user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      view
+      |> element("#keep-reviews-toggle")
+      |> render_click()
+
+      assert has_element?(view, "#keep-reviews-toggle[aria-checked='true']")
+
+      {:ok, updated} = Crit.Accounts.get_user(user.id)
+      assert updated.keep_reviews == true
+    end
+
+    test "toggling off after on", %{conn: conn} do
+      {conn, user} = login_user(conn)
+      {:ok, _} = Crit.Accounts.update_keep_reviews(user, true)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      assert has_element?(view, "#keep-reviews-toggle[aria-checked='true']")
+
+      view
+      |> element("#keep-reviews-toggle")
+      |> render_click()
+
+      assert has_element?(view, "#keep-reviews-toggle[aria-checked='false']")
+
+      {:ok, updated} = Crit.Accounts.get_user(user.id)
+      assert updated.keep_reviews == false
+    end
+
+    test "is hidden in selfhosted mode", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, html} = live(conn, ~p"/settings")
+
+      refute has_element?(view, "#keep-reviews-toggle")
+      refute html =~ "Keep reviews"
+    end
+  end
+
   describe "settings page title" do
     test "page title is Settings - Crit", %{conn: conn} do
       {conn, _user} = login_user(conn)

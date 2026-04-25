@@ -7,6 +7,7 @@ defmodule Crit.User do
     field :email, :string
     field :name, :string
     field :avatar_url, :string
+    field :keep_reviews, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end

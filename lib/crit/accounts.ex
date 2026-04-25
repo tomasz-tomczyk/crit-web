@@ -133,6 +133,16 @@ defmodule Crit.Accounts do
   end
 
   @doc """
+  Updates the keep_reviews setting for a user.
+  Returns `{:ok, user}` or `{:error, changeset}`.
+  """
+  def update_keep_reviews(%User{} = user, keep_reviews) when is_boolean(keep_reviews) do
+    user
+    |> Ecto.Changeset.change(keep_reviews: keep_reviews)
+    |> Repo.update()
+  end
+
+  @doc """
   Deletes a user account. PostgreSQL cascade handles:
   - API tokens (deleted)
   - Device codes (deleted)
