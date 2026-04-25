@@ -80,8 +80,9 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
-      assert html =~ "No reviews yet"
-      assert html =~ "Share a review from the Crit CLI"
+      assert html =~ "Get your first review on the web"
+      assert html =~ "Install crit"
+      assert html =~ "Share to the web"
     end
   end
 
