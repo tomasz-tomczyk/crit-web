@@ -17,9 +17,9 @@ defmodule CritWeb.Components.ReviewSnippetTest do
       assert html =~ ~s(data-lang="elixir")
       assert html =~ "defmodule Foo do"
       assert html =~ "def bar, do: :ok"
-      # line numbers
-      assert html =~ ">1<"
-      assert html =~ ">2<"
+      # line numbers (rendered inside the gutter span with whitespace)
+      assert html =~ ~r{>\s*1\s*<}
+      assert html =~ ~r{>\s*2\s*<}
     end
 
     test "omits data-lang for unknown extensions" do
