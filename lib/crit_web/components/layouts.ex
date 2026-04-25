@@ -310,24 +310,38 @@ defmodule CritWeb.Layouts do
   end
 
   @doc """
-  Header for dashboard and admin pages. No marketing nav links.
+  Header for dashboard, overview, and settings pages. No marketing nav links.
   Used in both public and selfhosted modes.
+
+  Layout: a chrome row (logo + identity popover) and a tab strip below
+  (Dashboard, optional Overview, Settings). Pass `current_page` to mark
+  the active tab. Sign out lives inside the identity popover on desktop
+  and at the bottom of the mobile drawer.
   """
   attr :authenticated, :boolean, default: true
   attr :password_required, :boolean, default: false
   attr :current_user, :any, default: nil
   attr :show_overview_link, :boolean, default: false
+  attr :current_page, :atom, default: nil
 
   def dashboard_header(assigns) do
+    host = if assigns.show_overview_link, do: CritWeb.Endpoint.host(), else: nil
+
+    assigns =
+      assigns
+      |> assign(:host, host)
+      |> assign(:user_initial, user_initial(assigns.current_user))
+
     ~H"""
-    <header class="border-b border-(--crit-border) bg-(--crit-bg-card)">
-      <div class="max-w-7xl mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
-        <div class="flex items-center gap-3">
+    <header class="bg-(--crit-bg-card) border-b border-(--crit-border)">
+      <%!-- Chrome row: logo + scope chip (left), identity popover + theme + hamburger (right) --%>
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 px-8 py-3.5 max-sm:px-4 max-sm:py-3">
+        <div class="flex items-center gap-2.5 min-w-0">
           <a
             href={~p"/dashboard"}
-            class="text-(--crit-fg-primary) no-underline transition-colors"
+            class="text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
           >
-            <svg class="h-5 w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
+            <svg class="h-[18px] w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
               <g transform="scale(1,-1)">
                 <path
                   d="M628 -22Q459 -22 336.5 50.5Q214 123 147.5 252.5Q81 382 81 554Q81 727 147.5 857.0Q214 987 336.5 1059.5Q459 1132 628 1132Q827 1132 960.0 1032.5Q1093 933 1125 760L846 708Q827 795 772.5 845.5Q718 896 631 896Q511 896 449.0 801.5Q387 707 387 555Q387 405 449.0 309.5Q511 214 631 214Q718 214 774.0 266.5Q830 319 848 409L1127 358Q1095 181 962.0 79.5Q829 -22 628 -22Z"
@@ -352,47 +366,161 @@ defmodule CritWeb.Layouts do
               </g>
             </svg>
           </a>
-        </div>
-        <nav class="flex items-center gap-4">
-          <%= if @current_user do %>
-            <div class="flex items-center gap-3 max-sm:hidden">
-              <%= if @current_user.avatar_url do %>
-                <img
-                  src={@current_user.avatar_url}
-                  alt={@current_user.name}
-                  class="h-8 w-8 rounded-full"
-                />
-              <% end %>
-              <span class="text-sm text-(--crit-fg-primary)">
-                {@current_user.name || @current_user.email}
+
+          <%= if @show_overview_link do %>
+            <div
+              role="group"
+              aria-label={"Self-hosted instance: " <> @host}
+              class="relative inline-flex items-stretch h-[30px] ml-1 min-w-0 max-sm:hidden text-(--crit-fg-muted) before:content-[''] before:absolute before:left-0 before:top-[7px] before:bottom-[7px] before:w-px before:bg-(--crit-border-strong)"
+            >
+              <span class="inline-flex items-center px-2.5">
+                <span class="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-(--crit-fg-muted) leading-none">
+                  Self-hosted
+                </span>
               </span>
-              <.link
-                href={~p"/dashboard"}
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
-              >
+              <span class="relative inline-flex items-center px-2.5 before:content-[''] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-(--crit-border-strong)">
+                <span class="font-mono text-[12.5px] font-medium text-(--crit-fg-primary) tracking-tight truncate max-w-[240px] leading-none">
+                  {@host}
+                </span>
+              </span>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <%= if @current_user do %>
+            <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
+              <.dashboard_link href={~p"/dashboard"} active={@current_page == :dashboard}>
                 Dashboard
-              </.link>
+              </.dashboard_link>
               <%= if @show_overview_link do %>
-                <.link
-                  href={~p"/overview"}
-                  class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
-                >
+                <.dashboard_link href={~p"/overview"} active={@current_page == :overview}>
                   Overview
-                </.link>
+                </.dashboard_link>
               <% end %>
-              <.link
-                navigate={~p"/settings"}
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
+            </nav>
+
+            <span
+              aria-hidden="true"
+              class="w-px h-4 bg-(--crit-border-strong) mx-1.5 max-sm:hidden"
+            >
+            </span>
+
+            <div class="relative max-sm:hidden">
+              <button
+                id="dashboard-identity-toggle"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-controls="dashboard-identity-popover"
+                phx-click={
+                  JS.toggle_attribute({"hidden", "hidden"}, to: "#dashboard-identity-popover")
+                  |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+                }
+                class="group inline-flex items-center gap-1.5 h-[30px] pl-0.5 pr-1.5 rounded-md text-(--crit-fg-secondary) hover:bg-(--crit-row-hover) hover:text-(--crit-fg-primary) aria-expanded:bg-(--crit-bg-card) aria-expanded:text-(--crit-fg-primary) cursor-pointer transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]"
+                aria-label="Account menu"
               >
-                Settings
-              </.link>
-              <.link
-                href={~p"/auth/logout"}
-                method="delete"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
+                <%= if @current_user.avatar_url do %>
+                  <img
+                    src={@current_user.avatar_url}
+                    alt=""
+                    class="h-6 w-6 rounded-full flex-shrink-0"
+                  />
+                <% else %>
+                  <span class="h-6 w-6 rounded-full bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[10.5px] font-semibold flex-shrink-0">
+                    {@user_initial}
+                  </span>
+                <% end %>
+                <.icon
+                  name="hero-chevron-down-micro"
+                  class="size-3 text-(--crit-fg-muted) transition-transform group-aria-expanded:rotate-180 group-aria-expanded:text-(--crit-fg-secondary) flex-shrink-0"
+                />
+              </button>
+
+              <div
+                id="dashboard-identity-popover"
+                role="menu"
+                aria-labelledby="dashboard-identity-toggle"
+                hidden
+                phx-hook=".IdentityPopover"
+                class="absolute right-0 top-[calc(100%+8px)] min-w-[280px] bg-(--crit-popover-bg) border border-(--crit-border-strong) rounded-[10px] p-1.5 z-40 shadow-[var(--crit-popover-shadow)]"
               >
-                Sign out
-              </.link>
+                <script :type={Phoenix.LiveView.ColocatedHook} name=".IdentityPopover">
+                  export default {
+                    mounted() {
+                      this.onDocClick = (e) => {
+                        if (this.el.hidden) return
+                        const trigger = document.getElementById("dashboard-identity-toggle")
+                        if (this.el.contains(e.target) || trigger?.contains(e.target)) return
+                        this.el.hidden = true
+                        trigger?.setAttribute("aria-expanded", "false")
+                      }
+                      this.onKey = (e) => {
+                        if (e.key === "Escape" && !this.el.hidden) {
+                          this.el.hidden = true
+                          document.getElementById("dashboard-identity-toggle")
+                            ?.setAttribute("aria-expanded", "false")
+                        }
+                      }
+                      document.addEventListener("click", this.onDocClick)
+                      document.addEventListener("keydown", this.onKey)
+                    },
+                    destroyed() {
+                      document.removeEventListener("click", this.onDocClick)
+                      document.removeEventListener("keydown", this.onKey)
+                    }
+                  }
+                </script>
+                <div class="flex gap-3 items-start px-3 pt-3 pb-3.5">
+                  <%= if @current_user.avatar_url do %>
+                    <img
+                      src={@current_user.avatar_url}
+                      alt=""
+                      class="h-9 w-9 rounded-md flex-shrink-0"
+                    />
+                  <% else %>
+                    <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                      {@user_initial}
+                    </span>
+                  <% end %>
+                  <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="text-[13px] font-semibold text-(--crit-fg-primary) leading-tight">
+                      {@current_user.name || @current_user.email}
+                    </span>
+                    <%= if @current_user.name && @current_user.email do %>
+                      <span class="text-xs text-(--crit-fg-muted) leading-tight truncate max-w-[200px]">
+                        {@current_user.email}
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="h-px bg-(--crit-border) my-0.5"></div>
+
+                <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-3 pt-2 pb-1">
+                  Account
+                </div>
+                <.link
+                  navigate={~p"/settings"}
+                  role="menuitem"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
+                >
+                  <.icon name="hero-cog-6-tooth-mini" class="size-3.5 text-(--crit-fg-muted)" />
+                  <span>Settings</span>
+                </.link>
+
+                <div class="h-px bg-(--crit-border) my-0.5"></div>
+
+                <.link
+                  href={~p"/auth/logout"}
+                  method="delete"
+                  role="menuitem"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
+                >
+                  <.icon name="hero-arrow-right-on-rectangle-mini" class="size-3.5" />
+                  <span>Sign out</span>
+                </.link>
+              </div>
             </div>
           <% else %>
             <%= if @password_required and not @authenticated do %>
@@ -404,53 +532,82 @@ defmodule CritWeb.Layouts do
               </a>
             <% end %>
           <% end %>
+
           <.theme_toggle />
+
           <button
             id="dashboard-nav-toggle"
-            class="sm:hidden p-1 text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) cursor-pointer"
+            type="button"
+            phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#dashboard-nav")}
+            class="sm:hidden p-1.5 rounded-md text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) cursor-pointer"
             aria-label="Toggle menu"
           >
             <.icon name="hero-bars-3" class="size-5" />
           </button>
-        </nav>
+        </div>
       </div>
-      <%!-- Mobile nav dropdown --%>
-      <div id="dashboard-nav" class="hidden sm:hidden border-t border-(--crit-border)">
-        <div class="flex flex-col px-5 py-2">
-          <.link
-            href={~p"/dashboard"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
-          >
-            Dashboard
-          </.link>
-          <%= if @show_overview_link do %>
-            <.link
-              href={~p"/overview"}
-              class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
-            >
-              Overview
-            </.link>
-          <% end %>
-          <.link
-            navigate={~p"/settings"}
-            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
-          >
-            Settings
-          </.link>
+
+      <%!-- Mobile drawer --%>
+      <div
+        id="dashboard-nav"
+        hidden
+        class="sm:hidden bg-(--crit-bg-card) border-t border-(--crit-border)"
+      >
+        <div class="flex flex-col gap-px px-3 pt-2 pb-3.5">
           <%= if @current_user do %>
+            <div class="flex items-center gap-3 px-3 py-3 border-b border-(--crit-border) mb-1.5">
+              <%= if @current_user.avatar_url do %>
+                <img src={@current_user.avatar_url} alt="" class="h-9 w-9 rounded-md flex-shrink-0" />
+              <% else %>
+                <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                  {@user_initial}
+                </span>
+              <% end %>
+              <div class="flex flex-col gap-0.5 min-w-0">
+                <span class="text-sm font-semibold text-(--crit-fg-primary) truncate">
+                  {@current_user.name || @current_user.email}
+                </span>
+                <%= if @current_user.name && @current_user.email do %>
+                  <span class="text-xs text-(--crit-fg-muted) truncate">
+                    {@current_user.email}
+                  </span>
+                <% end %>
+              </div>
+            </div>
+
+            <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+              Navigate
+            </div>
+            <.dashboard_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
+              Dashboard
+            </.dashboard_mobile_link>
+            <%= if @show_overview_link do %>
+              <.dashboard_mobile_link href={~p"/overview"} active={@current_page == :overview}>
+                Overview
+              </.dashboard_mobile_link>
+            <% end %>
+
+            <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+              Account
+            </div>
+            <.dashboard_mobile_link navigate={~p"/settings"} active={@current_page == :settings}>
+              Settings
+            </.dashboard_mobile_link>
+
             <.link
               href={~p"/auth/logout"}
               method="delete"
-              class="text-sm text-red-400 hover:text-red-300 no-underline py-2"
+              class="flex items-center gap-3 px-2 py-2.5 rounded-md text-sm text-(--crit-red) no-underline hover:bg-(--crit-btn-danger-hover-bg)"
             >
-              Sign out
+              <.icon name="hero-arrow-right-on-rectangle-mini" class="size-4" />
+              <span>Sign out</span>
             </.link>
           <% else %>
             <%= if @password_required and @authenticated do %>
               <.form for={%{}} action={~p"/auth/logout"} method="post" id="logout-form-mobile">
                 <button
                   type="submit"
-                  class="text-sm text-red-400 hover:text-red-300 transition-colors cursor-pointer py-2"
+                  class="text-sm text-(--crit-red) hover:opacity-80 transition-opacity cursor-pointer py-2 px-2"
                 >
                   Sign out
                 </button>
@@ -462,6 +619,63 @@ defmodule CritWeb.Layouts do
     </header>
     """
   end
+
+  attr :href, :string, default: nil
+  attr :navigate, :string, default: nil
+  attr :active, :boolean, default: false
+  slot :inner_block, required: true
+
+  defp dashboard_link(assigns) do
+    ~H"""
+    <.link
+      href={@href}
+      navigate={@navigate}
+      aria-current={@active && "page"}
+      class={[
+        "inline-flex items-center h-[30px] px-2.5 rounded-md text-[13px] font-medium tracking-tight no-underline transition-colors",
+        if(@active,
+          do: "text-(--crit-fg-primary) bg-(--crit-bg-card) hover:bg-(--crit-bg-elevated)",
+          else:
+            "text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover)"
+        )
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  attr :href, :string, default: nil
+  attr :navigate, :string, default: nil
+  attr :active, :boolean, default: false
+  slot :inner_block, required: true
+
+  defp dashboard_mobile_link(assigns) do
+    ~H"""
+    <.link
+      href={@href}
+      navigate={@navigate}
+      aria-current={@active && "page"}
+      class={[
+        "flex items-center gap-3 px-2 py-2.5 rounded-md text-sm font-medium no-underline",
+        if(@active,
+          do: "bg-(--crit-brand-bg) text-(--crit-brand)",
+          else: "text-(--crit-fg-primary) hover:bg-(--crit-row-hover)"
+        )
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  defp user_initial(%{name: name}) when is_binary(name) and name != "",
+    do: name |> String.first() |> String.upcase()
+
+  defp user_initial(%{email: email}) when is_binary(email) and email != "",
+    do: email |> String.first() |> String.upcase()
+
+  defp user_initial(_), do: "?"
 
   @doc """
   Shows the flash group with standard titles and content.

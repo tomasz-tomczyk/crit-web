@@ -130,6 +130,17 @@
   --crit-badge-removed-color: var(--crit-editor-fg-muted);
   --crit-badge-removed-border: color-mix(in srgb, var(--crit-editor-fg-muted) 20%, transparent);
 
+  /* ---- Dashboard header / popover ---- */
+  --crit-popover-bg: #1c1e29;
+  --crit-popover-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 12px 32px -8px rgba(0, 0, 0, 0.6),
+    0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  --crit-row-hover: rgba(255, 255, 255, 0.04);
+  --crit-workspace-tag-bg: rgba(122, 162, 247, 0.12);
+  --crit-workspace-tag-fg: #b6c8f5;
+  --crit-focus-ring: rgba(122, 162, 247, 0.45);
+
   /* ---- Editor palette (Tokyo Night) ---- */
   --crit-editor-bg:              #1a1b26;
   --crit-editor-bg-card:         #16171f;
@@ -244,6 +255,17 @@
   --crit-badge-removed-color: var(--crit-editor-fg-muted);
   --crit-badge-removed-border: color-mix(in srgb, var(--crit-editor-fg-muted) 20%, transparent);
 
+  /* ---- Dashboard header / popover ---- */
+  --crit-popover-bg: #1c1e29;
+  --crit-popover-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 12px 32px -8px rgba(0, 0, 0, 0.6),
+    0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  --crit-row-hover: rgba(255, 255, 255, 0.04);
+  --crit-workspace-tag-bg: rgba(122, 162, 247, 0.12);
+  --crit-workspace-tag-fg: #b6c8f5;
+  --crit-focus-ring: rgba(122, 162, 247, 0.45);
+
   /* ---- Editor palette (Tokyo Night) ---- */
   --crit-editor-bg:              #1a1b26;
   --crit-editor-bg-card:         #16171f;
@@ -352,6 +374,17 @@
   --crit-badge-removed-bg: rgba(100, 100, 100, 0.08);
   --crit-badge-removed-color: var(--crit-editor-fg-muted);
   --crit-badge-removed-border: color-mix(in srgb, var(--crit-editor-fg-muted) 15%, transparent);
+
+  /* ---- Dashboard header / popover ---- */
+  --crit-popover-bg: #ffffff;
+  --crit-popover-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.04),
+    0 12px 32px -8px rgba(15, 23, 42, 0.18),
+    0 4px 12px -4px rgba(15, 23, 42, 0.08);
+  --crit-row-hover: rgba(15, 23, 42, 0.05);
+  --crit-workspace-tag-bg: rgba(58, 114, 212, 0.1);
+  --crit-workspace-tag-fg: #2960bc;
+  --crit-focus-ring: rgba(58, 114, 212, 0.35);
 
   /* ---- Editor palette (light) ---- */
   --crit-editor-bg:              #fafafa;
@@ -463,6 +496,17 @@
     --crit-badge-removed-bg: rgba(100, 100, 100, 0.08);
     --crit-badge-removed-color: var(--crit-editor-fg-muted);
     --crit-badge-removed-border: color-mix(in srgb, var(--crit-editor-fg-muted) 15%, transparent);
+
+    /* ---- Dashboard header / popover ---- */
+    --crit-popover-bg: #ffffff;
+    --crit-popover-shadow:
+      0 0 0 1px rgba(15, 23, 42, 0.04),
+      0 12px 32px -8px rgba(15, 23, 42, 0.18),
+      0 4px 12px -4px rgba(15, 23, 42, 0.08);
+    --crit-row-hover: rgba(15, 23, 42, 0.05);
+    --crit-workspace-tag-bg: rgba(58, 114, 212, 0.1);
+    --crit-workspace-tag-fg: #2960bc;
+    --crit-focus-ring: rgba(58, 114, 212, 0.35);
 
     /* ---- Editor palette (light) ---- */
     --crit-editor-bg:              #fafafa;

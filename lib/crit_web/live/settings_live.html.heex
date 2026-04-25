@@ -1,7 +1,11 @@
 <Layouts.flash_group flash={@flash} />
 
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.dashboard_header current_user={@current_user} show_overview_link={@selfhosted} />
+  <Layouts.dashboard_header
+    current_user={@current_user}
+    show_overview_link={@selfhosted}
+    current_page={:settings}
+  />
 
   <%!-- Main content --%>
   <div class="max-w-[1100px] mx-auto w-full px-10 my-10 max-sm:px-5">

@@ -62,13 +62,9 @@ function setTheme(theme) {
 window.addEventListener("phx:set-theme", e => setTheme(e.target.dataset.phxTheme));
 window.addEventListener("storage", e => e.key === "phx:theme" && setTheme(e.newValue || "system"));
 
-// Mobile hamburger menu
+// Mobile hamburger menu (public site header)
 document.getElementById("mobile-nav-toggle")?.addEventListener("click", () => {
   document.getElementById("mobile-nav")?.classList.toggle("hidden");
-});
-
-document.getElementById("dashboard-nav-toggle")?.addEventListener("click", () => {
-  document.getElementById("dashboard-nav")?.classList.toggle("hidden");
 });
 
 // connect if there are any LiveViews on the page

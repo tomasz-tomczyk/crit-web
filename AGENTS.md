@@ -237,6 +237,9 @@ Elixir 1.19 / OTP 28 / PostgreSQL 17.
 - `phx-hook="MyHook"` requires a unique `id` and `phx-update="ignore"` if the hook manages its own DOM
 - Never write raw `<script>` tags — use colocated hooks (`:type={Phoenix.LiveView.ColocatedHook}`, name starts with `.`) or external hooks in `assets/js/`
 - Use `push_event/3` server→client, `this.pushEvent` client→server
+- For UI toggles (popovers, dropdowns, mobile drawers, tabs), prefer `Phoenix.LiveView.JS` commands declaratively in the template — `JS.toggle_attribute({"hidden", "hidden"}, to: "#el")`, `JS.toggle_attribute({"aria-expanded", "true", "false"})`, `JS.toggle/1`. Pipe them together for multi-step toggles
+- For behaviors `JS` can't express (click-outside, Escape close, focus traps), use a colocated hook scoped to the element. Hooks have lifecycle (`mounted`/`destroyed`) so listeners clean up on unmount
+- **Never** attach listeners via `document.getElementById("x").addEventListener(...)` in `app.js` for elements rendered inside LiveView templates — they break across client-side patches (`<.link navigate={...}>`) because the new DOM node isn't the one you bound to. Either use `JS` commands, a hook, or document-level event delegation if you really need vanilla JS
 
 ### LiveView tests
 
