@@ -1,54 +1,12 @@
 <Layouts.flash_group flash={@flash} />
 
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <%!-- Header --%>
-  <header class="border-b border-(--crit-border) bg-(--crit-bg-card)">
-    <div class="max-w-7xl mx-auto flex items-center justify-between px-10 py-5 max-sm:px-5 max-sm:py-4">
-      <div class="flex items-center gap-3">
-        <a
-          href={if @selfhosted, do: ~p"/dashboard", else: ~p"/"}
-          class="text-xl font-bold text-(--crit-fg-primary) tracking-tighter no-underline transition-colors"
-        >
-          crit<span class="text-(--crit-brand)">.</span>
-        </a>
-        <%= if @selfhosted do %>
-          <span class="text-xs text-(--crit-fg-muted) border border-(--crit-border) px-2 py-0.5 rounded">
-            self-hosted
-          </span>
-        <% end %>
-      </div>
-      <nav class="flex items-center gap-4">
-        <div class="flex items-center gap-3">
-          <%= if @current_user.avatar_url do %>
-            <img
-              src={@current_user.avatar_url}
-              alt={@current_user.name}
-              class="h-8 w-8 rounded-full"
-            />
-          <% end %>
-          <span class="text-sm text-(--crit-fg-primary) max-sm:hidden">
-            {@current_user.name || @current_user.email}
-          </span>
-          <%= if @selfhosted do %>
-            <.link
-              href={~p"/dashboard"}
-              class="text-sm text-(--crit-fg-muted) hover:text-(--crit-fg-primary) max-sm:hidden"
-            >
-              Dashboard
-            </.link>
-          <% end %>
-          <.link
-            href={~p"/auth/logout"}
-            method="delete"
-            class="text-sm text-(--crit-fg-muted) hover:text-(--crit-fg-primary) max-sm:hidden"
-          >
-            Sign out
-          </.link>
-        </div>
-        <Layouts.theme_toggle />
-      </nav>
-    </div>
-  </header>
+  <Layouts.dashboard_header
+    current_user={@current_user}
+    show_my_reviews_link={true}
+    show_admin_link={@selfhosted}
+    show_settings_link={false}
+  />
 
   <%!-- Main content --%>
   <div class="max-w-[1100px] mx-auto w-full px-10 my-10 max-sm:px-5">
