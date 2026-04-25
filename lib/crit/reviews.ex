@@ -489,22 +489,27 @@ defmodule Crit.Reviews do
         where: rf.review_id == parent_as(:review).id,
         order_by: [asc: rf.position],
         limit: 1,
-        select: rf.file_path
+        select: %{file_path: rf.file_path, content: rf.content}
       )
 
     from(r in Review, as: :review)
     |> join(:left, [r], c in Comment, on: c.review_id == r.id)
     |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
     |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
-    |> group_by([r, _c, _rf, fp], [
+    |> join(:left, [r, _c, _rf, _fp], u in User, on: u.id == r.user_id)
+    |> group_by([r, _c, _rf, fp, u], [
       r.id,
       r.token,
       r.inserted_at,
       r.last_activity_at,
       r.user_id,
-      fp.file_path
+      fp.file_path,
+      fp.content,
+      u.name,
+      u.email,
+      u.avatar_url
     ])
-    |> select([r, c, rf, fp], %{
+    |> select([r, c, rf, fp, u], %{
       id: r.id,
       token: r.token,
       inserted_at: r.inserted_at,
@@ -512,7 +517,11 @@ defmodule Crit.Reviews do
       user_id: r.user_id,
       comment_count: count(c.id, :distinct),
       file_count: count(rf.id, :distinct),
-      first_file_path: fp.file_path
+      first_file_path: fp.file_path,
+      first_file_content: fp.content,
+      author_name: u.name,
+      author_email: u.email,
+      author_avatar_url: u.avatar_url
     })
     |> order_by([r], desc: r.last_activity_at)
     |> Repo.all()
@@ -528,7 +537,7 @@ defmodule Crit.Reviews do
         where: rf.review_id == parent_as(:review).id,
         order_by: [asc: rf.position],
         limit: 1,
-        select: rf.file_path
+        select: %{file_path: rf.file_path, content: rf.content}
       )
 
     from(r in Review, as: :review)
@@ -542,7 +551,8 @@ defmodule Crit.Reviews do
       r.inserted_at,
       r.last_activity_at,
       r.user_id,
-      fp.file_path
+      fp.file_path,
+      fp.content
     ])
     |> select([r, c, rf, fp], %{
       id: r.id,
@@ -552,7 +562,8 @@ defmodule Crit.Reviews do
       user_id: r.user_id,
       comment_count: count(c.id, :distinct),
       file_count: count(rf.id, :distinct),
-      first_file_path: fp.file_path
+      first_file_path: fp.file_path,
+      first_file_content: fp.content
     })
     |> order_by([r], desc: r.last_activity_at)
     |> Repo.all()

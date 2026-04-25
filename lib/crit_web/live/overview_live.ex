@@ -3,7 +3,8 @@ defmodule CritWeb.OverviewLive do
 
   alias Crit.{Reviews, Statistics}
 
-  import CritWeb.Helpers, only: [time_ago: 1]
+  import CritWeb.Helpers, only: [time_ago: 1, split_path: 1]
+  import CritWeb.Components.ReviewSnippet
 
   @impl true
   def mount(_params, _session, socket) do
