@@ -440,7 +440,7 @@ defmodule CritWeb.Layouts do
               <div
                 id="dashboard-identity-popover"
                 role="menu"
-                aria-labelledby="dashboard-identity-toggle"
+                aria-label="Account menu"
                 hidden
                 phx-hook=".IdentityPopover"
                 class="absolute right-0 top-[calc(100%+8px)] min-w-[280px] bg-(--crit-popover-bg) border border-(--crit-border-strong) rounded-[10px] p-1.5 z-40 shadow-[var(--crit-popover-shadow)]"

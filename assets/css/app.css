@@ -137,8 +137,6 @@
     0 12px 32px -8px rgba(0, 0, 0, 0.6),
     0 4px 12px -4px rgba(0, 0, 0, 0.5);
   --crit-row-hover: rgba(255, 255, 255, 0.04);
-  --crit-workspace-tag-bg: rgba(122, 162, 247, 0.12);
-  --crit-workspace-tag-fg: #b6c8f5;
   --crit-focus-ring: rgba(122, 162, 247, 0.45);
 
   /* ---- Editor palette (Tokyo Night) ---- */
@@ -262,8 +260,6 @@
     0 12px 32px -8px rgba(0, 0, 0, 0.6),
     0 4px 12px -4px rgba(0, 0, 0, 0.5);
   --crit-row-hover: rgba(255, 255, 255, 0.04);
-  --crit-workspace-tag-bg: rgba(122, 162, 247, 0.12);
-  --crit-workspace-tag-fg: #b6c8f5;
   --crit-focus-ring: rgba(122, 162, 247, 0.45);
 
   /* ---- Editor palette (Tokyo Night) ---- */
@@ -382,8 +378,6 @@
     0 12px 32px -8px rgba(15, 23, 42, 0.18),
     0 4px 12px -4px rgba(15, 23, 42, 0.08);
   --crit-row-hover: rgba(15, 23, 42, 0.05);
-  --crit-workspace-tag-bg: rgba(58, 114, 212, 0.1);
-  --crit-workspace-tag-fg: #2960bc;
   --crit-focus-ring: rgba(58, 114, 212, 0.35);
 
   /* ---- Editor palette (light) ---- */
@@ -504,8 +498,6 @@
       0 12px 32px -8px rgba(15, 23, 42, 0.18),
       0 4px 12px -4px rgba(15, 23, 42, 0.08);
     --crit-row-hover: rgba(15, 23, 42, 0.05);
-    --crit-workspace-tag-bg: rgba(58, 114, 212, 0.1);
-    --crit-workspace-tag-fg: #2960bc;
     --crit-focus-ring: rgba(58, 114, 212, 0.35);
 
     /* ---- Editor palette (light) ---- */

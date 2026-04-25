@@ -139,7 +139,7 @@ defmodule CritWeb.OverviewLiveTest do
     end
   end
 
-  describe "admin empty state" do
+  describe "overview empty state" do
     setup :without_oauth
 
     test "shows empty message when no reviews", %{conn: conn} do
@@ -195,7 +195,7 @@ defmodule CritWeb.OverviewLiveTest do
     end
   end
 
-  describe "admin page title" do
+  describe "overview page title" do
     test "page title is Admin - Crit", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/overview")
 
@@ -203,7 +203,7 @@ defmodule CritWeb.OverviewLiveTest do
     end
   end
 
-  describe "admin with review metadata" do
+  describe "overview with review metadata" do
     setup :without_oauth
 
     test "shows comment and file counts for reviews", %{conn: conn} do
