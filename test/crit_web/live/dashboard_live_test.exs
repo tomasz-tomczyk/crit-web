@@ -61,7 +61,7 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
-      assert html =~ "My Reviews (1)"
+      assert html =~ ~r/Reviews.*?>1</
       assert html =~ hd(review.files).file_path
       refute html =~ hd(other_review.files).file_path
     end
@@ -110,7 +110,7 @@ defmodule CritWeb.DashboardLiveTest do
 
       html = render(view)
       refute html =~ hd(review.files).file_path
-      assert html =~ "My Reviews (0)"
+      assert html =~ ~r/Reviews.*?>0</
     end
 
     test "cannot delete another user's review", %{conn: conn} do
@@ -151,8 +151,8 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
-      assert html =~ "1 comment"
-      assert html =~ "1 file"
+      assert html =~ ~r{>1</span>\s*comment}
+      assert html =~ ~r{>1</span>\s*file}
     end
 
     test "pluralizes counts correctly for multiple items", %{conn: conn} do
@@ -185,8 +185,8 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
-      assert html =~ "2 comments"
-      assert html =~ "2 files"
+      assert html =~ ~r{>2</span>\s*comments}
+      assert html =~ ~r{>2</span>\s*files}
     end
   end
 
@@ -208,7 +208,7 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
-      assert html =~ "My Reviews (2)"
+      assert html =~ ~r/Reviews.*?>2</
       assert html =~ "older.md"
       assert html =~ "newer.md"
     end
@@ -231,14 +231,14 @@ defmodule CritWeb.DashboardLiveTest do
         )
 
       {:ok, view, html} = live(conn, ~p"/dashboard")
-      assert html =~ "My Reviews (2)"
+      assert html =~ ~r/Reviews.*?>2</
 
       view
       |> element("button[phx-value-id='#{review1.id}']")
       |> render_click()
 
       html = render(view)
-      assert html =~ "My Reviews (1)"
+      assert html =~ ~r/Reviews.*?>1</
       refute html =~ "first.md"
       assert html =~ "second.md"
     end
