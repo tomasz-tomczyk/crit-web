@@ -1,4 +1,4 @@
-defmodule CritWeb.AdminLiveTest do
+defmodule CritWeb.OverviewLiveTest do
   use CritWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
@@ -46,14 +46,14 @@ defmodule CritWeb.AdminLiveTest do
     test "redirects to / when not in selfhosted mode", %{conn: conn} do
       Application.delete_env(:crit, :selfhosted)
 
-      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/admin")
+      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/overview")
     end
 
     test "renders stats when selfhosted", %{conn: conn} do
       review = review_fixture()
       comment_fixture(review)
 
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "Reviews"
       assert html =~ "Comments"
@@ -65,7 +65,7 @@ defmodule CritWeb.AdminLiveTest do
       without_oauth(%{})
 
       review = review_fixture()
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "All Reviews"
       assert html =~ hd(review.files).file_path
@@ -78,7 +78,7 @@ defmodule CritWeb.AdminLiveTest do
     end
 
     test "shows login prompt when not authenticated", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "Sign in to view and manage reviews"
       refute html =~ "All Reviews"
@@ -87,14 +87,14 @@ defmodule CritWeb.AdminLiveTest do
     test "shows password form when no OAuth configured", %{conn: conn} do
       without_oauth(%{})
 
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "password"
       refute html =~ "Sign in with OAuth"
     end
 
     test "shows OAuth button when OAuth configured", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "Sign in with OAuth"
       refute html =~ "login-form"
@@ -104,7 +104,7 @@ defmodule CritWeb.AdminLiveTest do
       review = review_fixture()
       conn = login_user(conn)
 
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "All Reviews"
       assert html =~ hd(review.files).file_path
@@ -113,7 +113,7 @@ defmodule CritWeb.AdminLiveTest do
     test "shows stats even when not authenticated", %{conn: conn} do
       _review = review_fixture()
 
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "Reviews"
       assert html =~ "Comments"
@@ -126,7 +126,7 @@ defmodule CritWeb.AdminLiveTest do
     test "removes review from list", %{conn: conn} do
       review = review_fixture()
 
-      {:ok, view, html} = live(conn, ~p"/admin")
+      {:ok, view, html} = live(conn, ~p"/overview")
       assert html =~ hd(review.files).file_path
 
       view
@@ -143,7 +143,7 @@ defmodule CritWeb.AdminLiveTest do
     setup :without_oauth
 
     test "shows empty message when no reviews", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "All Reviews (0)"
       assert html =~ "No reviews yet"
@@ -157,7 +157,7 @@ defmodule CritWeb.AdminLiveTest do
       review = review_fixture()
       comment_fixture(review)
 
-      {:ok, view, html} = live(conn, ~p"/admin")
+      {:ok, view, html} = live(conn, ~p"/overview")
       assert html =~ "All Reviews (1)"
 
       view
@@ -179,7 +179,7 @@ defmodule CritWeb.AdminLiveTest do
       review = review_fixture()
 
       conn = init_test_session(conn, %{admin_authenticated: true})
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "All Reviews"
       assert html =~ hd(review.files).file_path
@@ -188,7 +188,7 @@ defmodule CritWeb.AdminLiveTest do
     test "unauthenticated password session shows login form", %{conn: conn} do
       without_oauth(%{})
 
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "password"
       refute html =~ "All Reviews"
@@ -197,9 +197,9 @@ defmodule CritWeb.AdminLiveTest do
 
   describe "admin page title" do
     test "page title is Admin - Crit", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/overview")
 
-      assert page_title(view) =~ "Admin - Crit"
+      assert page_title(view) =~ "Overview - Crit"
     end
   end
 
@@ -210,7 +210,7 @@ defmodule CritWeb.AdminLiveTest do
       review = review_fixture()
       comment_fixture(review)
 
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ "1 comment"
       assert html =~ "1 file"
@@ -219,7 +219,7 @@ defmodule CritWeb.AdminLiveTest do
     test "review links to /r/:token", %{conn: conn} do
       review = review_fixture()
 
-      {:ok, _view, html} = live(conn, ~p"/admin")
+      {:ok, _view, html} = live(conn, ~p"/overview")
 
       assert html =~ ~p"/r/#{review.token}"
     end
@@ -230,7 +230,7 @@ defmodule CritWeb.AdminLiveTest do
       {conn, user} = login_user_with_record(conn)
       review = review_fixture(user_id: user.id)
 
-      {:ok, view, html} = live(conn, ~p"/admin")
+      {:ok, view, html} = live(conn, ~p"/overview")
       assert html =~ hd(review.files).file_path
 
       view
@@ -251,7 +251,7 @@ defmodule CritWeb.AdminLiveTest do
       review = review_fixture(user_id: other_user.id)
       conn = login_user(conn)
 
-      {:ok, view, _html} = live(conn, ~p"/admin")
+      {:ok, view, _html} = live(conn, ~p"/overview")
 
       refute has_element?(view, "button[phx-value-id='#{review.id}']")
 
@@ -266,7 +266,7 @@ defmodule CritWeb.AdminLiveTest do
       review = review_fixture()
       conn = login_user(conn)
 
-      {:ok, view, html} = live(conn, ~p"/admin")
+      {:ok, view, html} = live(conn, ~p"/overview")
       assert html =~ hd(review.files).file_path
 
       view

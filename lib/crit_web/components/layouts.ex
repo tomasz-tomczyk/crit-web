@@ -316,9 +316,7 @@ defmodule CritWeb.Layouts do
   attr :authenticated, :boolean, default: true
   attr :password_required, :boolean, default: false
   attr :current_user, :any, default: nil
-  attr :show_admin_link, :boolean, default: false
-  attr :show_my_reviews_link, :boolean, default: false
-  attr :show_settings_link, :boolean, default: false
+  attr :show_overview_link, :boolean, default: false
 
   def dashboard_header(assigns) do
     ~H"""
@@ -368,30 +366,26 @@ defmodule CritWeb.Layouts do
               <span class="text-sm text-(--crit-fg-primary)">
                 {@current_user.name || @current_user.email}
               </span>
-              <%= if @show_my_reviews_link do %>
+              <.link
+                href={~p"/dashboard"}
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
+              >
+                Dashboard
+              </.link>
+              <%= if @show_overview_link do %>
                 <.link
-                  href={~p"/dashboard"}
+                  href={~p"/overview"}
                   class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
                 >
-                  My Reviews
+                  Overview
                 </.link>
               <% end %>
-              <%= if @show_admin_link do %>
-                <.link
-                  href={~p"/admin"}
-                  class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
-                >
-                  Admin
-                </.link>
-              <% end %>
-              <%= if @show_settings_link do %>
-                <.link
-                  navigate={~p"/settings"}
-                  class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
-                >
-                  Settings
-                </.link>
-              <% end %>
+              <.link
+                navigate={~p"/settings"}
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary)"
+              >
+                Settings
+              </.link>
               <.link
                 href={~p"/auth/logout"}
                 method="delete"
@@ -423,30 +417,26 @@ defmodule CritWeb.Layouts do
       <%!-- Mobile nav dropdown --%>
       <div id="dashboard-nav" class="hidden sm:hidden border-t border-(--crit-border)">
         <div class="flex flex-col px-5 py-2">
-          <%= if @show_my_reviews_link do %>
+          <.link
+            href={~p"/dashboard"}
+            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
+          >
+            Dashboard
+          </.link>
+          <%= if @show_overview_link do %>
             <.link
-              href={~p"/dashboard"}
+              href={~p"/overview"}
               class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
             >
-              My Reviews
+              Overview
             </.link>
           <% end %>
-          <%= if @show_admin_link do %>
-            <.link
-              href={~p"/admin"}
-              class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
-            >
-              Admin
-            </.link>
-          <% end %>
-          <%= if @show_settings_link do %>
-            <.link
-              navigate={~p"/settings"}
-              class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
-            >
-              Settings
-            </.link>
-          <% end %>
+          <.link
+            navigate={~p"/settings"}
+            class="text-sm text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) py-2"
+          >
+            Settings
+          </.link>
           <%= if @current_user do %>
             <.link
               href={~p"/auth/logout"}

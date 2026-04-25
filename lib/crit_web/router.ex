@@ -92,7 +92,7 @@ defmodule CritWeb.Router do
     live_session :admin,
       on_mount: [{CritWeb.Live.Hooks, :require_selfhosted_auth}],
       session: {CritWeb.Live.SessionHelper, :admin_session_opts, []} do
-      live "/admin", AdminLive, :index
+      live "/overview", OverviewLive, :index
     end
   end
 

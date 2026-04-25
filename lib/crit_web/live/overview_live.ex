@@ -1,4 +1,4 @@
-defmodule CritWeb.AdminLive do
+defmodule CritWeb.OverviewLive do
   use CritWeb, :live_view
 
   alias Crit.{Reviews, Statistics}
@@ -18,7 +18,7 @@ defmodule CritWeb.AdminLive do
       |> assign(:stats, stats)
       |> assign(:chart_data, chart_data)
       |> assign(:max_count, max_count)
-      |> assign(:page_title, "Admin - Crit")
+      |> assign(:page_title, "Overview - Crit")
       |> assign(:noindex, true)
 
     socket =

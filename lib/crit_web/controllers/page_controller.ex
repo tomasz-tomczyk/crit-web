@@ -185,7 +185,7 @@ defmodule CritWeb.PageController do
 
   def home(conn, _params) do
     if Application.get_env(:crit, :selfhosted) do
-      redirect(conn, to: "/dashboard")
+      redirect(conn, to: "/overview")
     else
       render(conn, :home,
         demo_token: Application.get_env(:crit, :demo_review_token),

@@ -263,9 +263,9 @@ defmodule CritWeb.DashboardLiveTest do
       end)
     end
 
-    test "/ redirects to /dashboard when selfhosted", %{conn: conn} do
+    test "/ redirects to /overview when selfhosted", %{conn: conn} do
       conn = get(conn, ~p"/")
-      assert redirected_to(conn) == "/dashboard"
+      assert redirected_to(conn) == "/overview"
     end
   end
 end
