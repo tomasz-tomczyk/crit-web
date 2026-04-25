@@ -13,6 +13,7 @@ config :crit, Crit.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: String.to_integer(System.get_env("DB_PORT", "5432")),
   database: "crit_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: if(e2e_mode?, do: DBConnection.ConnectionPool, else: Ecto.Adapters.SQL.Sandbox),
   pool_size: System.schedulers_online() * 2

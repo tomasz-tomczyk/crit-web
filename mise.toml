@@ -5,7 +5,7 @@ elixir = "1.19.5-otp-28"
 [env]
 PORT = "4000"
 DB_NAME = "crit_dev"
-DB_PORT = "5432"
+DB_PORT = "{{ get_env(name='DB_PORT', default='5432') }}"
 DB_USER = "postgres"
 DB_PASSWORD = "postgres"
 DB_HOST = "localhost"
@@ -17,9 +17,24 @@ WT_COPY_DIRS = "deps _build"
 description = "Install Elixir dependencies"
 run = "mix deps.get"
 
+[tasks."db:start"]
+description = "Start PostgreSQL container"
+run = """
+if docker inspect crit-web-postgres >/dev/null 2>&1; then
+  docker start crit-web-postgres 2>/dev/null || true
+else
+  docker run -d --name crit-web-postgres \
+    -e POSTGRES_USER=$DB_USER \
+    -e POSTGRES_PASSWORD=$DB_PASSWORD \
+    -p $DB_PORT:5432 \
+    postgres:17
+fi
+until docker exec crit-web-postgres pg_isready -U $DB_USER >/dev/null 2>&1; do sleep 0.2; done
+"""
+
 [tasks."db:setup"]
 description = "Create and migrate database"
-depends = ["deps"]
+depends = ["deps", "db:start"]
 run = [
   "mix ecto.create 2>/dev/null || true",
   "mix ecto.migrate"
@@ -33,7 +48,7 @@ raw = true
 
 [tasks.down]
 description = "Stop services"
-run = "echo 'nothing to stop'"
+run = "docker stop crit-web-postgres 2>/dev/null || true"
 
 [tasks.setup]
 description = "Install deps and setup DB (no server)"
