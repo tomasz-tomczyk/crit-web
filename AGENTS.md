@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```bash
-dev up                    # Install deps, setup DB, start server on :4000
+mise run up               # Install deps, setup DB, start server on :4000
 mix test                  # Run all tests
 mix precommit             # Full CI check: compile, format, sobelow, audit, test
 ```
