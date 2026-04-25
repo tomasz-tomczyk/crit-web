@@ -476,14 +476,14 @@ defmodule CritWeb.Layouts do
         <div class="flex items-center gap-1.5">
           <%= if @current_user do %>
             <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
-              <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
-                Dashboard
-              </.nav_link>
               <%= if @show_overview_link do %>
                 <.nav_link href={~p"/overview"} active={@current_page == :overview}>
                   Overview
                 </.nav_link>
               <% end %>
+              <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
+                Dashboard
+              </.nav_link>
             </nav>
 
             <span
@@ -664,14 +664,14 @@ defmodule CritWeb.Layouts do
             <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Navigate
             </div>
-            <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
-              Dashboard
-            </.nav_mobile_link>
             <%= if @show_overview_link do %>
               <.nav_mobile_link href={~p"/overview"} active={@current_page == :overview}>
                 Overview
               </.nav_mobile_link>
             <% end %>
+            <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
+              Dashboard
+            </.nav_mobile_link>
 
             <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Account
