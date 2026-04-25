@@ -3006,6 +3006,7 @@ function buildToc(tocEl, toggleBtn, items) {
 
   if (items.length === 0) {
     toggleBtn.style.display = "none"
+    tocEl.classList.add("crit-toc-hidden")
     return
   }
   toggleBtn.style.display = ""
@@ -4037,9 +4038,11 @@ export const DocumentRenderer = {
     const tocItems = extractTocItems(md, rawContent)
     if (tocEl && tocToggleBtn) {
       buildToc(tocEl, tocToggleBtn, tocItems)
-      const saved = localStorage.getItem("crit-toc")
-      if (saved === "open" || (saved === null && window.innerWidth > 1200)) {
-        tocEl.classList.remove("crit-toc-hidden")
+      if (tocItems.length > 0) {
+        const saved = localStorage.getItem("crit-toc")
+        if (saved === "open" || (saved === null && window.innerWidth > 1200)) {
+          tocEl.classList.remove("crit-toc-hidden")
+        }
       }
       tocToggleBtn.addEventListener("click", () => {
         const isHidden = tocEl.classList.contains("crit-toc-hidden")
