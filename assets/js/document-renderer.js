@@ -1,5 +1,6 @@
 import markdownit from "markdown-it"
 import hljs from "highlight.js"
+import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -69,98 +70,49 @@ function tokenize(line) {
   return tokens
 }
 
-// Compute LCS membership for two token arrays.
-// Returns { oldKeep: boolean[], newKeep: boolean[] } where true = token is in LCS (unchanged).
-function computeTokenLCS(oldTokens, newTokens) {
-  var m = oldTokens.length
-  var n = newTokens.length
-
-  // Build DP table
-  var dp = []
-  for (var i = 0; i <= m; i++) {
-    dp[i] = new Array(n + 1).fill(0)
-  }
-  for (var i = 1; i <= m; i++) {
-    for (var j = 1; j <= n; j++) {
-      if (oldTokens[i - 1] === newTokens[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
-      }
-    }
-  }
-
-  // Backtrack to mark LCS membership
-  var oldKeep = new Array(m).fill(false)
-  var newKeep = new Array(n).fill(false)
-  var i = m, j = n
-  while (i > 0 && j > 0) {
-    if (oldTokens[i - 1] === newTokens[j - 1]) {
-      oldKeep[i - 1] = true
-      newKeep[j - 1] = true
-      i--; j--
-    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
-      i--
-    } else {
-      j--
-    }
-  }
-
-  return { oldKeep: oldKeep, newKeep: newKeep }
-}
-
-// Compute word-level diff between two lines.
+// Compute word-level diff between two lines using diff-match-patch.
 // Returns { oldRanges, newRanges } where each range is [startCharIdx, endCharIdx] in the raw text.
 // Returns null if lines are too long, identical, or completely different.
 function wordDiff(oldLine, newLine) {
-  // Skip for very long lines (perf guard: LCS is O(m*n) on token count)
+  // Skip for very long lines (perf guard)
   if (oldLine.length > 500 || newLine.length > 500) return null
   // Skip for lines with no spaces and >200 chars (likely minified/binary)
   if (oldLine.length > 200 && !oldLine.includes(' ')) return null
   if (newLine.length > 200 && !newLine.includes(' ')) return null
 
-  var oldTokens = tokenize(oldLine)
-  var newTokens = tokenize(newLine)
+  // Lines are identical — nothing to highlight
+  if (oldLine === newLine) return null
 
-  // Skip if token counts are huge
-  if (oldTokens.length > 200 || newTokens.length > 200) return null
+  const diffs = cleanupSemantic(makeDiff(oldLine, newLine))
 
-  var result = computeTokenLCS(oldTokens, newTokens)
-  var oldKeep = result.oldKeep
-  var newKeep = result.newKeep
+  // If the diff is a single delete+insert with no equal parts, everything changed
+  const hasEqual = diffs.some(d => d[0] === DIFF_EQUAL)
+  if (!hasEqual) return null
 
-  // If everything changed, don't bother with word-level highlights
-  var oldUnchanged = oldKeep.filter(Boolean).length
-  var newUnchanged = newKeep.filter(Boolean).length
-  if (oldUnchanged === 0 && newUnchanged === 0) return null
+  // Build character ranges for deletions (oldRanges) and insertions (newRanges)
+  const oldRanges = []
+  const newRanges = []
+  let oldIdx = 0
+  let newIdx = 0
 
-  // If nothing changed (lines are identical), skip
-  if (oldUnchanged === oldTokens.length && newUnchanged === newTokens.length) return null
-
-  // Build character ranges for changed tokens
-  function buildRanges(tokens, keep) {
-    var ranges = []
-    var charIdx = 0
-    var rangeStart = -1
-    for (var i = 0; i < tokens.length; i++) {
-      if (!keep[i]) {
-        if (rangeStart === -1) rangeStart = charIdx
-      } else {
-        if (rangeStart !== -1) {
-          ranges.push([rangeStart, charIdx])
-          rangeStart = -1
-        }
-      }
-      charIdx += tokens[i].length
+  for (const [op, text] of diffs) {
+    const len = text.length
+    if (op === DIFF_EQUAL) {
+      oldIdx += len
+      newIdx += len
+    } else if (op === DIFF_DELETE) {
+      oldRanges.push([oldIdx, oldIdx + len])
+      oldIdx += len
+    } else if (op === DIFF_INSERT) {
+      newRanges.push([newIdx, newIdx + len])
+      newIdx += len
     }
-    if (rangeStart !== -1) ranges.push([rangeStart, charIdx])
-    return ranges
   }
 
-  return {
-    oldRanges: buildRanges(oldTokens, oldKeep),
-    newRanges: buildRanges(newTokens, newKeep),
-  }
+  // If no actual changes detected, skip
+  if (oldRanges.length === 0 && newRanges.length === 0) return null
+
+  return { oldRanges, newRanges }
 }
 
 // Overlay word-diff highlight ranges onto syntax-highlighted HTML.
