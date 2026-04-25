@@ -33,12 +33,18 @@ until docker exec crit-web-postgres pg_isready -U $DB_USER >/dev/null 2>&1; do s
 """
 
 [tasks."db:setup"]
-description = "Create and migrate database"
+description = "Create, migrate, and seed database"
 depends = ["deps", "db:start"]
 run = [
   "mix ecto.create 2>/dev/null || true",
-  "mix ecto.migrate"
+  "mix ecto.migrate",
+  "mix run priv/repo/seeds.exs"
 ]
+
+[tasks."db:seed"]
+description = "Run database seeds"
+depends = ["deps", "db:start"]
+run = "mix run priv/repo/seeds.exs"
 
 [tasks.up]
 description = "Start everything"
