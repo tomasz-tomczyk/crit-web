@@ -227,40 +227,18 @@ defmodule CritWeb.Layouts do
                 />
               </button>
 
+              <%!--
+                Marketing pages are dead views; the popover's outside-click and
+                Escape behavior lives in `assets/js/app.js` via document-level
+                delegation rather than a colocated hook.
+              --%>
               <div
                 id="site-identity-popover"
                 role="menu"
                 aria-label="Account menu"
                 hidden
-                phx-hook=".SiteIdentityPopover"
                 class="absolute right-0 top-[calc(100%+8px)] min-w-[280px] bg-(--crit-popover-bg) border border-(--crit-border-strong) rounded-[10px] p-1.5 z-40 shadow-[var(--crit-popover-shadow)]"
               >
-                <script :type={Phoenix.LiveView.ColocatedHook} name=".SiteIdentityPopover">
-                  export default {
-                    mounted() {
-                      this.onDocClick = (e) => {
-                        if (this.el.hidden) return
-                        const trigger = document.getElementById("site-identity-toggle")
-                        if (this.el.contains(e.target) || trigger?.contains(e.target)) return
-                        this.el.hidden = true
-                        trigger?.setAttribute("aria-expanded", "false")
-                      }
-                      this.onKey = (e) => {
-                        if (e.key === "Escape" && !this.el.hidden) {
-                          this.el.hidden = true
-                          document.getElementById("site-identity-toggle")
-                            ?.setAttribute("aria-expanded", "false")
-                        }
-                      }
-                      document.addEventListener("click", this.onDocClick)
-                      document.addEventListener("keydown", this.onKey)
-                    },
-                    destroyed() {
-                      document.removeEventListener("click", this.onDocClick)
-                      document.removeEventListener("keydown", this.onKey)
-                    }
-                  }
-                </script>
                 <div class="flex gap-3 items-start px-3 pt-3 pb-3.5">
                   <%= if @current_user.avatar_url do %>
                     <img

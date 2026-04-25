@@ -62,10 +62,26 @@ function setTheme(theme) {
 window.addEventListener("phx:set-theme", e => setTheme(e.target.dataset.phxTheme));
 window.addEventListener("storage", e => e.key === "phx:theme" && setTheme(e.newValue || "system"));
 
-// Mobile hamburger menu (public site header)
-document.getElementById("mobile-nav-toggle")?.addEventListener("click", () => {
-  document.getElementById("mobile-nav")?.classList.toggle("hidden");
-});
+// Site header identity popover: close on outside-click / Escape.
+// Marketing pages are dead views (controller-rendered), so phx-hook
+// won't reliably fire here — use document-level delegation instead.
+// The popover open/close itself is handled by phx-click + JS.toggle_attribute,
+// which works on dead views too (LiveSocket binds those globally).
+document.addEventListener("click", e => {
+  const popover = document.getElementById("site-identity-popover")
+  const trigger = document.getElementById("site-identity-toggle")
+  if (!popover || popover.hidden) return
+  if (popover.contains(e.target) || trigger?.contains(e.target)) return
+  popover.hidden = true
+  trigger?.setAttribute("aria-expanded", "false")
+})
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return
+  const popover = document.getElementById("site-identity-popover")
+  if (!popover || popover.hidden) return
+  popover.hidden = true
+  document.getElementById("site-identity-toggle")?.setAttribute("aria-expanded", "false")
+})
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
