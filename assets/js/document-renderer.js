@@ -1481,6 +1481,15 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
       block.startLine >= ctx.selectionStart && block.endLine <= ctx.selectionEnd
     if (inCurrentSelection) lineBlockEl.classList.add('selected')
     if (hasFormForBlock && !inCurrentSelection) lineBlockEl.classList.add('form-selected')
+    if (inCurrentSelection && ctx.dragState) {
+      const ds = ctx.dragState
+      const isAnchor = block.startLine <= ds.anchorEndLine && block.endLine >= ds.anchorStartLine
+      const isCurrent = block.startLine <= ds.currentEndLine && block.endLine >= ds.currentStartLine
+      if (isAnchor || isCurrent) lineBlockEl.classList.add('drag-endpoint')
+      lineBlockEl.classList.add('drag-range')
+      if (block.startLine === ctx.selectionStart) lineBlockEl.classList.add('drag-range-start')
+      if (block.endLine === ctx.selectionEnd) lineBlockEl.classList.add('drag-range-end')
+    }
 
     // Comment gutter
     const commentGutter = document.createElement('div')
@@ -2004,6 +2013,15 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
   if (hasFormForBlock && !inCurrentSelection) {
     lineBlockEl.classList.add("form-selected")
   }
+  if (inCurrentSelection && ctx.dragState) {
+    const ds = ctx.dragState
+    const isAnchor = block.startLine <= ds.anchorEndLine && block.endLine >= ds.anchorStartLine
+    const isCurrent = block.startLine <= ds.currentEndLine && block.endLine >= ds.currentStartLine
+    if (isAnchor || isCurrent) lineBlockEl.classList.add("drag-endpoint")
+    lineBlockEl.classList.add("drag-range")
+    if (block.startLine === ctx.selectionStart) lineBlockEl.classList.add("drag-range-start")
+    if (block.endLine === ctx.selectionEnd) lineBlockEl.classList.add("drag-range-end")
+  }
 
   // Gutter
   const gutter = document.createElement("div")
@@ -2015,12 +2033,15 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
   lineNum.className = "line-num"
   lineNum.textContent = block.startLine === block.endLine ? block.startLine : String(block.startLine)
 
+  const commentGutter = document.createElement("div")
+  commentGutter.className = "line-comment-gutter"
   const lineAdd = document.createElement("span")
   lineAdd.className = "line-add"
   lineAdd.textContent = "+"
+  commentGutter.appendChild(lineAdd)
 
   gutter.appendChild(lineNum)
-  gutter.appendChild(lineAdd)
+  gutter.appendChild(commentGutter)
   gutter.addEventListener("mousedown", (e) => handleGutterMouseDown(e, ctx))
 
   // Content
