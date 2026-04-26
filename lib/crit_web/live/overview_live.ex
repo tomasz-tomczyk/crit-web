@@ -37,7 +37,6 @@ defmodule CritWeb.OverviewLive do
     {:ok, socket, layout: false}
   end
 
-
   defp format_bytes(bytes) when bytes < 1024, do: "#{bytes} B"
   defp format_bytes(bytes) when bytes < 1_048_576, do: "#{Float.round(bytes / 1024, 1)} KB"
   defp format_bytes(bytes), do: "#{Float.round(bytes / 1_048_576, 1)} MB"

@@ -3,7 +3,6 @@ defmodule CritWeb.ReviewLive do
 
   alias Crit.Reviews
 
-
   on_mount {CritWeb.Live.Hooks, :load_current_user}
 
   @pubsub Crit.PubSub

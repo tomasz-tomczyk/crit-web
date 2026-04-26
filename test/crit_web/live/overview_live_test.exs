@@ -186,5 +186,4 @@ defmodule CritWeb.OverviewLiveTest do
       assert html =~ ~p"/r/#{review.token}"
     end
   end
-
 end

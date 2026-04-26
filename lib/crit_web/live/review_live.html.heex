@@ -364,10 +364,11 @@
       Enum.reduce(@review.comments, 0, fn c, acc ->
         acc + 1 + length(c.replies)
       end) %>
-    <% first_path = case List.first(@review.files) do
-      nil -> nil
-      f -> f.file_path
-    end %>
+    <% first_path =
+      case List.first(@review.files) do
+        nil -> nil
+        f -> f.file_path
+      end %>
     <div class="crit-review-meta">
       <div class="crit-review-meta-inner">
         <CritWeb.Components.ReviewListingHeader.review_listing_header

@@ -223,13 +223,13 @@
         </script>
         <article :for={{dom_id, review} <- @streams.reviews} id={dom_id} class="group">
           <div class="mb-2 px-0.5">
-          <.review_listing_header
-            path={review.first_file_path}
-            last_activity_at={review.last_activity_at}
-            file_count={review.file_count}
-            comment_count={review.comment_count}
-            link_to={~p"/r/#{review.token}"}
-          />
+            <.review_listing_header
+              path={review.first_file_path}
+              last_activity_at={review.last_activity_at}
+              file_count={review.file_count}
+              comment_count={review.comment_count}
+              link_to={~p"/r/#{review.token}"}
+            />
           </div>
           <.review_snippet path={review.first_file_path} content={review.first_file_content} />
         </article>
