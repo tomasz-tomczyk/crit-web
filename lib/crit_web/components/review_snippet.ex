@@ -25,7 +25,7 @@ defmodule CritWeb.Components.ReviewSnippet do
     ~H"""
     <%= case @snippet do %>
       <% {:code, lines} -> %>
-        <div class="border border-(--crit-border) rounded-md bg-(--crit-bg-card) overflow-hidden h-[200px] relative font-mono text-xs leading-5">
+        <div class="border border-(--crit-border) rounded-md overflow-hidden h-[200px] relative font-mono text-xs leading-5">
           <div class="py-2">
             <div
               :for={{line, idx} <- Enum.with_index(lines, 1)}
@@ -35,18 +35,18 @@ defmodule CritWeb.Components.ReviewSnippet do
                 {idx}
               </span>
               <code
-                class="hljs whitespace-pre overflow-hidden bg-transparent p-0 text-(--crit-fg-primary)"
+                class="hljs whitespace-pre overflow-hidden !bg-transparent p-0 text-(--crit-fg-primary)"
                 data-snippet-line
                 data-lang={@lang}
                 phx-no-format
               >{line}</code>
             </div>
           </div>
-          <div class="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-b from-transparent to-(--crit-bg-card) pointer-events-none">
+          <div class="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-b from-transparent to-(--crit-bg-page) pointer-events-none">
           </div>
         </div>
       <% {:markdown, html} -> %>
-        <div class="border border-(--crit-border) rounded-md bg-(--crit-bg-card) overflow-hidden h-[200px] relative px-5 py-3 text-sm
+        <div class="border border-(--crit-border) rounded-md overflow-hidden h-[200px] relative px-5 py-3 text-sm
                     [&_h1]:text-base [&_h1]:font-semibold [&_h1]:mt-0 [&_h1]:mb-1.5 [&_h1]:pb-1 [&_h1]:border-b [&_h1]:border-(--crit-border)
                     [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:mt-2.5 [&_h2]:mb-1
                     [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1
@@ -61,11 +61,11 @@ defmodule CritWeb.Components.ReviewSnippet do
                     [&_blockquote]:border-l-2 [&_blockquote]:border-(--crit-border-strong) [&_blockquote]:pl-3 [&_blockquote]:text-(--crit-fg-secondary)
                     [&_strong]:font-semibold [&_em]:italic">
           {html}
-          <div class="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-b from-transparent to-(--crit-bg-card) pointer-events-none">
+          <div class="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-b from-transparent to-(--crit-bg-page) pointer-events-none">
           </div>
         </div>
       <% :none -> %>
-        <div class="border border-dashed border-(--crit-border) rounded-md bg-(--crit-bg-card) h-12 flex items-center justify-center text-xs text-(--crit-fg-muted)">
+        <div class="border border-dashed border-(--crit-border) rounded-md h-12 flex items-center justify-center text-xs text-(--crit-fg-muted)">
           No preview available
         </div>
     <% end %>

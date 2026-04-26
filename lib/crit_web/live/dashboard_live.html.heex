@@ -10,7 +10,7 @@
   <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
     <div class="flex justify-between items-baseline mb-6 pb-4 border-b border-(--crit-border)">
       <h1 class="text-3xl font-extrabold tracking-tight">
-        Reviews <span class="text-(--crit-fg-muted) font-normal ml-2">{@review_count}</span>
+        Your Reviews <span class="text-(--crit-fg-muted) font-normal ml-2">{@review_count}</span>
       </h1>
       <span class="text-xs text-(--crit-fg-muted) max-sm:hidden">Sorted by recent activity</span>
     </div>
@@ -222,14 +222,14 @@
           }
         </script>
         <article :for={{dom_id, review} <- @streams.reviews} id={dom_id} class="group">
-          <header class="flex items-start justify-between gap-4 mb-2 px-0.5">
-            <div class="min-w-0 flex flex-col gap-0.5">
+          <header class="flex items-start justify-between gap-4 mb-2 px-0.5 max-sm:flex-col max-sm:gap-1">
+            <div class="min-w-0 flex flex-col gap-0.5 max-sm:w-full">
               <a
                 href={~p"/r/#{review.token}"}
                 class={[
-                  "text-sm font-semibold truncate block max-w-[720px] hover:underline",
+                  "font-semibold truncate block w-fit max-w-[720px] max-sm:max-w-full leading-tight",
                   if(review.first_file_path,
-                    do: "text-(--crit-brand)",
+                    do: "crit-link",
                     else: "text-(--crit-fg-secondary) italic"
                   )
                 ]}
@@ -237,11 +237,14 @@
                 <% {dir, file} = split_path(review.first_file_path) %>
                 <span class="text-(--crit-fg-muted) font-normal">{dir}</span>{file}
               </a>
-              <span class="text-xs text-(--crit-fg-muted)">
+              <span class="text-xs text-(--crit-fg-muted) max-sm:hidden">
                 Active {time_ago(review.last_activity_at)}
               </span>
             </div>
-            <div class="flex items-center gap-3.5 text-xs text-(--crit-fg-secondary) shrink-0">
+            <div class="flex items-center gap-3.5 text-xs text-(--crit-fg-secondary) shrink-0 max-sm:w-full max-sm:gap-3">
+              <span class="hidden max-sm:inline-flex items-center text-(--crit-fg-muted)">
+                Active {time_ago(review.last_activity_at)}
+              </span>
               <span class="inline-flex items-center gap-1 tabular-nums">
                 <.icon name="hero-document-text-micro" class="size-3.5 text-(--crit-fg-muted)" />
                 <span class="text-(--crit-fg-primary) font-medium">{review.file_count}</span>
@@ -269,7 +272,7 @@
                 phx-click="delete_review"
                 phx-value-id={review.id}
                 data-confirm="Delete this review? This cannot be undone."
-                class="size-6 inline-flex items-center justify-center rounded text-(--crit-fg-muted) hover:text-(--crit-red) hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer ml-1"
+                class="size-6 inline-flex items-center justify-center rounded text-(--crit-fg-muted) hover:text-(--crit-red) hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer ml-1 max-sm:ml-auto"
                 aria-label="Delete review"
               >
                 <.icon name="hero-trash" class="size-3.5" />
