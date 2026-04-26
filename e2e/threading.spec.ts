@@ -77,6 +77,36 @@ test.describe("Comment Threading", () => {
     await expect(card.locator(".reply-body")).toContainText("Done, fixed it");
   });
 
+  test("reply form collapses and clears after successful submit", async ({
+    page,
+    request,
+  }) => {
+    await seedComment(request, token, {
+      body: "Review this",
+      startLine: 1,
+    });
+
+    await loadReview(page, token);
+    await waitForCommentCard(page, "Review this");
+
+    const card = page
+      .locator(".comment-card")
+      .filter({ hasText: "Review this" });
+
+    await card.locator(".reply-input").click();
+    await card.locator(".reply-textarea").fill("Addressed this");
+    await card.locator(".reply-form-buttons .btn-primary").click();
+
+    // Reply should render
+    await expect(card.locator(".comment-reply")).toHaveCount(1);
+
+    // Form should collapse — textarea gone, compact input visible & empty
+    await expect(card.locator(".reply-textarea")).toHaveCount(0);
+    await expect(card.locator(".reply-form.expanded")).toHaveCount(0);
+    await expect(card.locator(".reply-input")).toBeVisible();
+    await expect(card.locator(".reply-input")).toHaveValue("");
+  });
+
   test("reply form Cancel collapses without submitting", async ({
     page,
     request,

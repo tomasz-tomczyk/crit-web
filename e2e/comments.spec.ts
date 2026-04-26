@@ -111,6 +111,36 @@ test.describe("Comments — Add via UI", () => {
     await waitForCommentCard(page, "Ctrl+Enter comment");
   });
 
+  test("opening a new comment form closes existing empty form", async ({ page }) => {
+    await loadReview(page, token);
+
+    // Open form on first line (leave empty)
+    await page.locator(".line-gutter").first().click();
+    await expect(page.locator(".comment-form")).toBeVisible({ timeout: 5_000 });
+
+    // Open form on a different line without filling first
+    await page.locator(".line-gutter").nth(2).click();
+
+    // Only one form should remain (the new one); the empty first form was closed
+    await expect(page.locator(".comment-form")).toHaveCount(1);
+  });
+
+  test("opening a new comment form keeps existing form with text", async ({ page }) => {
+    await loadReview(page, token);
+
+    await page.locator(".line-gutter").first().click();
+    const firstTextarea = page.locator(".comment-form textarea");
+    await expect(firstTextarea).toBeVisible({ timeout: 5_000 });
+    await firstTextarea.fill("draft text");
+
+    // Open form on a different line
+    await page.locator(".line-gutter").nth(2).click();
+
+    // Both forms should remain; first retains text
+    await expect(page.locator(".comment-form")).toHaveCount(2);
+    await expect(page.locator('.comment-form textarea').first()).toHaveValue("draft text");
+  });
+
   test("cancels a comment form with Escape", async ({ page }) => {
     await loadReview(page, token);
 
