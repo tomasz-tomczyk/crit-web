@@ -335,6 +335,18 @@ function getLineRangeFromSelection(selection) {
   return { filePath, startLine, endLine, afterBlockIndex }
 }
 
+function closeEmptyForms(ctx, exceptKey) {
+  const toClose = []
+  ctx.activeForms.forEach(function(f) {
+    if (f.formKey === exceptKey) return
+    if (f.editingId) return
+    const ta = ctx.el.querySelector('.comment-form[data-form-key="' + f.formKey + '"] textarea')
+    const text = ta ? ta.value : (f.draftBody || '')
+    if (!text.trim()) toClose.push(f)
+  })
+  toClose.forEach(function(f) { removeForm(ctx, f.formKey) })
+}
+
 function openForm(ctx, newForm) {
   const fk = formKey(newForm)
   const existing = ctx.activeForms.find(f => f.formKey === fk)
@@ -345,6 +357,7 @@ function openForm(ctx, newForm) {
     focusCommentTextarea(ctx, existing.formKey)
     return
   }
+  closeEmptyForms(ctx, fk)
   addForm(ctx, newForm)
   ctx.selectionStart = newForm.startLine
   ctx.selectionEnd = newForm.endLine
