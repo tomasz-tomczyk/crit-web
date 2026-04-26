@@ -840,24 +840,52 @@
   align-items: flex-start;
   justify-content: flex-end;
 }
-.line-gutter:hover .line-num { display: none; }
 .line-gutter:hover .line-add { display: flex; }
 body.dragging { user-select: none; cursor: grabbing; }
-body.dragging .line-block.selected .line-gutter .line-num { display: none; }
-body.dragging .line-block.selected .line-gutter .line-add { display: flex; }
+body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; }
+/* Document-path comment gutter: overlay column between line numbers and content */
+.line-gutter > .line-comment-gutter {
+  position: absolute;
+  right: -10px;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 1px;
+  z-index: 5;
+}
+/* Blue connecting line between drag endpoints */
+.line-block.drag-range .line-comment-gutter::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  margin-left: -1px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--crit-brand);
+  pointer-events: none;
+  z-index: 0;
+}
+.line-block.drag-range-start .line-comment-gutter::after { top: 10px; }
+.line-block.drag-range-end .line-comment-gutter::after { bottom: calc(100% - 10px); }
+.line-block.drag-range-start.drag-range-end .line-comment-gutter::after { display: none; }
 .line-num { padding-top: 1px; line-height: inherit; }
 .line-add {
   display: none;
   align-items: center;
   justify-content: center;
   width: 20px; height: 20px;
-  margin-top: 1px;
   border-radius: 4px;
   background: var(--crit-brand);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
+  position: relative;
+  z-index: 2;
 }
 
 /* ===== Line Content ===== */
