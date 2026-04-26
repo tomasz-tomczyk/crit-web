@@ -1247,7 +1247,10 @@ function updateViewedCount(ctx) {
 
 // ---- Render dispatcher ------------------------------------------------------
 
+let __activeCtx = null
+
 function render(ctx) {
+  __activeCtx = ctx
   if (ctx.multiFile) {
     renderMultiFile(ctx)
   } else {
@@ -1964,12 +1967,44 @@ function buildCommentsMap(comments) {
 
 function buildCommentedLineSet(comments) {
   const set = new Set()
+  const hideResolved = localStorage.getItem('crit-hide-resolved') === 'true'
   for (const c of comments) {
     if (c.scope === 'file' || c.scope === 'review') continue
     if (!c.start_line || !c.end_line) continue
+    if (hideResolved && c.resolved) continue
     for (let ln = c.start_line; ln <= c.end_line; ln++) set.add(ln)
   }
   return set
+}
+
+function refreshCommentHighlights(ctx) {
+  if (!ctx || !ctx.el || !ctx.comments) return
+  // Build per-file commented line sets so we can include/exclude file paths.
+  const byPath = new Map()
+  const hideResolved = localStorage.getItem('crit-hide-resolved') === 'true'
+  for (const c of ctx.comments) {
+    if (c.scope === 'file' || c.scope === 'review') continue
+    if (!c.start_line || !c.end_line) continue
+    if (hideResolved && c.resolved) continue
+    const fp = c.file_path || null
+    let set = byPath.get(fp)
+    if (!set) { set = new Set(); byPath.set(fp, set) }
+    for (let ln = c.start_line; ln <= c.end_line; ln++) set.add(ln)
+  }
+  ctx.el.querySelectorAll('.line-block').forEach(function(lb) {
+    const start = parseInt(lb.dataset.startLine)
+    const end = parseInt(lb.dataset.endLine)
+    if (Number.isNaN(start) || Number.isNaN(end)) return
+    const fp = lb.dataset.filePath || null
+    const set = byPath.get(fp)
+    let has = false
+    if (set) {
+      for (let ln = start; ln <= end; ln++) {
+        if (set.has(ln)) { has = true; break }
+      }
+    }
+    lb.classList.toggle('has-comment', has)
+  })
 }
 
 function getCommentsForBlock(block, commentsMap) {
@@ -3818,6 +3853,7 @@ function renderSettingsPane() {
     hideResolvedToggle.addEventListener('change', function() {
       localStorage.setItem('crit-hide-resolved', hideResolvedToggle.checked ? 'true' : 'false')
       applyHideResolved()
+      refreshCommentHighlights(__activeCtx)
     })
   }
 
@@ -4420,6 +4456,7 @@ export const DocumentRenderer = {
         const current = localStorage.getItem('crit-hide-resolved') === 'true'
         localStorage.setItem('crit-hide-resolved', current ? 'false' : 'true')
         applyHideResolved()
+        refreshCommentHighlights(ctx)
         // Sync settings pane toggle if open
         const toggle = document.getElementById('hideResolvedToggle')
         if (toggle) toggle.checked = !current
