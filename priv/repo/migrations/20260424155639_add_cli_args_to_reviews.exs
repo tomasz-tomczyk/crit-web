@@ -3,7 +3,7 @@ defmodule Crit.Repo.Migrations.AddCliArgsToReviews do
 
   def change do
     alter table(:reviews) do
-      add :cli_args, {:array, :string}, default: [], null: false
+      add :cli_args, {:array, :string}, default: []
     end
   end
 end
