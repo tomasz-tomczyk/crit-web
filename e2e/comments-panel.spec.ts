@@ -9,13 +9,121 @@ import {
 } from "./helpers";
 
 /**
- * Tests for the redesigned comments panel:
- * - Two-row header with count badge
- * - Segmented filter pill (All / Open / Resolved)
- * - Collapsible file groups
- * - Expand all / Collapse all toggle
+ * Comments panel — merged spec covering:
+ * 1. Toggle & visibility (open/close, panel rendering, scroll-to-comment)
+ * 2. Filter & grouping (segmented filter pill, count badge, file groups,
+ *    expand/collapse all)
+ *
+ * The redundant "Show resolved filter" test from the legacy detail spec is
+ * dropped — coverage lives in the segmented-filter tests below.
  */
-test.describe("Comments Panel — Redesigned Header & Filters", () => {
+
+test.describe("Comments Panel — Toggle & visibility", () => {
+  let token: string;
+  let deleteToken: string;
+
+  test.beforeEach(async ({ request }) => {
+    const review = await createReview(request, {
+      files: [
+        {
+          path: "example.md",
+          content:
+            "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\n" +
+            "Line 11\nLine 12\nLine 13\nLine 14\nLine 15\nLine 16\nLine 17\nLine 18\nLine 19\nLine 20\n",
+        },
+      ],
+    });
+    token = review.token;
+    deleteToken = review.deleteToken;
+  });
+
+  test.afterEach(async ({ request }) => {
+    await deleteReview(request, deleteToken);
+  });
+
+  test("panel shows all comments", async ({ page, request }) => {
+    await seedComment(request, token, {
+      body: "First panel comment",
+      startLine: 1,
+    });
+    await seedComment(request, token, {
+      body: "Second panel comment",
+      startLine: 5,
+    });
+
+    await loadReview(page, token);
+    await waitForCommentCard(page, "First panel comment");
+
+    await page.locator("#comment-count").click();
+    const panel = page.locator(".comments-panel");
+    await expect(panel).toBeVisible({ timeout: 5_000 });
+
+    await expect(panel).toContainText("First panel comment");
+    await expect(panel).toContainText("Second panel comment");
+  });
+
+  test("Shift+C toggles panel open and closed", async ({ page, request }) => {
+    await seedComment(request, token, {
+      body: "Toggle test",
+      startLine: 1,
+    });
+
+    await loadReview(page, token);
+    await waitForCommentCard(page, "Toggle test");
+
+    const panel = page.locator(".comments-panel");
+
+    await page.keyboard.press("Shift+C");
+    await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
+
+    await page.keyboard.press("Shift+C");
+    await expect(panel).not.toHaveClass(/comments-panel-open/);
+  });
+
+  test("close button hides panel", async ({ page, request }) => {
+    await seedComment(request, token, {
+      body: "Close button test",
+      startLine: 1,
+    });
+
+    await loadReview(page, token);
+    await waitForCommentCard(page, "Close button test");
+
+    await page.locator("#comment-count").click();
+    const panel = page.locator(".comments-panel");
+    await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
+
+    await panel.locator(".comments-panel-close").click();
+    await expect(panel).not.toHaveClass(/comments-panel-open/);
+  });
+
+  test("clicking a comment in panel scrolls to inline comment", async ({
+    page,
+    request,
+  }) => {
+    await seedComment(request, token, {
+      body: "Bottom comment to scroll to",
+      startLine: 18,
+    });
+
+    await loadReview(page, token);
+    await waitForCommentCard(page, "Bottom comment to scroll to");
+
+    await page.locator("#comment-count").click();
+    const panel = page.locator(".comments-panel");
+    await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
+
+    const panelComment = panel.locator(".panel-comment-block").first();
+    await panelComment.click();
+
+    const inlineCard = page
+      .locator("#document-renderer .comment-card")
+      .filter({ hasText: "Bottom comment to scroll to" });
+    await expect(inlineCard).toBeVisible({ timeout: 5_000 });
+  });
+});
+
+test.describe("Comments Panel — Filter & grouping", () => {
   let token: string;
   let deleteToken: string;
 
@@ -37,9 +145,6 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
     await deleteReview(request, deleteToken);
   });
 
-  /**
-   * Helper: open the comments panel and return the panel locator.
-   */
   async function openPanel(page: import("@playwright/test").Page) {
     await page.locator("#comment-count").click();
     const panel = page.locator(".comments-panel");
@@ -60,7 +165,6 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const panel = await openPanel(page);
 
-    // Count badge should show total of 3
     const badge = panel.locator("#commentsPanelCountBadge");
     await expect(badge).toHaveText("3");
   });
@@ -77,11 +181,9 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const panel = await openPanel(page);
 
-    // "All" button should be active by default
     const allBtn = panel.locator('.crit-toggle-btn[data-filter="all"]');
     await expect(allBtn).toHaveClass(/crit-toggle-btn--active/);
 
-    // Both comments should be visible in the panel
     await expect(panel).toContainText("Open comment");
     await expect(panel).toContainText("Another open");
   });
@@ -91,11 +193,9 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
   }) => {
     await loadReview(page, token);
 
-    // Add two comments via UI so we can resolve one
     await addCommentViaUI(page, "Will stay open", { lineIndex: 0 });
     await addCommentViaUI(page, "Will be resolved", { lineIndex: 4 });
 
-    // Resolve the second comment
     const resolvedCard = page
       .locator(".comment-card")
       .filter({ hasText: "Will be resolved" });
@@ -104,12 +204,10 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const panel = await openPanel(page);
 
-    // Click "Open" filter
     const openBtn = panel.locator('.crit-toggle-btn[data-filter="open"]');
     await openBtn.click();
     await expect(openBtn).toHaveClass(/crit-toggle-btn--active/);
 
-    // Only the open comment should be visible
     await expect(panel).toContainText("Will stay open");
     await expect(
       panel.locator(".panel-comment-block").filter({ hasText: "Will be resolved" })
@@ -124,7 +222,6 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
     await addCommentViaUI(page, "Stays open", { lineIndex: 0 });
     await addCommentViaUI(page, "Gets resolved", { lineIndex: 4 });
 
-    // Resolve the second comment
     const card = page
       .locator(".comment-card")
       .filter({ hasText: "Gets resolved" });
@@ -133,24 +230,19 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const panel = await openPanel(page);
 
-    // Click "Resolved" filter
     const resolvedBtn = panel.locator('.crit-toggle-btn[data-filter="resolved"]');
     await resolvedBtn.click();
     await expect(resolvedBtn).toHaveClass(/crit-toggle-btn--active/);
 
-    // Only the resolved comment should be visible
     await expect(panel).toContainText("Gets resolved");
     await expect(
       panel.locator(".panel-comment-block").filter({ hasText: "Stays open" })
     ).not.toBeVisible();
   });
 
-  test("filter pill counts match actual comment counts", async ({
-    page,
-  }) => {
+  test("filter pill counts match actual comment counts", async ({ page }) => {
     await loadReview(page, token);
 
-    // Create 3 comments, resolve 1
     await addCommentViaUI(page, "Open one", { lineIndex: 0 });
     await addCommentViaUI(page, "Open two", { lineIndex: 2 });
     await addCommentViaUI(page, "To resolve", { lineIndex: 4 });
@@ -163,7 +255,6 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const panel = await openPanel(page);
 
-    // All = 3, Open = 2, Resolved = 1
     const allCount = panel.locator('.crit-toggle-btn[data-filter="all"] .filter-count');
     const openCount = panel.locator('.crit-toggle-btn[data-filter="open"] .filter-count');
     const resolvedCount = panel.locator('.crit-toggle-btn[data-filter="resolved"] .filter-count');
@@ -177,7 +268,6 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
     page,
     request,
   }) => {
-    // Create a multi-file review so file group headers are rendered
     const multiFileReview = await createReview(request, {
       files: [
         { path: "alpha.ts", content: "Line 1\nLine 2\nLine 3\n" },
@@ -193,25 +283,18 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const panel = await openPanel(page);
 
-    // Find the file group
     const fileGroup = panel.locator(".comments-panel-file-group").first();
     const fileCards = fileGroup.locator(".comments-panel-file-cards");
 
-    // Initially expanded — cards should be visible
     await expect(fileCards).toBeVisible();
 
-    // Click the file group header to collapse
     const fileHeader = fileGroup.locator(".comments-panel-file-name");
     await fileHeader.click();
-
-    // Group should now have collapsed class
     await expect(fileGroup).toHaveClass(/collapsed/);
 
-    // Click again to expand
     await fileHeader.click();
     await expect(fileGroup).not.toHaveClass(/collapsed/);
 
-    // Clean up the multi-file review
     await deleteReview(request, multiFileReview.deleteToken);
   });
 
@@ -229,13 +312,10 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const expandAllBtn = panel.locator("#commentsPanelExpandAll");
 
-    // Initially cards are expanded, so button should say "Collapse all"
     await expect(expandAllBtn).toHaveText("Collapse all");
 
-    // Click to collapse all
     await expandAllBtn.click();
 
-    // All panel comment cards should have the collapsed class
     const panelCards = panel.locator(".comment-card");
     const count = await panelCards.count();
     expect(count).toBeGreaterThanOrEqual(2);
@@ -243,10 +323,8 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
       await expect(panelCards.nth(i)).toHaveClass(/collapsed/);
     }
 
-    // Button label should now say "Expand all"
     await expect(expandAllBtn).toHaveText("Expand all");
 
-    // Click to expand all again
     await expandAllBtn.click();
 
     for (let i = 0; i < count; i++) {
@@ -266,21 +344,17 @@ test.describe("Comments Panel — Redesigned Header & Filters", () => {
 
     const panel = await openPanel(page);
 
-    // Verify inline comment card in document is initially not collapsed
     const inlineCard = page
       .locator("#document-renderer .comment-card")
       .filter({ hasText: "Inline collapse test" });
     await expect(inlineCard).toBeVisible();
     await expect(inlineCard).not.toHaveClass(/collapsed/);
 
-    // Click Collapse all in the panel
     const expandAllBtn = panel.locator("#commentsPanelExpandAll");
     await expandAllBtn.click();
 
-    // Inline comment card should now be collapsed
     await expect(inlineCard).toHaveClass(/collapsed/);
 
-    // Click Expand all to restore
     await expandAllBtn.click();
     await expect(inlineCard).not.toHaveClass(/collapsed/);
   });
