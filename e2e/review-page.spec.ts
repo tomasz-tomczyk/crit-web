@@ -18,10 +18,8 @@ test.describe("Review Page — Loading", () => {
   test("renders the review page with document content", async ({ page }) => {
     await loadReview(page, token);
 
-    // The header should show the filename
-    await expect(page.locator(".crit-header-filename")).toContainText(
-      "example.md"
-    );
+    // The meta bar should show the filename
+    await expect(page.locator(".crit-review-meta")).toContainText("example.md");
 
     // The document should have rendered line blocks
     const lineBlocks = page.locator(".line-block");
