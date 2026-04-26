@@ -18,4 +18,10 @@ defmodule Crit.User do
     |> validate_required([:provider, :provider_uid])
     |> unique_constraint([:provider, :provider_uid])
   end
+
+  @doc "Changeset for user-controlled settings (e.g. keep_reviews)."
+  def settings_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:keep_reviews])
+  end
 end

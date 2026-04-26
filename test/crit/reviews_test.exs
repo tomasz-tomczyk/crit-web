@@ -802,6 +802,34 @@ defmodule Crit.ReviewsTest do
   end
 
   describe "upsert_review/3" do
+    test "rejects upsert with oversize cli_args" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      oversize = for i <- 1..65, do: "arg-#{i}"
+
+      assert {:error, %Ecto.Changeset{} = cs} =
+               Reviews.upsert_review(review.token, review.delete_token, %{
+                 "files" => [%{"path" => "f.md", "content" => "v2"}],
+                 "comments" => [],
+                 "cli_args" => oversize
+               })
+
+      assert {"may not contain more than 64 entries", _} = cs.errors[:cli_args]
+    end
+
+    test "rejects upsert with cli_args containing oversize entry (no content change)" do
+      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "same"}], 1, [], [])
+      huge = String.duplicate("x", 257)
+
+      assert {:error, %Ecto.Changeset{} = cs} =
+               Reviews.upsert_review(review.token, review.delete_token, %{
+                 "files" => [%{"path" => "f.md", "content" => "same"}],
+                 "comments" => [],
+                 "cli_args" => [huge]
+               })
+
+      assert {"each entry may not exceed 256 bytes", _} = cs.errors[:cli_args]
+    end
+
     test "returns {:error, :unauthorized} when delete_token is wrong" do
       {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
 

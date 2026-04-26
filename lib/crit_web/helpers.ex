@@ -1,16 +1,21 @@
 defmodule CritWeb.Helpers do
   @moduledoc "Shared helper functions for LiveViews and templates."
 
+  @minute_seconds 60
+  @hour_seconds 3_600
+  @active_within_seconds 86_400
+  @idle_within_seconds 604_800
+
   @doc "Formats a datetime as a human-readable relative time string."
   def time_ago(datetime) do
     diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
 
     cond do
-      diff < 60 -> "just now"
-      diff < 3600 -> "#{div(diff, 60)}m ago"
-      diff < 86400 -> "#{div(diff, 3600)}h ago"
-      diff < 604_800 -> "#{div(diff, 86400)}d ago"
-      true -> "#{div(diff, 604_800)}w ago"
+      diff < @minute_seconds -> "just now"
+      diff < @hour_seconds -> "#{div(diff, @minute_seconds)}m ago"
+      diff < @active_within_seconds -> "#{div(diff, @hour_seconds)}h ago"
+      diff < @idle_within_seconds -> "#{div(diff, @active_within_seconds)}d ago"
+      true -> "#{div(diff, @idle_within_seconds)}w ago"
     end
   end
 
@@ -22,8 +27,8 @@ defmodule CritWeb.Helpers do
     diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
 
     cond do
-      diff < 86_400 -> :active
-      diff < 604_800 -> :idle
+      diff < @active_within_seconds -> :active
+      diff < @idle_within_seconds -> :idle
       true -> :stale
     end
   end

@@ -223,7 +223,7 @@ defmodule Crit.Reviews do
             {:error, _} = error -> error
           end
         end)
-        |> Ecto.Multi.update(:review, Ecto.Changeset.change(review, review_changes))
+        |> Ecto.Multi.update(:review, Review.update_changeset(review, review_changes))
         |> Repo.transaction()
         |> case do
           {:ok, %{review: updated}} ->
@@ -253,7 +253,7 @@ defmodule Crit.Reviews do
 
         multi =
           if review_changes != %{} do
-            Ecto.Multi.update(multi, :review, Ecto.Changeset.change(review, review_changes))
+            Ecto.Multi.update(multi, :review, Review.update_changeset(review, review_changes))
           else
             multi
           end
@@ -448,21 +448,24 @@ defmodule Crit.Reviews do
   def delete_inactive(days) when is_integer(days) and days > 0 do
     cutoff = DateTime.add(DateTime.utc_now(), -days, :day)
 
-    kept_user_ids =
-      from(u in User, where: u.keep_reviews == true, select: u.id)
-
-    base =
+    ids_query =
       from r in Review,
-        where: r.last_activity_at < ^cutoff,
-        where: r.user_id not in subquery(kept_user_ids) or is_nil(r.user_id)
+        left_join: u in User,
+        on: u.id == r.user_id,
+        where:
+          r.last_activity_at < ^cutoff and
+            (is_nil(u.id) or u.keep_reviews == false),
+        select: r.id
 
-    query =
+    ids_query =
       case Application.get_env(:crit, :demo_review_token) do
-        nil -> base
-        demo_token -> from r in base, where: r.token != ^demo_token
+        nil -> ids_query
+        demo_token -> from [r, _u] in ids_query, where: r.token != ^demo_token
       end
 
-    {count, _} = Repo.delete_all(query)
+    {count, _} =
+      Repo.delete_all(from r in Review, where: r.id in subquery(ids_query))
+
     {:ok, count}
   end
 
@@ -485,47 +488,7 @@ defmodule Crit.Reviews do
   Sorted by last_activity_at descending. Does not include delete_token.
   """
   def list_reviews_with_counts do
-    first_file_subquery =
-      from(rf in ReviewRoundSnapshot,
-        where: rf.review_id == parent_as(:review).id,
-        order_by: [asc: rf.position],
-        limit: 1,
-        select: %{file_path: rf.file_path, content: rf.content}
-      )
-
-    from(r in Review, as: :review)
-    |> join(:left, [r], c in Comment, on: c.review_id == r.id)
-    |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
-    |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
-    |> join(:left, [r, _c, _rf, _fp], u in User, on: u.id == r.user_id)
-    |> group_by([r, _c, _rf, fp, u], [
-      r.id,
-      r.token,
-      r.inserted_at,
-      r.last_activity_at,
-      r.user_id,
-      fp.file_path,
-      fp.content,
-      u.name,
-      u.email,
-      u.avatar_url
-    ])
-    |> select([r, c, rf, fp, u], %{
-      id: r.id,
-      token: r.token,
-      inserted_at: r.inserted_at,
-      last_activity_at: r.last_activity_at,
-      user_id: r.user_id,
-      comment_count: count(c.id, :distinct),
-      file_count: count(rf.id, :distinct),
-      first_file_path: fp.file_path,
-      first_file_content: fp.content,
-      author_name: u.name,
-      author_email: u.email,
-      author_avatar_url: u.avatar_url
-    })
-    |> order_by([r], desc: r.last_activity_at)
-    |> Repo.all()
+    reviews_with_counts_query(:all) |> Repo.all()
   end
 
   @doc """
@@ -533,6 +496,10 @@ defmodule Crit.Reviews do
   Same as `list_reviews_with_counts/0` but filtered to the given user_id.
   """
   def list_user_reviews_with_counts(user_id) do
+    reviews_with_counts_query({:user, user_id}) |> Repo.all()
+  end
+
+  defp reviews_with_counts_query(scope) do
     first_file_subquery =
       from(rf in ReviewRoundSnapshot,
         where: rf.review_id == parent_as(:review).id,
@@ -541,33 +508,44 @@ defmodule Crit.Reviews do
         select: %{file_path: rf.file_path, content: rf.content}
       )
 
-    from(r in Review, as: :review)
-    |> where([r], r.user_id == ^user_id)
-    |> join(:left, [r], c in Comment, on: c.review_id == r.id)
-    |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
-    |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
-    |> group_by([r, _c, _rf, fp], [
-      r.id,
-      r.token,
-      r.inserted_at,
-      r.last_activity_at,
-      r.user_id,
-      fp.file_path,
-      fp.content
-    ])
-    |> select([r, c, rf, fp], %{
-      id: r.id,
-      token: r.token,
-      inserted_at: r.inserted_at,
-      last_activity_at: r.last_activity_at,
-      user_id: r.user_id,
-      comment_count: count(c.id, :distinct),
-      file_count: count(rf.id, :distinct),
-      first_file_path: fp.file_path,
-      first_file_content: fp.content
-    })
-    |> order_by([r], desc: r.last_activity_at)
-    |> Repo.all()
+    base =
+      from(r in Review, as: :review)
+      |> join(:left, [r], c in Comment, on: c.review_id == r.id)
+      |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
+      |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
+      |> join(:left, [r, _c, _rf, _fp], u in User, on: u.id == r.user_id)
+      |> group_by([r, _c, _rf, fp, u], [
+        r.id,
+        r.token,
+        r.inserted_at,
+        r.last_activity_at,
+        r.user_id,
+        fp.file_path,
+        fp.content,
+        u.name,
+        u.email,
+        u.avatar_url
+      ])
+      |> select([r, c, rf, fp, u], %{
+        id: r.id,
+        token: r.token,
+        inserted_at: r.inserted_at,
+        last_activity_at: r.last_activity_at,
+        user_id: r.user_id,
+        comment_count: count(c.id, :distinct),
+        file_count: count(rf.id, :distinct),
+        first_file_path: fp.file_path,
+        first_file_content: fp.content,
+        author_name: u.name,
+        author_email: u.email,
+        author_avatar_url: u.avatar_url
+      })
+      |> order_by([r], desc: r.last_activity_at)
+
+    case scope do
+      :all -> base
+      {:user, user_id} -> from [r, _c, _rf, _fp, _u] in base, where: r.user_id == ^user_id
+    end
   end
 
   @doc """
