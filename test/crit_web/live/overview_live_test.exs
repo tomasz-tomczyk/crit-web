@@ -120,25 +120,6 @@ defmodule CritWeb.OverviewLiveTest do
     end
   end
 
-  describe "delete_review" do
-    setup :without_oauth
-
-    test "removes review from list", %{conn: conn} do
-      review = review_fixture()
-
-      {:ok, view, html} = live(conn, ~p"/overview")
-      assert html =~ hd(review.files).file_path
-
-      view
-      |> element("button[phx-value-id='#{review.id}']")
-      |> render_click()
-
-      html = render(view)
-      refute html =~ hd(review.files).file_path
-      assert html =~ ~r/All Reviews[^<]*<[^>]*>0</
-    end
-  end
-
   describe "overview empty state" do
     setup :without_oauth
 
@@ -147,25 +128,6 @@ defmodule CritWeb.OverviewLiveTest do
 
       assert html =~ ~r/All Reviews[^<]*<[^>]*>0</
       assert html =~ "No reviews yet"
-    end
-  end
-
-  describe "stats update after delete" do
-    setup :without_oauth
-
-    test "stats refresh after deleting a review", %{conn: conn} do
-      review = review_fixture()
-      comment_fixture(review)
-
-      {:ok, view, html} = live(conn, ~p"/overview")
-      assert html =~ ~r/All Reviews[^<]*<[^>]*>1</
-
-      view
-      |> element("button[phx-value-id='#{review.id}']")
-      |> render_click()
-
-      html = render(view)
-      assert html =~ ~r/All Reviews[^<]*<[^>]*>0</
     end
   end
 
@@ -225,55 +187,4 @@ defmodule CritWeb.OverviewLiveTest do
     end
   end
 
-  describe "delete_review with OAuth" do
-    test "owner can delete their own review", %{conn: conn} do
-      {conn, user} = login_user_with_record(conn)
-      review = review_fixture(user_id: user.id)
-
-      {:ok, view, html} = live(conn, ~p"/overview")
-      assert html =~ hd(review.files).file_path
-
-      view
-      |> element("button[phx-value-id='#{review.id}']")
-      |> render_click()
-
-      refute render(view) =~ hd(review.files).file_path
-    end
-
-    test "user cannot delete another user's review", %{conn: conn} do
-      {:ok, other_user} =
-        Crit.Accounts.find_or_create_from_oauth("github", %{
-          "sub" => "other_uid_#{System.unique_integer()}",
-          "email" => "other@example.com",
-          "name" => "Other User"
-        })
-
-      review = review_fixture(user_id: other_user.id)
-      conn = login_user(conn)
-
-      {:ok, view, _html} = live(conn, ~p"/overview")
-
-      refute has_element?(view, "button[phx-value-id='#{review.id}']")
-
-      # Also verify the server-side guard rejects a crafted event
-      view
-      |> render_hook("delete_review", %{"id" => review.id})
-
-      assert render(view) =~ hd(review.files).file_path
-    end
-
-    test "any authenticated user can delete an ownerless review", %{conn: conn} do
-      review = review_fixture()
-      conn = login_user(conn)
-
-      {:ok, view, html} = live(conn, ~p"/overview")
-      assert html =~ hd(review.files).file_path
-
-      view
-      |> element("button[phx-value-id='#{review.id}']")
-      |> render_click()
-
-      refute render(view) =~ hd(review.files).file_path
-    end
-  end
 end

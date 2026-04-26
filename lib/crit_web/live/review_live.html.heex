@@ -29,22 +29,6 @@
           </svg>
         </a>
         <%= if not (@auth_required and is_nil(@current_user)) do %>
-          <%= if first = List.first(@review.files) do %>
-            <span class="crit-header-filename">
-              <svg
-                class="crit-filename-icon"
-                viewBox="0 0 16 16"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M3.75 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75zm5.75.56v2.19c0 .138.112.25.25.25h2.19L9.5 2.06zM2 1.75C2 .784 2.784 0 3.75 0h5.086c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25V1.75z"
-                />
-              </svg>
-              {first.file_path}
-            </span>
-          <% end %>
           <%= if @review.review_round > 1 do %>
             <span class="crit-header-round">Round #{@review.review_round}</span>
           <% end %>
@@ -374,6 +358,39 @@
       </div>
     </div>
   <% else %>
+    <% owner? = @current_user && (is_nil(@review.user_id) || @review.user_id == @current_user.id) %>
+    <% author = @review.user %>
+    <% comment_count =
+      Enum.reduce(@review.comments, 0, fn c, acc ->
+        acc + 1 + length(c.replies)
+      end) %>
+    <% first_path = case List.first(@review.files) do
+      nil -> nil
+      f -> f.file_path
+    end %>
+    <div class="crit-review-meta">
+      <div class="crit-review-meta-inner">
+        <CritWeb.Components.ReviewListingHeader.review_listing_header
+          path={first_path}
+          last_activity_at={@review.last_activity_at}
+          file_count={length(@review.files)}
+          comment_count={comment_count}
+          author={author}
+        >
+          <:actions :if={owner?}>
+            <button
+              phx-click="delete_review"
+              data-confirm="Delete this review? This cannot be undone."
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-(--crit-border) bg-(--crit-bg-card) text-(--crit-fg-secondary) hover:text-(--crit-red) hover:border-(--crit-red) hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer ml-1 font-medium"
+              aria-label="Delete review"
+            >
+              <.icon name="hero-trash" class="size-3.5" />
+              <span>Delete review</span>
+            </button>
+          </:actions>
+        </CritWeb.Components.ReviewListingHeader.review_listing_header>
+      </div>
+    </div>
     <div id="crit-main-layout" class="crit-main-layout">
       <div id="fileTreePanel" class="tree-panel" style="display:none">
         <div class="tree-header">

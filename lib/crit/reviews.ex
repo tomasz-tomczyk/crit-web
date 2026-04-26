@@ -13,6 +13,7 @@ defmodule Crit.Reviews do
         from r in Review,
           where: r.token == ^token,
           preload: [
+            :user,
             comments:
               ^from(c in Comment,
                 where: is_nil(c.parent_id),

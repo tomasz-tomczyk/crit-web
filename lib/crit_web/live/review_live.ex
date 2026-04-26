@@ -3,6 +3,7 @@ defmodule CritWeb.ReviewLive do
 
   alias Crit.Reviews
 
+
   on_mount {CritWeb.Live.Hooks, :load_current_user}
 
   @pubsub Crit.PubSub
@@ -125,6 +126,28 @@ defmodule CritWeb.ReviewLive do
          |> assign(:og_type, "article")
          |> assign(:canonical_url, CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"),
          layout: {CritWeb.Layouts, :review}}
+    end
+  end
+
+  def handle_event("delete_review", _params, socket) do
+    %{review: review, current_user: current_user} = socket.assigns
+
+    if current_user && (is_nil(review.user_id) || review.user_id == current_user.id) do
+      case Reviews.delete_review(review.id, owner_id: current_user.id) do
+        :ok ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Review deleted.")
+           |> redirect(to: ~p"/dashboard")}
+
+        {:error, :unauthorized} ->
+          {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Failed to delete review.")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
     end
   end
 

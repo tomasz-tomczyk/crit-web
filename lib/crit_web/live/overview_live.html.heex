@@ -179,91 +179,24 @@
               id={dom_id}
               class="group"
             >
-              <header class="flex items-start justify-between gap-4 mb-2 px-0.5 max-sm:flex-col max-sm:gap-1.5">
-                <div class="min-w-0 flex items-start gap-3 max-sm:w-full max-sm:items-center">
-                  <%= if review.author_avatar_url do %>
-                    <img
-                      src={review.author_avatar_url}
-                      alt={review.author_name || review.author_email || ""}
-                      class="size-7 rounded-full mt-0.5 shrink-0 max-sm:mt-0"
-                    />
-                  <% else %>
-                    <div class="size-7 rounded-full mt-0.5 shrink-0 max-sm:mt-0 bg-(--crit-bg-elevated) border border-(--crit-border) flex items-center justify-center text-xs font-semibold text-(--crit-fg-secondary) uppercase">
-                      {(review.author_name || review.author_email || "?")
-                      |> String.first()}
-                    </div>
-                  <% end %>
-                  <div class="min-w-0 flex flex-col gap-0.5 max-sm:w-full">
-                    <div class="flex items-baseline gap-1.5 min-w-0">
-                      <%= if review.author_name || review.author_email do %>
-                        <span class="font-medium text-(--crit-fg-primary) truncate max-w-[160px] max-sm:max-w-[180px]">
-                          {review.author_name || review.author_email}
-                        </span>
-                        <span class="text-(--crit-fg-muted) shrink-0">/</span>
-                      <% end %>
-                      <a
-                        href={~p"/r/#{review.token}"}
-                        class={[
-                          "font-semibold truncate leading-tight",
-                          if(review.first_file_path,
-                            do: "crit-link",
-                            else: "text-(--crit-fg-secondary) italic"
-                          )
-                        ]}
-                      >
-                        <% {dir, file} = split_path(review.first_file_path) %>
-                        <span class="text-(--crit-fg-muted) font-normal">{dir}</span>{file}
-                      </a>
-                    </div>
-                    <span class="text-xs text-(--crit-fg-muted) max-sm:hidden">
-                      Active {time_ago(review.last_activity_at)}
-                    </span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-3.5 text-xs text-(--crit-fg-secondary) shrink-0 max-sm:w-full max-sm:gap-3">
-                  <span class="hidden max-sm:inline-flex items-center text-(--crit-fg-muted)">
-                    Active {time_ago(review.last_activity_at)}
-                  </span>
-                  <span class="inline-flex items-center gap-1 tabular-nums">
-                    <.icon
-                      name="hero-document-text-micro"
-                      class="size-3.5 text-(--crit-fg-muted)"
-                    />
-                    <span class="text-(--crit-fg-primary) font-medium">{review.file_count}</span>
-                    {if review.file_count == 1, do: "file", else: "files"}
-                  </span>
-                  <span class={[
-                    "inline-flex items-center gap-1 tabular-nums",
-                    review.comment_count == 0 && "text-(--crit-fg-muted)"
-                  ]}>
-                    <.icon
-                      name="hero-chat-bubble-left-micro"
-                      class="size-3.5 text-(--crit-fg-muted)"
-                    />
-                    <span class={[
-                      if(review.comment_count == 0,
-                        do: "text-(--crit-fg-muted)",
-                        else: "text-(--crit-fg-primary) font-medium"
-                      )
-                    ]}>
-                      {review.comment_count}
-                    </span>
-                    {if review.comment_count == 1, do: "comment", else: "comments"}
-                  </span>
-                  <%= if not @oauth_configured or (not is_nil(@current_user) and (is_nil(review.user_id) or review.user_id == @current_user.id)) do %>
-                    <button
-                      phx-click="delete_review"
-                      phx-value-id={review.id}
-                      data-confirm="Delete this review? This cannot be undone."
-                      class="size-6 inline-flex items-center justify-center rounded text-(--crit-fg-muted) hover:text-(--crit-red) hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer ml-1 max-sm:ml-auto"
-                      aria-label="Delete review"
-                    >
-                      <.icon name="hero-trash" class="size-3.5" />
-                    </button>
-                  <% end %>
-                </div>
-              </header>
-
+              <div class="mb-2 px-0.5">
+              <.review_listing_header
+                path={review.first_file_path}
+                last_activity_at={review.last_activity_at}
+                file_count={review.file_count}
+                comment_count={review.comment_count}
+                link_to={~p"/r/#{review.token}"}
+                author={
+                  if review.author_name || review.author_email || review.author_avatar_url do
+                    %{
+                      name: review.author_name,
+                      email: review.author_email,
+                      avatar_url: review.author_avatar_url
+                    }
+                  end
+                }
+              />
+              </div>
               <.review_snippet path={review.first_file_path} content={review.first_file_content} />
             </article>
           </div>

@@ -97,44 +97,6 @@ defmodule CritWeb.DashboardLiveTest do
     end
   end
 
-  describe "delete_review" do
-    test "owner can delete their own review", %{conn: conn} do
-      {conn, user} = login_user_with_record(conn)
-      review = review_fixture(user_id: user.id)
-
-      {:ok, view, html} = live(conn, ~p"/dashboard")
-      assert html =~ hd(review.files).file_path
-
-      view
-      |> element("button[phx-value-id='#{review.id}']")
-      |> render_click()
-
-      html = render(view)
-      refute html =~ hd(review.files).file_path
-      assert html =~ ~r/Reviews[^<]*<[^>]*>0</
-    end
-
-    test "cannot delete another user's review", %{conn: conn} do
-      {conn, _user} = login_user_with_record(conn)
-
-      {:ok, other_user} =
-        Crit.Accounts.find_or_create_from_oauth("github", %{
-          "sub" => "other_uid_#{System.unique_integer()}",
-          "email" => "other@example.com",
-          "name" => "Other User"
-        })
-
-      review = review_fixture(user_id: other_user.id)
-
-      {:ok, view, _html} = live(conn, ~p"/dashboard")
-
-      # The review shouldn't even show, but test the event handler too
-      view |> render_hook("delete_review", %{"id" => review.id})
-
-      assert render(view) =~ "You can only delete your own reviews."
-    end
-  end
-
   describe "review counts and metadata" do
     test "shows comment and file counts", %{conn: conn} do
       {conn, user} = login_user_with_record(conn)
@@ -212,36 +174,6 @@ defmodule CritWeb.DashboardLiveTest do
       assert html =~ ~r/Reviews[^<]*<[^>]*>2</
       assert html =~ "older.md"
       assert html =~ "newer.md"
-    end
-  end
-
-  describe "delete_review updates count" do
-    test "review count decrements after deletion", %{conn: conn} do
-      {conn, user} = login_user_with_record(conn)
-
-      review1 =
-        review_fixture(
-          user_id: user.id,
-          files: [%{"path" => "first.md", "content" => "content"}]
-        )
-
-      _review2 =
-        review_fixture(
-          user_id: user.id,
-          files: [%{"path" => "second.md", "content" => "content"}]
-        )
-
-      {:ok, view, html} = live(conn, ~p"/dashboard")
-      assert html =~ ~r/Reviews[^<]*<[^>]*>2</
-
-      view
-      |> element("button[phx-value-id='#{review1.id}']")
-      |> render_click()
-
-      html = render(view)
-      assert html =~ ~r/Reviews[^<]*<[^>]*>1</
-      refute html =~ "first.md"
-      assert html =~ "second.md"
     end
   end
 

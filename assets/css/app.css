@@ -2135,6 +2135,17 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 }
 .crit-viewed-count.all-viewed { color: var(--crit-green); }
 
+/* ===== Review meta bar wrapper (constrains shared listing header to content width) ===== */
+.crit-review-meta {
+  border-bottom: 1px solid var(--crit-border);
+  background: var(--crit-bg-card);
+}
+.crit-review-meta-inner {
+  max-width: var(--crit-content-width);
+  margin: 0 auto;
+  padding: 12px 20px;
+}
+
 /* ===== Main layout (flex row: tree | content | comments) ===== */
 .crit-main-layout {
   display: flex;
