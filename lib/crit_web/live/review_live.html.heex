@@ -382,11 +382,11 @@
             <button
               phx-click="delete_review"
               data-confirm="Delete this review? This cannot be undone."
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-(--crit-border) bg-(--crit-bg-card) text-(--crit-fg-secondary) hover:text-(--crit-red) hover:border-(--crit-red) hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer ml-1 font-medium"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-(--crit-red) bg-(--crit-bg-card) text-(--crit-red) hover:bg-(--crit-red) hover:text-white transition-colors cursor-pointer ml-1 font-medium"
               aria-label="Delete review"
             >
               <.icon name="hero-trash" class="size-3.5" />
-              <span>Delete review</span>
+              <span>Delete</span>
             </button>
           </:actions>
         </CritWeb.Components.ReviewListingHeader.review_listing_header>

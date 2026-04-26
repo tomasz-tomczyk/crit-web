@@ -48,9 +48,9 @@ defmodule CritWeb.Components.ReviewListingHeader do
             </div>
           <% end %>
           <div class="min-w-0 flex flex-col gap-0.5 max-sm:w-full">
-            <div class="flex items-baseline gap-1.5 min-w-0">
+            <div class="flex flex-wrap items-baseline gap-x-1.5 min-w-0">
               <%= if @author.name || @author.email do %>
-                <span class="font-medium text-(--crit-fg-primary) truncate max-w-[160px] max-sm:max-w-[180px]">
+                <span class="font-medium text-(--crit-fg-primary)">
                   {@author.name || @author.email}
                 </span>
                 <span class="text-(--crit-fg-muted) shrink-0">/</span>
@@ -59,7 +59,7 @@ defmodule CritWeb.Components.ReviewListingHeader do
                 <.link
                   navigate={@link_to}
                   class={[
-                    "font-semibold truncate leading-tight",
+                    "font-semibold leading-tight",
                     if(@path, do: "crit-link", else: "text-(--crit-fg-secondary) italic")
                   ]}
                 >
@@ -67,7 +67,7 @@ defmodule CritWeb.Components.ReviewListingHeader do
                 </.link>
               <% else %>
                 <span class={[
-                  "font-semibold truncate leading-tight",
+                  "font-semibold leading-tight",
                   if(@path,
                     do: "text-(--crit-fg-primary)",
                     else: "text-(--crit-fg-secondary) italic"
@@ -86,7 +86,7 @@ defmodule CritWeb.Components.ReviewListingHeader do
             <.link
               navigate={@link_to}
               class={[
-                "font-semibold truncate block w-fit max-w-[720px] max-sm:max-w-full leading-tight",
+                "font-semibold block w-fit leading-tight",
                 if(@path, do: "crit-link", else: "text-(--crit-fg-secondary) italic")
               ]}
             >
@@ -94,7 +94,7 @@ defmodule CritWeb.Components.ReviewListingHeader do
             </.link>
           <% else %>
             <span class={[
-              "font-semibold truncate block max-w-[720px] max-sm:max-w-full leading-tight",
+              "font-semibold block leading-tight",
               if(@path, do: "text-(--crit-fg-primary)", else: "text-(--crit-fg-secondary) italic")
             ]}>
               <span class="text-(--crit-fg-muted) font-normal">{@dir}</span>{@file}
