@@ -247,9 +247,9 @@ function showToast(message, duration = 3000) {
   toast.textContent = message
   document.body.appendChild(toast)
   requestAnimationFrame(() => toast.classList.add('mini-toast-visible'))
-  setTimeout(() => {
+  trackedSetTimeout(__activeCtx, () => {
     toast.classList.remove('mini-toast-visible')
-    setTimeout(() => toast.remove(), 300)
+    trackedSetTimeout(__activeCtx, () => toast.remove(), 300)
   }, duration)
 }
 
@@ -1262,6 +1262,44 @@ function updateViewedCount(ctx) {
 
 let __activeCtx = null
 
+// ---- hide-resolved cache ----------------------------------------------------
+// Cache the localStorage value on ctx to avoid repeated reads in render paths.
+
+function readHideResolved() {
+  return localStorage.getItem('crit-hide-resolved') === 'true'
+}
+
+function isHideResolved(ctx) {
+  if (!ctx) return readHideResolved()
+  if (typeof ctx._hideResolved !== 'boolean') {
+    ctx._hideResolved = readHideResolved()
+  }
+  return ctx._hideResolved
+}
+
+function setHideResolved(ctx, value) {
+  const next = !!value
+  if (ctx) ctx._hideResolved = next
+  localStorage.setItem('crit-hide-resolved', next ? 'true' : 'false')
+  applyHideResolved(ctx)
+  if (ctx) refreshCommentHighlights(ctx)
+}
+
+// ---- Tracked timers ---------------------------------------------------------
+// Wraps setTimeout so destroyed() can clear pending callbacks. Avoids late
+// callbacks running against a torn-down hook (and any DOM nodes it owned).
+
+function trackedSetTimeout(ctx, fn, ms) {
+  if (!ctx) return setTimeout(fn, ms)
+  if (!ctx._timers) ctx._timers = new Set()
+  const id = setTimeout(() => {
+    if (ctx._timers) ctx._timers.delete(id)
+    fn()
+  }, ms)
+  ctx._timers.add(id)
+  return id
+}
+
 function render(ctx) {
   __activeCtx = ctx
   if (ctx.multiFile) {
@@ -1269,7 +1307,7 @@ function render(ctx) {
   } else {
     renderDocument(ctx)
   }
-  applyHideResolved()
+  applyHideResolved(ctx)
 }
 
 // ---- Multi-file rendering ---------------------------------------------------
@@ -1594,7 +1632,7 @@ function renderRenderedDiffSplit(ctx, md, file, prevContent) {
 
   // Two-pointer merge for horizontal alignment
   const commentsMap = buildCommentsMap(file.comments)
-  const commentedLineSet = buildCommentedLineSet(file.comments)
+  const commentedLineSet = buildCommentedLineSet(file.comments, ctx)
   let oldIdx = 0, newIdx = 0
 
   while (oldIdx < prevAnnotated.length || newIdx < currAnnotated.length) {
@@ -1643,7 +1681,7 @@ function renderRenderedDiffUnified(ctx, md, file, prevContent) {
   const lineSets = buildRoundDiffLineSets(prevContent, file.content)
 
   const commentsMap = buildCommentsMap(file.comments)
-  const commentedLineSet = buildCommentedLineSet(file.comments)
+  const commentedLineSet = buildCommentedLineSet(file.comments, ctx)
 
   let oldIdx = 0, newIdx = 0
 
@@ -1806,7 +1844,7 @@ function renderFileSection(ctx, file) {
       body.appendChild(diffContainer)
     } else {
       const commentsMap = buildCommentsMap(file.comments)
-      const commentedLineSet = buildCommentedLineSet(file.comments)
+      const commentedLineSet = buildCommentedLineSet(file.comments, ctx)
       const lineBlocks = file.lineBlocks
 
       for (let i = 0; i < lineBlocks.length; i++) {
@@ -1978,9 +2016,9 @@ function buildCommentsMap(comments) {
   return map
 }
 
-function buildCommentedLineSet(comments) {
+function buildCommentedLineSet(comments, ctx) {
   const set = new Set()
-  const hideResolved = localStorage.getItem('crit-hide-resolved') === 'true'
+  const hideResolved = ctx ? isHideResolved(ctx) : readHideResolved()
   for (const c of comments) {
     if (c.scope === 'file' || c.scope === 'review') continue
     if (!c.start_line || !c.end_line) continue
@@ -1994,7 +2032,7 @@ function refreshCommentHighlights(ctx) {
   if (!ctx || !ctx.el || !ctx.comments) return
   // Build per-file commented line sets so we can include/exclude file paths.
   const byPath = new Map()
-  const hideResolved = localStorage.getItem('crit-hide-resolved') === 'true'
+  const hideResolved = isHideResolved(ctx)
   for (const c of ctx.comments) {
     if (c.scope === 'file' || c.scope === 'review') continue
     if (!c.start_line || !c.end_line) continue
@@ -2154,7 +2192,7 @@ function renderDocument(ctx) {
   container.classList.remove('round-diff-split')
 
   const commentsMap = buildCommentsMap(ctx.comments)
-  const commentedLineSet = buildCommentedLineSet(ctx.comments)
+  const commentedLineSet = buildCommentedLineSet(ctx.comments, ctx)
 
   for (let bi = 0; bi < ctx.lineBlocks.length; bi++) {
     const block = ctx.lineBlocks[bi]
@@ -2799,7 +2837,7 @@ function createReplyInput(commentId, ctx) {
 
   // Collapse on blur if empty (with delay to allow button clicks)
   textarea.addEventListener('blur', function() {
-    setTimeout(function() {
+    trackedSetTimeout(ctx, function() {
       if (form.classList.contains('expanded') && !textarea.value.trim() && !form.contains(document.activeElement)) {
         collapse()
       }
@@ -3226,7 +3264,7 @@ function removeInlineComment(ctx, comment) {
   }
   // Update has-comment classes on line blocks
   if (comment.start_line && comment.end_line) {
-    const commentedLineSet = buildCommentedLineSet(ctx.comments)
+    const commentedLineSet = buildCommentedLineSet(ctx.comments, ctx)
     const lineBlocks = ctx.el.querySelectorAll('.line-block')
     for (const lb of lineBlocks) {
       const start = parseInt(lb.dataset.startLine)
@@ -3718,7 +3756,7 @@ function navigateToComment(ctx, direction) {
   const fileHeaderHeight = fileHeader ? fileHeader.offsetHeight : 0
   window.scrollTo({ top: rect.top + window.scrollY - headerHeight - fileHeaderHeight - 16, behavior: 'smooth' })
   target.classList.add('comment-nav-highlight')
-  setTimeout(() => target.classList.remove('comment-nav-highlight'), 1000)
+  trackedSetTimeout(ctx, () => target.classList.remove('comment-nav-highlight'), 1000)
 }
 
 // ---- Content Width ----------------------------------------------------------
@@ -3786,8 +3824,8 @@ function switchSettingsTab(tab) {
   else if (tab === 'about') renderAboutPane()
 }
 
-function applyHideResolved() {
-  const hide = localStorage.getItem('crit-hide-resolved') === 'true'
+function applyHideResolved(ctx) {
+  const hide = ctx ? isHideResolved(ctx) : readHideResolved()
   document.querySelectorAll('.comment-block:not(.panel-comment-block)').forEach(function(block) {
     const card = block.querySelector('.resolved-card')
     if (card) {
@@ -3812,7 +3850,7 @@ function renderSettingsPane() {
 
   const currentTheme = localStorage.getItem('phx:theme') || 'system'
   const currentWidth = localStorage.getItem('crit-width') || 'default'
-  const hideResolved = localStorage.getItem('crit-hide-resolved') === 'true'
+  const hideResolved = isHideResolved(__activeCtx)
 
   let html = ''
 
@@ -3864,9 +3902,7 @@ function renderSettingsPane() {
   const hideResolvedToggle = pane.querySelector('#hideResolvedToggle')
   if (hideResolvedToggle) {
     hideResolvedToggle.addEventListener('change', function() {
-      localStorage.setItem('crit-hide-resolved', hideResolvedToggle.checked ? 'true' : 'false')
-      applyHideResolved()
-      refreshCommentHighlights(__activeCtx)
+      setHideResolved(__activeCtx, hideResolvedToggle.checked)
     })
   }
 
@@ -4015,6 +4051,8 @@ export const DocumentRenderer = {
     ctx.showRoundDiff = false
     ctx.diffMode = 'split'
     ctx._navCommentId = null
+    ctx._hideResolved = readHideResolved()
+    ctx._timers = new Set()
 
     // Initialize content width and settings panel
     initWidth()
@@ -4093,7 +4131,16 @@ export const DocumentRenderer = {
     const nextBtn = document.getElementById('comment-nav-next')
     if (nextBtn) nextBtn.addEventListener('click', () => navigateToComment(ctx, 1))
 
-    // Comments panel
+    // Comments panel — append to #crit-main-layout (outside hook root) so it
+    // survives LiveView DOM patches. Reuse an existing panel if mounted() runs
+    // again with one already attached (defensive: prevents duplicate panels).
+    const existingPanel = document.querySelector('#crit-main-layout > .comments-panel')
+    if (existingPanel && !ctx._commentsPanel) {
+      existingPanel.remove()
+    }
+    if (ctx._commentsPanel) {
+      // Already created in this hook instance — nothing to do.
+    } else {
     const commentsPanel = document.createElement('div')
     commentsPanel.className = 'comments-panel'
     commentsPanel.innerHTML = `
@@ -4109,10 +4156,10 @@ export const DocumentRenderer = {
           </div>
         </div>
         <div class="comments-panel-header-row2">
-          <div class="comments-filter-toggle crit-diff-mode-toggle" id="commentsFilterPill" role="group" aria-label="Filter comments">
-            <button class="crit-toggle-btn crit-toggle-btn--active" data-filter="all" aria-pressed="true">All <span class="filter-count">0</span></button>
-            <button class="crit-toggle-btn" data-filter="open" aria-pressed="false">Open <span class="filter-count">0</span></button>
-            <button class="crit-toggle-btn" data-filter="resolved" aria-pressed="false">Resolved <span class="filter-count">0</span></button>
+          <div class="comments-filter-toggle crit-diff-mode-toggle" id="commentsFilterPill" role="radiogroup" aria-label="Filter comments">
+            <button class="crit-toggle-btn crit-toggle-btn--active" data-filter="all" role="radio" aria-checked="true" tabindex="0">All <span class="filter-count">0</span></button>
+            <button class="crit-toggle-btn" data-filter="open" role="radio" aria-checked="false" tabindex="-1">Open <span class="filter-count">0</span></button>
+            <button class="crit-toggle-btn" data-filter="resolved" role="radio" aria-checked="false" tabindex="-1">Resolved <span class="filter-count">0</span></button>
           </div>
           <button class="comments-panel-expand-all" id="commentsPanelExpandAll">Expand all</button>
         </div>
@@ -4131,20 +4178,44 @@ export const DocumentRenderer = {
       updateTocPosition(ctx)
     })
 
-    // Segmented pill filter
+    // Segmented pill filter (radiogroup with roving tabindex)
     const filterPill = commentsPanel.querySelector('#commentsFilterPill')
-    filterPill.addEventListener('click', (e) => {
-      const btn = e.target.closest('.crit-toggle-btn')
+    function activateFilterBtn(btn, focus) {
       if (!btn) return
       const filter = btn.dataset.filter
       ctx._commentsActiveFilter = filter
       filterPill.querySelectorAll('.crit-toggle-btn').forEach(b => {
-        b.classList.remove('crit-toggle-btn--active')
-        b.setAttribute('aria-pressed', 'false')
+        const active = b === btn
+        b.classList.toggle('crit-toggle-btn--active', active)
+        b.setAttribute('aria-checked', active ? 'true' : 'false')
+        b.setAttribute('tabindex', active ? '0' : '-1')
       })
-      btn.classList.add('crit-toggle-btn--active')
-      btn.setAttribute('aria-pressed', 'true')
+      if (focus) btn.focus()
       renderCommentsPanel(ctx)
+    }
+    filterPill.addEventListener('click', (e) => {
+      const btn = e.target.closest('.crit-toggle-btn')
+      if (!btn) return
+      activateFilterBtn(btn, false)
+    })
+    filterPill.addEventListener('keydown', (e) => {
+      const btns = Array.from(filterPill.querySelectorAll('.crit-toggle-btn'))
+      const currentIdx = btns.findIndex(b => b === document.activeElement)
+      if (currentIdx === -1) return
+      let nextIdx = null
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        nextIdx = (currentIdx + 1) % btns.length
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        nextIdx = (currentIdx - 1 + btns.length) % btns.length
+      } else if (e.key === 'Home') {
+        nextIdx = 0
+      } else if (e.key === 'End') {
+        nextIdx = btns.length - 1
+      } else {
+        return
+      }
+      e.preventDefault()
+      activateFilterBtn(btns[nextIdx], true)
     })
 
     // Expand all / Collapse all
@@ -4154,6 +4225,7 @@ export const DocumentRenderer = {
     const mainLayout = document.getElementById('crit-main-layout')
     mainLayout.appendChild(commentsPanel)
     ctx._commentsPanel = commentsPanel
+    }
 
     // Wire comment count as panel toggle. The button uses phx-click with
     // JS.dispatch("crit:toggle-comments", to: "#document-renderer") so this
@@ -4466,10 +4538,8 @@ export const DocumentRenderer = {
       // Hide resolved toggle
       if (e.key === 'h') {
         e.preventDefault()
-        const current = localStorage.getItem('crit-hide-resolved') === 'true'
-        localStorage.setItem('crit-hide-resolved', current ? 'false' : 'true')
-        applyHideResolved()
-        refreshCommentHighlights(ctx)
+        const current = isHideResolved(ctx)
+        setHideResolved(ctx, !current)
         // Sync settings pane toggle if open
         const toggle = document.getElementById('hideResolvedToggle')
         if (toggle) toggle.checked = !current
@@ -4593,8 +4663,25 @@ export const DocumentRenderer = {
     }
     // Close settings panel if open
     closeSettingsPanel()
+    // Defensive: clear any pending tracked timeouts so callbacks don't fire
+    // against a torn-down hook (and detached DOM nodes).
+    if (this._timers) {
+      for (const id of this._timers) clearTimeout(id)
+      this._timers.clear()
+    }
+    // Defensive: panel-internal handlers may have been attached to
+    // document/window in future changes — remove them here if present.
+    if (this._panelDocClickHandler) {
+      document.removeEventListener('click', this._panelDocClickHandler)
+      this._panelDocClickHandler = null
+    }
+    if (this._panelDocKeyHandler) {
+      document.removeEventListener('keydown', this._panelDocKeyHandler)
+      this._panelDocKeyHandler = null
+    }
     if (this._commentsPanel) {
       this._commentsPanel.remove()
+      this._commentsPanel = null
     }
   },
 }
