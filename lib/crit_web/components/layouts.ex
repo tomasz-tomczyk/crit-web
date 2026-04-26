@@ -192,7 +192,7 @@ defmodule CritWeb.Layouts do
           </span>
 
           <%= if @current_user do %>
-            <div class="max-sm:hidden">
+            <div>
               <.nav_link href={~p"/dashboard"}>Dashboard</.nav_link>
             </div>
 
