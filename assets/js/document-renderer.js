@@ -3078,6 +3078,7 @@ function updateTocActive(tocItems) {
 function openFileCommentForm(ctx, filePath) {
   const fk = 'file:' + filePath
   if (ctx.activeForms.find(f => f.formKey === fk)) return
+  closeEmptyForms(ctx, fk)
   const form = { formKey: fk, scope: 'file', filePath: filePath, startLine: null, endLine: null, editingId: null }
   ctx.activeForms.push(form)
   render(ctx)
@@ -3090,6 +3091,7 @@ function openFileCommentForm(ctx, filePath) {
 function openReviewCommentForm(ctx) {
   const fk = 'review:general'
   if (ctx.activeForms.find(f => f.formKey === fk)) return
+  closeEmptyForms(ctx, fk)
   const form = { formKey: fk, scope: 'review', filePath: null, startLine: null, endLine: null, editingId: null }
   ctx.activeForms.push(form)
   // Open panel if not open
