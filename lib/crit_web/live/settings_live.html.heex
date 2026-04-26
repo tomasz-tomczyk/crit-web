@@ -23,7 +23,7 @@
               Account
             </a>
           </li>
-          <li>
+          <li :if={!@selfhosted}>
             <a
               href="#reviews"
               class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
