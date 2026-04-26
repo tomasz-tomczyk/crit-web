@@ -150,12 +150,16 @@
               <path d="M4 10l4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
+          <%!--
+            aria-expanded is owned by JS (see syncCommentsPanelAria in
+            document-renderer.js). Do not set it statically here — the static
+            value would race with the JS-owned value across LiveView patches.
+          --%>
           <button
             class="comment-count-btn"
             id="comment-count"
             title="Toggle comments panel"
             aria-label="Toggle comments panel"
-            aria-expanded="false"
             phx-click={JS.dispatch("crit:toggle-comments", to: "#document-renderer")}
           >
             <svg
