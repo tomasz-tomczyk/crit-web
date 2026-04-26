@@ -8,7 +8,10 @@ defmodule Crit.Repo.Migrations.SetCliArgsNotNull do
     )
 
     alter table(:reviews) do
-      modify :cli_args, {:array, :string}, default: [], null: false, from: {{:array, :string}, default: [], null: true}
+      modify :cli_args, {:array, :string},
+        default: [],
+        null: false,
+        from: {{:array, :string}, default: [], null: true}
     end
   end
 end
