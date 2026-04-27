@@ -16,6 +16,7 @@ defmodule Crit.Comment do
     field :external_id, :string
     belongs_to :review, Crit.Review
     belongs_to :parent, Crit.Comment
+    belongs_to :user, Crit.User
     has_many :replies, Crit.Comment, foreign_key: :parent_id, preload_order: [asc: :inserted_at]
 
     timestamps(type: :utc_datetime)

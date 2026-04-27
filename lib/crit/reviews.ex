@@ -18,7 +18,7 @@ defmodule Crit.Reviews do
               ^from(c in Comment,
                 where: is_nil(c.parent_id),
                 order_by: [asc: c.start_line, asc: c.end_line],
-                preload: [:replies]
+                preload: [:user, replies: [:user]]
               )
           ]
       )
@@ -59,23 +59,37 @@ defmodule Crit.Reviews do
       from c in Comment,
         where: c.review_id == ^review_id and is_nil(c.parent_id),
         order_by: [asc: c.start_line, asc: c.end_line],
-        preload: [:replies]
+        preload: [:user, replies: [:user]]
     )
   end
 
-  @doc "Create a comment for a review with a given identity."
+  @doc """
+  Create a comment for a review.
+
+  `identity` is the session-owner token used for anonymous web visitors so
+  they can edit/delete their comment within the session. Pass `nil` for an
+  authenticated user along with `user_id:` in opts — when `user_id` is set,
+  it takes precedence and `author_identity` is left NULL.
+
+  Opts:
+    * `:user_id` — authenticated user's id; when set, `author_identity` is NULL
+  """
   def create_comment(
         %Review{id: review_id},
         attrs,
         identity,
         display_name \\ nil,
-        file_path \\ nil
+        file_path \\ nil,
+        opts \\ []
       ) do
+    user_id = Keyword.get(opts, :user_id)
+
     %Comment{}
     |> Comment.create_changeset(attrs)
     |> Ecto.Changeset.put_change(:review_id, review_id)
-    |> Ecto.Changeset.put_change(:author_identity, identity)
+    |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
     |> Ecto.Changeset.put_change(:author_display_name, display_name)
+    |> Ecto.Changeset.put_change(:user_id, user_id)
     |> then(fn cs ->
       if file_path, do: Ecto.Changeset.put_change(cs, :file_path, file_path), else: cs
     end)
@@ -86,39 +100,55 @@ defmodule Crit.Reviews do
     end)
   end
 
-  @doc "Update a comment's body if the identity matches the author."
-  def update_comment(comment_id, body, identity) do
+  @doc """
+  Update a comment's body if the caller owns it.
+
+  Authorization rules:
+    * `user_id IS NOT NULL` on the comment → must match `opts[:user_id]`
+    * `user_id IS NULL` → must match `identity` (session token)
+  """
+  def update_comment(comment_id, body, identity, opts \\ []) do
     case Repo.get(Comment, comment_id) do
       nil ->
         {:error, :not_found}
 
-      %Comment{author_identity: author} = comment when author == identity ->
-        comment
-        |> Comment.create_changeset(%{
-          "start_line" => comment.start_line,
-          "end_line" => comment.end_line,
-          "body" => body,
-          "scope" => comment.scope || "line"
-        })
-        |> Repo.update()
-
-      _ ->
-        {:error, :unauthorized}
+      %Comment{} = comment ->
+        if comment_owned_by?(comment, identity, Keyword.get(opts, :user_id)) do
+          comment
+          |> Comment.create_changeset(%{
+            "start_line" => comment.start_line,
+            "end_line" => comment.end_line,
+            "body" => body,
+            "scope" => comment.scope || "line"
+          })
+          |> Repo.update()
+        else
+          {:error, :unauthorized}
+        end
     end
   end
 
-  @doc "Delete a comment if the identity matches the author."
-  def delete_comment(comment_id, identity) do
+  @doc "Delete a comment if the caller owns it. See `update_comment/4` for ownership rules."
+  def delete_comment(comment_id, identity, opts \\ []) do
     case Repo.get(Comment, comment_id) do
       nil ->
         {:error, :not_found}
 
-      %Comment{author_identity: author} = comment when author == identity ->
-        Repo.delete(comment)
-
-      _ ->
-        {:error, :unauthorized}
+      %Comment{} = comment ->
+        if comment_owned_by?(comment, identity, Keyword.get(opts, :user_id)) do
+          Repo.delete(comment)
+        else
+          {:error, :unauthorized}
+        end
     end
+  end
+
+  defp comment_owned_by?(%Comment{user_id: nil, author_identity: ai}, identity, _user_id) do
+    not is_nil(ai) and ai == identity
+  end
+
+  defp comment_owned_by?(%Comment{user_id: uid}, _identity, current_user_id) do
+    not is_nil(current_user_id) and uid == current_user_id
   end
 
   @doc "Create a review from the share API payload. Files is a list of %{\"path\" => _, \"content\" => _} maps."
@@ -155,13 +185,13 @@ defmodule Crit.Reviews do
         end
       end)
       |> Ecto.Multi.run(:comments, fn _repo, %{review: review} ->
-        case insert_imported_comments(review, comments_attrs) do
+        case insert_imported_comments(review, comments_attrs, user_id) do
           :ok -> {:ok, :ok}
           error -> error
         end
       end)
       |> Ecto.Multi.run(:review_comments, fn _repo, %{review: review} ->
-        case insert_imported_comments(review, review_comments_attrs) do
+        case insert_imported_comments(review, review_comments_attrs, user_id) do
           :ok -> {:ok, :ok}
           error -> error
         end
@@ -197,7 +227,9 @@ defmodule Crit.Reviews do
   Appends a new round of snapshots if anything changed — no data is deleted.
   Returns {:ok, :updated, review}, {:ok, :no_changes, review}, or {:error, reason}.
   """
-  def upsert_review(token, delete_token, payload) do
+  def upsert_review(token, delete_token, payload, opts \\ []) do
+    user_id = Keyword.get(opts, :user_id)
+
     with {:ok, review} <- fetch_review_for_update(token, delete_token) do
       files = payload["files"] || []
       comments = payload["comments"] || []
@@ -218,7 +250,7 @@ defmodule Crit.Reviews do
           end
         end)
         |> Ecto.Multi.run(:comments, fn _repo, _changes ->
-          case replace_comments(review, comments) do
+          case replace_comments(review, comments, user_id) do
             :ok -> {:ok, :ok}
             {:error, _} = error -> error
           end
@@ -245,7 +277,7 @@ defmodule Crit.Reviews do
 
         multi =
           Ecto.Multi.run(multi, :comments, fn _repo, _changes ->
-            case replace_comments(review, comments) do
+            case replace_comments(review, comments, user_id) do
               :ok -> {:ok, :ok}
               {:error, _} = error -> error
             end
@@ -289,12 +321,39 @@ defmodule Crit.Reviews do
     current != incoming
   end
 
-  defp replace_comments(review, new_comments) do
+  # Re-share path. We capture existing comments by external_id BEFORE deleting,
+  # so we can preserve their server-verified `user_id` on roundtrip. Without
+  # this carry-forward, every re-share would strip attribution from comments
+  # authored by other users.
+  defp replace_comments(review, new_comments, current_user_id) do
+    existing_by_external_id =
+      from(c in Comment,
+        where: c.review_id == ^review.id and not is_nil(c.external_id) and is_nil(c.parent_id)
+      )
+      |> Repo.all()
+      |> Map.new(fn c -> {c.external_id, c} end)
+
+    # Same carry-forward for replies. Reply external_ids are the local CLI
+    # reply IDs; assumed unique within a review (CLI stamps `rp_<random>` per
+    # reply).
+    existing_replies_by_external_id =
+      from(c in Comment,
+        where: c.review_id == ^review.id and not is_nil(c.external_id) and not is_nil(c.parent_id)
+      )
+      |> Repo.all()
+      |> Map.new(fn c -> {c.external_id, c} end)
+
     Repo.delete_all(from c in Comment, where: c.review_id == ^review.id)
 
     Enum.reduce_while(new_comments, :ok, fn attrs, :ok ->
       scope = attrs["scope"] || infer_scope(attrs)
       replies_attrs = attrs["replies"] || []
+      external_id = attrs["external_id"]
+
+      existing = external_id && Map.get(existing_by_external_id, external_id)
+
+      {resolved_user_id, resolved_identity, resolved_display_name} =
+        resolve_attribution(existing, attrs, current_user_id)
 
       %Comment{}
       |> Comment.create_changeset(%{
@@ -303,18 +362,24 @@ defmodule Crit.Reviews do
         "body" => attrs["body"],
         "file_path" => attrs["file"],
         "quote" => attrs["quote"],
-        "author_display_name" => attrs["author_display_name"] || attrs["author"],
+        "author_display_name" => resolved_display_name,
         "review_round" => attrs["review_round"] || 1,
         "resolved" => attrs["resolved"] || false,
         "scope" => scope,
-        "external_id" => attrs["external_id"]
+        "external_id" => external_id
       })
       |> Ecto.Changeset.put_change(:review_id, review.id)
-      |> Ecto.Changeset.put_change(:author_identity, "imported")
+      |> Ecto.Changeset.put_change(:author_identity, resolved_identity)
+      |> Ecto.Changeset.put_change(:user_id, resolved_user_id)
       |> Repo.insert()
       |> case do
         {:ok, comment} ->
-          case insert_replies(comment, replies_attrs) do
+          case insert_replies(
+                 comment,
+                 replies_attrs,
+                 current_user_id,
+                 existing_replies_by_external_id
+               ) do
             :ok -> {:cont, :ok}
             {:error, _} = error -> {:halt, error}
           end
@@ -324,6 +389,55 @@ defmodule Crit.Reviews do
       end
     end)
   end
+
+  # Decide (user_id, author_identity, author_display_name) for a comment
+  # arriving via the share API.
+  #
+  # An existing row matched by external_id wins outright: if it already has a
+  # verified user_id, preserve it. The current sharer (whether authed or not)
+  # cannot rewrite attribution on a comment authored by someone else — that's
+  # how foreign comments roundtrip safely through `crit fetch`/re-share.
+  #
+  # Otherwise, the only attribution the server trusts is the bearer token.
+  # The payload's per-comment user_id is treated as intent only:
+  #   * empty → anonymous (NULL), even when the request is authenticated.
+  #     Lets users who logged in mid-flow share earlier anonymous comments
+  #     without retroactively claiming them.
+  #   * matches current_user_id → write the verified id.
+  #   * any other value → treated as a spoof attempt; we have no row to
+  #     roundtrip-match against (the first clause would have caught it),
+  #     so we drop to NULL.
+  #
+  # Anonymous requests always end up with NULL user_id and the legacy
+  # "imported" sentinel in author_identity (kept as a back-compat contract
+  # for the Go CLI on unauthenticated shares).
+  defp resolve_attribution(%Comment{user_id: existing_uid} = existing, _attrs, _current_user_id)
+       when not is_nil(existing_uid) do
+    {existing_uid, nil, existing.author_display_name}
+  end
+
+  defp resolve_attribution(_existing, attrs, current_user_id) do
+    display_name = attrs["author_display_name"] || attrs["author"]
+    payload_user_id = attrs["user_id"]
+
+    cond do
+      current_user_id && blank?(payload_user_id) ->
+        {nil, "imported", display_name}
+
+      current_user_id && payload_user_id == current_user_id ->
+        {current_user_id, nil, display_name}
+
+      current_user_id ->
+        {nil, "imported", display_name}
+
+      true ->
+        {nil, "imported", display_name}
+    end
+  end
+
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(_), do: false
 
   defp insert_round_snapshots(review, round_number, files_attrs) do
     Enum.with_index(files_attrs)
@@ -349,25 +463,33 @@ defmodule Crit.Reviews do
     end)
   end
 
-  defp insert_imported_comments(review, comments_attrs) do
+  # Initial-share path (POST). No existing rows to carry forward — the rules
+  # collapse to:
+  #   * Authenticated → write current_user_id, clear author_identity.
+  #   * Anonymous → write "imported" sentinel into author_identity, NULL user_id.
+  defp insert_imported_comments(review, comments_attrs, current_user_id) do
     Enum.reduce_while(comments_attrs, :ok, fn attrs, :ok ->
       replies_attrs = attrs["replies"] || []
       scope = attrs["scope"] || infer_scope(attrs)
 
+      # Initial-share path has no existing-by-external_id rows to carry forward,
+      # but rules #5/#6/#8 still apply per-comment. Delegate to resolve_attribution
+      # with `nil` existing so per-payload `user_id` intent is honored.
+      {resolved_user_id, resolved_identity, resolved_display_name} =
+        resolve_attribution(nil, attrs, current_user_id)
+
       %Comment{}
       |> Comment.create_changeset(Map.put(attrs, "scope", scope))
       |> Ecto.Changeset.put_change(:review_id, review.id)
-      |> Ecto.Changeset.put_change(:author_identity, "imported")
+      |> Ecto.Changeset.put_change(:author_identity, resolved_identity)
+      |> Ecto.Changeset.put_change(:user_id, resolved_user_id)
       |> Ecto.Changeset.put_change(:file_path, attrs["file"])
       |> Ecto.Changeset.put_change(:resolved, attrs["resolved"] == true)
-      |> Ecto.Changeset.put_change(
-        :author_display_name,
-        attrs["author_display_name"] || attrs["author"]
-      )
+      |> Ecto.Changeset.put_change(:author_display_name, resolved_display_name)
       |> Repo.insert()
       |> case do
         {:ok, comment} ->
-          case insert_replies(comment, replies_attrs) do
+          case insert_replies(comment, replies_attrs, current_user_id) do
             :ok -> {:cont, :ok}
             error -> {:halt, error}
           end
@@ -389,19 +511,27 @@ defmodule Crit.Reviews do
     end
   end
 
-  defp insert_replies(_comment, []), do: :ok
+  defp insert_replies(comment, replies_attrs, current_user_id),
+    do: insert_replies(comment, replies_attrs, current_user_id, %{})
 
-  defp insert_replies(comment, replies_attrs) do
+  defp insert_replies(_comment, [], _current_user_id, _existing_by_external_id), do: :ok
+
+  defp insert_replies(comment, replies_attrs, current_user_id, existing_by_external_id) do
     Enum.reduce_while(replies_attrs, :ok, fn attrs, :ok ->
+      external_id = attrs["external_id"]
+      existing = external_id && Map.get(existing_by_external_id, external_id)
+
+      {resolved_user_id, resolved_identity, resolved_display_name} =
+        resolve_attribution(existing, attrs, current_user_id)
+
       %Comment{}
       |> Comment.reply_changeset(attrs)
       |> Ecto.Changeset.put_change(:parent_id, comment.id)
       |> Ecto.Changeset.put_change(:review_id, comment.review_id)
-      |> Ecto.Changeset.put_change(:author_identity, "imported")
-      |> Ecto.Changeset.put_change(
-        :author_display_name,
-        attrs["author_display_name"] || attrs["author"]
-      )
+      |> Ecto.Changeset.put_change(:author_identity, resolved_identity)
+      |> Ecto.Changeset.put_change(:user_id, resolved_user_id)
+      |> Ecto.Changeset.put_change(:author_display_name, resolved_display_name)
+      |> Ecto.Changeset.put_change(:external_id, external_id)
       |> Repo.insert()
       |> case do
         {:ok, _} -> {:cont, :ok}
@@ -606,8 +736,15 @@ defmodule Crit.Reviews do
     end
   end
 
-  @doc "Create a reply to an existing comment. Scoped to the given review."
-  def create_reply(comment_id, attrs, identity, display_name, review_id) do
+  @doc """
+  Create a reply to an existing comment. Scoped to the given review.
+
+  Same attribution rules as `create_comment/6`: when `opts[:user_id]` is set,
+  it takes precedence and `author_identity` is left NULL.
+  """
+  def create_reply(comment_id, attrs, identity, display_name, review_id, opts \\ []) do
+    user_id = Keyword.get(opts, :user_id)
+
     case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
       nil ->
         {:error, :not_found}
@@ -620,18 +757,23 @@ defmodule Crit.Reviews do
         |> Comment.reply_changeset(attrs)
         |> Ecto.Changeset.put_change(:parent_id, comment_id)
         |> Ecto.Changeset.put_change(:review_id, parent.review_id)
-        |> Ecto.Changeset.put_change(:author_identity, identity)
+        |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
+        |> Ecto.Changeset.put_change(:user_id, user_id)
         |> Ecto.Changeset.put_change(:author_display_name, display_name)
         |> Repo.insert()
-        |> tap(fn
-          {:ok, _} -> Statistics.increment_comment()
-          _ -> :ok
-        end)
+        |> case do
+          {:ok, reply} ->
+            Statistics.increment_comment()
+            {:ok, Repo.preload(reply, :user)}
+
+          other ->
+            other
+        end
     end
   end
 
-  @doc "Update a reply's body if the identity matches the author."
-  def update_reply(reply_id, body, identity) do
+  @doc "Update a reply's body if the caller owns it. See `update_comment/4` for ownership rules."
+  def update_reply(reply_id, body, identity, opts \\ []) do
     case Repo.get(Comment, reply_id) do
       nil ->
         {:error, :not_found}
@@ -639,16 +781,17 @@ defmodule Crit.Reviews do
       %Comment{parent_id: nil} ->
         {:error, :not_found}
 
-      %Comment{author_identity: author} = reply when author == identity ->
-        reply |> Comment.reply_changeset(%{"body" => body}) |> Repo.update()
-
-      _ ->
-        {:error, :unauthorized}
+      %Comment{} = reply ->
+        if comment_owned_by?(reply, identity, Keyword.get(opts, :user_id)) do
+          reply |> Comment.reply_changeset(%{"body" => body}) |> Repo.update()
+        else
+          {:error, :unauthorized}
+        end
     end
   end
 
-  @doc "Delete a reply if the identity matches the author."
-  def delete_reply(reply_id, identity) do
+  @doc "Delete a reply if the caller owns it. See `update_comment/4` for ownership rules."
+  def delete_reply(reply_id, identity, opts \\ []) do
     case Repo.get(Comment, reply_id) do
       nil ->
         {:error, :not_found}
@@ -656,15 +799,24 @@ defmodule Crit.Reviews do
       %Comment{parent_id: nil} ->
         {:error, :not_found}
 
-      %Comment{author_identity: author} = reply when author == identity ->
-        Repo.delete(reply)
-
-      _ ->
-        {:error, :unauthorized}
+      %Comment{} = reply ->
+        if comment_owned_by?(reply, identity, Keyword.get(opts, :user_id)) do
+          Repo.delete(reply)
+        else
+          {:error, :unauthorized}
+        end
     end
   end
 
-  @doc "Serialize a comment to the API JSON shape."
+  @doc """
+  Serialize a comment to the API JSON shape.
+
+  `author_display_name` is resolved: when `user_id` is set and the `:user`
+  association is loaded, the joined `users.name` wins over the stored
+  display name (so renames propagate). Otherwise the stored value is used.
+  Preload `:user` (and `replies: [:user]`) to avoid N+1 — done by default
+  in `get_by_token/1` and `list_comments/1`.
+  """
   def serialize_comment(%Comment{} = c) do
     replies =
       case c.replies do
@@ -680,7 +832,8 @@ defmodule Crit.Reviews do
       quote: c.quote,
       scope: c.scope || "line",
       author_identity: c.author_identity,
-      author_display_name: c.author_display_name,
+      author_display_name: resolve_display_name(c),
+      user_id: c.user_id,
       review_round: c.review_round,
       file_path: c.file_path,
       resolved: c.resolved,
@@ -697,8 +850,17 @@ defmodule Crit.Reviews do
       id: r.id,
       body: r.body,
       author_identity: r.author_identity,
-      author_display_name: r.author_display_name,
+      author_display_name: resolve_display_name(r),
+      user_id: r.user_id,
       created_at: DateTime.to_iso8601(r.inserted_at)
     }
   end
+
+  defp resolve_display_name(%Comment{user_id: nil} = c), do: c.author_display_name
+
+  defp resolve_display_name(%Comment{user: %User{name: name}})
+       when is_binary(name) and name != "",
+       do: name
+
+  defp resolve_display_name(%Comment{} = c), do: c.author_display_name
 end

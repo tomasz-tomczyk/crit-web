@@ -10,6 +10,7 @@ defmodule CritWeb.AuthApiController do
     user = conn.assigns.current_user
 
     json(conn, %{
+      id: user.id,
       name: user.name,
       email: user.email
     })

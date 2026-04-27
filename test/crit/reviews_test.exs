@@ -750,7 +750,14 @@ defmodule Crit.ReviewsTest do
       assert Map.has_key?(serialized, :created_at)
 
       expected_keys =
-        MapSet.new([:id, :body, :author_identity, :author_display_name, :created_at])
+        MapSet.new([
+          :id,
+          :body,
+          :author_identity,
+          :author_display_name,
+          :user_id,
+          :created_at
+        ])
 
       assert MapSet.new(Map.keys(serialized)) == expected_keys
     end

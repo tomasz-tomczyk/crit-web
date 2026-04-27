@@ -20,6 +20,16 @@ if demo_token = System.get_env("DEMO_REVIEW_TOKEN") do
   config :crit, :demo_review_token, demo_token
 end
 
+# Comma-separated list of comment IDs that constitute the seeded demo review's
+# canonical comments + replies. The export filter uses this to hide
+# visitor-authored comments from the public API export. If a deployment
+# configures :demo_review_token without this, the export silently returns
+# zero comments — set DEMO_COMMENT_IDS to match the seed.
+if demo_ids = System.get_env("DEMO_COMMENT_IDS") do
+  ids = demo_ids |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+  config :crit, :demo_comment_ids, ids
+end
+
 if System.get_env("SELFHOSTED") in ~w(true 1) do
   config :crit, :selfhosted, true
 end

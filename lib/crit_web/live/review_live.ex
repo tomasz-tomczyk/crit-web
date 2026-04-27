@@ -15,9 +15,12 @@ defmodule CritWeb.ReviewLive do
       Application.get_env(:crit, :selfhosted) == true &&
         Application.get_env(:crit, :oauth_provider) != nil
 
+    # When authenticated, attribution flows through `user_id` (a verified FK).
+    # `identity` (the session-owner token) is only used for anonymous
+    # visitors to scope edit/delete permission across page reloads.
     {identity, display_name} =
       if current_user do
-        {current_user.id, current_user.name || current_user.email}
+        {nil, current_user.name || current_user.email}
       else
         {Map.get(session, "identity", Ecto.UUID.generate()), Map.get(session, "display_name")}
       end
@@ -46,7 +49,9 @@ defmodule CritWeb.ReviewLive do
             Phoenix.PubSub.subscribe(@pubsub, "review:#{token}")
             Reviews.touch_last_activity(review)
 
-            comments = review.comments |> filter_demo_comments(demo?, identity)
+            comments =
+              review.comments
+              |> filter_demo_comments(demo?, identity, current_user_id(socket))
 
             push_event(socket, "init", %{
               comments: serialize_comments(comments),
@@ -202,7 +207,16 @@ defmodule CritWeb.ReviewLive do
         if q = params["quote"], do: Map.put(a, "quote", q), else: a
       end)
 
-    case Reviews.create_comment(review, attrs, identity, socket.assigns.display_name, file_path) do
+    user_id = current_user_id(socket)
+
+    case Reviews.create_comment(
+           review,
+           attrs,
+           identity,
+           socket.assigns.display_name,
+           file_path,
+           user_id: user_id
+         ) do
       {:ok, comment} ->
         payload = %{comment: Reviews.serialize_comment(comment)}
         socket = push_event(socket, "comment_added", payload)
@@ -218,7 +232,7 @@ defmodule CritWeb.ReviewLive do
   def handle_event("edit_comment", %{"id" => id, "body" => body}, socket) do
     %{identity: identity} = socket.assigns
 
-    case Reviews.update_comment(id, body, identity) do
+    case Reviews.update_comment(id, body, identity, user_id: current_user_id(socket)) do
       {:ok, comment} ->
         payload = %{
           id: comment.id,
@@ -242,7 +256,7 @@ defmodule CritWeb.ReviewLive do
   def handle_event("delete_comment", %{"id" => id}, socket) do
     %{identity: identity} = socket.assigns
 
-    case Reviews.delete_comment(id, identity) do
+    case Reviews.delete_comment(id, identity, user_id: current_user_id(socket)) do
       {:ok, _} ->
         payload = %{id: id}
         socket = push_event(socket, "comment_deleted", payload)
@@ -284,7 +298,14 @@ defmodule CritWeb.ReviewLive do
   def handle_event("add_reply", %{"comment_id" => comment_id, "body" => body}, socket) do
     %{review: review, identity: identity, display_name: display_name} = socket.assigns
 
-    case Reviews.create_reply(comment_id, %{"body" => body}, identity, display_name, review.id) do
+    case Reviews.create_reply(
+           comment_id,
+           %{"body" => body},
+           identity,
+           display_name,
+           review.id,
+           user_id: current_user_id(socket)
+         ) do
       {:ok, reply} ->
         payload = %{parent_id: comment_id, reply: Reviews.serialize_reply(reply)}
         socket = push_event(socket, "reply_added", payload)
@@ -300,7 +321,7 @@ defmodule CritWeb.ReviewLive do
   def handle_event("edit_reply", %{"id" => id, "body" => body}, socket) do
     %{identity: identity} = socket.assigns
 
-    case Reviews.update_reply(id, body, identity) do
+    case Reviews.update_reply(id, body, identity, user_id: current_user_id(socket)) do
       {:ok, reply} ->
         payload = %{parent_id: reply.parent_id, id: reply.id, body: reply.body}
         socket = push_event(socket, "reply_updated", payload)
@@ -319,7 +340,7 @@ defmodule CritWeb.ReviewLive do
   def handle_event("delete_reply", %{"id" => id}, socket) do
     %{identity: identity} = socket.assigns
 
-    case Reviews.delete_reply(id, identity) do
+    case Reviews.delete_reply(id, identity, user_id: current_user_id(socket)) do
       {:ok, deleted} ->
         payload = %{parent_id: deleted.parent_id, id: id}
         socket = push_event(socket, "reply_deleted", payload)
@@ -404,7 +425,7 @@ defmodule CritWeb.ReviewLive do
   @impl true
   def handle_info({:comments_full_sync, comments}, socket) do
     %{demo?: demo?, identity: identity} = socket.assigns
-    filtered = filter_demo_serialized_comments(comments, demo?, identity)
+    filtered = filter_demo_serialized_comments(comments, demo?, identity, current_user_id(socket))
     {:noreply, push_event(socket, "comments_full_sync", %{comments: filtered})}
   end
 
@@ -427,16 +448,25 @@ defmodule CritWeb.ReviewLive do
     Enum.map(comments, &Reviews.serialize_comment/1)
   end
 
-  defp filter_demo_comments(comments, false, _identity), do: comments
+  defp current_user_id(socket) do
+    case socket.assigns[:current_user] do
+      nil -> nil
+      %{id: id} -> id
+    end
+  end
 
-  defp filter_demo_comments(comments, true, identity) do
+  defp filter_demo_comments(comments, false, _identity, _user_id), do: comments
+
+  defp filter_demo_comments(comments, true, identity, user_id) do
+    keep? = fn c -> demo_visible?(c, identity, user_id) end
+
     comments
-    |> Enum.filter(fn c -> c.author_identity in ["imported", identity] end)
+    |> Enum.filter(keep?)
     |> Enum.map(fn c ->
       filtered_replies =
         case c.replies do
           %Ecto.Association.NotLoaded{} -> %Ecto.Association.NotLoaded{}
-          replies -> Enum.filter(replies, &(&1.author_identity in ["imported", identity]))
+          replies -> Enum.filter(replies, keep?)
         end
 
       %{c | replies: filtered_replies}
@@ -444,15 +474,21 @@ defmodule CritWeb.ReviewLive do
   end
 
   # Filters already-serialized comment maps (atom keys) for demo mode full sync.
-  defp filter_demo_serialized_comments(comments, false, _identity), do: comments
+  defp filter_demo_serialized_comments(comments, false, _identity, _user_id), do: comments
 
-  defp filter_demo_serialized_comments(comments, true, identity) do
+  defp filter_demo_serialized_comments(comments, true, identity, user_id) do
+    keep? = fn c -> demo_visible?(c, identity, user_id) end
+
     comments
-    |> Enum.filter(fn c -> c.author_identity in ["imported", identity] end)
+    |> Enum.filter(keep?)
     |> Enum.map(fn c ->
-      filtered_replies = Enum.filter(c.replies, &(&1.author_identity in ["imported", identity]))
-      %{c | replies: filtered_replies}
+      %{c | replies: Enum.filter(c.replies, keep?)}
     end)
+  end
+
+  defp demo_visible?(c, identity, user_id) do
+    c.author_identity in ["imported", identity] or
+      (not is_nil(user_id) and Map.get(c, :user_id) == user_id)
   end
 
   @doc false

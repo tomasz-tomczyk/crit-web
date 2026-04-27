@@ -129,6 +129,7 @@ defmodule CritWeb.Router do
     if Mix.env() in [:test, :dev] do
       post "/reviews/:token/seed-comment", ApiController, :seed_comment
       post "/reviews/:token/seed-reply/:comment_id", ApiController, :seed_reply
+      post "/test/seed-user", ApiController, :seed_user
     end
   end
 

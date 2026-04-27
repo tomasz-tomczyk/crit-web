@@ -135,17 +135,24 @@ defmodule CritWeb.ApiController do
     end
   end
 
+  # The demo review is open to anyone — anon visitors can comment on it. The
+  # API export must show only the seeded demo comments (and their seeded
+  # replies), not visitor comments. The demo content is seeded with a known
+  # set of comment IDs (config-driven so tests/dev can set their own); anything
+  # outside that set is a visitor comment and gets hidden in the export.
   defp visible_comments(review) do
     demo_token = Application.get_env(:crit, :demo_review_token)
 
     if review.token == demo_token do
+      demo_ids = MapSet.new(Application.get_env(:crit, :demo_comment_ids, []))
+
       review.comments
-      |> Enum.filter(&(&1.author_identity == "imported"))
+      |> Enum.filter(&MapSet.member?(demo_ids, &1.id))
       |> Enum.map(fn c ->
         filtered_replies =
           case c.replies do
             %Ecto.Association.NotLoaded{} -> %Ecto.Association.NotLoaded{}
-            replies -> Enum.filter(replies, &(&1.author_identity == "imported"))
+            replies -> Enum.filter(replies, &MapSet.member?(demo_ids, &1.id))
           end
 
         %{c | replies: filtered_replies}
@@ -158,8 +165,9 @@ defmodule CritWeb.ApiController do
   def update(conn, %{"token" => token} = params) do
     delete_token = params["delete_token"]
     payload = Map.take(params, ["files", "comments", "review_round", "cli_args"])
+    user_id = conn.assigns[:current_user] && conn.assigns[:current_user].id
 
-    case Reviews.upsert_review(token, delete_token, payload) do
+    case Reviews.upsert_review(token, delete_token, payload, user_id: user_id) do
       {:ok, :updated, review} ->
         url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
         json(conn, %{url: url, review_round: review.review_round, changed: true})
@@ -224,6 +232,24 @@ defmodule CritWeb.ApiController do
 
           json(conn, Reviews.serialize_comment(comment))
       end
+    end
+
+    def seed_user(conn, params) do
+      name = params["name"] || "Test User"
+      email = params["email"] || "test-#{System.unique_integer([:positive])}@example.com"
+      provider_uid = "test-#{System.unique_integer([:positive])}"
+
+      {:ok, user} =
+        Crit.Accounts.find_or_create_from_oauth("test", %{
+          "sub" => provider_uid,
+          "name" => name,
+          "email" => email,
+          "picture" => nil
+        })
+
+      {:ok, {plaintext, _record}} = Crit.Accounts.create_token(user, "integration-test")
+
+      json(conn, %{user_id: user.id, name: user.name, email: user.email, token: plaintext})
     end
 
     def seed_reply(conn, %{"token" => token, "comment_id" => comment_id} = params) do
