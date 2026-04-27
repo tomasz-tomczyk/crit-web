@@ -176,7 +176,7 @@ defmodule CritWeb.Layouts do
             </.nav_link>
             <a
               href="https://github.com/tomasz-tomczyk/crit"
-              class="inline-flex items-center gap-1.5 h-[30px] px-2.5 rounded-md text-[13px] font-medium tracking-tight no-underline text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+              class="inline-flex items-center gap-1.5 h-[30px] px-2.5 rounded-md text-sm font-medium tracking-tight no-underline text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
             >
               <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
@@ -217,7 +217,7 @@ defmodule CritWeb.Layouts do
                     class="h-6 w-6 rounded-full flex-shrink-0"
                   />
                 <% else %>
-                  <span class="h-6 w-6 rounded-full bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[10.5px] font-semibold flex-shrink-0">
+                  <span class="h-6 w-6 rounded-full bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
                     {@user_initial}
                   </span>
                 <% end %>
@@ -247,12 +247,12 @@ defmodule CritWeb.Layouts do
                       class="h-9 w-9 rounded-md flex-shrink-0"
                     />
                   <% else %>
-                    <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                    <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-sm font-semibold flex-shrink-0">
                       {@user_initial}
                     </span>
                   <% end %>
                   <div class="flex flex-col gap-0.5 min-w-0">
-                    <span class="text-[13px] font-semibold text-(--crit-fg-primary) leading-tight">
+                    <span class="text-sm font-semibold text-(--crit-fg-primary) leading-tight">
                       {@current_user.name || @current_user.email}
                     </span>
                     <%= if @current_user.name && @current_user.email do %>
@@ -265,13 +265,13 @@ defmodule CritWeb.Layouts do
 
                 <div class="h-px bg-(--crit-border) my-0.5"></div>
 
-                <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-3 pt-2 pb-1">
+                <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-3 pt-2 pb-1">
                   Account
                 </div>
                 <.link
                   navigate={~p"/settings"}
                   role="menuitem"
-                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
                 >
                   <.icon name="hero-cog-6-tooth-mini" class="size-3.5 text-(--crit-fg-muted)" />
                   <span>Settings</span>
@@ -283,7 +283,7 @@ defmodule CritWeb.Layouts do
                   href={~p"/auth/logout"}
                   method="delete"
                   role="menuitem"
-                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
                 >
                   <.icon name="hero-arrow-right-on-rectangle-mini" class="size-3.5" />
                   <span>Sign out</span>
@@ -293,7 +293,7 @@ defmodule CritWeb.Layouts do
           <% else %>
             <a
               href={~p"/auth/login?return_to=/dashboard"}
-              class="inline-flex items-center gap-1.5 h-[30px] px-3 mr-1.5 rounded-md text-[13px] font-medium tracking-tight no-underline bg-(--crit-brand-cta) text-white hover:bg-(--crit-brand-cta-hover) transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]"
+              class="inline-flex items-center gap-1.5 h-[30px] px-3 mr-1.5 rounded-md text-sm font-medium tracking-tight no-underline bg-(--crit-brand-cta) text-white hover:bg-(--crit-brand-cta-hover) transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]"
             >
               <%= if @github_oauth? do %>
                 <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
@@ -325,7 +325,7 @@ defmodule CritWeb.Layouts do
         class="sm:hidden bg-(--crit-bg-card) border-t border-(--crit-border)"
       >
         <div class="flex flex-col gap-px px-3 pt-2 pb-3.5">
-          <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+          <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
             Site
           </div>
           <.nav_mobile_link href={~p"/features"} active={@current_page == :features}>
@@ -358,7 +358,7 @@ defmodule CritWeb.Layouts do
               <%= if @current_user.avatar_url do %>
                 <img src={@current_user.avatar_url} alt="" class="h-9 w-9 rounded-md flex-shrink-0" />
               <% else %>
-                <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-sm font-semibold flex-shrink-0">
                   {@user_initial}
                 </span>
               <% end %>
@@ -374,7 +374,7 @@ defmodule CritWeb.Layouts do
               </div>
             </div>
 
-            <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+            <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Account
             </div>
             <.nav_mobile_link href={~p"/dashboard"}>Dashboard</.nav_mobile_link>
@@ -460,12 +460,12 @@ defmodule CritWeb.Layouts do
               class="relative inline-flex items-stretch h-[30px] ml-1 min-w-0 max-sm:hidden text-(--crit-fg-muted) before:content-[''] before:absolute before:left-0 before:top-[7px] before:bottom-[7px] before:w-px before:bg-(--crit-border-strong)"
             >
               <span class="inline-flex items-center px-2.5">
-                <span class="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-(--crit-fg-muted) leading-none">
+                <span class="text-xs font-semibold uppercase tracking-[0.1em] text-(--crit-fg-muted) leading-none">
                   Self-hosted
                 </span>
               </span>
               <span class="relative inline-flex items-center px-2.5 before:content-[''] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-(--crit-border-strong)">
-                <span class="font-mono text-[12.5px] font-medium text-(--crit-fg-primary) tracking-tight truncate max-w-[240px] leading-none">
+                <span class="font-mono text-sm font-medium text-(--crit-fg-primary) tracking-tight truncate max-w-[240px] leading-none">
                   {@host}
                 </span>
               </span>
@@ -513,7 +513,7 @@ defmodule CritWeb.Layouts do
                     class="h-6 w-6 rounded-full flex-shrink-0"
                   />
                 <% else %>
-                  <span class="h-6 w-6 rounded-full bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[10.5px] font-semibold flex-shrink-0">
+                  <span class="h-6 w-6 rounded-full bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
                     {@user_initial}
                   </span>
                 <% end %>
@@ -565,12 +565,12 @@ defmodule CritWeb.Layouts do
                       class="h-9 w-9 rounded-md flex-shrink-0"
                     />
                   <% else %>
-                    <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                    <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-sm font-semibold flex-shrink-0">
                       {@user_initial}
                     </span>
                   <% end %>
                   <div class="flex flex-col gap-0.5 min-w-0">
-                    <span class="text-[13px] font-semibold text-(--crit-fg-primary) leading-tight">
+                    <span class="text-sm font-semibold text-(--crit-fg-primary) leading-tight">
                       {@current_user.name || @current_user.email}
                     </span>
                     <%= if @current_user.name && @current_user.email do %>
@@ -583,13 +583,13 @@ defmodule CritWeb.Layouts do
 
                 <div class="h-px bg-(--crit-border) my-0.5"></div>
 
-                <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-3 pt-2 pb-1">
+                <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-3 pt-2 pb-1">
                   Account
                 </div>
                 <.link
                   navigate={~p"/settings"}
                   role="menuitem"
-                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
                 >
                   <.icon name="hero-cog-6-tooth-mini" class="size-3.5 text-(--crit-fg-muted)" />
                   <span>Settings</span>
@@ -601,7 +601,7 @@ defmodule CritWeb.Layouts do
                   href={~p"/auth/logout"}
                   method="delete"
                   role="menuitem"
-                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
+                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
                 >
                   <.icon name="hero-arrow-right-on-rectangle-mini" class="size-3.5" />
                   <span>Sign out</span>
@@ -645,7 +645,7 @@ defmodule CritWeb.Layouts do
               <%= if @current_user.avatar_url do %>
                 <img src={@current_user.avatar_url} alt="" class="h-9 w-9 rounded-md flex-shrink-0" />
               <% else %>
-                <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-sm font-semibold flex-shrink-0">
                   {@user_initial}
                 </span>
               <% end %>
@@ -661,7 +661,7 @@ defmodule CritWeb.Layouts do
               </div>
             </div>
 
-            <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+            <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Navigate
             </div>
             <%= if @show_overview_link do %>
@@ -673,7 +673,7 @@ defmodule CritWeb.Layouts do
               Dashboard
             </.nav_mobile_link>
 
-            <div class="text-[10.5px] uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+            <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Account
             </div>
             <.nav_mobile_link navigate={~p"/settings"} active={@current_page == :settings}>
@@ -718,7 +718,7 @@ defmodule CritWeb.Layouts do
       navigate={@navigate}
       aria-current={@active && "page"}
       class={[
-        "inline-flex items-center h-[30px] px-2.5 rounded-md text-[13px] font-medium tracking-tight no-underline transition-colors",
+        "inline-flex items-center h-[30px] px-2.5 rounded-md text-sm font-medium tracking-tight no-underline transition-colors",
         if(@active,
           do: "text-(--crit-fg-primary) bg-(--crit-bg-card) hover:bg-(--crit-bg-elevated)",
           else:

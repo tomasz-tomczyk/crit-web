@@ -31,7 +31,7 @@ defmodule CritWeb.Components.ReviewSnippet do
               :for={{line, idx} <- Enum.with_index(lines, 1)}
               class="grid grid-cols-[44px_1fr] gap-x-2.5 pr-3.5"
             >
-              <span class="text-right text-(--crit-fg-muted) opacity-60 select-none text-[11px] pr-1.5 leading-5">
+              <span class="text-right text-(--crit-fg-muted) opacity-60 select-none text-xs pr-1.5 leading-5">
                 {idx}
               </span>
               <code
@@ -48,15 +48,15 @@ defmodule CritWeb.Components.ReviewSnippet do
       <% {:markdown, html} -> %>
         <div class="border border-(--crit-border) rounded-md overflow-hidden h-[200px] relative px-5 py-3 text-sm
                     [&_h1]:text-base [&_h1]:font-semibold [&_h1]:mt-0 [&_h1]:mb-1.5 [&_h1]:pb-1 [&_h1]:border-b [&_h1]:border-(--crit-border)
-                    [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:mt-2.5 [&_h2]:mb-1
+                    [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mt-2.5 [&_h2]:mb-1
                     [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1
                     [&_p]:my-1 [&_p]:leading-relaxed
                     [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1
                     [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-1
                     [&_li]:my-0.5
                     [&_a]:text-(--crit-brand) [&_a]:underline
-                    [&_code]:font-mono [&_code]:text-[12px] [&_code]:bg-(--crit-bg-elevated) [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded
-                    [&_pre]:font-mono [&_pre]:text-[12px] [&_pre]:bg-(--crit-bg-elevated) [&_pre]:p-2 [&_pre]:rounded [&_pre]:my-1.5 [&_pre]:overflow-hidden
+                    [&_code]:font-mono [&_code]:text-xs [&_code]:bg-(--crit-bg-elevated) [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded
+                    [&_pre]:font-mono [&_pre]:text-xs [&_pre]:bg-(--crit-bg-elevated) [&_pre]:p-2 [&_pre]:rounded [&_pre]:my-1.5 [&_pre]:overflow-hidden
                     [&_pre_code]:bg-transparent [&_pre_code]:px-0 [&_pre_code]:py-0
                     [&_blockquote]:border-l-2 [&_blockquote]:border-(--crit-border-strong) [&_blockquote]:pl-3 [&_blockquote]:text-(--crit-fg-secondary)
                     [&_strong]:font-semibold [&_em]:italic">

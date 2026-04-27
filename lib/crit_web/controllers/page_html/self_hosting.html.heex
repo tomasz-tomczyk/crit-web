@@ -130,14 +130,8 @@
         </div>
       </div>
 
-      <p class="text-sm text-(--crit-fg-secondary) mt-3 leading-relaxed">
-        Set
-        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
-          SECRET_KEY_BASE
-        </code>
-        and <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>
-        in your <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code>
-        file.
+      <p phx-no-format class="text-sm text-(--crit-fg-secondary) mt-3 leading-relaxed">
+        Set <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">SECRET_KEY_BASE</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code> in your <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code> file.
       </p>
     </section>
 
@@ -306,11 +300,8 @@
         <div class="divide-y divide-(--crit-border)">
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">SECRET_KEY_BASE</code>
-            <p class="text-sm text-(--crit-fg-secondary)">
-              64+ byte secret for signing cookies. Generate with
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
-                openssl rand -base64 64
-              </code>
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              64+ byte secret for signing cookies. Generate with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">openssl rand -base64 64</code>
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
@@ -367,12 +358,8 @@
         <div class="divide-y divide-(--crit-border)">
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">GITHUB_CLIENT_ID</code>
-            <p class="text-sm text-(--crit-fg-secondary)">
-              GitHub OAuth App client ID. Set alongside
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
-                GITHUB_CLIENT_SECRET
-              </code>
-              to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews.
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              GitHub OAuth App client ID. Set alongside <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_SECRET</code> to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews.
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
@@ -383,13 +370,8 @@
           </div>
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_CLIENT_ID</code>
-            <p class="text-sm text-(--crit-fg-secondary)">
-              Generic OIDC/OAuth2 client ID. Use with
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
-                OAUTH_CLIENT_SECRET
-              </code>
-              and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code>
-              for providers like Google, GitLab, or Okta. Mutually exclusive with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code>.
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              Generic OIDC/OAuth2 client ID. Use with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_SECRET</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code> for providers like Google, GitLab, or Okta. Mutually exclusive with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code>.
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
@@ -400,11 +382,8 @@
           </div>
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_BASE_URL</code>
-            <p class="text-sm text-(--crit-fg-secondary)">
-              OIDC discovery base URL, e.g.
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">
-                https://accounts.google.com
-              </code>
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              OIDC discovery base URL, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">https://accounts.google.com</code>
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
