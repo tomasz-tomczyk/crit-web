@@ -541,6 +541,7 @@ defmodule CritWeb.ReviewLiveTest do
           :scope,
           :author_identity,
           :author_display_name,
+          :user_id,
           :review_round,
           :file_path,
           :resolved,
@@ -1079,7 +1080,10 @@ defmodule CritWeb.ReviewLiveTest do
 
       [comment] = Reviews.list_comments(review)
       assert comment.author_display_name == "Reviewer"
-      assert comment.author_identity == user.id
+      # Authenticated comments now flow through user_id (verified FK).
+      # author_identity (the session-owner token) is NULL for them.
+      assert comment.user_id == user.id
+      assert comment.author_identity == nil
     end
   end
 

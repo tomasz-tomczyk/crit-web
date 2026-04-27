@@ -83,6 +83,14 @@ config :phoenix, :plug_init_mode, :runtime
 
 config :crit, :demo_review_token, "seedreview12345678901"
 
+# IDs of comments + replies seeded onto the demo review. The export filter
+# uses this set to hide visitor-authored comments from the API export. Keep
+# in sync with the demo block in priv/repo/seeds.exs.
+config :crit, :demo_comment_ids, [
+  "a0000000-0000-0000-0000-000000000001",
+  "a0000000-0000-0000-0000-000000000002"
+]
+
 config :phoenix_live_view,
   # Include debug annotations and locations in rendered markup.
   # Changing this configuration will require mix clean and a full recompile.
