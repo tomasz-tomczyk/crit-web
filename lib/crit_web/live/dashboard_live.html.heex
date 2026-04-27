@@ -93,15 +93,17 @@
           <%!-- Steps --%>
           <div class="flex flex-col">
             <%!-- Step 1: Install --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
-              <div class="flex flex-col items-center">
-                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+              <div class="flex flex-col items-center max-sm:hidden">
+                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   1
                 </div>
                 <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
               </div>
               <div class="pb-8 min-w-0">
-                <div class="text-xl font-bold tracking-tight leading-8">Install crit</div>
+                <div class="text-xl font-bold tracking-tight leading-8">
+                  <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">1.</span>Install crit
+                </div>
                 <div class="mt-3">
                   <CritWeb.PageHTML.install_widget />
                 </div>
@@ -109,15 +111,17 @@
             </div>
 
             <%!-- Step 2: Connect your agent --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
-              <div class="flex flex-col items-center">
-                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+              <div class="flex flex-col items-center max-sm:hidden">
+                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   2
                 </div>
                 <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
               </div>
               <div class="pb-8 min-w-0">
-                <div class="text-xl font-bold tracking-tight leading-8">Connect your agent</div>
+                <div class="text-xl font-bold tracking-tight leading-8">
+                  <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">2.</span>Connect your agent
+                </div>
                 <div class="mt-3">
                   <CritWeb.PageHTML.agent_setup_widget />
                 </div>
@@ -126,16 +130,16 @@
 
             <%= if @selfhosted do %>
               <%!-- Step 3 (selfhosted): Point crit at this instance --%>
-              <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
-                <div class="flex flex-col items-center">
-                  <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+              <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+                <div class="flex flex-col items-center max-sm:hidden">
+                  <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                     3
                   </div>
                   <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
                 </div>
                 <div class="pb-8 min-w-0">
                   <div class="text-xl font-bold tracking-tight leading-8">
-                    Point crit at this instance
+                    <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">3.</span>Point crit at this instance
                   </div>
                   <p
                     class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed"
@@ -170,15 +174,17 @@
             <% end %>
 
             <%!-- Step: Log in --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
-              <div class="flex flex-col items-center">
-                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+              <div class="flex flex-col items-center max-sm:hidden">
+                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   {if @selfhosted, do: 4, else: 3}
                 </div>
                 <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
               </div>
               <div class="pb-8 min-w-0">
-                <div class="text-xl font-bold tracking-tight leading-8">Log in</div>
+                <div class="text-xl font-bold tracking-tight leading-8">
+                  <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">{if @selfhosted, do: 4, else: 3}.</span>Log in
+                </div>
                 <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
                   Run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit auth login</code>
                   to link shared reviews to your account. Opens your browser for a one-time confirmation.
@@ -199,14 +205,16 @@
             </div>
 
             <%!-- Step: Share --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
-              <div class="flex flex-col items-center">
-                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+              <div class="flex flex-col items-center max-sm:hidden">
+                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   {if @selfhosted, do: 5, else: 4}
                 </div>
               </div>
               <div>
-                <div class="text-xl font-bold tracking-tight leading-8">Share to the web</div>
+                <div class="text-xl font-bold tracking-tight leading-8">
+                  <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">{if @selfhosted, do: 5, else: 4}.</span>Share to the web
+                </div>
                 <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
                   When you're ready, run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit share</code>
                   to upload your review to a shareable URL.
