@@ -93,9 +93,9 @@
           <%!-- Steps --%>
           <div class="flex flex-col">
             <%!-- Step 1: Install --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
               <div class="flex flex-col items-center">
-                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   1
                 </div>
                 <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
@@ -109,9 +109,9 @@
             </div>
 
             <%!-- Step 2: Connect your agent --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
               <div class="flex flex-col items-center">
-                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   2
                 </div>
                 <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
@@ -126,9 +126,9 @@
 
             <%= if @selfhosted do %>
               <%!-- Step 3 (selfhosted): Point crit at this instance --%>
-              <div class="grid grid-cols-[40px_1fr] gap-x-5">
+              <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
                 <div class="flex flex-col items-center">
-                  <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                  <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                     3
                   </div>
                   <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
@@ -170,9 +170,9 @@
             <% end %>
 
             <%!-- Step: Log in --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
               <div class="flex flex-col items-center">
-                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   {if @selfhosted, do: 4, else: 3}
                 </div>
                 <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
@@ -199,9 +199,9 @@
             </div>
 
             <%!-- Step: Share --%>
-            <div class="grid grid-cols-[40px_1fr] gap-x-5">
+            <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:grid-cols-[24px_1fr] max-sm:gap-x-3">
               <div class="flex flex-col items-center">
-                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                <div class="w-8 h-8 max-sm:w-6 max-sm:h-6 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm max-sm:text-xs font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
                   {if @selfhosted, do: 5, else: 4}
                 </div>
               </div>
