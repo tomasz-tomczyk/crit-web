@@ -124,27 +124,98 @@
               </div>
             </div>
 
-            <%!-- Step 3: Share --%>
+            <%= if @selfhosted do %>
+              <%!-- Step 3 (selfhosted): Point crit at this instance --%>
+              <div class="grid grid-cols-[40px_1fr] gap-x-5">
+                <div class="flex flex-col items-center">
+                  <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                    3
+                  </div>
+                  <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
+                </div>
+                <div class="pb-8">
+                  <div class="text-xl font-bold tracking-tight leading-8">
+                    Point crit at this instance
+                  </div>
+                  <p
+                    class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed"
+                    phx-no-format
+                  >
+                    By default, crit shares to <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit.md</code>. Set <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">share_url</code>
+                    so it talks to this self-hosted instance instead.
+                  </p>
+
+                  <div class="mt-3 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
+                    <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-4 py-3 overflow-x-auto whitespace-pre"><span class="text-(--crit-fg-muted) select-none">$ </span>export CRIT_SHARE_URL={@instance_url}</pre>
+                    <button
+                      class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+                      aria-label="Copy to clipboard"
+                      data-copy={"export CRIT_SHARE_URL=#{@instance_url}"}
+                    >
+                      <.icon name="hero-clipboard" class="size-4 icon-default" />
+                      <.icon
+                        name="hero-clipboard-document-check"
+                        class="size-4 icon-copied hidden"
+                      />
+                    </button>
+                  </div>
+
+                  <p class="mt-2 text-xs text-(--crit-fg-muted) leading-relaxed">
+                    Or pass <code class="font-mono">--share-url</code>
+                    per command, or set <code class="font-mono">share_url</code>
+                    in <code class="font-mono">~/.crit.config.json</code>.
+                  </p>
+                </div>
+              </div>
+            <% end %>
+
+            <%!-- Step: Log in --%>
             <div class="grid grid-cols-[40px_1fr] gap-x-5">
               <div class="flex flex-col items-center">
                 <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
-                  3
+                  {if @selfhosted, do: 4, else: 3}
+                </div>
+                <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
+              </div>
+              <div class="pb-8">
+                <div class="text-xl font-bold tracking-tight leading-8">Log in</div>
+                <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
+                  Run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit auth login</code>
+                  to link shared reviews to your account. Opens your browser for a one-time confirmation.
+                </p>
+
+                <div class="mt-3 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
+                  <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-4 py-3 overflow-x-auto whitespace-pre"><span class="text-(--crit-fg-muted) select-none">$ </span>crit auth login</pre>
+                  <button
+                    class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+                    aria-label="Copy to clipboard"
+                    data-copy="crit auth login"
+                  >
+                    <.icon name="hero-clipboard" class="size-4 icon-default" />
+                    <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <%!-- Step: Share --%>
+            <div class="grid grid-cols-[40px_1fr] gap-x-5">
+              <div class="flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                  {if @selfhosted, do: 5, else: 4}
                 </div>
               </div>
               <div>
                 <div class="text-xl font-bold tracking-tight leading-8">Share to the web</div>
-                <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed">
-                  When you're ready, run
-                  <code class="font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">
-                    crit share
-                  </code>
+                <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
+                  When you're ready, run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit share</code>
                   to upload your review to a shareable URL.
                 </p>
 
                 <%!-- Terminal snippet --%>
                 <div class="mt-3 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
                   <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-4 py-3 overflow-x-auto whitespace-pre"><span class="text-(--crit-fg-muted) select-none">$ </span>crit share
-<span class="text-(--crit-fg-muted) italic">Shared at crit.md/r/abc123</span></pre>
+<span class="text-(--crit-fg-muted) italic">Shared at {if @selfhosted, do: String.replace(@instance_url, ~r{^https?://}, ""), else: "crit.md"}/r/abc123</span></pre>
                 </div>
 
                 <%!-- Share details --%>
@@ -175,11 +246,8 @@
                       name="hero-trash"
                       class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5"
                     />
-                    <span>
-                      Unpublish anytime with
-                      <code class="font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">
-                        crit unpublish
-                      </code>
+                    <span phx-no-format>
+                      Unpublish anytime with <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit unpublish</code>
                     </span>
                   </div>
                 </div>

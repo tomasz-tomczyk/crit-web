@@ -17,6 +17,7 @@ defmodule CritWeb.DashboardLive do
       |> assign(:page_title, "Dashboard - Crit")
       |> assign(:noindex, true)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
+      |> assign(:instance_url, CritWeb.Endpoint.url())
       |> stream(:reviews, reviews)
       |> assign(:review_count, length(reviews))
 
