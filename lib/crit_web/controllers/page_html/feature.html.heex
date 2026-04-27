@@ -4,7 +4,7 @@
   <Layouts.site_header current_user={@current_user} current_page={:features} />
   
 <!-- Breadcrumb -->
-  <div class="max-w-7xl mx-auto w-full px-10 mt-10 max-sm:px-5 max-sm:mt-5">
+  <div class="max-w-7xl mx-auto w-full px-10 mt-10 max-sm:px-4 max-sm:mt-5">
     <a
       href={~p"/features"}
       class="text-sm text-(--crit-fg-muted) no-underline hover:text-(--crit-fg-primary) transition-colors"
@@ -14,7 +14,7 @@
   </div>
   
 <!-- Hero -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-5">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-4">
     <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
       Feature
     </p>
@@ -27,7 +27,7 @@
   </section>
   
 <!-- Visual widget -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
     <%= case @slug do %>
       <% "inline-comments" -> %>
         <div
@@ -99,12 +99,11 @@
                 Edit &middot; Delete
               </span>
             </div>
-            <div class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed">
-              +1 on OAuth2. See the
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded text-(--crit-brand)">
-                passport.js
-              </code>
-              docs for examples.
+            <div
+              phx-no-format
+              class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed"
+            >
+              +1 on OAuth2. See the <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded text-(--crit-brand)">passport.js</code> docs for examples.
             </div>
           </div>
           <div class="flex">
@@ -136,13 +135,11 @@
                 Edit &middot; Delete
               </span>
             </div>
-            <div class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed">
-              bcrypt is fine but
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded text-(--crit-brand)">
-                argon2id
-              </code>
-              is the <em>current</em>
-              recommendation.
+            <div
+              phx-no-format
+              class="px-3 py-2 font-sans text-(--crit-fg-secondary) leading-relaxed"
+            >
+              bcrypt is fine but <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded text-(--crit-brand)">argon2id</code> is the <em>current</em> recommendation.
             </div>
           </div>
         </div>
@@ -428,7 +425,7 @@
   </section>
   
 <!-- Details -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
     <h2 class="text-2xl font-extrabold tracking-tight mb-6">How it works</h2>
     <div class="grid gap-5">
       <%= for {detail, idx} <- Enum.with_index(@feature.details) do %>
@@ -446,7 +443,7 @@
   
 <!-- Why this matters -->
   <%= if @feature[:why_this_matters] do %>
-    <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
+    <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
       <h2 class="text-2xl font-extrabold tracking-tight mb-6">Why this matters</h2>
       <div class="flex flex-col gap-4">
         <%= for paragraph <- @feature.why_this_matters do %>
@@ -460,7 +457,7 @@
   
 <!-- How Crit compares -->
   <%= if @feature[:how_crit_compares] do %>
-    <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-5 max-sm:mt-8">
+    <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
       <h2 class="text-2xl font-extrabold tracking-tight mb-4">How Crit compares</h2>
       <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
         {CritWeb.PageHTML.inline_code(@feature.how_crit_compares)}
@@ -469,7 +466,7 @@
   <% end %>
   
 <!-- Demo + Install CTA -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-14 mb-16 max-sm:px-5 max-sm:mt-10">
+  <section class="max-w-7xl mx-auto w-full px-10 mt-14 mb-16 max-sm:px-4 max-sm:mt-10">
     <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-8 max-sm:p-5">
       <h2 class="text-2xl font-extrabold tracking-tight mb-2">Try it out</h2>
       <p class="text-sm text-(--crit-fg-secondary) mb-6">
@@ -501,7 +498,7 @@
   </section>
   
 <!-- Other features -->
-  <section class="max-w-7xl mx-auto w-full px-10 mb-16 max-sm:px-5">
+  <section class="max-w-7xl mx-auto w-full px-10 mb-16 max-sm:px-4">
     <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-4">
       More features
     </p>

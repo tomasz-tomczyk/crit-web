@@ -2953,6 +2953,7 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   border-bottom: 1px solid transparent;
   padding-bottom: 1px;
   transition: border-color var(--crit-dur-fast) var(--crit-ease);
+  overflow-wrap: anywhere;
 }
 
 .changelog-body a:hover {

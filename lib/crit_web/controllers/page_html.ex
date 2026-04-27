@@ -15,7 +15,7 @@ defmodule CritWeb.PageHTML do
       case Regex.run(~r/^`([^`]+)`$/, part) do
         [_, code] ->
           Phoenix.HTML.raw(
-            "<code class=\"font-mono text-[0.9em] text-(--crit-brand) bg-(--crit-bg-elevated) px-1 py-0.5 rounded\">#{Phoenix.HTML.html_escape(code) |> Phoenix.HTML.safe_to_string()}</code>"
+            "<code class=\"font-mono text-sm text-(--crit-brand) bg-(--crit-bg-elevated) px-1 py-0.5 rounded\">#{Phoenix.HTML.html_escape(code) |> Phoenix.HTML.safe_to_string()}</code>"
           )
 
         nil ->

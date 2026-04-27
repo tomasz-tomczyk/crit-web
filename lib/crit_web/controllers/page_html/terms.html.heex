@@ -1,35 +1,35 @@
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_user={@current_user} />
-  <div class="max-w-[900px] mx-auto px-10 pb-15 max-sm:px-5 max-sm:pb-10">
+  <div class="max-w-[900px] mx-auto px-10 pb-15 max-sm:px-4 max-sm:pb-10">
     <main class="mt-12">
       <h1 class="text-4xl font-extrabold tracking-tight mb-2">Terms of Service</h1>
       <p class="text-sm text-(--crit-fg-muted) mb-10">Last updated: March 2026</p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">What Crit is</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Crit is an open-source tool (MIT license) for inline review of markdown documents.
         The CLI runs locally on your machine. This website hosts a web UI that lets you
         view and comment on documents shared via a share link.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Who operates this</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Crit is operated by Tomasz Tomczyk as an independent open-source project.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">
         Use of the shared review service
       </h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         When you share a document using the Share button in Crit, your document and its
         comments are uploaded to this server and made accessible via a unique share link.
         The share link is a secret URL that serves as the only access control for the review.
         Anyone with the link can view and comment on the review.
       </p>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         By sharing a document, you agree:
       </p>
-      <ul class="text-sm leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
+      <ul class="leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
         <li class="mb-1">You have the right to share the document's contents.</li>
         <li class="mb-1">
           You will not use the service to share illegal, harmful, or abusive content.
@@ -38,41 +38,41 @@
       </ul>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">GitHub accounts</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         On crit.md, you can optionally sign in with your GitHub account. This is not required
         to use the service — you can share, view, and comment on reviews without an account.
       </p>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         If you choose to sign in, your GitHub profile information (username, display name,
         email, and avatar) is stored on our servers and used to identify you across sessions.
         See the Privacy Policy for details on what is stored and how to request deletion.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">CLI update check</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         On startup, the Crit CLI checks for a newer version by making a request to
         api.github.com. This sends your IP address to GitHub. You can disable this by
         setting the environment variable <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">CRIT_NO_UPDATE_CHECK=1</code>.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Limits</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Shared documents are limited to 2 MB of content, 500 comments, and 50 KB per comment body.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Shared review data</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Shared reviews are retained for 30 days from the date of last activity, then
         deleted automatically. Do not rely on this service as a permanent store for
         important content.
       </p>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         You can delete a shared review at any time using the Unpublish button in Crit.
         This immediately and permanently removes the review from our servers.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">No warranties</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Crit is provided "as is", without warranty of any kind. We make no guarantees
         about uptime, data retention, or fitness for any particular purpose. To the maximum
         extent permitted by applicable law, we are not liable for any loss, corruption, or
@@ -80,7 +80,7 @@
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Changes</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         We may update these terms at any time. The "Last updated" date on this page reflects
         when terms last changed. Significant changes will be noted in the <a
           href="https://github.com/tomasz-tomczyk/crit/releases"
@@ -89,7 +89,7 @@
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Contact</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         For questions, open an issue on <a
           href="https://github.com/tomasz-tomczyk/crit"
           class="crit-link"

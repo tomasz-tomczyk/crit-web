@@ -1,23 +1,23 @@
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_user={@current_user} />
-  <div class="max-w-[900px] mx-auto px-10 pb-15 max-sm:px-5 max-sm:pb-10">
+  <div class="max-w-[900px] mx-auto px-10 pb-15 max-sm:px-4 max-sm:pb-10">
     <main class="mt-12">
       <h1 class="text-4xl font-extrabold tracking-tight mb-2">Privacy Policy</h1>
       <p class="text-sm text-(--crit-fg-muted) mb-10">Last updated: March 2026</p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Who operates this</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Crit is operated by Tomasz Tomczyk as an independent open-source project.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Local use</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         When you use Crit locally (without sharing), no data leaves your machine.
         Documents and comments are stored only in files on your computer.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">CLI update check</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         On startup, the Crit CLI contacts api.github.com to check for a new version.
         This request includes your IP address and current Crit version as the User-Agent
         header. GitHub's privacy policy governs how GitHub handles this data. You can
@@ -25,35 +25,35 @@
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Shared reviews</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         When you share a review, the following is stored on our servers:
       </p>
-      <ul class="text-sm leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
+      <ul class="leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
         <li class="mb-1">The document content (markdown text)</li>
         <li class="mb-1">Any comments included at the time of sharing</li>
         <li class="mb-1">The time the review was created</li>
       </ul>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         Comments added by anyone who visits the shared link are also stored on our servers,
         subject to the same 30-day retention policy.
       </p>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         This data is accessible to anyone with the share link. The link is a secret URL that
         serves as the primary access control. GitHub login is optional and not required to
         view or comment on shared reviews.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">GitHub login</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         On crit.md, you can optionally sign in with your GitHub account. If you do, we store:
       </p>
-      <ul class="text-sm leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
+      <ul class="leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
         <li class="mb-1">Your GitHub username and display name</li>
         <li class="mb-1">Your primary GitHub email address</li>
         <li class="mb-1">Your GitHub avatar URL</li>
         <li class="mb-1">Your GitHub user ID (used as a stable identifier)</li>
       </ul>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         This information is used solely to identify you across sessions and to display your name
         on reviews and comments you create. We do not share it with third parties.
         You can delete your account by emailing <a
@@ -63,24 +63,24 @@
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Anonymous session</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         When you view a shared review, we set a session cookie containing a randomly generated
         anonymous identifier. This lets you edit or delete comments you left in that session.
         The identifier is not linked to any personal information and is not used for tracking.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Tracking</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         We do not use analytics or advertising trackers on this site.
       </p>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         The homepage includes an embedded YouTube video. If you visit the homepage,
         YouTube (Google) may set cookies and collect data according to <a
           href="https://policies.google.com/privacy"
           class="crit-link"
         >Google's privacy policy</a>.
       </p>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary) mt-2">
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
         If you sign in with GitHub, your browser connects to GitHub's OAuth service.
         GitHub's
         <a
@@ -94,7 +94,7 @@
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Server logs</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Our server records standard HTTP access logs (IP address, timestamp, path, response code).
         These are used solely for debugging and abuse prevention. IP addresses are also used
         in memory for rate limiting. These are not persisted beyond what appears in access logs.
@@ -102,7 +102,7 @@
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Infrastructure</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         This service runs on <a
           href="https://fly.io/legal/privacy-policy/"
           class="crit-link"
@@ -110,14 +110,14 @@
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Data retention</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         Shared reviews are retained for 30 days from the date of last activity, then
         deleted automatically. You can delete a shared review at any time using the
         Unpublish button in Crit.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Contact</h2>
-      <p class="text-sm leading-relaxed text-(--crit-fg-secondary)">
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
         For privacy questions, open an issue on <a
           href="https://github.com/tomasz-tomczyk/crit"
           class="crit-link"
