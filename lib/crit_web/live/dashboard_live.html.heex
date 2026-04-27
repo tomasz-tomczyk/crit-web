@@ -137,7 +137,10 @@
                   <div class="text-xl font-bold tracking-tight leading-8">
                     Point crit at this instance
                   </div>
-                  <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed">
+                  <p
+                    class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed"
+                    phx-no-format
+                  >
                     By default, crit shares to <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit.md</code>. Set <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">share_url</code>
                     so it talks to this self-hosted instance instead.
                   </p>
@@ -150,7 +153,10 @@
                       data-copy={"export CRIT_SHARE_URL=#{@instance_url}"}
                     >
                       <.icon name="hero-clipboard" class="size-4 icon-default" />
-                      <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+                      <.icon
+                        name="hero-clipboard-document-check"
+                        class="size-4 icon-copied hidden"
+                      />
                     </button>
                   </div>
 
@@ -173,7 +179,7 @@
               </div>
               <div class="pb-8">
                 <div class="text-xl font-bold tracking-tight leading-8">Log in</div>
-                <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed">
+                <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
                   Run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit auth login</code>
                   to link shared reviews to your account. Opens your browser for a one-time confirmation.
                 </p>
@@ -201,7 +207,7 @@
               </div>
               <div>
                 <div class="text-xl font-bold tracking-tight leading-8">Share to the web</div>
-                <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed">
+                <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
                   When you're ready, run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit share</code>
                   to upload your review to a shareable URL.
                 </p>
@@ -240,7 +246,7 @@
                       name="hero-trash"
                       class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5"
                     />
-                    <span>
+                    <span phx-no-format>
                       Unpublish anytime with <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit unpublish</code>
                     </span>
                   </div>
