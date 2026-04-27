@@ -110,25 +110,59 @@ document.addEventListener('click', function(e) {
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
-// Home page: copy buttons (skip elements owned by the dashboard LiveView hook)
-document.querySelectorAll(".copy-btn").forEach(btn => {
+// Unified copy buttons + tab switchers via document-level delegation.
+// Marketing pages are dead views patched by <.link navigate>, so direct
+// listeners attached at load don't survive DOM swaps. Delegation works
+// regardless of when the matching elements appear.
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".copy-btn")
+  if (!btn) return
   if (btn.closest("#empty-state")) return
+  const text = btn.dataset.copy
+  if (!text) return
   const defaultIcon = btn.querySelector(".icon-default")
   const copiedIcon = btn.querySelector(".icon-copied")
-  btn.addEventListener("click", () => {
-    const raw = btn.previousElementSibling.textContent.trim()
-    const text = raw.replace(/^\$\s+/, "")
-    navigator.clipboard.writeText(text).then(() => {
-      btn.style.color = "var(--crit-green)"
+  navigator.clipboard.writeText(text).then(() => {
+    btn.style.color = "var(--crit-green)"
+    if (defaultIcon && copiedIcon) {
       defaultIcon.classList.add("hidden")
       copiedIcon.classList.remove("hidden")
-      setTimeout(() => {
-        btn.style.color = ""
+    }
+    setTimeout(() => {
+      btn.style.color = ""
+      if (defaultIcon && copiedIcon) {
         defaultIcon.classList.remove("hidden")
         copiedIcon.classList.add("hidden")
-      }, 2000)
-    })
+      }
+    }, 2000)
   })
+})
+
+// Tab switchers: .install-tab / .agent-tab. Each clicked tab activates itself
+// and reveals the panel referenced by data-target, hiding sibling panels.
+// Sibling tabs/panels are scoped by the shared class (install-* / agent-*).
+function activateTab(tab, tabClass, panelClass) {
+  document.querySelectorAll(`.${tabClass}`).forEach(t => {
+    t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
+    t.classList.add("border-transparent", "text-(--crit-fg-muted)")
+  })
+  document.querySelectorAll(`.${panelClass}`).forEach(p => p.classList.add("hidden"))
+  tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
+  tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
+  const panel = document.getElementById(tab.dataset.target)
+  if (panel) panel.classList.remove("hidden")
+}
+
+document.addEventListener("click", e => {
+  const installTab = e.target.closest(".install-tab")
+  if (installTab && !installTab.closest("#empty-state")) {
+    activateTab(installTab, "install-tab", "install-panel")
+    return
+  }
+  const agentTab = e.target.closest(".agent-tab")
+  if (agentTab && !agentTab.closest("#empty-state")) {
+    activateTab(agentTab, "agent-tab", "agent-panel")
+  }
 })
 
 // Home page: YouTube lite facade — load iframe on click
@@ -186,37 +220,7 @@ if (testimonialsGrid) {
   observer.observe(testimonialsGrid)
 }
 
-// Integrations page: tab switching
-document.querySelectorAll(".integration-tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".integration-tab").forEach(t => {
-      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
-      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
-    })
-    document.querySelectorAll(".integration-panel").forEach(p => p.classList.add("hidden"))
-    tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
-    tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
-    document.getElementById(tab.dataset.target).classList.remove("hidden")
-  })
-})
-
-// Integrations page: copy snippet buttons
-document.querySelectorAll(".copy-snippet-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const pre = document.getElementById(btn.dataset.snippet)
-    navigator.clipboard.writeText(pre.textContent).then(() => {
-      const original = btn.textContent
-      btn.textContent = "Copied!"
-      btn.style.color = "var(--crit-green)"
-      btn.style.borderColor = "var(--crit-green)"
-      setTimeout(() => {
-        btn.textContent = original
-        btn.style.color = ""
-        btn.style.borderColor = ""
-      }, 2000)
-    })
-  })
-})
+// (Integration tab bar removed; per-tool pages don't use tabs.)
 
 // Home page: platform stats count-up + staggered reveal
 const platformStats = document.getElementById("platform-stats")
@@ -266,54 +270,7 @@ if (platformStats) {
   statsObserver.observe(platformStats)
 }
 
-// Home page: install tab switcher (skip elements owned by the dashboard LiveView hook)
-document.querySelectorAll(".install-tab").forEach(tab => {
-  if (tab.closest("#empty-state")) return
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".install-tab").forEach(t => {
-      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
-      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
-    })
-    document.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"))
-    tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
-    tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
-    document.getElementById(tab.dataset.target).classList.remove("hidden")
-  })
-})
-
-// Home page: agent setup copy buttons (skip elements owned by the dashboard LiveView hook)
-document.querySelectorAll(".agent-copy-btn").forEach(btn => {
-  if (btn.closest("#empty-state")) return
-  const defaultIcon = btn.querySelector(".icon-default")
-  const copiedIcon = btn.querySelector(".icon-copied")
-  btn.addEventListener("click", () => {
-    navigator.clipboard.writeText(btn.dataset.copy).then(() => {
-      btn.style.color = "var(--crit-green)"
-      defaultIcon.classList.add("hidden")
-      copiedIcon.classList.remove("hidden")
-      setTimeout(() => {
-        btn.style.color = ""
-        defaultIcon.classList.remove("hidden")
-        copiedIcon.classList.add("hidden")
-      }, 2000)
-    })
-  })
-})
-
-// Home page: agent setup tab switcher (skip elements owned by the dashboard LiveView hook)
-document.querySelectorAll(".agent-tab").forEach(tab => {
-  if (tab.closest("#empty-state")) return
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".agent-tab").forEach(t => {
-      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
-      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
-    })
-    document.querySelectorAll(".agent-panel").forEach(p => p.classList.add("hidden"))
-    tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
-    tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
-    document.getElementById(tab.dataset.target).classList.remove("hidden")
-  })
-})
+// (.install-tab / .agent-tab handled by document-level delegation above.)
 
 // The lines below enable quality of life phoenix_live_reload
 // development features:

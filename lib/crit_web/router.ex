@@ -46,6 +46,7 @@ defmodule CritWeb.Router do
     get "/features", PageController, :features
     get "/features/:slug", PageController, :feature
     get "/integrations", PageController, :integrations
+    get "/integrations/:tool", PageController, :integration
     get "/terms", PageController, :terms
     get "/privacy", PageController, :privacy
     get "/getting-started", PageController, :getting_started

@@ -1,160 +1,244 @@
 defmodule Crit.Integrations do
   @moduledoc """
-  Fetches and caches integration snippets from GitHub for display on /integrations.
+  Static integration metadata for the /integrations pages.
 
-  Refreshes every hour. Reads from an ETS table for fast access.
+  Lists supported AI coding agents (Claude Code, Cursor, Copilot, etc.) and
+  the reusable component descriptions referenced from each tool's page.
   """
 
-  use GenServer
-
-  require Logger
-
-  @table :integration_snippets
-  @refresh_interval :timer.hours(1)
-
-  @github_base "https://raw.githubusercontent.com/tomasz-tomczyk/crit/main/integrations/"
-
-  @meta [
+  @tools [
     %{
       id: "claude-code",
       name: "Claude Code",
-      file_path: ".claude/skills/crit/SKILL.md",
-      source: "claude-code/skills/crit/SKILL.md",
-      description:
-        "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "CLI Skill",
-      secondary_file_path: ".claude/skills/crit-cli/SKILL.md",
-      secondary_source: "claude-code/skills/crit-cli/SKILL.md"
+      tagline: "The full Crit workflow for Claude Code",
+      logo: %{
+        light: "/images/integrations/claude-code-light.svg",
+        dark: "/images/integrations/claude-code-dark.svg"
+      },
+      page_title: "Crit + Claude Code — plan-mode review for AI agents",
+      meta:
+        "Install crit's plugin for Claude Code: a /crit slash command, the crit-cli skill, and an automatic plan-mode review hook that opens every plan for inline review before any code is written.",
+      intro:
+        "Claude Code is the only agent with the plan-mode hook: every plan it writes goes through Crit for inline review before any file edits happen.",
+      command: "crit install claude-code",
+      components: [:crit_command, :crit_cli_skill, :plan_hook],
+      marketplace: %{
+        intro:
+          "Installs a global Claude Code plugin with the /crit slash command, the crit-cli skill, and the plan-mode hook below. Works across every project.",
+        commands: [
+          "claude plugin marketplace add tomasz-tomczyk/crit",
+          "claude plugin install crit@crit"
+        ]
+      }
     },
     %{
       id: "cursor",
       name: "Cursor",
-      file_path: ".cursor/skills/crit/SKILL.md",
-      source: "cursor/skills/crit/SKILL.md",
-      description:
-        "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "CLI Skill",
-      secondary_file_path: ".cursor/skills/crit-cli/SKILL.md",
-      secondary_source: "cursor/skills/crit-cli/SKILL.md"
+      tagline: "Inline review for Cursor",
+      logo: %{
+        light: "/images/integrations/cursor-light.svg",
+        dark: "/images/integrations/cursor-dark.svg"
+      },
+      page_title: "Crit + Cursor — inline review for plans and code",
+      meta:
+        "Install crit for Cursor: drops a /crit slash command and the crit-cli skill into .cursor/skills/. Cursor auto-loads them so the agent reviews plans with you before writing code.",
+      intro:
+        "crit installs the /crit command and the crit-cli helper into .cursor/skills/. Cursor auto-loads them, no extra setup.",
+      command: "crit install cursor",
+      components: [:crit_command, :crit_cli_skill]
     },
     %{
       id: "github-copilot",
       name: "GitHub Copilot",
-      file_path: ".github/skills/crit/SKILL.md",
-      source: "github-copilot/skills/crit/SKILL.md",
-      description:
-        "Add the /crit slash command. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "CLI Skill",
-      secondary_file_path: ".github/skills/crit-cli/SKILL.md",
-      secondary_source: "github-copilot/skills/crit-cli/SKILL.md"
+      tagline: "Crit as a Copilot Agent Skill",
+      logo: %{
+        light: "/images/integrations/github-copilot-light.svg",
+        dark: "/images/integrations/github-copilot-dark.svg"
+      },
+      page_title: "Crit + GitHub Copilot — review AI plans inline",
+      meta:
+        "Install crit as a GitHub Copilot Agent Skill. Drops .github/skills/crit/SKILL.md and .github/skills/crit-cli/SKILL.md so Copilot auto-loads the review workflow.",
+      intro:
+        "Copilot auto-discovers Agent Skills under .github/skills/ in your repo, or under ~/.copilot/skills/ for a global install.",
+      command: "crit install github-copilot",
+      components: [:crit_command, :crit_cli_skill]
     },
     %{
       id: "opencode",
       name: "OpenCode",
-      file_path: ".opencode/agents/crit.md",
-      source: "opencode/crit.md",
-      description:
-        "Add a Crit agent. It launches Crit, reads your comments, and revises the output automatically.",
-      secondary_label: "Skill (recommended)",
-      secondary_file_path: ".opencode/skills/crit-cli/SKILL.md",
-      secondary_source: "opencode/SKILL.md"
+      tagline: "Crit as an OpenCode skill",
+      logo: %{
+        light: "/images/integrations/opencode-light.svg",
+        dark: "/images/integrations/opencode-dark.svg"
+      },
+      page_title: "Crit + OpenCode — inline plan review",
+      meta:
+        "Install crit's OpenCode skill. Drops .opencode/skills/crit/SKILL.md so OpenCode auto-activates the review workflow when you ask it to plan or review changes.",
+      intro:
+        "OpenCode discovers skills from .opencode/skills/ based on their frontmatter. The crit skill triggers on plan and review requests.",
+      command: "crit install opencode",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
+      id: "codex",
+      name: "Codex",
+      tagline: "Crit as a Codex skill",
+      logo: %{
+        light: "/images/integrations/codex-light.svg",
+        dark: "/images/integrations/codex-dark.svg"
+      },
+      page_title: "Crit + OpenAI Codex CLI — review AI plans inline",
+      meta:
+        "Install crit's Codex skill. Drops .agents/skills/crit/ and .agents/skills/crit-cli/ so the OpenAI Codex CLI discovers the review workflow automatically.",
+      intro:
+        "Codex CLI walks up from cwd looking for .agents/skills/, with a global fallback at ~/.agents/skills/. The files follow the cross-tool Agent Skills spec, so any compatible agent loads them.",
+      command: "crit install codex",
+      components: [:crit_command, :crit_cli_skill]
     },
     %{
       id: "windsurf",
       name: "Windsurf",
-      file_path: ".windsurf/rules/crit.md",
-      source: "windsurf/crit.md",
-      description:
-        "Add a Windsurf rule that teaches the agent to use Crit for reviewing plans and code changes."
-    },
-    %{
-      id: "aider",
-      name: "Aider",
-      file_path: "CONVENTIONS.md",
-      source: "aider/CONVENTIONS.md",
-      description:
-        "Append to your Aider conventions file to teach the agent to use Crit for reviewing plans and code changes."
+      tagline: "A Windsurf rule for Crit",
+      logo: %{
+        light: "/images/integrations/windsurf-light.svg",
+        dark: "/images/integrations/windsurf-dark.svg"
+      },
+      page_title: "Crit + Windsurf — review plans before coding",
+      meta:
+        "Install crit's Windsurf rule. Drops .windsurf/rules/crit.md so Cascade always knows to launch Crit for plan review before writing code.",
+      intro:
+        "Windsurf's Cascade auto-loads rules from .windsurf/rules/. crit installs a single rule that defines the review loop: write a plan, run crit on it, address each inline comment, implement.",
+      command: "crit install windsurf",
+      no_global: true,
+      components: [:crit_rule]
     },
     %{
       id: "cline",
       name: "Cline",
-      file_path: ".clinerules/crit.md",
-      source: "cline/crit.md",
-      description:
-        "Add a Cline rule that teaches the agent to use Crit for reviewing plans and code changes."
+      tagline: "A Cline rule for Crit",
+      logo: nil,
+      page_title: "Crit + Cline — review plans before coding",
+      meta:
+        "Install crit's Cline rule. Drops .clinerules/crit.md so Cline follows the plan-first review loop with inline feedback before any code change.",
+      intro:
+        "Cline auto-loads every file under .clinerules/. crit drops a single rule there that walks the agent through the review loop. Cline has no skills or slash commands, so the rule carries the workflow.",
+      command: "crit install cline",
+      components: [:crit_rule]
+    },
+    %{
+      id: "aider",
+      name: "Aider",
+      tagline: "Crit conventions for Aider",
+      logo: nil,
+      page_title: "Crit + Aider — inline plan review",
+      meta:
+        "Use Crit with Aider by appending the crit conventions to your CONVENTIONS.md. Aider then follows the plan-first review loop with inline feedback before any code change.",
+      intro:
+        "Aider has no skills or plugins. It reads conventions from CONVENTIONS.md (or any file passed via --read or .aider.conf.yml). Append the crit conventions and Aider follows the plan-first review loop on every change.",
+      command: nil,
+      manual:
+        "Append integrations/aider/CONVENTIONS.md from the crit repo to your project's CONVENTIONS.md.",
+      components: [:crit_rule]
     }
   ]
 
-  # Client API
+  @components %{
+    crit_command: %{
+      label: "/crit slash command",
+      summary:
+        "Starts the review loop. The agent launches Crit, waits for your inline comments, then revises until you approve.",
+      use_cases: [
+        %{
+          title: nil,
+          desc: nil,
+          example_label: "In your agent's chat:",
+          example: "/crit"
+        }
+      ]
+    },
+    crit_cli_skill: %{
+      label: "crit-cli skill",
+      summary:
+        "Auto-activates when the agent works with review files, shares a review, or syncs to a PR. No manual invocation. Talk to the agent normally and it picks the right crit subcommand.",
+      use_cases: [
+        %{
+          title: "Spawn a team of agents to review the work",
+          desc:
+            "Your main agent runs /crit and dispatches reviewer subagents. Each one leaves inline comments via crit. You scan the comments and decide which ones to act on.",
+          example_label: "In your agent's chat:",
+          example:
+            "Run /crit and spawn a team of agents to use crit to review the work. I'll decide which comments to proceed with."
+        },
+        %{
+          title: "Review from your phone",
+          desc:
+            "The share URL renders on mobile, so you can leave inline comments from the couch while the agent keeps grinding.",
+          example_label: "In your agent's chat:",
+          example: "Share the current review with crit and send me the link."
+        }
+      ]
+    },
+    plan_hook: %{
+      label: "Plan-mode review hook",
+      summary:
+        "Intercepts Claude Code's ExitPlanMode and sends the plan to Crit for inline review. You comment line-by-line, the agent revises, and plan mode doesn't exit until you approve. Ships only with the marketplace plugin.",
+      use_cases: [
+        %{
+          title: nil,
+          desc: nil,
+          example_label: "Disable per-shell or globally:",
+          example: "export CRIT_PLAN_REVIEW=off"
+        }
+      ]
+    },
+    crit_rule: %{
+      label: "Crit rule",
+      summary:
+        "A single rules file the agent loads for every conversation in this project. It defines the review loop: write a plan, launch crit $PLAN_FILE, read the resulting review file, address each comment, repeat.",
+      use_cases: [
+        %{
+          title: nil,
+          desc: nil,
+          example_label: "Prompt the agent:",
+          example: "Write a plan for the auth refactor, then run crit on it."
+        }
+      ]
+    }
+  }
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
-  end
+  @doc "Returns the list of supported integration tools."
+  def tools, do: @tools
 
-  @doc "Returns cached integrations with their snippets."
-  def list do
-    case :ets.lookup(@table, :integrations) do
-      [{:integrations, integrations}] -> integrations
-      [] -> []
+  @doc "Returns the map of reusable component descriptions keyed by id."
+  def components, do: @components
+
+  @doc """
+  Looks up a tool by its `id`.
+
+  Returns `{:ok, tool}` or `:error` if no tool matches.
+  """
+  def get_tool(id) when is_binary(id) do
+    case Enum.find(@tools, &(&1.id == id)) do
+      nil -> :error
+      tool -> {:ok, tool}
     end
-  rescue
-    ArgumentError -> []
   end
 
-  # Server callbacks
+  @doc """
+  Fetches a component by id, raising a useful error if it's missing.
 
-  @impl true
-  def init(_opts) do
-    table = :ets.new(@table, [:set, :named_table, :protected, read_concurrency: true])
-    integrations = fetch_all()
-    :ets.insert(table, {:integrations, integrations})
-    schedule_refresh()
-    {:ok, %{}}
-  end
+  Used from templates where a missing key is a programming error (a tool's
+  `:components` list referenced a component that doesn't exist).
+  """
+  def fetch_component!(id) when is_atom(id) do
+    case Map.fetch(@components, id) do
+      {:ok, component} ->
+        component
 
-  @impl true
-  def handle_info(:refresh, state) do
-    integrations = fetch_all()
-    :ets.insert(@table, {:integrations, integrations})
-    schedule_refresh()
-    {:noreply, state}
-  end
-
-  defp fetch_all do
-    Enum.map(@meta, fn meta ->
-      snippet = fetch_snippet(meta.source)
-
-      meta
-      |> Map.put(:snippet, snippet)
-      |> maybe_add_secondary()
-    end)
-  end
-
-  defp maybe_add_secondary(%{secondary_source: source} = meta) do
-    Map.put(meta, :secondary_snippet, fetch_snippet(source))
-  end
-
-  defp maybe_add_secondary(meta), do: meta
-
-  defp fetch_snippet(source_path) do
-    url = @github_base <> source_path
-
-    case Req.get(url) do
-      {:ok, %{status: 200, body: body}} ->
-        body
-
-      {:ok, %{status: status}} ->
-        Logger.warning("[Integrations] GitHub returned #{status} for #{source_path}")
-        ""
-
-      {:error, reason} ->
-        Logger.warning("[Integrations] Failed to fetch #{source_path}: #{inspect(reason)}")
-        ""
+      :error ->
+        raise ArgumentError,
+              "unknown integration component #{inspect(id)} — " <>
+                "check Crit.Integrations.@components for valid keys"
     end
-  end
-
-  defp schedule_refresh do
-    interval = Application.get_env(:crit, :integrations_refresh_interval_ms, @refresh_interval)
-    Process.send_after(self(), :refresh, interval)
   end
 end

@@ -2993,3 +2993,11 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   border-top: 1px solid var(--crit-border);
   margin: 1.5em 0;
 }
+/* Integration logo theme swap (default site is dark) */
+.logo-light { display: none; }
+[data-theme="light"] .logo-light { display: inline-block; }
+[data-theme="light"] .logo-dark { display: none; }
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .logo-light { display: inline-block; }
+  html:not([data-theme]) .logo-dark { display: none; }
+}

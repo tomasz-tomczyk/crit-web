@@ -1,0 +1,73 @@
+# crit
+
+> Local CLI for reviewing AI agent output. Open a browser at localhost, comment inline on markdown plans and code diffs, and feed structured feedback back to the agent without leaving your machine.
+
+crit is a single-binary Go CLI. No account required. Works offline. Companion hosted service at crit.md lets you share reviews via URL.
+
+## Get started
+
+- [Homepage](https://crit.md): Overview, install options, and quick-start.
+- [Getting started guide](https://crit.md/getting-started): Step-by-step from install to first review, including agent workflow setup.
+- [Features](https://crit.md/features): Full list of what crit does. Inline comments, round-to-round diffs, structured JSON output, share links.
+- [Changelog](https://crit.md/changelog): Release history with what changed and when.
+
+Install (pick one):
+
+```
+brew install tomasz-tomczyk/tap/crit
+go install github.com/tomasz-tomczyk/crit@latest
+nix run github:tomasz-tomczyk/crit
+```
+
+Binary downloads on the GitHub releases page.
+
+## Install for your agent
+
+For Claude Code, the **plugin marketplace is the recommended path**. It installs the /crit slash command, the crit-cli skill, and a plan-mode hook that intercepts every plan for inline review:
+
+```
+claude plugin marketplace add tomasz-tomczyk/crit
+claude plugin install crit@crit
+```
+
+For every other agent, `crit install <tool>` writes the integration files (skills, custom rules, or a slash command, depending on the tool).
+
+- [All integrations](https://crit.md/integrations): Index of every supported agent with install instructions.
+- [Claude Code](https://crit.md/integrations/claude-code): Plugin marketplace (recommended, see above) or `crit install claude-code` per project.
+- [Cursor](https://crit.md/integrations/cursor): `crit install cursor`. Drops the /crit slash command and crit-cli skill into `.cursor/skills/`.
+- [GitHub Copilot](https://crit.md/integrations/github-copilot): `crit install github-copilot`. Installs as Agent Skills under `.github/skills/`.
+- [OpenCode](https://crit.md/integrations/opencode): `crit install opencode`. Skill auto-activates on plan and review requests.
+- [Codex](https://crit.md/integrations/codex): `crit install codex`. Cross-tool Agent Skills format, project or global install.
+- [Windsurf](https://crit.md/integrations/windsurf): `crit install windsurf`. Single rule under `.windsurf/rules/`.
+- [Cline](https://crit.md/integrations/cline): `crit install cline`. Single rule under `.clinerules/`.
+- [Aider](https://crit.md/integrations/aider): Append the crit conventions to your `CONVENTIONS.md`.
+
+Raw integration files (skills, rules, plugin manifests): https://github.com/tomasz-tomczyk/crit/tree/main/integrations
+
+## Use crit
+
+Subcommands an agent will call directly:
+
+- `crit` (no args): Auto-detect changed files in the current repo and open them for review.
+- `crit <file>`: Review a specific file (markdown plan, design doc, code).
+- `crit comment <path>:<line> <body>`: Add an inline comment programmatically without opening the browser.
+- `crit comment --reply-to <id> <body>`: Reply to an existing comment.
+- `crit share <file>`: Publish a review to crit.md and print a share URL. Add `--qr` for a terminal QR code.
+- `crit unpublish`: Remove a shared review.
+- `crit pull [pr]`: Fetch GitHub PR review comments into the local review file.
+- `crit push [pr]`: Post local review comments as a GitHub PR review. Supports `--event approve|request-changes|comment`.
+- `crit status`: Show review file path and daemon status.
+
+Review files live at `~/.crit/reviews/<key>.json` (keyed by cwd + branch). The JSON schema is documented in the README. Agents read this file to consume human feedback. Humans never edit it directly.
+
+Round diffs: when the human reopens crit after the agent makes changes, crit shows only what changed since the last review round, not the full diff again.
+
+## Source
+
+- [CLI source (Go)](https://github.com/tomasz-tomczyk/crit): Single binary, local review server, round-diff engine, integration installer.
+- [CLI README](https://github.com/tomasz-tomczyk/crit/blob/main/README.md): Full usage reference. Subcommands, flags, review file schema, integration setup.
+- [Hosted service source (Elixir/Phoenix)](https://github.com/tomasz-tomczyk/crit-web): The share-via-URL backend. Same review UI as the local CLI.
+
+## Optional
+
+- [Self-hosting](https://crit.md/self-hosting): Run your own crit-web instance. Useful for teams that can't send code to a third-party service. Point the CLI at your instance with `--share-url` or the `share_url` config key.

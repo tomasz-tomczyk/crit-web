@@ -77,6 +77,7 @@ defmodule CritWeb.PageHTML do
         <button
           class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
+          data-copy="brew install tomasz-tomczyk/tap/crit"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
@@ -93,6 +94,7 @@ defmodule CritWeb.PageHTML do
         <button
           class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
+          data-copy="go install github.com/tomasz-tomczyk/crit@latest"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
@@ -109,6 +111,7 @@ defmodule CritWeb.PageHTML do
         <button
           class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
+          data-copy="nix profile install github:tomasz-tomczyk/crit"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
@@ -125,6 +128,7 @@ defmodule CritWeb.PageHTML do
         <button
           class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
+          data-copy="crit"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
@@ -155,10 +159,11 @@ defmodule CritWeb.PageHTML do
     %{
       id: "cursor",
       name: "Cursor",
-      copy: "/install-plugin tomasz-tomczyk/crit",
+      copy: "crit install cursor",
       lines: [
-        %{type: :cmd, prompt: "> ", text: "/install-plugin tomasz-tomczyk/crit"},
-        %{type: :output, text: "Installed crit (skills: crit, crit-cli)"}
+        %{type: :cmd, prompt: "$ ", text: "crit install cursor"},
+        %{type: :output, text: "Installed: .cursor/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .cursor/skills/crit-cli/SKILL.md"}
       ]
     },
     %{
@@ -167,7 +172,8 @@ defmodule CritWeb.PageHTML do
       copy: "crit install github-copilot",
       lines: [
         %{type: :cmd, prompt: "$ ", text: "crit install github-copilot"},
-        %{type: :output, text: "Installed .github/skills/crit/SKILL.md"}
+        %{type: :output, text: "Installed: .github/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .github/skills/crit-cli/SKILL.md"}
       ]
     },
     %{
@@ -176,7 +182,8 @@ defmodule CritWeb.PageHTML do
       copy: "crit install codex",
       lines: [
         %{type: :cmd, prompt: "$ ", text: "crit install codex"},
-        %{type: :output, text: "Installed .agents/skills/crit/SKILL.md"}
+        %{type: :output, text: "Installed: .agents/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .agents/skills/crit-cli/SKILL.md"}
       ]
     },
     %{
@@ -185,7 +192,7 @@ defmodule CritWeb.PageHTML do
       copy: "crit install windsurf",
       lines: [
         %{type: :cmd, prompt: "$ ", text: "crit install windsurf"},
-        %{type: :output, text: "Installed .windsurf/rules/crit.md"}
+        %{type: :output, text: "Installed: .windsurf/rules/crit.md"}
       ]
     },
     %{
@@ -194,7 +201,8 @@ defmodule CritWeb.PageHTML do
       copy: "crit install opencode",
       lines: [
         %{type: :cmd, prompt: "$ ", text: "crit install opencode"},
-        %{type: :output, text: "Installed .opencode/commands/crit.md"}
+        %{type: :output, text: "Installed: .opencode/commands/crit.md"},
+        %{type: :output, text: "Installed: .opencode/skills/crit/SKILL.md"}
       ]
     },
     %{
@@ -203,7 +211,7 @@ defmodule CritWeb.PageHTML do
       copy: "crit install cline",
       lines: [
         %{type: :cmd, prompt: "$ ", text: "crit install cline"},
-        %{type: :output, text: "Installed .clinerules/crit.md"}
+        %{type: :output, text: "Installed: .clinerules/crit.md"}
       ]
     },
     %{
@@ -212,7 +220,11 @@ defmodule CritWeb.PageHTML do
       copy: "crit install aider",
       lines: [
         %{type: :cmd, prompt: "$ ", text: "crit install aider"},
-        %{type: :output, text: "Installed CONVENTIONS.md"}
+        %{type: :output, text: "Installed: .crit/aider-conventions.md"},
+        %{
+          type: :output,
+          text: "Updated:   .aider.conf.yml (added .crit/aider-conventions.md under read:)"
+        }
       ]
     }
   ]
@@ -262,7 +274,7 @@ defmodule CritWeb.PageHTML do
           </div>
         </div>
         <button
-          class="agent-copy-btn shrink-0 p-3 mt-0.5 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+          class="copy-btn shrink-0 p-3 mt-0.5 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
           data-copy={agent.copy}
         >

@@ -7,7 +7,7 @@
   <div class="max-w-7xl mx-auto w-full px-10 mt-8 max-sm:px-5 max-sm:mt-5">
     <a
       href={~p"/"}
-      class="text-sm text-(--crit-fg-muted) no-underline hover:text-(--crit-fg-primary) transition-colors"
+      class="text-(--crit-fg-muted) no-underline hover:text-(--crit-fg-primary) transition-colors"
     >
       &larr; Back to Crit
     </a>
@@ -15,103 +15,55 @@
   
 <!-- Hero -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-5">
-    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
-      Integrations
-    </p>
-    <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
-      Connect Crit to your agent<span class="text-(--crit-brand)">.</span>
+    <h1 class="text-4xl font-extrabold leading-tight tracking-tight max-sm:text-3xl">
+      Agent integrations for Crit<span class="text-(--crit-brand)">.</span>
     </h1>
-    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px]">
-      Drop one file into your project. Your agent writes a plan, launches Crit for review,
-      and waits for your feedback before writing code. The same integration works for reviewing
-      code changes after your agent writes them.
-    </p>
   </section>
   
-<!-- Tabbed integrations -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-16 mb-16 max-sm:px-5 max-sm:mt-8">
-    <!-- Tab bar -->
-    <div class="flex gap-0 border-b border-(--crit-border) overflow-x-auto">
-      <%= for {integration, idx} <- Enum.with_index(@integrations) do %>
-        <button
-          class={"integration-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 transition-colors cursor-pointer bg-transparent whitespace-nowrap #{if idx == 0, do: "border-(--crit-brand) text-(--crit-brand)", else: "border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary)"}"}
-          data-target={"integration-#{integration.id}"}
-        >
-          {integration.name}
-        </button>
-      <% end %>
-    </div>
-    
-<!-- Panels -->
-    <%= for {integration, idx} <- Enum.with_index(@integrations) do %>
-      <div
-        id={"integration-#{integration.id}"}
-        class={"integration-panel #{if idx != 0, do: "hidden"}"}
+<!-- Cards -->
+  <section class="max-w-7xl mx-auto w-full px-10 mt-12 mb-16 max-sm:px-5 max-sm:mt-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <.link
+        :for={tool <- Crit.Integrations.tools()}
+        navigate={~p"/integrations/#{tool.id}"}
+        class="group block p-6 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) no-underline transition-colors hover:border-(--crit-brand) focus-visible:border-(--crit-brand)"
       >
-        <div class="mt-6 mb-4">
-          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-2">
-            {integration.description}
-          </p>
-          <p class="font-mono text-xs text-(--crit-fg-muted)">
-            Copy to
-            <code class="text-(--crit-brand) bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
-              {integration.file_path}
-            </code>
-          </p>
-        </div>
-        
-<!-- Snippet -->
-        <div class="border border-(--crit-border) rounded-md overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
-            <span class="font-mono text-xs text-(--crit-fg-muted)">{integration.file_path}</span>
-            <button
-              class="copy-snippet-btn shrink-0 px-3 py-1 text-xs font-mono text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer bg-transparent border border-(--crit-border) rounded transition-colors"
-              data-snippet={"snippet-#{integration.id}"}
-            >
-              Copy
-            </button>
+        <div class="flex items-center gap-4 mb-3">
+          <div class="shrink-0 w-12 h-12 flex items-center justify-center rounded-md bg-(--crit-bg-page) border border-(--crit-border) overflow-hidden">
+            <%= case tool.logo do %>
+              <% nil -> %>
+                <span class="font-mono font-bold text-(--crit-fg-secondary)">
+                  {String.first(tool.name)}
+                </span>
+              <% logo -> %>
+                <img
+                  src={logo.dark}
+                  alt={"#{tool.name} logo"}
+                  class="logo-dark w-8 h-8 object-contain"
+                  loading="lazy"
+                />
+                <img
+                  src={logo.light}
+                  alt={"#{tool.name} logo"}
+                  class="logo-light w-8 h-8 object-contain"
+                  loading="lazy"
+                />
+            <% end %>
           </div>
-          <pre
-            id={"snippet-#{integration.id}"}
-            class="m-0 px-5 py-4 text-xs font-mono leading-6 text-(--crit-fg-secondary) bg-(--crit-code-bg) overflow-x-auto whitespace-pre-wrap"
-          >{String.trim(integration.snippet)}</pre>
+          <h2 class="font-bold tracking-tight text-(--crit-fg-primary) group-hover:text-(--crit-brand) transition-colors">
+            {tool.name}
+          </h2>
         </div>
-        
-<!-- Secondary snippet (Claude Code only) -->
-        <%= if Map.has_key?(integration, :secondary_snippet) do %>
-          <div class="mt-8 mb-4">
-            <p class="text-sm font-semibold text-(--crit-fg-primary) mb-1">
-              {integration.secondary_label}
-            </p>
-            <p class="font-mono text-xs text-(--crit-fg-muted)">
-              {integration.secondary_file_path}
-            </p>
-          </div>
+        <p class="text-(--crit-fg-secondary) leading-relaxed">
+          {tool.tagline}
+        </p>
+      </.link>
+    </div>
 
-          <div class="border border-(--crit-border) rounded-md overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
-              <span class="font-mono text-xs text-(--crit-fg-muted)">CLAUDE.md</span>
-              <button
-                class="copy-snippet-btn shrink-0 px-3 py-1 text-xs font-mono text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer bg-transparent border border-(--crit-border) rounded transition-colors"
-                data-snippet={"snippet-#{integration.id}-secondary"}
-              >
-                Copy
-              </button>
-            </div>
-            <pre
-              id={"snippet-#{integration.id}-secondary"}
-              class="m-0 px-5 py-4 text-xs font-mono leading-6 text-(--crit-fg-secondary) bg-(--crit-code-bg) overflow-x-auto whitespace-pre-wrap"
-            >{String.trim(integration.secondary_snippet)}</pre>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
-    
-<!-- GitHub link -->
-    <div class="mt-8 text-center">
+    <div class="mt-12 text-center">
       <a
         href="https://github.com/tomasz-tomczyk/crit/tree/main/integrations"
-        class="text-sm crit-link"
+        class="crit-link"
       >
         View all integration files on GitHub &rarr;
       </a>

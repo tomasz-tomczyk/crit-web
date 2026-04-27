@@ -273,12 +273,29 @@ defmodule CritWeb.PageController do
 
   def integrations(conn, _params) do
     render(conn, :integrations,
-      integrations: Crit.Integrations.list(),
       canonical_url: canonical_url(conn),
       page_title: "Integrations - Crit",
       meta_description:
         "Set up Crit with Claude Code, Cursor, GitHub Copilot, Windsurf, Aider, or Cline. Drop-in config files for each agent."
     )
+  end
+
+  def integration(conn, %{"tool" => tool_id}) do
+    case Crit.Integrations.get_tool(tool_id) do
+      {:ok, tool} ->
+        render(conn, :integration,
+          tool: tool,
+          canonical_url: canonical_url(conn),
+          page_title: tool.page_title,
+          meta_description: tool.meta
+        )
+
+      :error ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(html: CritWeb.ErrorHTML)
+        |> render(:"404")
+    end
   end
 
   def terms(conn, _params) do
