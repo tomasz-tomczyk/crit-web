@@ -1682,9 +1682,9 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .hljs-selector-tag{color:#73daca}
 .hljs-keyword,.hljs-title,.hljs-title.function_,.hljs-title.class_,.hljs-title.class_.inherited__,.hljs-subst,.hljs-property{color:#7dcfff}
 .hljs-quote,.hljs-string,.hljs-symbol,.hljs-bullet,.hljs-addition{color:#9ece6a}
-.hljs-code,.hljs-formula,.hljs-section{color:#7aa2f7}
+.hljs-code,.hljs-formula,.hljs-section{color:#85aaf8}
 .hljs-keyword,.hljs-operator,.hljs-attr,.hljs-name,.hljs-char.escape_{color:#bb9af7}
-.hljs-comment,.hljs-meta{color:#868fba}
+.hljs-comment,.hljs-meta{color:#9aa1c8}
 .hljs-punctuation{color:#c0caf5}
 .hljs-emphasis{font-style:italic}
 .hljs-strong{font-weight:bold}
@@ -1698,9 +1698,9 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 [data-theme="dark"] .hljs-selector-tag{color:#73daca}
 [data-theme="dark"] .hljs-keyword,[data-theme="dark"] .hljs-title,[data-theme="dark"] .hljs-title.function_,[data-theme="dark"] .hljs-title.class_,[data-theme="dark"] .hljs-title.class_.inherited__,[data-theme="dark"] .hljs-subst,[data-theme="dark"] .hljs-property{color:#7dcfff}
 [data-theme="dark"] .hljs-quote,[data-theme="dark"] .hljs-string,[data-theme="dark"] .hljs-symbol,[data-theme="dark"] .hljs-bullet,[data-theme="dark"] .hljs-addition{color:#9ece6a}
-[data-theme="dark"] .hljs-code,[data-theme="dark"] .hljs-formula,[data-theme="dark"] .hljs-section{color:#7aa2f7}
+[data-theme="dark"] .hljs-code,[data-theme="dark"] .hljs-formula,[data-theme="dark"] .hljs-section{color:#85aaf8}
 [data-theme="dark"] .hljs-keyword,[data-theme="dark"] .hljs-operator,[data-theme="dark"] .hljs-attr,[data-theme="dark"] .hljs-name,[data-theme="dark"] .hljs-char.escape_{color:#bb9af7}
-[data-theme="dark"] .hljs-comment,[data-theme="dark"] .hljs-meta{color:#868fba}
+[data-theme="dark"] .hljs-comment,[data-theme="dark"] .hljs-meta{color:#9aa1c8}
 [data-theme="dark"] .hljs-punctuation{color:#c0caf5}
 [data-theme="dark"] .hljs-emphasis{font-style:italic}
 [data-theme="dark"] .hljs-strong{font-weight:bold}
