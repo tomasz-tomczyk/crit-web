@@ -53,9 +53,12 @@ defmodule CritWeb.DeviceApiController do
   """
   def token(conn, %{"device_code" => device_code}) do
     case DeviceCodes.poll_device_code(device_code) do
-      {:ok, access_token, user_name} ->
-        response = %{access_token: access_token, token_type: "bearer"}
-        response = if user_name, do: Map.put(response, :user_name, user_name), else: response
+      {:ok, access_token, user_info} ->
+        response =
+          %{access_token: access_token, token_type: "bearer"}
+          |> maybe_put(:user_id, user_info && user_info.id)
+          |> maybe_put(:user_name, user_info && user_info.name)
+          |> maybe_put(:user_email, user_info && user_info.email)
 
         conn
         |> put_status(200)
@@ -82,6 +85,9 @@ defmodule CritWeb.DeviceApiController do
   defp oauth_configured? do
     Application.get_env(:crit, :oauth_provider) != nil
   end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   # Rate-limit device code creation: 10 per minute per IP.
   defp rate_limit_create(conn, _opts) do

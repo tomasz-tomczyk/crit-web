@@ -55,7 +55,7 @@ defmodule CritWeb.DeviceApiControllerTest do
       assert %{"error" => "authorization_pending"} = json_response(conn, 400)
     end
 
-    test "returns access_token for an authorized device code", %{conn: conn} do
+    test "returns access_token and user identity for an authorized device code", %{conn: conn} do
       {:ok, user} = Accounts.find_or_create_from_oauth("github", @oauth_params)
       {:ok, %{device_code: raw, record: record}} = DeviceCodes.create_device_code()
       {:ok, _authorized} = DeviceCodes.authorize_device_code(record.id, user)
@@ -65,9 +65,12 @@ defmodule CritWeb.DeviceApiControllerTest do
       assert %{
                "access_token" => token,
                "token_type" => "bearer",
-               "user_name" => "API Test User"
+               "user_id" => user_id,
+               "user_name" => "API Test User",
+               "user_email" => "apitest@example.com"
              } = json_response(conn, 200)
 
+      assert user_id == user.id
       assert String.starts_with?(token, "crit_")
     end
 

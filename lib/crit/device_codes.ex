@@ -135,7 +135,9 @@ defmodule Crit.DeviceCodes do
   Polls for the token associated with a raw device code.
 
   Returns one of:
-  - `{:ok, access_token, user_name}` — success, token redeemed
+  - `{:ok, access_token, user_info}` — success, token redeemed. `user_info`
+     is a map with `:id`, `:name`, `:email` (any field may be `nil`) or `nil`
+     when no user is associated with the device code.
   - `{:error, :authorization_pending}` — user hasn't authorized yet
   - `{:error, :slow_down}` — client is polling too fast
   - `{:error, :expired_token}` — device code has expired
@@ -188,7 +190,7 @@ defmodule Crit.DeviceCodes do
               )
 
             if count == 1 do
-              {:ok, dc.access_token, display_name(dc.user)}
+              {:ok, dc.access_token, user_info(dc.user)}
             else
               # Another poll beat us — token already redeemed
               {:error, :expired_token}
@@ -233,9 +235,13 @@ defmodule Crit.DeviceCodes do
     diff < @poll_interval_seconds
   end
 
-  defp display_name(nil), do: nil
+  defp user_info(nil), do: nil
 
-  defp display_name(%Crit.User{} = user) do
-    user.name || user.email || user.provider_uid
+  defp user_info(%Crit.User{} = user) do
+    %{
+      id: user.id,
+      name: user.name || user.email || user.provider_uid,
+      email: user.email
+    }
   end
 end

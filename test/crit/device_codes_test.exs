@@ -133,14 +133,16 @@ defmodule Crit.DeviceCodesTest do
       assert {:error, :authorization_pending} = DeviceCodes.poll_device_code(raw)
     end
 
-    test "returns the access_token and user_name for an authorized device code" do
+    test "returns the access_token and user info for an authorized device code" do
       user = create_user()
       {:ok, %{device_code: raw, record: record}} = DeviceCodes.create_device_code()
       {:ok, _authorized} = DeviceCodes.authorize_device_code(record.id, user)
 
-      assert {:ok, access_token, user_name} = DeviceCodes.poll_device_code(raw)
+      assert {:ok, access_token, user_info} = DeviceCodes.poll_device_code(raw)
       assert String.starts_with?(access_token, "crit_")
-      assert user_name == "Test User"
+      assert user_info.id == user.id
+      assert user_info.name == "Test User"
+      assert user_info.email == user.email
     end
 
     test "marks device code as redeemed and clears access_token after successful poll" do
@@ -148,7 +150,7 @@ defmodule Crit.DeviceCodesTest do
       {:ok, %{device_code: raw, record: record}} = DeviceCodes.create_device_code()
       {:ok, _authorized} = DeviceCodes.authorize_device_code(record.id, user)
 
-      {:ok, _token, _name} = DeviceCodes.poll_device_code(raw)
+      {:ok, _token, _info} = DeviceCodes.poll_device_code(raw)
 
       redeemed = Repo.get!(DeviceCode, record.id)
       assert redeemed.status == :redeemed
@@ -160,7 +162,7 @@ defmodule Crit.DeviceCodesTest do
       {:ok, %{device_code: raw, record: record}} = DeviceCodes.create_device_code()
       {:ok, _authorized} = DeviceCodes.authorize_device_code(record.id, user)
 
-      {:ok, _token, _name} = DeviceCodes.poll_device_code(raw)
+      {:ok, _token, _info} = DeviceCodes.poll_device_code(raw)
       assert {:error, :expired_token} = DeviceCodes.poll_device_code(raw)
     end
 
