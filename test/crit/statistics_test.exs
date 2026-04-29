@@ -1,7 +1,10 @@
 defmodule Crit.StatisticsTest do
   use Crit.DataCase, async: true
 
+  alias Crit.Accounts.Scope
   alias Crit.Statistics
+
+  defp anon_scope, do: Scope.for_visitor("stats-test-#{System.unique_integer([:positive])}")
 
   describe "totals/0" do
     test "returns zero counts when no statistics rows exist" do
@@ -185,7 +188,7 @@ defmodule Crit.StatisticsTest do
         %{"file" => "a.md", "start_line" => 1, "end_line" => 1, "body" => "note"}
       ]
 
-      {:ok, _review} = Crit.Reviews.create_review(files, 0, comments)
+      {:ok, _review} = Crit.Reviews.create_review(anon_scope(), files, 0, comments)
 
       after_totals = Statistics.totals()
       assert after_totals.reviews_created == before.reviews_created + 1
@@ -197,15 +200,16 @@ defmodule Crit.StatisticsTest do
 
   describe "integration with Reviews.upsert_review/3" do
     test "upserting a review increments content stats but not reviews_created" do
+      scope = anon_scope()
       files = [%{"path" => "a.md", "content" => "original\ncontent"}]
-      {:ok, review} = Crit.Reviews.create_review(files, 0, [])
+      {:ok, review} = Crit.Reviews.create_review(scope, files, 0, [])
 
       before = Statistics.totals()
 
       new_files = [%{"path" => "a.md", "content" => "updated\ncontent\nhere"}]
 
       {:ok, :updated, _review} =
-        Crit.Reviews.upsert_review(review.token, review.delete_token, %{
+        Crit.Reviews.upsert_review(scope, review.token, review.delete_token, %{
           "files" => new_files,
           "comments" => []
         })
@@ -226,9 +230,9 @@ defmodule Crit.StatisticsTest do
 
       {:ok, _comment} =
         Crit.Reviews.create_comment(
+          anon_scope(),
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "hello", "scope" => "line"},
-          Ecto.UUID.generate()
+          %{"start_line" => 1, "end_line" => 1, "body" => "hello", "scope" => "line"}
         )
 
       after_totals = Statistics.totals()
@@ -237,22 +241,22 @@ defmodule Crit.StatisticsTest do
 
     test "creating a reply increments stats" do
       review = review_fixture()
+      scope = anon_scope()
 
       {:ok, comment} =
         Crit.Reviews.create_comment(
+          scope,
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "parent", "scope" => "line"},
-          Ecto.UUID.generate()
+          %{"start_line" => 1, "end_line" => 1, "body" => "parent", "scope" => "line"}
         )
 
       before = Statistics.totals()
 
       {:ok, _reply} =
         Crit.Reviews.create_reply(
+          scope,
           comment.id,
           %{"body" => "reply"},
-          Ecto.UUID.generate(),
-          nil,
           review.id
         )
 

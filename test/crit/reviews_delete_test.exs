@@ -1,11 +1,14 @@
 defmodule Crit.ReviewsDeleteTest do
   use Crit.DataCase
 
+  alias Crit.Accounts.Scope
   alias Crit.{Reviews, Review, Repo}
 
   defp insert_review do
+    scope = Scope.for_visitor("delete-test-#{System.unique_integer([:positive])}")
+
     {:ok, review} =
-      Reviews.create_review([%{"path" => "test.md", "content" => "# Hello"}], 0, [])
+      Reviews.create_review(scope, [%{"path" => "test.md", "content" => "# Hello"}], 0, [])
 
     review
   end

@@ -4,7 +4,12 @@ defmodule CritWeb.ReviewLiveTest do
   import Phoenix.LiveViewTest
   import Crit.ReviewsFixtures
 
+  alias Crit.Accounts.Scope
   alias Crit.Reviews
+
+  defp anon_scope(identity \\ nil, display_name \\ nil) do
+    Scope.for_visitor(identity || "rl-test-#{System.unique_integer([:positive])}", display_name)
+  end
 
   setup do
     Application.put_env(:crit, :selfhosted, false)
@@ -33,6 +38,7 @@ defmodule CritWeb.ReviewLiveTest do
     test "sets page title to first file path", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [
             %{"path" => "main.go", "content" => "pkg main"},
             %{"path" => "util.go", "content" => "pkg util"}
@@ -50,6 +56,7 @@ defmodule CritWeb.ReviewLiveTest do
     test "creates comment with file_path param", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "main.go", "content" => "pkg main"}],
           0,
           []
@@ -122,10 +129,9 @@ defmodule CritWeb.ReviewLiveTest do
 
       {:ok, _other_comment} =
         Reviews.create_comment(
+          Scope.for_visitor(other_identity),
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"},
-          other_identity,
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"}
         )
 
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
@@ -170,10 +176,9 @@ defmodule CritWeb.ReviewLiveTest do
 
       {:ok, _other_comment} =
         Reviews.create_comment(
+          Scope.for_visitor(other_identity),
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"},
-          other_identity,
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"}
         )
 
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
@@ -310,6 +315,7 @@ defmodule CritWeb.ReviewLiveTest do
     test "local prompt includes cli_args when present", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "plan.md", "content" => "# Test"}],
           1,
           [],
@@ -825,10 +831,9 @@ defmodule CritWeb.ReviewLiveTest do
 
       {:ok, _other_comment} =
         Reviews.create_comment(
+          Scope.for_visitor(other_identity),
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"},
-          other_identity,
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"}
         )
 
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
@@ -849,10 +854,9 @@ defmodule CritWeb.ReviewLiveTest do
 
       {:ok, _other_comment} =
         Reviews.create_comment(
+          Scope.for_visitor(other_identity),
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"},
-          other_identity,
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"}
         )
 
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
@@ -899,6 +903,7 @@ defmodule CritWeb.ReviewLiveTest do
     test "creates a file-scoped comment", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "main.go", "content" => "pkg main"}],
           0,
           []
@@ -925,6 +930,7 @@ defmodule CritWeb.ReviewLiveTest do
     test "creates a review-scoped comment", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "main.go", "content" => "pkg main"}],
           0,
           []
@@ -986,6 +992,7 @@ defmodule CritWeb.ReviewLiveTest do
     test "enables round diff when previous round exists", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "main.go", "content" => "v1 content"}],
           0,
           []
@@ -1014,6 +1021,7 @@ defmodule CritWeb.ReviewLiveTest do
     test "disables round diff on second toggle", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "main.go", "content" => "v1 content"}],
           0,
           []
@@ -1090,21 +1098,20 @@ defmodule CritWeb.ReviewLiveTest do
   describe "reply permissions" do
     test "cannot edit another user's reply", %{conn: conn, review: review} do
       other_identity = Ecto.UUID.generate()
+      other_scope = Scope.for_visitor(other_identity)
 
       {:ok, parent} =
         Reviews.create_comment(
+          other_scope,
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Parent comment"},
-          other_identity,
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Parent comment"}
         )
 
       {:ok, reply} =
         Reviews.create_reply(
+          other_scope,
           parent.id,
           %{"body" => "Other's reply"},
-          other_identity,
-          nil,
           review.id
         )
 
@@ -1121,21 +1128,20 @@ defmodule CritWeb.ReviewLiveTest do
 
     test "cannot delete another user's reply", %{conn: conn, review: review} do
       other_identity = Ecto.UUID.generate()
+      other_scope = Scope.for_visitor(other_identity)
 
       {:ok, parent} =
         Reviews.create_comment(
+          other_scope,
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Parent comment"},
-          other_identity,
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Parent comment"}
         )
 
       {:ok, _reply} =
         Reviews.create_reply(
+          other_scope,
           parent.id,
           %{"body" => "Other's reply"},
-          other_identity,
-          nil,
           review.id
         )
 
@@ -1188,6 +1194,7 @@ defmodule CritWeb.ReviewLiveTest do
 
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "demo.md", "content" => "# Demo"}],
           0,
           []
@@ -1306,7 +1313,7 @@ defmodule CritWeb.ReviewLiveTest do
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
 
       # Get the identity assigned during mount
-      own_identity = :sys.get_state(view.pid).socket.assigns.identity
+      own_identity = :sys.get_state(view.pid).socket.assigns.current_scope.identity
 
       payload = %{
         parent_id: Ecto.UUID.generate(),
@@ -1332,7 +1339,7 @@ defmodule CritWeb.ReviewLiveTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
 
-      own_identity = :sys.get_state(view.pid).socket.assigns.identity
+      own_identity = :sys.get_state(view.pid).socket.assigns.current_scope.identity
       foreign_identity = Ecto.UUID.generate()
 
       comments = [
@@ -1376,7 +1383,7 @@ defmodule CritWeb.ReviewLiveTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
 
-      own_identity = :sys.get_state(view.pid).socket.assigns.identity
+      own_identity = :sys.get_state(view.pid).socket.assigns.current_scope.identity
 
       comments = [
         %{

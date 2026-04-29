@@ -7,16 +7,16 @@ defmodule CritWeb.ReviewController do
         conn |> put_status(422) |> json(%{error: "name cannot be blank"})
 
       name ->
-        identity = get_session(conn, "identity")
+        scope = conn.assigns.current_scope
 
-        if identity do
-          Crit.Reviews.update_display_name(identity, name)
+        if scope.identity do
+          Crit.Reviews.update_display_name(scope, name)
 
-          for {_id, token} <- Crit.Reviews.reviews_for_identity(identity) do
+          for {_id, token} <- Crit.Reviews.reviews_for_identity(scope) do
             Phoenix.PubSub.broadcast(
               Crit.PubSub,
               "review:#{token}",
-              {:display_name_changed, %{identity: identity, name: name}}
+              {:display_name_changed, %{identity: scope.identity, name: name}}
             )
           end
         end

@@ -1,7 +1,7 @@
 <Layouts.flash_group flash={@flash} />
 
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.site_header current_user={@current_user} current_page={:features} />
+  <Layouts.site_header current_user={@current_scope.user} current_page={:features} />
   
 <!-- Breadcrumb -->
   <div class="max-w-7xl mx-auto w-full px-10 mt-10 max-sm:px-4 max-sm:mt-5">

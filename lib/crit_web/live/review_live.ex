@@ -1,33 +1,24 @@
 defmodule CritWeb.ReviewLive do
   use CritWeb, :live_view
 
+  alias Crit.Accounts.Scope
   alias Crit.Reviews
 
-  # Auth is gated by the router's :require_review_auth on_mount hook, which
-  # also assigns :current_user (set to nil for anonymous visitors in public
-  # mode). No module-level on_mount needed here.
+  # Auth is gated by the router's :require_review_scope on_mount hook
+  # (CritWeb.UserAuth), which also assigns :current_scope. On selfhosted+OAuth,
+  # unauthenticated visitors are redirected before mount/3 runs.
 
   @pubsub Crit.PubSub
 
   @impl true
-  def mount(%{"token" => token}, session, socket) do
-    current_user = socket.assigns.current_user
+  def mount(%{"token" => token}, _session, socket) do
+    scope = socket.assigns.current_scope
     auth_required = Crit.Config.selfhosted_oauth?()
 
-    # When authenticated, attribution flows through `user_id` (a verified FK).
-    # `identity` (the session-owner token) is only used for anonymous
-    # visitors to scope edit/delete permission across page reloads.
-    {identity, display_name} =
-      if current_user do
-        {nil, current_user.name || current_user.email}
-      else
-        {Map.get(session, "identity", Ecto.UUID.generate()), Map.get(session, "display_name")}
-      end
-
-    mount_review(token, socket, current_user, identity, display_name, auth_required)
+    mount_review(token, socket, scope, auth_required)
   end
 
-  defp mount_review(token, socket, current_user, identity, display_name, auth_required) do
+  defp mount_review(token, socket, %Scope{} = scope, auth_required) do
     case Reviews.get_by_token(token) do
       nil ->
         {:ok,
@@ -37,6 +28,10 @@ defmodule CritWeb.ReviewLive do
 
       review ->
         demo? = review.token == Application.get_env(:crit, :demo_review_token)
+        current_user = scope.user
+        identity = scope.identity
+        display_name = scope.display_name
+        user_id = Scope.user_id(scope)
 
         files_data =
           Enum.map(review.files, fn f ->
@@ -50,7 +45,7 @@ defmodule CritWeb.ReviewLive do
 
             comments =
               review.comments
-              |> filter_demo_comments(demo?, identity, current_user_id(socket))
+              |> filter_demo_comments(demo?, identity, user_id)
 
             push_event(socket, "init", %{
               comments: serialize_comments(comments),
@@ -93,11 +88,8 @@ defmodule CritWeb.ReviewLive do
         {:ok,
          socket
          |> assign(:review, review)
-         |> assign(:current_user, current_user)
          |> assign(:oauth_configured, Application.get_env(:crit, :oauth_provider) != nil)
          |> assign(:auth_required, auth_required)
-         |> assign(:identity, identity)
-         |> assign(:display_name, display_name)
          |> assign(:demo?, demo?)
          |> assign(:local_prompt_text, local_prompt_text)
          |> assign(:full_export_prompt_text, full_export_prompt_text)
@@ -123,24 +115,20 @@ defmodule CritWeb.ReviewLive do
   end
 
   def handle_event("delete_review", _params, socket) do
-    %{review: review, current_user: current_user} = socket.assigns
+    %{review: review, current_scope: scope} = socket.assigns
 
-    if current_user && review.user_id == current_user.id do
-      case Reviews.delete_review(review.id, owner_id: current_user.id) do
-        :ok ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Review deleted.")
-           |> redirect(to: ~p"/dashboard")}
+    case Reviews.delete_review(scope, review.id) do
+      :ok ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Review deleted.")
+         |> redirect(to: ~p"/dashboard")}
 
-        {:error, :unauthorized} ->
-          {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
 
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Failed to delete review.")}
-      end
-    else
-      {:noreply, put_flash(socket, :error, "You can only delete your own reviews.")}
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete review.")}
     end
   end
 
@@ -181,31 +169,22 @@ defmodule CritWeb.ReviewLive do
         %{"body" => body} = params,
         socket
       ) do
-    %{review: review, identity: identity} = socket.assigns
+    %{review: review, current_scope: scope} = socket.assigns
     file_path = params["file_path"]
-    scope = params["scope"] || "line"
+    comment_scope = params["scope"] || "line"
 
     attrs =
       %{
         "start_line" => params["start_line"] || 0,
         "end_line" => params["end_line"] || 0,
         "body" => body,
-        "scope" => scope
+        "scope" => comment_scope
       }
       |> then(fn a ->
         if q = params["quote"], do: Map.put(a, "quote", q), else: a
       end)
 
-    user_id = current_user_id(socket)
-
-    case Reviews.create_comment(
-           review,
-           attrs,
-           identity,
-           socket.assigns.display_name,
-           file_path,
-           user_id: user_id
-         ) do
+    case Reviews.create_comment(scope, review, attrs, file_path: file_path) do
       {:ok, comment} ->
         payload = %{comment: Reviews.serialize_comment(comment)}
         socket = push_event(socket, "comment_added", payload)
@@ -219,9 +198,9 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("edit_comment", %{"id" => id, "body" => body}, socket) do
-    %{identity: identity} = socket.assigns
+    %{current_scope: scope} = socket.assigns
 
-    case Reviews.update_comment(id, body, identity, user_id: current_user_id(socket)) do
+    case Reviews.update_comment(scope, id, body) do
       {:ok, comment} ->
         payload = %{
           id: comment.id,
@@ -243,9 +222,9 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("delete_comment", %{"id" => id}, socket) do
-    %{identity: identity} = socket.assigns
+    %{current_scope: scope} = socket.assigns
 
-    case Reviews.delete_comment(id, identity, user_id: current_user_id(socket)) do
+    case Reviews.delete_comment(scope, id) do
       {:ok, _} ->
         payload = %{id: id}
         socket = push_event(socket, "comment_deleted", payload)
@@ -270,9 +249,11 @@ defmodule CritWeb.ReviewLive do
         {:noreply, socket}
 
       name ->
+        scope = Scope.put_display_name(socket.assigns.current_scope, name)
+
         {:noreply,
          socket
-         |> assign(:display_name, name)
+         |> assign(:current_scope, scope)
          |> push_event("display_name_updated", %{display_name: name})}
     end
   end
@@ -285,16 +266,9 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("add_reply", %{"comment_id" => comment_id, "body" => body}, socket) do
-    %{review: review, identity: identity, display_name: display_name} = socket.assigns
+    %{review: review, current_scope: scope} = socket.assigns
 
-    case Reviews.create_reply(
-           comment_id,
-           %{"body" => body},
-           identity,
-           display_name,
-           review.id,
-           user_id: current_user_id(socket)
-         ) do
+    case Reviews.create_reply(scope, comment_id, %{"body" => body}, review.id) do
       {:ok, reply} ->
         payload = %{parent_id: comment_id, reply: Reviews.serialize_reply(reply)}
         socket = push_event(socket, "reply_added", payload)
@@ -308,9 +282,9 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("edit_reply", %{"id" => id, "body" => body}, socket) do
-    %{identity: identity} = socket.assigns
+    %{current_scope: scope} = socket.assigns
 
-    case Reviews.update_reply(id, body, identity, user_id: current_user_id(socket)) do
+    case Reviews.update_reply(scope, id, body) do
       {:ok, reply} ->
         payload = %{parent_id: reply.parent_id, id: reply.id, body: reply.body}
         socket = push_event(socket, "reply_updated", payload)
@@ -327,9 +301,9 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("delete_reply", %{"id" => id}, socket) do
-    %{identity: identity} = socket.assigns
+    %{current_scope: scope} = socket.assigns
 
-    case Reviews.delete_reply(id, identity, user_id: current_user_id(socket)) do
+    case Reviews.delete_reply(scope, id) do
       {:ok, deleted} ->
         payload = %{parent_id: deleted.parent_id, id: id}
         socket = push_event(socket, "reply_deleted", payload)
@@ -346,14 +320,18 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_event("resolve_comment", %{"id" => id, "resolved" => resolved}, socket) do
-    %{review: review} = socket.assigns
+    %{review: review, current_scope: scope} = socket.assigns
 
-    case Reviews.resolve_comment(id, resolved, review.id) do
+    case Reviews.resolve_comment(scope, id, resolved, review.id) do
       {:ok, comment} ->
         payload = %{id: comment.id, resolved: comment.resolved}
         socket = push_event(socket, "comment_resolved", payload)
         broadcast_from_review(socket, {:comment_resolved, payload})
         {:noreply, socket}
+
+      {:error, :unauthorized} ->
+        {:noreply,
+         put_flash(socket, :error, "Only the comment author or review owner can resolve this.")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to update comment.")}
@@ -366,9 +344,9 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_info({:comment_added, %{comment: comment} = payload}, socket) do
-    %{demo?: demo?, identity: identity} = socket.assigns
+    %{demo?: demo?, current_scope: scope} = socket.assigns
 
-    if demo? and comment.author_identity not in ["imported", identity] do
+    if demo? and comment.author_identity not in ["imported", scope.identity] do
       {:noreply, socket}
     else
       {:noreply, push_event(socket, "comment_added", payload)}
@@ -392,9 +370,9 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_info({:reply_added, %{reply: reply} = payload}, socket) do
-    %{demo?: demo?, identity: identity} = socket.assigns
+    %{demo?: demo?, current_scope: scope} = socket.assigns
 
-    if demo? and reply.author_identity not in ["imported", identity] do
+    if demo? and reply.author_identity not in ["imported", scope.identity] do
       {:noreply, socket}
     else
       {:noreply, push_event(socket, "reply_added", payload)}
@@ -413,8 +391,11 @@ defmodule CritWeb.ReviewLive do
 
   @impl true
   def handle_info({:comments_full_sync, comments}, socket) do
-    %{demo?: demo?, identity: identity} = socket.assigns
-    filtered = filter_demo_serialized_comments(comments, demo?, identity, current_user_id(socket))
+    %{demo?: demo?, current_scope: scope} = socket.assigns
+
+    filtered =
+      filter_demo_serialized_comments(comments, demo?, scope.identity, Scope.user_id(scope))
+
     {:noreply, push_event(socket, "comments_full_sync", %{comments: filtered})}
   end
 
@@ -435,13 +416,6 @@ defmodule CritWeb.ReviewLive do
 
   defp serialize_comments(comments) do
     Enum.map(comments, &Reviews.serialize_comment/1)
-  end
-
-  defp current_user_id(socket) do
-    case socket.assigns[:current_user] do
-      nil -> nil
-      %{id: id} -> id
-    end
   end
 
   defp filter_demo_comments(comments, false, _identity, _user_id), do: comments
@@ -484,6 +458,8 @@ defmodule CritWeb.ReviewLive do
   def session_opts(conn) do
     %{
       "user_id" => Plug.Conn.get_session(conn, "user_id"),
+      "identity" => Plug.Conn.get_session(conn, "identity"),
+      "display_name" => Plug.Conn.get_session(conn, "display_name"),
       "request_path" => conn.request_path
     }
   end

@@ -2,12 +2,13 @@ defmodule CritWeb.SettingsLive do
   use CritWeb, :live_view
 
   alias Crit.Accounts
+  alias Crit.Accounts.Scope
 
   import CritWeb.Helpers, only: [time_ago: 1]
 
   @impl true
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_scope.user
 
     socket =
       socket
@@ -25,7 +26,8 @@ defmodule CritWeb.SettingsLive do
 
   @impl true
   def handle_event("toggle_keep_reviews", _params, socket) do
-    user = socket.assigns.current_user
+    %{current_scope: scope} = socket.assigns
+    user = scope.user
     new_value = !socket.assigns.keep_reviews
 
     case Accounts.update_keep_reviews(user, new_value) do
@@ -33,7 +35,7 @@ defmodule CritWeb.SettingsLive do
         {:noreply,
          socket
          |> assign(:keep_reviews, new_value)
-         |> assign(:current_user, updated_user)}
+         |> assign(:current_scope, Scope.put_user(scope, updated_user))}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to update setting.")}
@@ -42,7 +44,7 @@ defmodule CritWeb.SettingsLive do
 
   @impl true
   def handle_event("create_token", %{"name" => name}, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_scope.user
 
     case Accounts.create_token(user, name) do
       {:ok, {plaintext, _token}} ->
@@ -59,7 +61,7 @@ defmodule CritWeb.SettingsLive do
 
   @impl true
   def handle_event("revoke_token", %{"id" => id}, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_scope.user
 
     case Accounts.revoke_token(id, user.id) do
       :ok ->
@@ -85,7 +87,7 @@ defmodule CritWeb.SettingsLive do
 
   @impl true
   def handle_event("delete_account", _params, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_scope.user
 
     if socket.assigns.delete_confirmation == delete_confirmation_text(user) do
       case Accounts.delete_account(user) do

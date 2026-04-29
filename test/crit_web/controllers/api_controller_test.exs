@@ -1,11 +1,19 @@
 defmodule CritWeb.ApiControllerTest do
   use CritWeb.ConnCase
 
+  alias Crit.Accounts.Scope
   alias Crit.Reviews
+
+  defp anon_scope, do: Scope.for_visitor("api-test-#{System.unique_integer([:positive])}")
 
   defp create_review do
     {:ok, review} =
-      Reviews.create_review([%{"path" => "test.md", "content" => "# Hello\n\nworld"}], 0, [])
+      Reviews.create_review(
+        anon_scope(),
+        [%{"path" => "test.md", "content" => "# Hello\n\nworld"}],
+        0,
+        []
+      )
 
     review
   end
@@ -78,6 +86,7 @@ defmodule CritWeb.ApiControllerTest do
     test "returns JSON with files for multi-file review", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "a.go", "content" => "pkg a"}, %{"path" => "b.go", "content" => "pkg b"}],
           0,
           []
@@ -124,6 +133,7 @@ defmodule CritWeb.ApiControllerTest do
     test "returns file headers for multi-file review", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "x.go", "content" => "pkg x"}, %{"path" => "y.go", "content" => "pkg y"}],
           0,
           []
@@ -145,6 +155,7 @@ defmodule CritWeb.ApiControllerTest do
     test "returns review file compatible shape with top-level fields", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "plan.md", "content" => "# Plan"}],
           1,
           [
@@ -319,6 +330,7 @@ defmodule CritWeb.ApiControllerTest do
     test "updates cli_args on content change", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "plan.md", "content" => "# v1"}],
           1,
           [],
@@ -345,6 +357,7 @@ defmodule CritWeb.ApiControllerTest do
     test "updates cli_args even when content unchanged", %{conn: conn} do
       {:ok, review} =
         Reviews.create_review(
+          anon_scope(),
           [%{"path" => "plan.md", "content" => "same"}],
           1,
           [],
@@ -552,6 +565,7 @@ defmodule CritWeb.ApiControllerTest do
     test "updates review content and returns new round", %{conn: conn} do
       {:ok, review} =
         Crit.Reviews.create_review(
+          anon_scope(),
           [%{"path" => "plan.md", "content" => "# v1"}],
           1,
           [],
@@ -578,6 +592,7 @@ defmodule CritWeb.ApiControllerTest do
     test "returns changed: false when content is identical", %{conn: conn} do
       {:ok, review} =
         Crit.Reviews.create_review(
+          anon_scope(),
           [%{"path" => "plan.md", "content" => "same"}],
           1,
           [],
@@ -600,6 +615,7 @@ defmodule CritWeb.ApiControllerTest do
     test "returns 401 with wrong delete_token", %{conn: conn} do
       {:ok, review} =
         Crit.Reviews.create_review(
+          anon_scope(),
           [%{"path" => "plan.md", "content" => "# v1"}],
           1,
           [],

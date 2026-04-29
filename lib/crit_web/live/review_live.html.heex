@@ -33,16 +33,16 @@
         <% end %>
       </div>
       <div class="crit-header-identity">
-        <%= if @current_user do %>
+        <%= if @current_scope.user do %>
           <div class="crit-user-pill">
-            <%= if @current_user.avatar_url do %>
+            <%= if @current_scope.user.avatar_url do %>
               <img
-                src={@current_user.avatar_url}
-                alt={@current_user.name || @current_user.email}
+                src={@current_scope.user.avatar_url}
+                alt={@current_scope.display_name}
                 class="crit-user-avatar"
               />
             <% end %>
-            <span class="crit-user-name">{@current_user.name || @current_user.email}</span>
+            <span class="crit-user-name">{@current_scope.display_name}</span>
             <.form for={%{}} action={~p"/auth/logout"} method="post" id="review-logout-form">
               <input type="hidden" name="_method" value="delete" />
               <button type="submit" class="crit-user-signout">Sign out</button>
@@ -60,7 +60,9 @@
               }
               class="crit-name-btn"
             >
-              {if @display_name, do: @display_name, else: "Set your name"}
+              {if @current_scope.display_name,
+                do: @current_scope.display_name,
+                else: "Set your name"}
             </button>
             <form
               id="name-form"
@@ -76,7 +78,7 @@
                 type="text"
                 id="name-input"
                 name="name"
-                value={@display_name || ""}
+                value={@current_scope.display_name || ""}
                 placeholder="Your name"
                 maxlength="40"
                 phx-keydown={JS.hide(to: "#name-form") |> JS.show(to: "#name-pill-btn")}
@@ -350,7 +352,7 @@
     <ul class="crit-toc-list"></ul>
   </div>
 
-  <% owner? = @current_user && @review.user_id == @current_user.id %>
+  <% owner? = @current_scope.user && @review.user_id == @current_scope.user.id %>
   <% author = @review.user %>
   <% comment_count =
     Enum.reduce(@review.comments, 0, fn c, acc ->
@@ -398,7 +400,7 @@
         id="document-renderer"
         phx-hook=".DocumentRenderer"
         phx-update="ignore"
-        data-identity={@identity}
+        data-identity={@current_scope.identity}
         data-review-round={@review.review_round || 0}
       >
         <div class="crit-loading">Loading document...</div>

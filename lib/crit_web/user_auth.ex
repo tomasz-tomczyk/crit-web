@@ -73,10 +73,31 @@ defmodule CritWeb.UserAuth do
     * `:require_authenticated_user` — assigns scope; halts and redirects to
       `/auth/login?return_to=<request_path>` when user missing and OAuth
       configured. Falls back to `/` when OAuth is not configured.
+    * `:require_review_scope` — assigns `:current_scope`. When the instance is
+      selfhosted AND an `oauth_provider` is configured, redirects unauthenticated
+      visitors to the OAuth login flow with `return_to` set to the current
+      request path. Otherwise (public/hosted, or selfhosted without OAuth) lets
+      the request through with `current_scope.user` possibly nil.
     * `:require_selfhosted_auth` — selfhosted-instance gate.
   """
   def on_mount(:mount_current_scope_for_user, _params, session, socket) do
     {:cont, assign_scope(socket, session)}
+  end
+
+  def on_mount(:require_review_scope, _params, session, socket) do
+    socket = assign_scope(socket, session)
+
+    cond do
+      socket.assigns.current_scope.user ->
+        {:cont, socket}
+
+      Crit.Config.selfhosted_oauth?() ->
+        return_to = Map.get(session, "request_path", "/")
+        {:halt, redirect(socket, to: "/auth/login?return_to=#{URI.encode_www_form(return_to)}")}
+
+      true ->
+        {:cont, socket}
+    end
   end
 
   def on_mount(:require_authenticated_user, _params, session, socket) do

@@ -2,7 +2,7 @@
 
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.dashboard_header
-    current_user={@current_user}
+    current_user={@current_scope.user}
     show_overview_link={@selfhosted}
     current_page={:settings}
   />
@@ -59,22 +59,22 @@
           </h2>
           <div class="flex flex-col gap-4">
             <div class="flex items-start gap-4">
-              <%= if @current_user.avatar_url do %>
+              <%= if @current_scope.user.avatar_url do %>
                 <img
-                  src={@current_user.avatar_url}
-                  alt={@current_user.name}
+                  src={@current_scope.user.avatar_url}
+                  alt={@current_scope.user.name}
                   class="h-16 w-16 rounded-full border border-(--crit-border)"
                 />
               <% end %>
               <div>
                 <div class="text-base font-medium text-(--crit-fg-primary)">
-                  {@current_user.name || "—"}
+                  {@current_scope.user.name || "—"}
                 </div>
                 <div class="text-sm text-(--crit-fg-muted) mt-0.5">
-                  {@current_user.email || "No email"}
+                  {@current_scope.user.email || "No email"}
                 </div>
                 <div class="text-xs text-(--crit-fg-muted) mt-1">
-                  Signed in via <span class="capitalize">{@current_user.provider}</span>
+                  Signed in via <span class="capitalize">{@current_scope.user.provider}</span>
                 </div>
               </div>
             </div>
@@ -229,7 +229,9 @@
             >
               <label class="block text-sm text-(--crit-fg-primary) mb-2">
                 To confirm, type
-                <strong class="font-semibold">{delete_confirmation_text(@current_user)}</strong>
+                <strong class="font-semibold">
+                  {delete_confirmation_text(@current_scope.user)}
+                </strong>
                 below:
               </label>
               <input
@@ -242,10 +244,10 @@
               <div>
                 <button
                   type="submit"
-                  disabled={@delete_confirmation != delete_confirmation_text(@current_user)}
+                  disabled={@delete_confirmation != delete_confirmation_text(@current_scope.user)}
                   class={[
                     "px-4 py-2 rounded-md text-sm font-semibold transition-opacity cursor-pointer",
-                    if(@delete_confirmation == delete_confirmation_text(@current_user),
+                    if(@delete_confirmation == delete_confirmation_text(@current_scope.user),
                       do: "bg-red-600 text-white hover:bg-red-700",
                       else: "bg-red-600/30 text-red-400/50 cursor-not-allowed"
                     )

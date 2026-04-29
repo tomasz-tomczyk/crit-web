@@ -3,6 +3,7 @@ defmodule Crit.Reviews do
 
   import Ecto.Query
   alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Statistics, User}
+  alias Crit.Accounts.Scope
 
   @max_total_size 10_485_760
 
@@ -64,25 +65,20 @@ defmodule Crit.Reviews do
   end
 
   @doc """
-  Create a comment for a review.
+  Create a comment for a review within the given scope.
 
-  `identity` is the session-owner token used for anonymous web visitors so
-  they can edit/delete their comment within the session. Pass `nil` for an
-  authenticated user along with `user_id:` in opts — when `user_id` is set,
-  it takes precedence and `author_identity` is left NULL.
+  Anonymous scope (`scope.user == nil`) → `user_id = nil`,
+  `author_identity = scope.identity`.
+  Authenticated scope → `user_id = scope.user.id`, `author_identity = nil`.
 
   Opts:
-    * `:user_id` — authenticated user's id; when set, `author_identity` is NULL
+    * `:file_path` — file path the comment is anchored to
   """
-  def create_comment(
-        %Review{id: review_id},
-        attrs,
-        identity,
-        display_name \\ nil,
-        file_path \\ nil,
-        opts \\ []
-      ) do
-    user_id = Keyword.get(opts, :user_id)
+  def create_comment(%Scope{} = scope, %Review{id: review_id}, attrs, opts \\ []) do
+    user_id = Scope.user_id(scope)
+    identity = scope.identity
+    display_name = scope.display_name
+    file_path = Keyword.get(opts, :file_path)
 
     %Comment{}
     |> Comment.create_changeset(attrs)
@@ -101,19 +97,19 @@ defmodule Crit.Reviews do
   end
 
   @doc """
-  Update a comment's body if the caller owns it.
+  Update a comment's body if the caller's scope owns it.
 
   Authorization rules:
-    * `user_id IS NOT NULL` on the comment → must match `opts[:user_id]`
-    * `user_id IS NULL` → must match `identity` (session token)
+    * `user_id IS NOT NULL` on the comment → must match `scope.user.id`
+    * `user_id IS NULL` → must match `scope.identity`
   """
-  def update_comment(comment_id, body, identity, opts \\ []) do
+  def update_comment(%Scope{} = scope, comment_id, body) do
     case Repo.get(Comment, comment_id) do
       nil ->
         {:error, :not_found}
 
       %Comment{} = comment ->
-        if comment_owned_by?(comment, identity, Keyword.get(opts, :user_id)) do
+        if comment_owned_by?(comment, scope.identity, Scope.user_id(scope)) do
           comment
           |> Comment.create_changeset(%{
             "start_line" => comment.start_line,
@@ -128,14 +124,14 @@ defmodule Crit.Reviews do
     end
   end
 
-  @doc "Delete a comment if the caller owns it. See `update_comment/4` for ownership rules."
-  def delete_comment(comment_id, identity, opts \\ []) do
+  @doc "Delete a comment if the caller's scope owns it. See `update_comment/3` for ownership rules."
+  def delete_comment(%Scope{} = scope, comment_id) do
     case Repo.get(Comment, comment_id) do
       nil ->
         {:error, :not_found}
 
       %Comment{} = comment ->
-        if comment_owned_by?(comment, identity, Keyword.get(opts, :user_id)) do
+        if comment_owned_by?(comment, scope.identity, Scope.user_id(scope)) do
           Repo.delete(comment)
         else
           {:error, :unauthorized}
@@ -151,8 +147,15 @@ defmodule Crit.Reviews do
     not is_nil(current_user_id) and uid == current_user_id
   end
 
-  @doc "Create a review from the share API payload. Files is a list of %{\"path\" => _, \"content\" => _} maps."
+  @doc """
+  Create a review from the share API payload within the given scope. Files is a
+  list of `%{"path" => _, "content" => _}` maps.
+
+  Opts:
+    * `:cli_args` — CLI arguments associated with the share action
+  """
   def create_review(
+        %Scope{} = scope,
         files_attrs,
         review_round,
         comments_attrs,
@@ -160,7 +163,7 @@ defmodule Crit.Reviews do
         opts \\ []
       ) do
     total_size = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
-    user_id = Keyword.get(opts, :user_id)
+    user_id = Scope.user_id(scope)
     cli_args = Keyword.get(opts, :cli_args) || []
 
     if total_size > @max_total_size do
@@ -223,12 +226,14 @@ defmodule Crit.Reviews do
   end
 
   @doc """
-  Update an existing review identified by token+delete_token with new files and comments.
-  Appends a new round of snapshots if anything changed — no data is deleted.
+  Update an existing review identified by token+delete_token with new files and comments
+  within the given scope. Appends a new round of snapshots if anything changed —
+  no data is deleted.
+
   Returns {:ok, :updated, review}, {:ok, :no_changes, review}, or {:error, reason}.
   """
-  def upsert_review(token, delete_token, payload, opts \\ []) do
-    user_id = Keyword.get(opts, :user_id)
+  def upsert_review(%Scope{} = scope, token, delete_token, payload) do
+    user_id = Scope.user_id(scope)
 
     with {:ok, review} <- fetch_review_for_update(token, delete_token) do
       files = payload["files"] || []
@@ -622,14 +627,16 @@ defmodule Crit.Reviews do
   end
 
   @doc """
-  Returns reviews for a specific user as plain maps with comment/file counts.
-  Same as `list_reviews_with_counts/0` but filtered to the given user_id.
+  Returns reviews for the authenticated user in the scope, with comment/file counts.
+  Returns `[]` for an anonymous scope (no user).
   """
-  def list_user_reviews_with_counts(user_id) do
+  def list_user_reviews_with_counts(%Scope{user: %User{id: user_id}}) do
     reviews_with_counts_query({:user, user_id}) |> Repo.all()
   end
 
-  defp reviews_with_counts_query(scope) do
+  def list_user_reviews_with_counts(%Scope{}), do: []
+
+  defp reviews_with_counts_query(filter) do
     first_file_subquery =
       from(rf in ReviewRoundSnapshot,
         where: rf.review_id == parent_as(:review).id,
@@ -672,31 +679,33 @@ defmodule Crit.Reviews do
       })
       |> order_by([r], desc: r.last_activity_at)
 
-    case scope do
+    case filter do
       :all -> base
       {:user, user_id} -> from [r, _c, _rf, _fp, _u] in base, where: r.user_id == ^user_id
     end
   end
 
   @doc """
-  Delete a review by its id.
+  Delete a review by id within the given scope.
 
-  Accepts an optional `owner_id` keyword argument. When provided, deletion is
-  only allowed if the review's `user_id` matches `owner_id` exactly. Anonymous
-  reviews (where `review.user_id` is nil) cannot be deleted via this path —
-  they are deleted by their `delete_token` instead (`delete_review_by_token/1`).
+  Anonymous scope → `{:error, :unauthorized}`.
+  Authenticated scope → allowed only when the review's `user_id` matches the
+  scope's user. Anonymous reviews (`review.user_id == nil`) cannot be deleted
+  via this path — they are deleted by their `delete_token` instead
+  (`delete_by_delete_token/1`).
 
-  Returns `:ok`, `{:error, :not_found}`, or `{:error, :unauthorized}`.
+  Returns `:ok`, `{:error, :not_found}`, `{:error, :unauthorized}`, or
+  `{:error, :delete_failed}`.
   """
-  def delete_review(id, opts \\ []) do
-    owner_id = Keyword.get(opts, :owner_id)
+  def delete_review(%Scope{user: nil}, _id), do: {:error, :unauthorized}
 
+  def delete_review(%Scope{user: %User{id: owner_id}}, id) do
     case Repo.get(Review, id) do
       nil ->
         {:error, :not_found}
 
       review ->
-        if owner_id && review.user_id != owner_id do
+        if review.user_id != owner_id do
           {:error, :unauthorized}
         else
           case Repo.delete(review) do
@@ -707,17 +716,27 @@ defmodule Crit.Reviews do
     end
   end
 
-  @doc "Update the display name on all comments by a given identity. Returns {count, nil}."
-  def update_display_name(identity, display_name) do
+  @doc """
+  Update the display name on all comments owned by the scope's identity.
+
+  No-ops for authenticated scopes (their display name is derived from the user
+  record). Returns `{count, nil}` for anonymous, `:ok` otherwise.
+  """
+  def update_display_name(%Scope{user: nil, identity: identity}, name)
+      when is_binary(identity) and is_binary(name) do
     from(c in Comment, where: c.author_identity == ^identity)
-    |> Repo.update_all(set: [author_display_name: display_name])
+    |> Repo.update_all(set: [author_display_name: name])
   end
 
+  def update_display_name(%Scope{}, _name), do: :ok
+
   @doc """
-  Returns {id, token} pairs for all reviews that have comments by the given identity.
-  Used to broadcast display name changes to affected live review pages.
+  Returns {id, token} pairs for all reviews that have comments by the scope's
+  identity. Used to broadcast display name changes to affected live review pages.
+
+  Returns `[]` for authenticated scopes.
   """
-  def reviews_for_identity(identity) do
+  def reviews_for_identity(%Scope{user: nil, identity: identity}) when is_binary(identity) do
     from(c in Comment,
       where: c.author_identity == ^identity,
       join: r in Review,
@@ -728,23 +747,69 @@ defmodule Crit.Reviews do
     |> Repo.all()
   end
 
-  @doc "Toggle the resolved state of a comment. Scoped to the given review."
-  def resolve_comment(comment_id, resolved, review_id) when is_boolean(resolved) do
-    case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
-      nil -> {:error, :not_found}
-      %Comment{parent_id: parent} when parent != nil -> {:error, :not_found}
-      comment -> comment |> Ecto.Changeset.change(resolved: resolved) |> Repo.update()
+  def reviews_for_identity(%Scope{}), do: []
+
+  @doc """
+  Toggle the resolved state of a comment. Scoped to the given review.
+
+  Authorization rules:
+    * Authenticated review owner → allowed.
+    * Authenticated comment author → allowed.
+    * Anonymous comment author with matching identity → allowed.
+    * Otherwise → `{:error, :unauthorized}`.
+  """
+  def resolve_comment(%Scope{} = scope, comment_id, resolved, review_id)
+      when is_boolean(resolved) do
+    with :ok <- check_resolve_permission(scope, comment_id, review_id) do
+      case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
+        nil -> {:error, :not_found}
+        %Comment{parent_id: parent} when parent != nil -> {:error, :not_found}
+        comment -> comment |> Ecto.Changeset.change(resolved: resolved) |> Repo.update()
+      end
+    end
+  end
+
+  defp check_resolve_permission(%Scope{} = scope, comment_id, review_id) do
+    case Repo.one(
+           from c in Comment,
+             where: c.id == ^comment_id and c.review_id == ^review_id,
+             join: r in Review,
+             on: r.id == c.review_id,
+             select: %{
+               comment_user_id: c.user_id,
+               comment_identity: c.author_identity,
+               review_user_id: r.user_id,
+               parent_id: c.parent_id
+             }
+         ) do
+      nil ->
+        {:error, :not_found}
+
+      %{parent_id: parent} when parent != nil ->
+        {:error, :not_found}
+
+      %{comment_user_id: cuid, comment_identity: cident, review_user_id: ruid} ->
+        scope_uid = Scope.user_id(scope)
+
+        cond do
+          scope_uid != nil and scope_uid == ruid -> :ok
+          scope_uid != nil and scope_uid == cuid -> :ok
+          cuid == nil and scope.identity != nil and scope.identity == cident -> :ok
+          true -> {:error, :unauthorized}
+        end
     end
   end
 
   @doc """
-  Create a reply to an existing comment. Scoped to the given review.
+  Create a reply to an existing comment within the given scope. Scoped to the
+  given review.
 
-  Same attribution rules as `create_comment/6`: when `opts[:user_id]` is set,
-  it takes precedence and `author_identity` is left NULL.
+  Same attribution rules as `create_comment/4`.
   """
-  def create_reply(comment_id, attrs, identity, display_name, review_id, opts \\ []) do
-    user_id = Keyword.get(opts, :user_id)
+  def create_reply(%Scope{} = scope, comment_id, attrs, review_id) do
+    user_id = Scope.user_id(scope)
+    identity = scope.identity
+    display_name = scope.display_name
 
     case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
       nil ->
@@ -773,8 +838,8 @@ defmodule Crit.Reviews do
     end
   end
 
-  @doc "Update a reply's body if the caller owns it. See `update_comment/4` for ownership rules."
-  def update_reply(reply_id, body, identity, opts \\ []) do
+  @doc "Update a reply's body if the caller's scope owns it. See `update_comment/3` for ownership rules."
+  def update_reply(%Scope{} = scope, reply_id, body) do
     case Repo.get(Comment, reply_id) do
       nil ->
         {:error, :not_found}
@@ -783,7 +848,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = reply ->
-        if comment_owned_by?(reply, identity, Keyword.get(opts, :user_id)) do
+        if comment_owned_by?(reply, scope.identity, Scope.user_id(scope)) do
           reply |> Comment.reply_changeset(%{"body" => body}) |> Repo.update()
         else
           {:error, :unauthorized}
@@ -791,8 +856,8 @@ defmodule Crit.Reviews do
     end
   end
 
-  @doc "Delete a reply if the caller owns it. See `update_comment/4` for ownership rules."
-  def delete_reply(reply_id, identity, opts \\ []) do
+  @doc "Delete a reply if the caller's scope owns it. See `update_comment/3` for ownership rules."
+  def delete_reply(%Scope{} = scope, reply_id) do
     case Repo.get(Comment, reply_id) do
       nil ->
         {:error, :not_found}
@@ -801,7 +866,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = reply ->
-        if comment_owned_by?(reply, identity, Keyword.get(opts, :user_id)) do
+        if comment_owned_by?(reply, scope.identity, Scope.user_id(scope)) do
           Repo.delete(reply)
         else
           {:error, :unauthorized}

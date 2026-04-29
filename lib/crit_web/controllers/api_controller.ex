@@ -1,6 +1,7 @@
 defmodule CritWeb.ApiController do
   use CritWeb, :controller
 
+  alias Crit.Accounts.Scope
   alias Crit.Reviews
   alias Crit.Output
 
@@ -14,7 +15,7 @@ defmodule CritWeb.ApiController do
     cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
-    user_id = conn.assigns[:current_user] && conn.assigns[:current_user].id
+    scope = api_scope(conn)
 
     cond do
       length(comments) + length(review_comments) > @max_comments ->
@@ -24,8 +25,7 @@ defmodule CritWeb.ApiController do
         conn |> put_status(422) |> json(%{error: "Too many files (max 200)"})
 
       true ->
-        case Reviews.create_review(files, review_round, comments, review_comments,
-               user_id: user_id,
+        case Reviews.create_review(scope, files, review_round, comments, review_comments,
                cli_args: cli_args
              ) do
           {:ok, review} ->
@@ -48,7 +48,7 @@ defmodule CritWeb.ApiController do
     cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
-    user_id = conn.assigns[:current_user] && conn.assigns[:current_user].id
+    scope = api_scope(conn)
 
     file_path = filename || "document"
     files = [%{"path" => file_path, "content" => content}]
@@ -61,8 +61,12 @@ defmodule CritWeb.ApiController do
         |> json(%{error: "Too many comments (max #{@max_comments})"})
 
       true ->
-        case Reviews.create_review(files, review_round, comments_with_file, review_comments,
-               user_id: user_id,
+        case Reviews.create_review(
+               scope,
+               files,
+               review_round,
+               comments_with_file,
+               review_comments,
                cli_args: cli_args
              ) do
           {:ok, review} ->
@@ -165,9 +169,9 @@ defmodule CritWeb.ApiController do
   def update(conn, %{"token" => token} = params) do
     delete_token = params["delete_token"]
     payload = Map.take(params, ["files", "comments", "review_round", "cli_args"])
-    user_id = conn.assigns[:current_user] && conn.assigns[:current_user].id
+    scope = api_scope(conn)
 
-    case Reviews.upsert_review(token, delete_token, payload, user_id: user_id) do
+    case Reviews.upsert_review(scope, token, delete_token, payload) do
       {:ok, :updated, review} ->
         url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
         json(conn, %{url: url, review_round: review.review_round, changed: true})
@@ -209,10 +213,10 @@ defmodule CritWeb.ApiController do
           not_found(conn)
 
         review ->
-          scope = params["scope"] || if(params["file"], do: "line", else: "review")
+          comment_scope = params["scope"] || if(params["file"], do: "line", else: "review")
 
           attrs =
-            if scope == "review" do
+            if comment_scope == "review" do
               %{
                 "body" => params["body"] || "web reviewer comment",
                 "scope" => "review"
@@ -223,12 +227,12 @@ defmodule CritWeb.ApiController do
                 "end_line" => params["end_line"] || 1,
                 "body" => params["body"] || "web reviewer comment",
                 "file_path" => params["file"] || hd(review.files).file_path,
-                "scope" => scope
+                "scope" => comment_scope
               }
             end
 
-          {:ok, comment} =
-            Reviews.create_comment(review, attrs, "integration-test", "WebReviewer")
+          scope = Scope.for_visitor("integration-test", params["author"] || "WebReviewer")
+          {:ok, comment} = Reviews.create_comment(scope, review, attrs)
 
           json(conn, Reviews.serialize_comment(comment))
       end
@@ -258,12 +262,13 @@ defmodule CritWeb.ApiController do
           not_found(conn)
 
         review ->
+          scope = Scope.for_visitor("integration-test", params["author"] || "WebReviewer")
+
           {:ok, reply} =
             Reviews.create_reply(
+              scope,
               comment_id,
               %{"body" => params["body"] || "web reviewer reply"},
-              "integration-test",
-              params["author"] || "WebReviewer",
               review.id
             )
 
@@ -274,6 +279,16 @@ defmodule CritWeb.ApiController do
 
   # Handled by LocalhostCors plug — this action is never reached.
   def options(conn, _params), do: send_resp(conn, 204, "")
+
+  # Build a scope from the API's bearer-auth assigns. The API pipeline does
+  # not run the browser pipeline, so we don't have a session-derived scope
+  # here — only the Bearer-token-resolved `:current_user`.
+  defp api_scope(conn) do
+    case conn.assigns[:current_user] do
+      nil -> %Scope{}
+      user -> Scope.for_user(user)
+    end
+  end
 
   # Rate-limit POST /api/reviews: 30 per minute per IP.
   # Disabled in E2E test mode to avoid test flakiness.

@@ -3,20 +3,21 @@ defmodule CritWeb.ReviewControllerTest do
 
   import Crit.ReviewsFixtures
 
+  alias Crit.Accounts.Scope
   alias Crit.Reviews
 
   describe "POST /set-name" do
     test "updates display name on existing comments", %{conn: conn} do
       review = review_fixture()
       identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor(identity, "OldName")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Old name comment"},
-          identity,
-          "OldName"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "Old name comment"
+        })
 
       conn =
         conn
@@ -33,22 +34,21 @@ defmodule CritWeb.ReviewControllerTest do
       review1 = review_fixture()
       review2 = review_fixture(%{files: [%{"path" => "b.md", "content" => "# B"}]})
       identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor(identity, "Old")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review1,
-          %{"start_line" => 1, "end_line" => 1, "body" => "R1"},
-          identity,
-          "Old"
-        )
+        Reviews.create_comment(scope, review1, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "R1"
+        })
 
       {:ok, _} =
-        Reviews.create_comment(
-          review2,
-          %{"start_line" => 1, "end_line" => 1, "body" => "R2"},
-          identity,
-          "Old"
-        )
+        Reviews.create_comment(scope, review2, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "R2"
+        })
 
       conn
       |> init_test_session(%{"identity" => identity})
@@ -62,33 +62,33 @@ defmodule CritWeb.ReviewControllerTest do
       review = review_fixture()
       my_identity = Ecto.UUID.generate()
       other_identity = Ecto.UUID.generate()
+      mine = Scope.for_visitor(my_identity, "OldMe")
+      theirs = Scope.for_visitor(other_identity, "Other")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Mine"},
-          my_identity,
-          "OldMe"
-        )
+        Reviews.create_comment(mine, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "Mine"
+        })
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 2, "end_line" => 2, "body" => "Theirs"},
-          other_identity,
-          "Other"
-        )
+        Reviews.create_comment(theirs, review, %{
+          "start_line" => 2,
+          "end_line" => 2,
+          "body" => "Theirs"
+        })
 
       conn
       |> init_test_session(%{"identity" => my_identity})
       |> post(~p"/set-name", %{"name" => "NewMe"})
 
       comments = Reviews.list_comments(review)
-      mine = Enum.find(comments, &(&1.author_identity == my_identity))
-      theirs = Enum.find(comments, &(&1.author_identity == other_identity))
+      mine_c = Enum.find(comments, &(&1.author_identity == my_identity))
+      theirs_c = Enum.find(comments, &(&1.author_identity == other_identity))
 
-      assert mine.author_display_name == "NewMe"
-      assert theirs.author_display_name == "Other"
+      assert mine_c.author_display_name == "NewMe"
+      assert theirs_c.author_display_name == "Other"
     end
 
     test "returns 422 for blank name", %{conn: conn} do
@@ -112,14 +112,14 @@ defmodule CritWeb.ReviewControllerTest do
     test "broadcasts display_name_changed, not comments_updated", %{conn: conn} do
       review = review_fixture()
       identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor(identity, "OldName")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "test"},
-          identity,
-          "OldName"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "test"
+        })
 
       Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review.token}")
 
@@ -135,22 +135,21 @@ defmodule CritWeb.ReviewControllerTest do
       review1 = review_fixture()
       review2 = review_fixture(%{files: [%{"path" => "b.md", "content" => "# B"}]})
       identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor(identity, "Old")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review1,
-          %{"start_line" => 1, "end_line" => 1, "body" => "R1"},
-          identity,
-          "Old"
-        )
+        Reviews.create_comment(scope, review1, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "R1"
+        })
 
       {:ok, _} =
-        Reviews.create_comment(
-          review2,
-          %{"start_line" => 1, "end_line" => 1, "body" => "R2"},
-          identity,
-          "Old"
-        )
+        Reviews.create_comment(scope, review2, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "R2"
+        })
 
       Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review1.token}")
       Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review2.token}")
@@ -166,14 +165,14 @@ defmodule CritWeb.ReviewControllerTest do
     test "display_name_changed payload contains identity and name", %{conn: conn} do
       review = review_fixture()
       identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor(identity, "Old")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "test"},
-          identity,
-          "Old"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "test"
+        })
 
       Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review.token}")
 

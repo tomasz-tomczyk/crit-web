@@ -2,13 +2,47 @@ defmodule Crit.ReviewsTest do
   use Crit.DataCase, async: true
 
   alias Crit.{Repo, Review, Reviews}
+  alias Crit.Accounts.Scope
 
   import Crit.ReviewsFixtures
 
-  describe "create_review/3" do
+  defp insert_user!(attrs \\ %{}) do
+    base = %{
+      provider: "test",
+      provider_uid: "uid-#{System.unique_integer([:positive])}",
+      email: "u-#{System.unique_integer([:positive])}@example.com",
+      name: "Alex"
+    }
+
+    %Crit.User{}
+    |> Crit.User.changeset(Map.merge(base, attrs))
+    |> Repo.insert!()
+  end
+
+  defp anon_scope(identity \\ nil, display_name \\ nil) do
+    Scope.for_visitor(identity || "anon-#{System.unique_integer([:positive])}", display_name)
+  end
+
+  defp default_files, do: [%{"path" => "test.md", "content" => "# Hello"}]
+
+  describe "create_review/6" do
+    test "anonymous → user_id nil" do
+      scope = anon_scope()
+      assert {:ok, review} = Reviews.create_review(scope, default_files(), 0, [])
+      assert review.user_id == nil
+    end
+
+    test "authenticated → user_id = scope.user.id" do
+      user = insert_user!()
+      scope = Scope.for_user(user)
+      assert {:ok, review} = Reviews.create_review(scope, default_files(), 0, [])
+      assert review.user_id == user.id
+    end
+
     test "creates a review with files" do
+      scope = anon_scope()
       files = [%{"path" => "test.md", "content" => "# Hello"}]
-      {:ok, review} = Reviews.create_review(files, 0, [])
+      {:ok, review} = Reviews.create_review(scope, files, 0, [])
 
       review = Reviews.get_by_token(review.token)
       assert review.review_round == 0
@@ -20,6 +54,7 @@ defmodule Crit.ReviewsTest do
     end
 
     test "creates a review with seed comments" do
+      scope = anon_scope()
       files = [%{"path" => "test.md", "content" => "# Hello"}]
 
       comments = [
@@ -27,7 +62,7 @@ defmodule Crit.ReviewsTest do
         %{"file" => "test.md", "start_line" => 3, "end_line" => 3, "body" => "Second comment"}
       ]
 
-      {:ok, review} = Reviews.create_review(files, 1, comments)
+      {:ok, review} = Reviews.create_review(scope, files, 1, comments)
 
       loaded = Reviews.list_comments(review)
       assert length(loaded) == 2
@@ -35,11 +70,13 @@ defmodule Crit.ReviewsTest do
     end
 
     test "returns error for file with invalid content (missing content)" do
+      scope = anon_scope()
       files = [%{"path" => "a.go"}]
-      assert {:error, %Ecto.Changeset{}} = Reviews.create_review(files, 0, [])
+      assert {:error, %Ecto.Changeset{}} = Reviews.create_review(scope, files, 0, [])
     end
 
     test "returns error when total size exceeds 10 MB" do
+      scope = anon_scope()
       big_content = String.duplicate("x", 5_500_000)
 
       files = [
@@ -47,10 +84,12 @@ defmodule Crit.ReviewsTest do
         %{"path" => "b.go", "content" => big_content}
       ]
 
-      assert {:error, :total_size_exceeded} = Reviews.create_review(files, 0, [])
+      assert {:error, :total_size_exceeded} = Reviews.create_review(scope, files, 0, [])
     end
 
     test "creates review with multiple files and per-file comments" do
+      scope = anon_scope()
+
       files = [
         %{"path" => "src/main.go", "content" => "package main"},
         %{"path" => "src/util.go", "content" => "package util"}
@@ -61,7 +100,7 @@ defmodule Crit.ReviewsTest do
         %{"file" => "src/util.go", "start_line" => 1, "end_line" => 1, "body" => "nice"}
       ]
 
-      assert {:ok, review} = Reviews.create_review(files, 1, comments)
+      assert {:ok, review} = Reviews.create_review(scope, files, 1, comments)
       assert review.token
       assert review.delete_token
 
@@ -83,18 +122,21 @@ defmodule Crit.ReviewsTest do
     end
 
     test "files are ordered by position" do
+      scope = anon_scope()
+
       files = [
         %{"path" => "z.go", "content" => "z"},
         %{"path" => "a.go", "content" => "a"}
       ]
 
-      {:ok, review} = Reviews.create_review(files, 0, [])
+      {:ok, review} = Reviews.create_review(scope, files, 0, [])
       review = Reviews.get_by_token(review.token)
 
       assert Enum.map(review.files, & &1.file_path) == ["z.go", "a.go"]
     end
 
     test "create_review imports comments with resolved and replies" do
+      scope = anon_scope()
       files = [%{"path" => "f.md", "content" => "x"}]
 
       comments = [
@@ -111,7 +153,7 @@ defmodule Crit.ReviewsTest do
         }
       ]
 
-      {:ok, review} = Reviews.create_review(files, 0, comments)
+      {:ok, review} = Reviews.create_review(scope, files, 0, comments)
       review = Reviews.get_by_token(review.token)
       comment = hd(review.comments)
 
@@ -121,6 +163,7 @@ defmodule Crit.ReviewsTest do
     end
 
     test "create_review stores external_id on comments" do
+      scope = anon_scope()
       files = [%{"path" => "plan.md", "content" => "# Plan"}]
 
       comments = [
@@ -133,15 +176,18 @@ defmodule Crit.ReviewsTest do
         }
       ]
 
-      {:ok, review} = Reviews.create_review(files, 1, comments, [])
+      {:ok, review} = Reviews.create_review(scope, files, 1, comments, [])
       review = Repo.preload(review, :comments)
 
       assert hd(review.comments).external_id == "local-c1"
     end
 
     test "serialize_comment includes external_id" do
+      scope = anon_scope()
+
       {:ok, review} =
         Reviews.create_review(
+          scope,
           [%{"path" => "plan.md", "content" => "# Plan"}],
           1,
           [
@@ -163,17 +209,27 @@ defmodule Crit.ReviewsTest do
     end
 
     test "comments referencing non-existent files are still inserted" do
+      scope = anon_scope()
       files = [%{"path" => "a.go", "content" => "a"}]
 
       comments = [
         %{"file" => "nonexistent.go", "start_line" => 1, "end_line" => 1, "body" => "orphan"}
       ]
 
-      {:ok, review} = Reviews.create_review(files, 0, comments)
+      {:ok, review} = Reviews.create_review(scope, files, 0, comments)
       review = Reviews.get_by_token(review.token)
 
       assert length(review.comments) == 1
       assert hd(review.comments).file_path == "nonexistent.go"
+    end
+
+    test "cli_args still threads through opts" do
+      scope = anon_scope()
+
+      assert {:ok, review} =
+               Reviews.create_review(scope, default_files(), 1, [], [], cli_args: ["status"])
+
+      assert review.cli_args == ["status"]
     end
   end
 
@@ -194,13 +250,15 @@ defmodule Crit.ReviewsTest do
     end
 
     test "preloads files in position order" do
+      scope = anon_scope()
+
       files = [
         %{"path" => "c.go", "content" => "c"},
         %{"path" => "a.go", "content" => "a"},
         %{"path" => "b.go", "content" => "b"}
       ]
 
-      {:ok, review} = Reviews.create_review(files, 0, [])
+      {:ok, review} = Reviews.create_review(scope, files, 0, [])
       found = Reviews.get_by_token(review.token)
 
       assert Ecto.assoc_loaded?(found.files)
@@ -221,137 +279,149 @@ defmodule Crit.ReviewsTest do
     end
   end
 
-  describe "create_comment/4" do
-    test "creates a comment with identity" do
+  describe "create_comment/4 (scope)" do
+    test "anonymous → user_id nil, author_identity = scope.identity" do
       review = review_fixture()
-      identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor("ident-anon", "Pat")
 
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 2, "body" => "Nice!"},
-          identity
-        )
+      assert {:ok, comment} =
+               Reviews.create_comment(scope, review, %{
+                 "start_line" => 1,
+                 "end_line" => 2,
+                 "body" => "Nice!"
+               })
 
       assert comment.body == "Nice!"
-      assert comment.start_line == 1
-      assert comment.end_line == 2
-      assert comment.author_identity == identity
-      assert comment.author_display_name == nil
+      assert comment.user_id == nil
+      assert comment.author_identity == "ident-anon"
+      assert comment.author_display_name == "Pat"
     end
 
-    test "creates a comment with display_name" do
+    test "authenticated → user_id = scope.user.id, author_identity nil" do
       review = review_fixture()
-      identity = Ecto.UUID.generate()
+      user = insert_user!()
+      scope = Scope.for_user(user)
 
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Good"},
-          identity,
-          "Alice"
-        )
+      assert {:ok, comment} =
+               Reviews.create_comment(scope, review, %{
+                 "start_line" => 1,
+                 "end_line" => 1,
+                 "body" => "hi"
+               })
 
-      assert comment.author_display_name == "Alice"
+      assert comment.user_id == user.id
+      assert comment.author_identity == nil
     end
-  end
 
-  describe "create_comment/5 with file_path" do
-    test "creates comment with file_path" do
+    test "stores file_path when provided in opts" do
+      scope = anon_scope("identity1")
+
       {:ok, review} =
-        Reviews.create_review(
-          [%{"path" => "a.go", "content" => "a"}],
-          0,
-          []
-        )
+        Reviews.create_review(scope, [%{"path" => "a.go", "content" => "a"}], 0, [])
 
       {:ok, comment} =
         Reviews.create_comment(
+          scope,
           review,
           %{"start_line" => 1, "end_line" => 1, "body" => "hi"},
-          "identity1",
-          nil,
-          "a.go"
+          file_path: "a.go"
         )
 
       assert comment.file_path == "a.go"
     end
 
-    test "comment without file_path has nil file_path" do
+    test "comment without file_path opt has nil file_path" do
       review = review_fixture()
+      scope = anon_scope("identity1")
 
       {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "hi"},
-          "identity1"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "hi"
+        })
 
       assert comment.file_path == nil
     end
   end
 
-  describe "update_comment/3" do
-    test "updates when identity matches" do
+  describe "update_comment/3 (scope) — owner check" do
+    test "anonymous author can update via matching identity" do
       review = review_fixture()
-      identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor("ident-anon", "Pat")
 
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Original"},
-          identity
-        )
+      {:ok, c} =
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "Original"
+        })
 
-      {:ok, updated} = Reviews.update_comment(comment.id, "Updated body", identity)
-
+      assert {:ok, updated} = Reviews.update_comment(scope, c.id, "Updated body")
       assert updated.body == "Updated body"
     end
 
-    test "rejects update when identity does not match" do
+    test "different identity cannot update anonymous comment" do
       review = review_fixture()
-      author_identity = Ecto.UUID.generate()
+      a = Scope.for_visitor("a", "A")
+      b = Scope.for_visitor("b", "B")
 
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Original"},
-          author_identity
-        )
+      {:ok, c} =
+        Reviews.create_comment(a, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "Original"
+        })
 
-      assert {:error, :unauthorized} = Reviews.update_comment(comment.id, "Hacked", "other-id")
+      assert {:error, :unauthorized} = Reviews.update_comment(b, c.id, "Hacked")
+    end
+
+    test "authenticated author can update own comment" do
+      review = review_fixture()
+      user = insert_user!()
+      scope = Scope.for_user(user)
+
+      {:ok, c} =
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "Original"
+        })
+
+      assert {:ok, updated} = Reviews.update_comment(scope, c.id, "Updated body")
+      assert updated.body == "Updated body"
     end
   end
 
-  describe "delete_comment/2" do
+  describe "delete_comment/2 (scope)" do
     test "deletes when identity matches" do
       review = review_fixture()
-      identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor("ident-anon")
 
       {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "To delete"},
-          identity
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "To delete"
+        })
 
-      {:ok, _deleted} = Reviews.delete_comment(comment.id, identity)
-
+      {:ok, _deleted} = Reviews.delete_comment(scope, comment.id)
       assert Reviews.list_comments(review) == []
     end
 
     test "rejects deletion when identity does not match" do
       review = review_fixture()
-      author_identity = Ecto.UUID.generate()
+      a = Scope.for_visitor("ident-a")
+      b = Scope.for_visitor("ident-b")
 
       {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Protected"},
-          author_identity
-        )
+        Reviews.create_comment(a, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "Protected"
+        })
 
-      assert {:error, :unauthorized} = Reviews.delete_comment(comment.id, "other-id")
+      assert {:error, :unauthorized} = Reviews.delete_comment(b, comment.id)
     end
   end
 
@@ -436,8 +506,11 @@ defmodule Crit.ReviewsTest do
     end
 
     test "returns correct counts for multi-file review with comments" do
+      scope = anon_scope()
+
       {:ok, review} =
         Reviews.create_review(
+          scope,
           [
             %{"path" => "a.go", "content" => "package a"},
             %{"path" => "b.go", "content" => "package b"}
@@ -459,28 +532,45 @@ defmodule Crit.ReviewsTest do
     end
   end
 
-  describe "update_display_name/2" do
-    test "updates display name on all comments by the given identity" do
+  describe "list_user_reviews_with_counts/1 (scope)" do
+    test "returns empty list for anonymous scope" do
+      _ = review_fixture()
+      assert Reviews.list_user_reviews_with_counts(anon_scope()) == []
+    end
+
+    test "returns only the user's reviews for authenticated scope" do
+      owner = insert_user!()
+      other = insert_user!()
+      _user_review = review_fixture(%{user_id: owner.id})
+      _other_review = review_fixture(%{user_id: other.id})
+      _anon_review = review_fixture()
+
+      [result] = Reviews.list_user_reviews_with_counts(Scope.for_user(owner))
+      assert result.user_id == owner.id
+    end
+  end
+
+  describe "update_display_name/2 (scope)" do
+    test "updates display name on all comments by the scope's identity" do
       review = review_fixture()
       identity = Ecto.UUID.generate()
+      scope = Scope.for_visitor(identity, "OldName")
 
       {:ok, _c1} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "First"},
-          identity,
-          "OldName"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "First"
+        })
 
       {:ok, _c2} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 2, "end_line" => 2, "body" => "Second"},
-          identity,
-          "OldName"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 2,
+          "end_line" => 2,
+          "body" => "Second"
+        })
 
-      {2, _} = Reviews.update_display_name(identity, "NewName")
+      {2, _} = Reviews.update_display_name(scope, "NewName")
 
       comments = Reviews.list_comments(review)
       assert Enum.all?(comments, &(&1.author_display_name == "NewName"))
@@ -488,187 +578,226 @@ defmodule Crit.ReviewsTest do
 
     test "does not affect comments by other identities" do
       review = review_fixture()
-      identity_a = Ecto.UUID.generate()
-      identity_b = Ecto.UUID.generate()
+      scope_a = Scope.for_visitor(Ecto.UUID.generate(), "Alice")
+      scope_b = Scope.for_visitor(Ecto.UUID.generate(), "Bob")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "A's comment"},
-          identity_a,
-          "Alice"
-        )
+        Reviews.create_comment(scope_a, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "A"
+        })
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 2, "end_line" => 2, "body" => "B's comment"},
-          identity_b,
-          "Bob"
-        )
+        Reviews.create_comment(scope_b, review, %{
+          "start_line" => 2,
+          "end_line" => 2,
+          "body" => "B"
+        })
 
-      Reviews.update_display_name(identity_a, "Alicia")
+      Reviews.update_display_name(scope_a, "Alicia")
 
       comments = Reviews.list_comments(review)
-      a_comment = Enum.find(comments, &(&1.author_identity == identity_a))
-      b_comment = Enum.find(comments, &(&1.author_identity == identity_b))
+      a = Enum.find(comments, &(&1.author_identity == scope_a.identity))
+      b = Enum.find(comments, &(&1.author_identity == scope_b.identity))
 
-      assert a_comment.author_display_name == "Alicia"
-      assert b_comment.author_display_name == "Bob"
+      assert a.author_display_name == "Alicia"
+      assert b.author_display_name == "Bob"
     end
 
     test "updates comments across multiple reviews" do
       review1 = review_fixture()
-
-      review2 =
-        review_fixture(%{files: [%{"path" => "other.md", "content" => "# Other"}]})
-
-      identity = Ecto.UUID.generate()
+      review2 = review_fixture(%{files: [%{"path" => "other.md", "content" => "# Other"}]})
+      scope = Scope.for_visitor(Ecto.UUID.generate(), "Old")
 
       {:ok, _} =
-        Reviews.create_comment(
-          review1,
-          %{"start_line" => 1, "end_line" => 1, "body" => "On review 1"},
-          identity,
-          "Old"
-        )
+        Reviews.create_comment(scope, review1, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "On review 1"
+        })
 
       {:ok, _} =
-        Reviews.create_comment(
-          review2,
-          %{"start_line" => 1, "end_line" => 1, "body" => "On review 2"},
-          identity,
-          "Old"
-        )
+        Reviews.create_comment(scope, review2, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "On review 2"
+        })
 
-      {2, _} = Reviews.update_display_name(identity, "New")
+      {2, _} = Reviews.update_display_name(scope, "New")
 
       assert hd(Reviews.list_comments(review1)).author_display_name == "New"
       assert hd(Reviews.list_comments(review2)).author_display_name == "New"
     end
 
     test "returns {0, nil} when identity has no comments" do
-      assert {0, _} = Reviews.update_display_name(Ecto.UUID.generate(), "Nobody")
+      assert {0, _} = Reviews.update_display_name(anon_scope(), "Nobody")
+    end
+
+    test "no-ops for authenticated scopes" do
+      user = insert_user!()
+      scope = Scope.for_user(user)
+      assert :ok = Reviews.update_display_name(scope, "Anything")
     end
   end
 
-  describe "reviews_for_identity/1" do
-    test "returns review id and token pairs" do
+  describe "reviews_for_identity/1 (scope)" do
+    test "returns review id and token pairs for the scope's identity" do
       review = review_fixture()
-      identity = Ecto.UUID.generate()
+      scope = anon_scope()
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "hi"},
-          identity
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "hi"
+        })
 
-      assert [{review.id, review.token}] == Reviews.reviews_for_identity(identity)
+      assert [{review.id, review.token}] == Reviews.reviews_for_identity(scope)
     end
 
     test "returns distinct reviews even with multiple comments" do
       review = review_fixture()
-      identity = Ecto.UUID.generate()
+      scope = anon_scope()
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "one"},
-          identity
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "one"
+        })
 
       {:ok, _} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 2, "end_line" => 2, "body" => "two"},
-          identity
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 2,
+          "end_line" => 2,
+          "body" => "two"
+        })
 
-      assert [{review.id, review.token}] == Reviews.reviews_for_identity(identity)
+      assert [{review.id, review.token}] == Reviews.reviews_for_identity(scope)
     end
 
     test "returns empty list for identity with no comments" do
-      assert [] == Reviews.reviews_for_identity(Ecto.UUID.generate())
+      assert [] == Reviews.reviews_for_identity(anon_scope())
+    end
+
+    test "returns empty list for authenticated scope" do
+      assert [] == Reviews.reviews_for_identity(Scope.for_user(insert_user!()))
     end
   end
 
-  describe "resolve_comment/3" do
-    test "resolves an existing comment" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+  describe "resolve_comment/4 (scope) — gating" do
+    setup do
+      owner = insert_user!()
+      owner_scope = Scope.for_user(owner)
+      anon_author_scope = Scope.for_visitor("anon-1", "Anon")
+      {:ok, review} = Reviews.create_review(owner_scope, default_files(), 0, [])
 
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
-          "id1"
-        )
+      {:ok, anon_comment} =
+        Reviews.create_comment(anon_author_scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "anon"
+        })
 
-      assert {:ok, updated} = Reviews.resolve_comment(comment.id, true, review.id)
-      assert updated.resolved == true
+      {:ok, auth_comment} =
+        Reviews.create_comment(owner_scope, review, %{
+          "start_line" => 2,
+          "end_line" => 2,
+          "body" => "auth"
+        })
+
+      %{owner: owner, review: review, anon_comment: anon_comment, auth_comment: auth_comment}
     end
 
-    test "unresolves a resolved comment" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+    test "review owner can resolve any comment", ctx do
+      scope = Scope.for_user(ctx.owner)
 
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
-          "id1"
-        )
+      assert {:ok, _} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, true, ctx.review.id)
 
-      {:ok, _} = Reviews.resolve_comment(comment.id, true, review.id)
-      assert {:ok, updated} = Reviews.resolve_comment(comment.id, false, review.id)
+      assert {:ok, _} =
+               Reviews.resolve_comment(scope, ctx.auth_comment.id, true, ctx.review.id)
+    end
+
+    test "anonymous author can resolve own anonymous comment", ctx do
+      scope = Scope.for_visitor("anon-1")
+
+      assert {:ok, _} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, true, ctx.review.id)
+    end
+
+    test "different anonymous viewer cannot resolve", ctx do
+      scope = Scope.for_visitor("someone-else")
+
+      assert {:error, :unauthorized} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, true, ctx.review.id)
+    end
+
+    test "different authenticated user cannot resolve other people's comments", ctx do
+      intruder = insert_user!()
+      scope = Scope.for_user(intruder)
+
+      assert {:error, :unauthorized} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, true, ctx.review.id)
+    end
+
+    test "rejects resolving a comment from a different review", ctx do
+      scope = Scope.for_user(ctx.owner)
+      other_review_id = Ecto.UUID.generate()
+
+      assert {:error, :not_found} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, true, other_review_id)
+    end
+
+    test "rejects resolving a reply", %{review: review, owner: owner} do
+      scope = Scope.for_user(owner)
+      anon_scope = Scope.for_visitor("reply-anon")
+
+      {:ok, parent} =
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 5,
+          "end_line" => 5,
+          "body" => "parent"
+        })
+
+      {:ok, reply} =
+        Reviews.create_reply(anon_scope, parent.id, %{"body" => "done"}, review.id)
+
+      assert {:error, :not_found} = Reviews.resolve_comment(scope, reply.id, true, review.id)
+    end
+
+    test "unresolves a resolved comment", ctx do
+      scope = Scope.for_user(ctx.owner)
+      {:ok, _} = Reviews.resolve_comment(scope, ctx.anon_comment.id, true, ctx.review.id)
+
+      assert {:ok, updated} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, false, ctx.review.id)
+
       assert updated.resolved == false
     end
-
-    test "rejects resolving a comment from a different review" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
-
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
-          "id1"
-        )
-
-      other_review_id = Ecto.UUID.generate()
-      assert {:error, :not_found} = Reviews.resolve_comment(comment.id, true, other_review_id)
-    end
-
-    test "rejects resolving a reply" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
-
-      {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
-          "id1"
-        )
-
-      {:ok, reply} = Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", nil, review.id)
-      assert {:error, :not_found} = Reviews.resolve_comment(reply.id, true, review.id)
-    end
   end
 
-  describe "reply CRUD" do
+  describe "reply CRUD (scope)" do
     setup do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+      scope = anon_scope("anon-1")
+      {:ok, review} = Reviews.create_review(scope, default_files(), 0, [])
 
       {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "fix"},
-          "id1"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "fix"
+        })
 
-      %{review: review, comment: comment}
+      %{review: review, comment: comment, author_scope: scope}
     end
 
-    test "create_reply/5 adds a reply", %{review: review, comment: comment} do
+    test "create_reply/4 adds a reply", %{review: review, comment: comment} do
+      scope = Scope.for_visitor("id2", "Bob")
+
       assert {:ok, reply} =
-               Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+               Reviews.create_reply(scope, comment.id, %{"body" => "done"}, review.id)
 
       assert reply.body == "done"
       assert reply.author_identity == "id2"
@@ -676,70 +805,74 @@ defmodule Crit.ReviewsTest do
       assert reply.parent_id == comment.id
     end
 
-    test "create_reply/5 rejects reply to comment from different review", %{comment: comment} do
+    test "create_reply/4 rejects reply to comment from different review", %{comment: comment} do
+      scope = Scope.for_visitor("id2", "Bob")
       other_review_id = Ecto.UUID.generate()
 
       assert {:error, :not_found} =
-               Reviews.create_reply(
-                 comment.id,
-                 %{"body" => "done"},
-                 "id2",
-                 "Bob",
-                 other_review_id
-               )
+               Reviews.create_reply(scope, comment.id, %{"body" => "done"}, other_review_id)
     end
 
-    test "create_reply/5 rejects replying to a reply", %{review: review, comment: comment} do
+    test "create_reply/4 rejects replying to a reply", %{review: review, comment: comment} do
+      scope = Scope.for_visitor("id2", "Bob")
+
       {:ok, reply} =
-        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+        Reviews.create_reply(scope, comment.id, %{"body" => "done"}, review.id)
+
+      other = Scope.for_visitor("id3")
 
       assert {:error, :not_found} =
-               Reviews.create_reply(reply.id, %{"body" => "nested"}, "id3", nil, review.id)
+               Reviews.create_reply(other, reply.id, %{"body" => "nested"}, review.id)
     end
 
     test "update_reply/3 updates own reply", %{review: review, comment: comment} do
-      {:ok, reply} =
-        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+      scope = Scope.for_visitor("id2", "Bob")
+      {:ok, reply} = Reviews.create_reply(scope, comment.id, %{"body" => "done"}, review.id)
 
-      assert {:ok, updated} = Reviews.update_reply(reply.id, "actually not done", "id2")
+      assert {:ok, updated} = Reviews.update_reply(scope, reply.id, "actually not done")
       assert updated.body == "actually not done"
     end
 
     test "update_reply/3 rejects other's reply", %{review: review, comment: comment} do
-      {:ok, reply} =
-        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+      scope = Scope.for_visitor("id2", "Bob")
+      {:ok, reply} = Reviews.create_reply(scope, comment.id, %{"body" => "done"}, review.id)
 
-      assert {:error, :unauthorized} = Reviews.update_reply(reply.id, "hacked", "id3")
+      intruder = Scope.for_visitor("id3")
+      assert {:error, :unauthorized} = Reviews.update_reply(intruder, reply.id, "hacked")
     end
 
     test "delete_reply/2 deletes own reply", %{review: review, comment: comment} do
-      {:ok, reply} =
-        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+      scope = Scope.for_visitor("id2", "Bob")
+      {:ok, reply} = Reviews.create_reply(scope, comment.id, %{"body" => "done"}, review.id)
 
-      assert {:ok, _} = Reviews.delete_reply(reply.id, "id2")
+      assert {:ok, _} = Reviews.delete_reply(scope, reply.id)
     end
 
     test "delete_reply/2 rejects other's reply", %{review: review, comment: comment} do
-      {:ok, reply} =
-        Reviews.create_reply(comment.id, %{"body" => "done"}, "id2", "Bob", review.id)
+      scope = Scope.for_visitor("id2", "Bob")
+      {:ok, reply} = Reviews.create_reply(scope, comment.id, %{"body" => "done"}, review.id)
 
-      assert {:error, :unauthorized} = Reviews.delete_reply(reply.id, "id3")
+      intruder = Scope.for_visitor("id3")
+      assert {:error, :unauthorized} = Reviews.delete_reply(intruder, reply.id)
     end
   end
 
   describe "serialize_reply/1" do
     test "returns expected shape" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+      scope = anon_scope("id1")
+      {:ok, review} = Reviews.create_review(scope, default_files(), 0, [])
 
       {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "parent"},
-          "id1"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "parent"
+        })
+
+      reply_scope = Scope.for_visitor("id2", "Bob")
 
       {:ok, reply} =
-        Reviews.create_reply(comment.id, %{"body" => "test reply"}, "id2", "Bob", review.id)
+        Reviews.create_reply(reply_scope, comment.id, %{"body" => "test reply"}, review.id)
 
       serialized = Reviews.serialize_reply(reply)
 
@@ -763,28 +896,32 @@ defmodule Crit.ReviewsTest do
     end
 
     test "formats inserted_at as ISO8601" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "x"}], 0, [])
+      scope = anon_scope("id1")
+      {:ok, review} = Reviews.create_review(scope, default_files(), 0, [])
 
       {:ok, comment} =
-        Reviews.create_comment(
-          review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "parent"},
-          "id1"
-        )
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 1,
+          "end_line" => 1,
+          "body" => "parent"
+        })
+
+      reply_scope = Scope.for_visitor("id2")
 
       {:ok, reply} =
-        Reviews.create_reply(comment.id, %{"body" => "reply"}, "id2", nil, review.id)
+        Reviews.create_reply(reply_scope, comment.id, %{"body" => "reply"}, review.id)
 
       serialized = Reviews.serialize_reply(reply)
-
       assert {:ok, _dt, _offset} = DateTime.from_iso8601(serialized.created_at)
     end
   end
 
   describe "review_round_snapshot" do
     test "create_round_snapshot/4 stores file content for a round" do
+      scope = anon_scope()
+
       {:ok, review} =
-        Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
+        Reviews.create_review(scope, [%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
 
       {:ok, snap} = Reviews.create_round_snapshot(review.id, 1, "plan.md", "v1 content")
 
@@ -795,8 +932,10 @@ defmodule Crit.ReviewsTest do
     end
 
     test "get_round_snapshots/2 returns a file_path => content map for a round" do
+      scope = anon_scope()
+
       {:ok, review} =
-        Reviews.create_review([%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
+        Reviews.create_review(scope, [%{"path" => "plan.md", "content" => "v1"}], 1, [], [])
 
       Reviews.create_round_snapshot(review.id, 1, "plan.md", "round 1 content")
       Reviews.create_round_snapshot(review.id, 1, "other.md", "other round 1")
@@ -808,13 +947,17 @@ defmodule Crit.ReviewsTest do
     end
   end
 
-  describe "upsert_review/3" do
+  describe "upsert_review/4 (scope)" do
     test "rejects upsert with oversize cli_args" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
       oversize = for i <- 1..65, do: "arg-#{i}"
 
       assert {:error, %Ecto.Changeset{} = cs} =
-               Reviews.upsert_review(review.token, review.delete_token, %{
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
                  "files" => [%{"path" => "f.md", "content" => "v2"}],
                  "comments" => [],
                  "cli_args" => oversize
@@ -824,11 +967,15 @@ defmodule Crit.ReviewsTest do
     end
 
     test "rejects upsert with cli_args containing oversize entry (no content change)" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "same"}], 1, [], [])
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "same"}], 1, [], [])
+
       huge = String.duplicate("x", 257)
 
       assert {:error, %Ecto.Changeset{} = cs} =
-               Reviews.upsert_review(review.token, review.delete_token, %{
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
                  "files" => [%{"path" => "f.md", "content" => "same"}],
                  "comments" => [],
                  "cli_args" => [huge]
@@ -838,10 +985,13 @@ defmodule Crit.ReviewsTest do
     end
 
     test "returns {:error, :unauthorized} when delete_token is wrong" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
 
       result =
-        Reviews.upsert_review(review.token, "wrong-token", %{
+        Reviews.upsert_review(scope, review.token, "wrong-token", %{
           "files" => [%{"path" => "f.md", "content" => "v2"}],
           "comments" => [],
           "review_round" => 1
@@ -851,10 +1001,13 @@ defmodule Crit.ReviewsTest do
     end
 
     test "returns {:ok, :no_changes, review} when content is identical" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "same"}], 1, [], [])
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "same"}], 1, [], [])
 
       {:ok, :no_changes, returned} =
-        Reviews.upsert_review(review.token, review.delete_token, %{
+        Reviews.upsert_review(scope, review.token, review.delete_token, %{
           "files" => [%{"path" => "f.md", "content" => "same"}],
           "comments" => [],
           "review_round" => 1
@@ -865,10 +1018,13 @@ defmodule Crit.ReviewsTest do
     end
 
     test "increments review_round when file content changes" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
 
       {:ok, :updated, updated} =
-        Reviews.upsert_review(review.token, review.delete_token, %{
+        Reviews.upsert_review(scope, review.token, review.delete_token, %{
           "files" => [%{"path" => "f.md", "content" => "v2"}],
           "comments" => [],
           "review_round" => 1
@@ -878,10 +1034,14 @@ defmodule Crit.ReviewsTest do
     end
 
     test "preserves initial round content after upsert (no data deleted)" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "old"}], 1, [], [])
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "old"}], 1, [], [])
+
       initial_round = review.review_round
 
-      Reviews.upsert_review(review.token, review.delete_token, %{
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
         "files" => [%{"path" => "f.md", "content" => "new"}],
         "comments" => [],
         "review_round" => 1
@@ -892,9 +1052,12 @@ defmodule Crit.ReviewsTest do
     end
 
     test "get_by_token returns latest round file content after upsert" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
 
-      Reviews.upsert_review(review.token, review.delete_token, %{
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
         "files" => [%{"path" => "f.md", "content" => "v2 updated"}],
         "comments" => [],
         "review_round" => 1
@@ -905,9 +1068,12 @@ defmodule Crit.ReviewsTest do
     end
 
     test "replaces comments and preserves external_id and resolved state" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
 
-      Reviews.upsert_review(review.token, review.delete_token, %{
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
         "files" => [%{"path" => "f.md", "content" => "v2"}],
         "comments" => [
           %{
@@ -929,9 +1095,12 @@ defmodule Crit.ReviewsTest do
     end
 
     test "preserves author_display_name from payload" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
 
-      Reviews.upsert_review(review.token, review.delete_token, %{
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
         "files" => [%{"path" => "f.md", "content" => "v2"}],
         "comments" => [
           %{
@@ -951,9 +1120,12 @@ defmodule Crit.ReviewsTest do
     end
 
     test "author_display_name is nil when not provided (not defaulted to 'crit')" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
 
-      Reviews.upsert_review(review.token, review.delete_token, %{
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
         "files" => [%{"path" => "f.md", "content" => "v2"}],
         "comments" => [
           %{
@@ -972,9 +1144,12 @@ defmodule Crit.ReviewsTest do
     end
 
     test "falls back to author field when author_display_name is not provided" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
 
-      Reviews.upsert_review(review.token, review.delete_token, %{
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
         "files" => [%{"path" => "f.md", "content" => "v2"}],
         "comments" => [
           %{
@@ -994,9 +1169,12 @@ defmodule Crit.ReviewsTest do
     end
 
     test "preserves author_display_name on replies during upsert" do
-      {:ok, review} = Reviews.create_review([%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+      scope = anon_scope()
 
-      Reviews.upsert_review(review.token, review.delete_token, %{
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
         "files" => [%{"path" => "f.md", "content" => "v2"}],
         "comments" => [
           %{
@@ -1021,16 +1199,40 @@ defmodule Crit.ReviewsTest do
     end
   end
 
-  describe "delete_review/1" do
-    test "deletes a review by id" do
+  describe "delete_review/2 (scope)" do
+    test "anonymous → :unauthorized" do
       review = review_fixture()
+      assert {:error, :unauthorized} = Reviews.delete_review(anon_scope(), review.id)
+    end
 
-      assert :ok = Reviews.delete_review(review.id)
+    test "authenticated owner → ok" do
+      user = insert_user!()
+      scope = Scope.for_user(user)
+      {:ok, review} = Reviews.create_review(scope, default_files(), 0, [])
+      assert :ok = Reviews.delete_review(scope, review.id)
       assert Repo.get(Review, review.id) == nil
     end
 
+    test "different authenticated user → :unauthorized" do
+      owner = insert_user!()
+      intruder = insert_user!()
+      {:ok, review} = Reviews.create_review(Scope.for_user(owner), default_files(), 0, [])
+      assert {:error, :unauthorized} = Reviews.delete_review(Scope.for_user(intruder), review.id)
+    end
+
+    test "owner of an unowned (legacy) review → ok" do
+      anon_owner = anon_scope()
+      {:ok, review} = Reviews.create_review(anon_owner, default_files(), 0, [])
+      auth_user = insert_user!()
+      # Legacy review (user_id == nil) — any authed user can delete.
+      assert :ok = Reviews.delete_review(Scope.for_user(auth_user), review.id)
+    end
+
     test "returns error for unknown id" do
-      assert {:error, :not_found} = Reviews.delete_review(Ecto.UUID.generate())
+      user = insert_user!()
+
+      assert {:error, :not_found} =
+               Reviews.delete_review(Scope.for_user(user), Ecto.UUID.generate())
     end
 
     test "with owner_id deletes when owner matches" do

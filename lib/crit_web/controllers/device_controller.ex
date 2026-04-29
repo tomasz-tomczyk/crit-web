@@ -37,7 +37,7 @@ defmodule CritWeb.DeviceController do
   @doc "GET /auth/cli/authorize — shows consent screen with user identity."
   def authorize(conn, _params) do
     device_code_id = get_session(conn, :device_code_id)
-    current_user = conn.assigns[:current_user]
+    current_user = conn.assigns.current_scope.user
 
     if device_code_id && current_user do
       render(conn, :authorize, current_user: current_user, host: conn.host)
@@ -49,7 +49,7 @@ defmodule CritWeb.DeviceController do
   @doc "POST /auth/cli/authorize — completes device authorization."
   def confirm_authorize(conn, _params) do
     device_code_id = get_session(conn, :device_code_id)
-    current_user = conn.assigns[:current_user]
+    current_user = conn.assigns.current_scope.user
 
     if device_code_id && current_user do
       case DeviceCodes.authorize_device_code(device_code_id, current_user) do

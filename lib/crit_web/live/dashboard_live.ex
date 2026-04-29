@@ -8,9 +8,7 @@ defmodule CritWeb.DashboardLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    current_user = socket.assigns.current_user
-
-    reviews = Reviews.list_user_reviews_with_counts(current_user.id)
+    reviews = Reviews.list_user_reviews_with_counts(socket.assigns.current_scope)
 
     socket =
       socket

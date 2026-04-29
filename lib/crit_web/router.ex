@@ -1,6 +1,8 @@
 defmodule CritWeb.Router do
   use CritWeb, :router
 
+  import CritWeb.UserAuth, only: [fetch_current_scope_for_user: 2]
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,9 +10,8 @@ defmodule CritWeb.Router do
     plug :put_root_layout, html: {CritWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug CritWeb.Plugs.Identity
     plug CritWeb.Plugs.SecurityHeaders
-    plug CritWeb.Plugs.Auth
+    plug :fetch_current_scope_for_user
   end
 
   pipeline :api do
@@ -78,20 +79,20 @@ defmodule CritWeb.Router do
     pipe_through [:browser, :noindex]
 
     live_session :review,
-      on_mount: [{CritWeb.Live.Hooks, :require_review_auth}],
+      on_mount: [{CritWeb.UserAuth, :require_review_scope}],
       session: {CritWeb.ReviewLive, :session_opts, []} do
       live "/r/:token", ReviewLive, :show
     end
 
     live_session :user,
-      on_mount: [{CritWeb.Live.Hooks, :require_user}],
+      on_mount: [{CritWeb.UserAuth, :require_authenticated_user}],
       session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
       live "/dashboard", DashboardLive, :index
       live "/settings", SettingsLive, :index
     end
 
     live_session :admin,
-      on_mount: [{CritWeb.Live.Hooks, :require_selfhosted_auth}],
+      on_mount: [{CritWeb.UserAuth, :require_selfhosted_auth}],
       session: {CritWeb.Live.SessionHelper, :admin_session_opts, []} do
       live "/overview", OverviewLive, :index
     end

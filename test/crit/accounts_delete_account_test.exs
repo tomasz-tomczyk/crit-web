@@ -31,11 +31,11 @@ defmodule Crit.AccountsDeleteAccountTest do
 
       {:ok, review} =
         Crit.Reviews.create_review(
+          Crit.Accounts.Scope.for_user(user),
           [%{"path" => "test.md", "content" => "# Test"}],
           0,
           [],
-          [],
-          user_id: user.id
+          []
         )
 
       assert :ok = Accounts.delete_account(user)

@@ -106,10 +106,9 @@ defmodule CritWeb.DashboardLiveTest do
       # Add a comment to the review
       {:ok, _comment} =
         Crit.Reviews.create_comment(
+          Crit.Accounts.Scope.for_visitor(Ecto.UUID.generate()),
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Test comment"},
-          Ecto.UUID.generate(),
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Test comment"}
         )
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
@@ -132,18 +131,16 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _} =
         Crit.Reviews.create_comment(
+          Crit.Accounts.Scope.for_visitor(Ecto.UUID.generate()),
           review,
-          %{"start_line" => 1, "end_line" => 1, "body" => "Comment 1"},
-          Ecto.UUID.generate(),
-          nil
+          %{"start_line" => 1, "end_line" => 1, "body" => "Comment 1"}
         )
 
       {:ok, _} =
         Crit.Reviews.create_comment(
+          Crit.Accounts.Scope.for_visitor(Ecto.UUID.generate()),
           review,
-          %{"start_line" => 2, "end_line" => 2, "body" => "Comment 2"},
-          Ecto.UUID.generate(),
-          nil
+          %{"start_line" => 2, "end_line" => 2, "body" => "Comment 2"}
         )
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
