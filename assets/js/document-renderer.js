@@ -1,6 +1,11 @@
 import markdownit from "markdown-it"
 import hljs from "highlight.js"
+import { registerMarkdownPatch } from "./highlight-markdown-patch"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
+
+// Re-register hljs 'markdown' with patched grammar. Must run before any
+// hljs.highlight() call. See highlight-markdown-patch.js for rationale.
+registerMarkdownPatch(hljs)
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -906,7 +911,7 @@ function buildLineBlocks(md, rawContent) {
       }
 
       let highlighted
-      if (lang && lang !== 'markdown' && lang !== 'md' && hljs.getLanguage(lang)) {
+      if (lang && hljs.getLanguage(lang)) {
         try { highlighted = hljs.highlight(code, { language: lang }).value } catch (_) { highlighted = escapeHtml(code) }
       } else {
         highlighted = escapeHtml(code)
