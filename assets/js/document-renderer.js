@@ -2586,7 +2586,7 @@ function createCommentForm(formObj, ctx) {
 
   const submitBtn = document.createElement("button")
   submitBtn.className = "btn btn-sm btn-primary"
-  submitBtn.textContent = "Submit"
+  submitBtn.textContent = "Comment"
   submitBtn.addEventListener("click", () => submitNewComment(textarea.value, formObj, ctx))
 
   actions.appendChild(leftGroup)
@@ -3198,7 +3198,7 @@ function renderCommentFormUI(ctx, formObj) {
   cancelBtn.addEventListener('click', () => cancelComment(formObj, ctx))
   const submitBtn = document.createElement('button')
   submitBtn.className = 'btn btn-sm btn-primary'
-  submitBtn.textContent = 'Submit'
+  submitBtn.textContent = 'Comment'
   submitBtn.addEventListener('click', () => submitNewComment(textarea.value, formObj, ctx))
   actions.appendChild(cancelBtn)
   actions.appendChild(submitBtn)
@@ -3969,7 +3969,7 @@ function renderShortcutsPane() {
       { key: '<kbd>e</kbd>', action: 'Edit comment on focused block' },
       { key: '<kbd>d</kbd>', action: 'Delete comment on focused block' },
       { key: '<kbd>Shift</kbd>+<kbd>G</kbd>', action: 'General comment' },
-      { key: '<kbd>Ctrl</kbd>+<kbd>Enter</kbd>', action: 'Submit comment' },
+      { key: '<kbd>Ctrl</kbd>+<kbd>Enter</kbd>', action: 'Comment' },
     ]},
     { label: 'Review', shortcuts: [
       { key: '<kbd>Shift</kbd>+<kbd>C</kbd>', action: 'Toggle comments panel' },
