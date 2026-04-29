@@ -112,7 +112,7 @@ test.describe("Draft Autosave", () => {
     }).toPass({ timeout: 3_000 });
 
     // Submit the comment
-    await page.locator('.comment-form button:has-text("Submit")').click();
+    await page.locator('.comment-form button:has-text("Comment")').click();
     await waitForCommentCard(page, "Will be submitted");
 
     // Draft should be cleared

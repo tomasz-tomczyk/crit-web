@@ -85,8 +85,8 @@ test.describe("Comments — Add via UI", () => {
     const textarea = commentForm.locator("textarea");
     await textarea.fill("New comment from E2E test");
 
-    // Click Submit
-    await commentForm.locator('button:has-text("Submit")').click();
+    // Click Comment
+    await commentForm.locator('button:has-text("Comment")').click();
 
     // The comment card should appear
     await waitForCommentCard(page, "New comment from E2E test");

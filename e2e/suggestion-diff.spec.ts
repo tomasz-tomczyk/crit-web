@@ -41,7 +41,7 @@ test.describe("Suggestion Diff Rendering", () => {
       "Here is my suggestion:\n\n```suggestion\nreplacement line\n```\n\nPlease consider this change."
     );
 
-    await page.locator('.comment-form button:has-text("Submit")').click();
+    await page.locator('.comment-form button:has-text("Comment")').click();
 
     // Wait for comment to render
     await waitForCommentCard(page, "Here is my suggestion");
@@ -81,7 +81,7 @@ test.describe("Suggestion Diff Rendering", () => {
     await expect(textarea).toBeVisible({ timeout: 5_000 });
     await textarea.fill('```javascript\nconsole.log("hello")\n```');
 
-    await page.locator('.comment-form button:has-text("Submit")').click();
+    await page.locator('.comment-form button:has-text("Comment")').click();
 
     // Wait for comment to render
     await expect(page.locator(".comment-card").first()).toBeVisible({
@@ -106,7 +106,7 @@ test.describe("Suggestion Diff Rendering", () => {
     await expect(textarea).toBeVisible({ timeout: 5_000 });
     await textarea.fill("```suggestion\n```");
 
-    await page.locator('.comment-form button:has-text("Submit")').click();
+    await page.locator('.comment-form button:has-text("Comment")').click();
 
     await expect(page.locator(".comment-card").first()).toBeVisible({
       timeout: 5_000,
