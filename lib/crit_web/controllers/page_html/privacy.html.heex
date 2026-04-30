@@ -90,7 +90,21 @@
           privacy policy
         </a>
         governs that interaction.
-        No other third-party embeds or auth providers are used anywhere on this site.
+        Aside from the YouTube embed, GitHub OAuth, and the error monitoring described below,
+        no other third parties receive data from this site.
+      </p>
+
+      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Error monitoring</h2>
+      <p class="leading-relaxed text-(--crit-fg-secondary)">
+        The hosted deployment uses <a href="https://sentry.io/privacy/" class="crit-link">Sentry</a>
+        to capture application errors and crashes. When an error occurs, your browser may
+        send Sentry: the error message and stack trace, the page URL, browser and OS
+        metadata, and an anonymized session ID. Shared review documents, comment text,
+        request bodies, and session cookies are not sent.
+      </p>
+      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
+        Self-hosted deployments do not use Sentry unless the operator explicitly
+        configures their own DSN.
       </p>
 
       <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Server logs</h2>

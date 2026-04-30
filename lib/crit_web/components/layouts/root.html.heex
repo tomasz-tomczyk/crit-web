@@ -4,6 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <%= if sentry = Application.get_env(:crit, :sentry_frontend) do %>
+      <meta name="sentry-dsn" content={sentry.dsn} />
+      <meta name="sentry-environment" content={sentry.environment} />
+      <meta :if={sentry[:release]} name="sentry-release" content={sentry.release} />
+    <% end %>
     <meta
       name="description"
       content={

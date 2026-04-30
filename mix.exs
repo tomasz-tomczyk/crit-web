@@ -70,6 +70,7 @@ defmodule Crit.MixProject do
       {:req, "~> 0.5"},
       {:assent, "~> 0.2"},
       {:earmark, "~> 1.4"},
+      {:sentry, "~> 10.8"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test}

@@ -51,6 +51,17 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Sentry — disabled by default; enabled at runtime when SENTRY_DSN is set.
+# Self-hosted deployments without a DSN incur no network calls.
+config :sentry,
+  dsn: nil,
+  environment_name: config_env(),
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()],
+  in_app_otp_apps: [:crit],
+  client: Crit.SentryHTTPClient,
+  before_send: {Crit.SentryFilter, :before_send}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

@@ -20,6 +20,69 @@
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 
+// Sentry — only loaded when the server emits a <meta name="sentry-dsn">.
+// Self-hosted users without a DSN incur no network calls and the dynamic
+// import is skipped entirely (esbuild keeps it as a separate chunk).
+function initSentry(liveSocket) {
+  const sentryDsn = document.querySelector("meta[name='sentry-dsn']")?.content
+  if (!sentryDsn) return
+  const env = document.querySelector("meta[name='sentry-environment']")?.content
+  const release = document.querySelector("meta[name='sentry-release']")?.content
+  import("@sentry/browser").then(Sentry => {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: env || "production",
+      release: release || undefined,
+      tracesSampleRate: 0,
+      // Privacy: never attach personal data, never record DOM/inputs.
+      sendDefaultPii: false,
+      // Replace the default Breadcrumbs integration with one that doesn't
+      // capture console output or DOM text — review/comment content must not leak.
+      integrations: defaults => [
+        ...defaults.filter(i => i.name !== "Breadcrumbs"),
+        Sentry.breadcrumbsIntegration({
+          console: false,
+          dom: false,
+          fetch: true,
+          xhr: true,
+          history: true,
+          sentry: true,
+        }),
+      ],
+      beforeSend(event) {
+        // Mermaid/markdown errors quote the offending source verbatim — truncate.
+        const ex = event.exception?.values?.[0]
+        if (ex?.value && ex.value.length > 200) {
+          ex.value = ex.value.slice(0, 200) + "…[truncated]"
+        }
+        return event
+      },
+      beforeBreadcrumb(crumb) {
+        // Defense in depth — these should already be off via integration config.
+        if (["console", "ui.click", "ui.input"].includes(crumb.category)) return null
+        return crumb
+      },
+    })
+
+    // LiveView socket errors hit console.error, not window.onerror —
+    // wire them to Sentry explicitly. onError fires on every reconnect
+    // backoff tick during outages, so dedupe until the next successful open.
+    const socket = liveSocket?.getSocket?.()
+    if (socket) {
+      let reported = false
+      socket.onError(err => {
+        if (reported) return
+        reported = true
+        Sentry.captureMessage("LiveSocket transport error", {
+          level: "error",
+          extra: { type: err?.type, message: String(err?.message ?? err) },
+        })
+      })
+      socket.onOpen(() => { reported = false })
+    }
+  }).catch(() => {})
+}
+
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
@@ -85,6 +148,7 @@ document.addEventListener("keydown", e => {
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
+initSentry(liveSocket)
 
 window.addEventListener("clipboard:copy", e => {
   navigator.clipboard.writeText(e.detail.text).catch(() => {})

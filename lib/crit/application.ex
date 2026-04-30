@@ -7,6 +7,8 @@ defmodule Crit.Application do
 
   @impl true
   def start(_type, _args) do
+    attach_sentry_logger_handler()
+
     children =
       [
         CritWeb.Telemetry,
@@ -42,6 +44,16 @@ defmodule Crit.Application do
     else
       []
     end
+  end
+
+  defp attach_sentry_logger_handler do
+    if Sentry.Config.dsn() do
+      :logger.add_handler(:sentry_handler, Sentry.LoggerHandler, %{
+        config: %{metadata: [:request_id], capture_log_messages: false}
+      })
+    end
+
+    :ok
   end
 
   defp changelog do

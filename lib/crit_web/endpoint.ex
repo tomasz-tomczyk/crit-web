@@ -49,5 +49,13 @@ defmodule CritWeb.Endpoint do
   plug Plug.Head
   plug CritWeb.Plugs.CanonicalHost
   plug Plug.Session, @session_options
+
+  # Drop request body and cookies — review documents and comment bodies must
+  # never leave the deployment. Placed after Session/MethodOverride so the
+  # captured context reflects the final method and session state.
+  plug Sentry.PlugContext,
+    body_scrubber: nil,
+    cookie_scrubber: nil
+
   plug CritWeb.Router
 end

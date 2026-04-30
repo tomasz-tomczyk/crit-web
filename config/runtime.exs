@@ -34,6 +34,28 @@ if System.get_env("SELFHOSTED") in ~w(true 1) do
   config :crit, :selfhosted, true
 end
 
+# Sentry — only active when SENTRY_DSN is set. With no DSN the SDK is a no-op,
+# so self-hosted deployments make zero network calls to Sentry.
+if sentry_dsn = System.get_env("SENTRY_DSN") do
+  release =
+    System.get_env("SENTRY_RELEASE") ||
+      (Application.spec(:crit, :vsn) || ~c"") |> to_string()
+
+  config :sentry,
+    dsn: sentry_dsn,
+    environment_name: System.get_env("SENTRY_ENV") || to_string(config_env()),
+    release: release
+end
+
+# Optional separate DSN for the browser SDK. Injected into the page only when set.
+if frontend_dsn = System.get_env("SENTRY_FRONTEND_DSN") do
+  config :crit, :sentry_frontend, %{
+    dsn: frontend_dsn,
+    environment: System.get_env("SENTRY_ENV") || "prod",
+    release: System.get_env("SENTRY_RELEASE")
+  }
+end
+
 if admin_password = System.get_env("ADMIN_PASSWORD") do
   config :crit, :admin_password, admin_password
 end
