@@ -28,7 +28,6 @@ defmodule CritWeb.ReviewLive do
 
       review ->
         demo? = review.token == Application.get_env(:crit, :demo_review_token)
-        current_user = scope.user
         identity = scope.identity
         display_name = scope.display_name
         user_id = Scope.user_id(scope)

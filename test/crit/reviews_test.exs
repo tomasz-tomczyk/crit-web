@@ -1220,12 +1220,13 @@ defmodule Crit.ReviewsTest do
       assert {:error, :unauthorized} = Reviews.delete_review(Scope.for_user(intruder), review.id)
     end
 
-    test "owner of an unowned (legacy) review → ok" do
+    test "anonymous (user_id == nil) review cannot be deleted by any authenticated user" do
       anon_owner = anon_scope()
       {:ok, review} = Reviews.create_review(anon_owner, default_files(), 0, [])
       auth_user = insert_user!()
-      # Legacy review (user_id == nil) — any authed user can delete.
-      assert :ok = Reviews.delete_review(Scope.for_user(auth_user), review.id)
+      # Anonymous reviews must be deleted via delete_token, not by any authed user.
+      assert {:error, :unauthorized} =
+               Reviews.delete_review(Scope.for_user(auth_user), review.id)
     end
 
     test "returns error for unknown id" do
@@ -1235,7 +1236,7 @@ defmodule Crit.ReviewsTest do
                Reviews.delete_review(Scope.for_user(user), Ecto.UUID.generate())
     end
 
-    test "with owner_id deletes when owner matches" do
+    test "deletes when scope user matches review owner" do
       {:ok, user} =
         Crit.Accounts.find_or_create_from_oauth("github", %{
           "sub" => "owner-#{System.unique_integer([:positive])}",
@@ -1245,11 +1246,11 @@ defmodule Crit.ReviewsTest do
 
       review = review_fixture(%{user_id: user.id})
 
-      assert :ok = Reviews.delete_review(review.id, owner_id: user.id)
+      assert :ok = Reviews.delete_review(Scope.for_user(user), review.id)
       assert Repo.get(Review, review.id) == nil
     end
 
-    test "with owner_id refuses when owner does not match" do
+    test "refuses when scope user does not match review owner" do
       {:ok, owner} =
         Crit.Accounts.find_or_create_from_oauth("github", %{
           "sub" => "owner-#{System.unique_integer([:positive])}",
@@ -1266,11 +1267,13 @@ defmodule Crit.ReviewsTest do
 
       review = review_fixture(%{user_id: owner.id})
 
-      assert {:error, :unauthorized} = Reviews.delete_review(review.id, owner_id: other.id)
+      assert {:error, :unauthorized} =
+               Reviews.delete_review(Scope.for_user(other), review.id)
+
       assert Repo.get(Review, review.id)
     end
 
-    test "with owner_id refuses to delete an anonymous (user_id == nil) review" do
+    test "refuses to delete an anonymous (user_id == nil) review via scope" do
       {:ok, other} =
         Crit.Accounts.find_or_create_from_oauth("github", %{
           "sub" => "other-#{System.unique_integer([:positive])}",
@@ -1281,7 +1284,9 @@ defmodule Crit.ReviewsTest do
       review = review_fixture()
       assert is_nil(review.user_id)
 
-      assert {:error, :unauthorized} = Reviews.delete_review(review.id, owner_id: other.id)
+      assert {:error, :unauthorized} =
+               Reviews.delete_review(Scope.for_user(other), review.id)
+
       assert Repo.get(Review, review.id)
     end
   end
