@@ -20,6 +20,17 @@ function identityHue(identity) {
   return IDENTITY_HUES[Math.abs(hash) % IDENTITY_HUES.length]
 }
 
+function isOwnComment(c, ctx) {
+  if (ctx.userId) {
+    return c.user_id != null && String(c.user_id) === String(ctx.userId)
+  }
+  return c.author_identity != null && c.author_identity !== "" && c.author_identity === ctx.identity
+}
+
+function isReviewOwner(ctx) {
+  return ctx.userId !== "" && ctx.reviewOwnerId !== "" && String(ctx.userId) === String(ctx.reviewOwnerId)
+}
+
 function escapeHtml(str) {
   return str
     .replace(/&/g, "&amp;")
@@ -2382,7 +2393,8 @@ function createCommentElement(comment, ctx) {
     return createInlineEditor(comment, editForm, ctx)
   }
 
-  const isOwn = comment.author_identity === ctx.identity
+  const isOwn = isOwnComment(comment, ctx)
+  const canResolve = isOwn || isReviewOwner(ctx)
 
   const wrapper = document.createElement("div")
   wrapper.className = "comment-block"
@@ -2451,7 +2463,7 @@ function createCommentElement(comment, ctx) {
   const actions = document.createElement("div")
   actions.className = "comment-actions"
 
-  if (isOwn) {
+  if (canResolve) {
     const resolveBtn = document.createElement('button')
     resolveBtn.className = 'resolve-btn'
     resolveBtn.title = 'Resolve'
@@ -2460,7 +2472,9 @@ function createCommentElement(comment, ctx) {
       ctx.pushEvent("resolve_comment", { id: comment.id, resolved: true })
     })
     actions.appendChild(resolveBtn)
+  }
 
+  if (isOwn) {
     const editBtn = document.createElement("button")
     editBtn.title = "Edit"
     editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>'
@@ -2757,7 +2771,7 @@ function renderReplyList(comment, ctx) {
 
     const replyMeta = document.createElement('div')
     replyMeta.className = 'reply-meta'
-    const isOwnReply = reply.author_identity === ctx.identity
+    const isOwnReply = isOwnComment(reply, ctx)
     if (reply.author_display_name) {
       const replyAuthorBadge = document.createElement('span')
       replyAuthorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(reply.author_display_name)
@@ -3015,26 +3029,31 @@ function createResolvedElement(comment, ctx) {
   const actions = document.createElement('div')
   actions.className = 'comment-actions'
 
-  const unresolveBtn = document.createElement('button')
-  unresolveBtn.className = 'resolve-btn resolve-btn--active'
-  unresolveBtn.title = 'Unresolve'
-  unresolveBtn.setAttribute('aria-label', 'Unresolve thread')
-  unresolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
-  unresolveBtn.addEventListener('click', function() {
-    ctx.pushEvent("resolve_comment", { id: comment.id, resolved: false })
-  })
+  const isOwn = isOwnComment(comment, ctx)
+  const canResolve = isOwn || isReviewOwner(ctx)
 
-  const isOwn = comment.author_identity === ctx.identity
-  const deleteBtn = document.createElement('button')
-  deleteBtn.className = 'delete-btn'
-  deleteBtn.title = 'Delete'
-  deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
-  deleteBtn.addEventListener('click', function() {
-    ctx.pushEvent("delete_comment", { id: comment.id })
-  })
+  if (canResolve) {
+    const unresolveBtn = document.createElement('button')
+    unresolveBtn.className = 'resolve-btn resolve-btn--active'
+    unresolveBtn.title = 'Unresolve'
+    unresolveBtn.setAttribute('aria-label', 'Unresolve thread')
+    unresolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
+    unresolveBtn.addEventListener('click', function() {
+      ctx.pushEvent("resolve_comment", { id: comment.id, resolved: false })
+    })
+    actions.appendChild(unresolveBtn)
+  }
 
-  actions.appendChild(unresolveBtn)
-  if (isOwn) actions.appendChild(deleteBtn)
+  if (isOwn) {
+    const deleteBtn = document.createElement('button')
+    deleteBtn.className = 'delete-btn'
+    deleteBtn.title = 'Delete'
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+    deleteBtn.addEventListener('click', function() {
+      ctx.pushEvent("delete_comment", { id: comment.id })
+    })
+    actions.appendChild(deleteBtn)
+  }
 
   header.appendChild(headerLeft)
   header.appendChild(actions)
@@ -3628,7 +3647,8 @@ function renderPanelCard(ctx, comment, filePath) {
   headerLeft.appendChild(collapseBtn)
 
   // Author
-  const isOwn = comment.author_identity === ctx.identity
+  const isOwn = isOwnComment(comment, ctx)
+  const canResolve = isOwn || isReviewOwner(ctx)
   if (comment.author_display_name) {
     const authorBadge = document.createElement('span')
     authorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(comment.author_display_name)
@@ -3671,32 +3691,35 @@ function renderPanelCard(ctx, comment, filePath) {
   header.appendChild(headerLeft)
 
   // Actions appended to header (sibling to headerLeft — matches crit local)
-  // Only show for own review comments
-  if (isGeneral && isOwn) {
+  if (isGeneral && (canResolve || isOwn)) {
     const actions = document.createElement('div')
     actions.className = 'comment-actions'
 
-    const resolveBtn = document.createElement('button')
-    resolveBtn.className = isResolved ? 'resolve-btn resolve-btn--active' : 'resolve-btn'
-    resolveBtn.title = isResolved ? 'Unresolve' : 'Resolve'
-    resolveBtn.innerHTML = isResolved
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Resolve</span>'
-    resolveBtn.addEventListener('click', function(e) {
-      e.stopPropagation()
-      ctx.pushEvent('resolve_comment', { id: comment.id, resolved: !isResolved })
-    })
-    actions.appendChild(resolveBtn)
+    if (canResolve) {
+      const resolveBtn = document.createElement('button')
+      resolveBtn.className = isResolved ? 'resolve-btn resolve-btn--active' : 'resolve-btn'
+      resolveBtn.title = isResolved ? 'Unresolve' : 'Resolve'
+      resolveBtn.innerHTML = isResolved
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Resolve</span>'
+      resolveBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        ctx.pushEvent('resolve_comment', { id: comment.id, resolved: !isResolved })
+      })
+      actions.appendChild(resolveBtn)
+    }
 
-    const deleteBtn = document.createElement('button')
-    deleteBtn.className = 'delete-btn'
-    deleteBtn.title = 'Delete'
-    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
-    deleteBtn.addEventListener('click', function(e) {
-      e.stopPropagation()
-      ctx.pushEvent('delete_comment', { id: comment.id })
-    })
-    actions.appendChild(deleteBtn)
+    if (isOwn) {
+      const deleteBtn = document.createElement('button')
+      deleteBtn.className = 'delete-btn'
+      deleteBtn.title = 'Delete'
+      deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+      deleteBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        ctx.pushEvent('delete_comment', { id: comment.id })
+      })
+      actions.appendChild(deleteBtn)
+    }
 
     header.appendChild(actions)
   }
@@ -4322,6 +4345,8 @@ export const DocumentRenderer = {
     ctx.dragState = null
     ctx.focusedBlockIndex = -1
     ctx.identity = ctx.el.dataset.identity || ""
+    ctx.userId = ctx.el.dataset.userId || ""
+    ctx.reviewOwnerId = ctx.el.dataset.reviewOwnerId || ""
     ctx.reviewRound = parseInt(ctx.el.dataset.reviewRound || "0", 10)
     ctx.multiFile = ctx.el.dataset.multiFile === 'true'
     ctx.files = []
@@ -4873,7 +4898,7 @@ export const DocumentRenderer = {
           if (!block) break
           const filePath = ctx.focusedFilePath || null
           const comment = ctx.comments.find(c =>
-            c.author_identity === ctx.identity &&
+            isOwnComment(c, ctx) &&
             c.end_line >= block.startLine && c.end_line <= block.endLine &&
             (c.file_path || null) === filePath
           )
@@ -4897,7 +4922,7 @@ export const DocumentRenderer = {
           if (!block) break
           const filePath = ctx.focusedFilePath || null
           const comment = ctx.comments.find(c =>
-            c.author_identity === ctx.identity &&
+            isOwnComment(c, ctx) &&
             c.end_line >= block.startLine && c.end_line <= block.endLine &&
             (c.file_path || null) === filePath
           )

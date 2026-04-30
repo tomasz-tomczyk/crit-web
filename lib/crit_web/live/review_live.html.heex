@@ -403,6 +403,8 @@
         phx-hook=".DocumentRenderer"
         phx-update="ignore"
         data-identity={@current_scope.identity}
+        data-user-id={Crit.Accounts.Scope.user_id(@current_scope)}
+        data-review-owner-id={@review.user_id}
         data-review-round={@review.review_round || 0}
       >
         <div class="crit-loading">Loading document...</div>
