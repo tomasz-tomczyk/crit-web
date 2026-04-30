@@ -125,7 +125,7 @@ defmodule CritWeb.ReviewLive do
   def handle_event("delete_review", _params, socket) do
     %{review: review, current_user: current_user} = socket.assigns
 
-    if current_user && (is_nil(review.user_id) || review.user_id == current_user.id) do
+    if current_user && review.user_id == current_user.id do
       case Reviews.delete_review(review.id, owner_id: current_user.id) do
         :ok ->
           {:noreply,

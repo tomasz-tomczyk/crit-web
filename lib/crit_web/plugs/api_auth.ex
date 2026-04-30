@@ -1,6 +1,7 @@
 defmodule CritWeb.Plugs.ApiAuth do
   import Plug.Conn
   alias Crit.Accounts
+  alias Crit.Config
 
   def init(opts), do: opts
 
@@ -12,7 +13,7 @@ defmodule CritWeb.Plugs.ApiAuth do
             assign(conn, :current_user, user)
 
           {:error, :invalid} ->
-            if enforced?(conn) do
+            if Config.selfhosted_oauth?() do
               conn |> send_resp(401, ~s({"error":"invalid token"})) |> halt()
             else
               conn
@@ -20,13 +21,11 @@ defmodule CritWeb.Plugs.ApiAuth do
         end
 
       _ ->
-        if enforced?(conn) do
+        if Config.selfhosted_oauth?() do
           conn |> send_resp(401, ~s({"error":"authentication required"})) |> halt()
         else
           conn
         end
     end
   end
-
-  defp enforced?(_conn), do: Crit.Config.selfhosted_oauth?()
 end

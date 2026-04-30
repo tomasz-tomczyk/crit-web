@@ -350,7 +350,7 @@
     <ul class="crit-toc-list"></ul>
   </div>
 
-  <% owner? = @current_user && (is_nil(@review.user_id) || @review.user_id == @current_user.id) %>
+  <% owner? = @current_user && @review.user_id == @current_user.id %>
   <% author = @review.user %>
   <% comment_count =
     Enum.reduce(@review.comments, 0, fn c, acc ->

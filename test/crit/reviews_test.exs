@@ -1032,5 +1032,55 @@ defmodule Crit.ReviewsTest do
     test "returns error for unknown id" do
       assert {:error, :not_found} = Reviews.delete_review(Ecto.UUID.generate())
     end
+
+    test "with owner_id deletes when owner matches" do
+      {:ok, user} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "owner-#{System.unique_integer([:positive])}",
+          "name" => "Owner",
+          "email" => "owner@example.test"
+        })
+
+      review = review_fixture(%{user_id: user.id})
+
+      assert :ok = Reviews.delete_review(review.id, owner_id: user.id)
+      assert Repo.get(Review, review.id) == nil
+    end
+
+    test "with owner_id refuses when owner does not match" do
+      {:ok, owner} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "owner-#{System.unique_integer([:positive])}",
+          "name" => "Owner2",
+          "email" => "owner2@example.test"
+        })
+
+      {:ok, other} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "other-#{System.unique_integer([:positive])}",
+          "name" => "Other",
+          "email" => "other@example.test"
+        })
+
+      review = review_fixture(%{user_id: owner.id})
+
+      assert {:error, :unauthorized} = Reviews.delete_review(review.id, owner_id: other.id)
+      assert Repo.get(Review, review.id)
+    end
+
+    test "with owner_id refuses to delete an anonymous (user_id == nil) review" do
+      {:ok, other} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "other-#{System.unique_integer([:positive])}",
+          "name" => "Other2",
+          "email" => "other2@example.test"
+        })
+
+      review = review_fixture()
+      assert is_nil(review.user_id)
+
+      assert {:error, :unauthorized} = Reviews.delete_review(review.id, owner_id: other.id)
+      assert Repo.get(Review, review.id)
+    end
   end
 end
