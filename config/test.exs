@@ -44,6 +44,10 @@ config :crit, start_review_cleaner: false
 config :crit, start_device_code_cleaner: false
 config :crit, start_changelog: false
 
+# Disable global rate limit in tests — shared 127.0.0.1 + persistent ETS would
+# trip the limiter across the suite. Plug-specific tests opt back in locally.
+config :crit, CritWeb.Plugs.RateLimit, disabled: true
+
 config :crit, :oauth_provider,
   strategy: Assent.Strategy.Github,
   client_id: "test_github_client_id",
