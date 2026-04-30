@@ -89,6 +89,10 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `FORCE_SSL` | No | `false` | Set `true` if terminating TLS at the app (not behind a reverse proxy) |
 | `PHX_SCHEME` | No | `https` | URL scheme for link generation |
 | `PHX_URL_PORT` | No | `443`/`80` | Port for generated URLs |
+| `SENTRY_DSN` | No | — | Backend [Sentry](https://sentry.io) DSN. When unset, no Sentry traffic is generated. Self-hosted deployments leave this blank by default |
+| `SENTRY_FRONTEND_DSN` | No | — | Browser SDK DSN. The `@sentry/browser` chunk is only fetched when this is set, so unset means zero third-party requests |
+| `SENTRY_ENV` | No | `prod` (frontend) / `Mix.env()` (backend) | Sentry environment tag |
+| `SENTRY_RELEASE` | No | `mix.exs` version | Release tag for Sentry events. The hosted Fly deploy auto-sets this to the commit SHA |
 
 \* Set either `DATABASE_URL` **or** all four of `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
 | `POOL_SIZE` | No | `10` | Database connection pool size |
