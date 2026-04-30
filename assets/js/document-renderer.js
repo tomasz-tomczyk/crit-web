@@ -3801,12 +3801,8 @@ function renderReviewConversation(ctx) {
   section.hidden = false
   section.innerHTML = ''
 
-  // Multi-file (git-style) view → left-anchor; single-doc view → centered.
-  if (!ctx.multiFile) {
-    section.dataset.docLayout = 'centered'
-  } else {
-    delete section.dataset.docLayout
-  }
+  // crit-web is always doc-centered (no git-mode side-by-side diff view).
+  section.dataset.docLayout = 'centered'
 
   const reviewForm = ctx.activeForms.find(f => f.scope === 'review')
   const reviewComments = ctx.comments.filter(c => c.scope === 'review')
@@ -3884,14 +3880,13 @@ function renderReviewConversation(ctx) {
 // already builds resolve/edit/delete actions for own review comments) but
 // rewires the edit button to open the inline editor instead of a panel form.
 function createReviewConversationCard(ctx, comment) {
-  const card = renderPanelCard(ctx, comment, null)
+  const wrapper = renderPanelCard(ctx, comment, null)
   // Drop the panel-comment-block class so width rules don't fight the inline section.
-  card.classList.remove('panel-comment-block')
-  // Inline cards should not navigate on click.
+  wrapper.classList.remove('panel-comment-block')
+  // The actual card lives inside the wrapper; we need it to append replies + reply input.
+  const card = wrapper.querySelector('.comment-card') || wrapper
   card.style.cursor = ''
-  // Replace the panel "delete" event-driven flow's edit affordance: panel-card
-  // for review scope renders only resolve+delete (no edit). Append an Edit
-  // button if the user owns this comment and one isn't already there.
+  // Append Edit button for owners (panel-card builds resolve+delete only for review scope).
   if (comment.author_identity === ctx.identity) {
     const actions = card.querySelector('.comment-actions')
     if (actions && !actions.querySelector('.edit-btn')) {
@@ -3906,7 +3901,13 @@ function createReviewConversationCard(ctx, comment) {
       actions.appendChild(editBtn)
     }
   }
-  return card
+  // Render existing replies + a reply input — review-level threads support replies
+  // exactly like line-anchored ones (parity with crit local).
+  if (comment.replies && comment.replies.length > 0) {
+    card.appendChild(renderReplyList(comment, ctx))
+  }
+  card.appendChild(createReplyInput(comment.id, ctx))
+  return wrapper
 }
 
 function buildReviewConversationTreeRow(ctx) {

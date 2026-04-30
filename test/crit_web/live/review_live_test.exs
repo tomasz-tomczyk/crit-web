@@ -800,6 +800,34 @@ defmodule CritWeb.ReviewLiveTest do
       assert reply_id == reply.id
     end
 
+    test "add_reply works on review-scope comments (parity with line-anchored)", %{
+      conn: conn,
+      review: review
+    } do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_comment", %{
+        "scope" => "review",
+        "body" => "General feedback"
+      })
+
+      [comment] = Reviews.list_comments(review)
+      assert comment.scope == "review"
+
+      view
+      |> element("#document-renderer")
+      |> render_hook("add_reply", %{"comment_id" => comment.id, "body" => "reply on review"})
+
+      assert_push_event view, "reply_added", %{parent_id: parent_id, reply: reply}
+      assert parent_id == comment.id
+      assert reply.body == "reply on review"
+
+      [updated] = Reviews.list_comments(review)
+      assert [%{body: "reply on review"}] = updated.replies
+    end
+
     test "delete_reply pushes reply_deleted with parent_id and id", %{
       conn: conn,
       review: review
