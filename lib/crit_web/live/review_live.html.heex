@@ -388,6 +388,7 @@
   </div>
   <div id="crit-main-layout" class="crit-main-layout">
     <div id="fileTreePanel" class="tree-panel" style="display:none">
+      <div id="treeConversationSection" class="tree-section--conversation"></div>
       <div class="tree-header">
         <span class="tree-title">Files</span>
         <span id="fileTreeStats" class="tree-stats"></span>
@@ -396,6 +397,7 @@
     </div>
 
     <div class="crit-main-content">
+      <div id="reviewConversation" class="review-conversation" hidden></div>
       <div
         id="document-renderer"
         phx-hook=".DocumentRenderer"

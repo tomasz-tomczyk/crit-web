@@ -363,6 +363,7 @@ function openForm(ctx, newForm) {
     return
   }
   closeEmptyForms(ctx, fk)
+  closeEmptyReviewForm(ctx)
   addForm(ctx, newForm)
   ctx.selectionStart = newForm.startLine
   ctx.selectionEnd = newForm.endLine
@@ -1257,6 +1258,13 @@ function renderFileTree(ctx) {
     headerEl.appendChild(collapseBtn)
   }
 
+  // Review conversation pseudo-row sits in its own section above FILES.
+  const conversationSection = document.getElementById('treeConversationSection')
+  if (conversationSection) {
+    conversationSection.innerHTML = ''
+    conversationSection.appendChild(buildReviewConversationTreeRow(ctx))
+  }
+
   // Build and render tree
   const tree = collapseCommonPrefixes(buildFileTree(ctx.files))
   const body = document.getElementById('fileTreeBody')
@@ -1326,6 +1334,7 @@ function render(ctx) {
   } else {
     renderDocument(ctx)
   }
+  renderReviewConversation(ctx)
   applyHideResolved(ctx)
 }
 
@@ -2836,6 +2845,8 @@ function createReplyInput(commentId, ctx) {
 
   function expand() {
     if (form.classList.contains('expanded')) return
+    closeEmptyReviewForm(ctx)
+    closeEmptyForms(ctx, null)
     form.classList.add('expanded')
     textarea.value = input.value
     input.replaceWith(textarea)
@@ -3136,6 +3147,7 @@ function openFileCommentForm(ctx, filePath) {
   const fk = 'file:' + filePath
   if (ctx.activeForms.find(f => f.formKey === fk)) return
   closeEmptyForms(ctx, fk)
+  closeEmptyReviewForm(ctx)
   const form = { formKey: fk, scope: 'file', filePath: filePath, startLine: null, endLine: null, editingId: null }
   ctx.activeForms.push(form)
   render(ctx)
@@ -3151,18 +3163,51 @@ function openReviewCommentForm(ctx) {
   closeEmptyForms(ctx, fk)
   const form = { formKey: fk, scope: 'review', filePath: null, startLine: null, endLine: null, editingId: null }
   ctx.activeForms.push(form)
-  // Open panel if not open
-  const panel = ctx._commentsPanel
-  if (panel && !panel.classList.contains('comments-panel-open')) {
-    panel.classList.add('comments-panel-open')
-    syncCommentsPanelAria(true)
-    updateTocPosition(ctx)
-  }
-  renderCommentsPanel(ctx)
+  renderReviewConversation(ctx)
+  scrollToReviewConversation(ctx)
   requestAnimationFrame(() => {
-    const ta = panel.querySelector('.panel-review-comment-form textarea')
+    const section = document.getElementById('reviewConversation')
+    const ta = section && section.querySelector('.comment-form textarea')
     if (ta) ta.focus()
   })
+}
+
+function openReviewCommentEditForm(ctx, comment) {
+  // Close any other forms (matches crit/ behaviour)
+  closeEmptyForms(ctx, null)
+  const fk = 'review:edit:' + comment.id
+  if (ctx.activeForms.find(f => f.formKey === fk)) return
+  // Drop any existing review compose/edit form
+  ctx.activeForms = ctx.activeForms.filter(f => f.scope !== 'review')
+  const form = {
+    formKey: fk,
+    scope: 'review',
+    filePath: null,
+    startLine: null,
+    endLine: null,
+    editingId: comment.id,
+    draftBody: comment.body,
+  }
+  ctx.activeForms.push(form)
+  renderReviewConversation(ctx)
+  scrollToReviewConversation(ctx)
+  requestAnimationFrame(() => {
+    const section = document.getElementById('reviewConversation')
+    const ta = section && section.querySelector('.comment-form textarea')
+    if (ta) ta.focus()
+  })
+}
+
+// Auto-close an empty review compose form when the user starts another form.
+// Mirrors crit/'s closeEmptyReviewForm.
+function closeEmptyReviewForm(ctx) {
+  const reviewForm = ctx.activeForms.find(f => f.scope === 'review' && !f.editingId)
+  if (!reviewForm) return
+  const section = document.getElementById('reviewConversation')
+  const ta = section && section.querySelector('.comment-form textarea')
+  if (ta && ta.value.trim()) return
+  removeForm(ctx, reviewForm.formKey)
+  renderReviewConversation(ctx)
 }
 
 function renderCommentFormUI(ctx, formObj) {
@@ -3171,17 +3216,25 @@ function renderCommentFormUI(ctx, formObj) {
 
   const form = document.createElement('div')
   form.className = 'comment-form'
+  form.dataset.formKey = formObj.formKey
+
+  const isEdit = !!formObj.editingId
 
   const textarea = document.createElement('textarea')
+  textarea.dataset.formKey = formObj.formKey
   textarea.placeholder = formObj.scope === 'review'
     ? 'Leave a comment\u2026 (Ctrl+Enter to submit, Escape to cancel)'
     : 'Add a file comment\u2026 (Ctrl+Enter to submit, Escape to cancel)'
   textarea.value = formObj.draftBody || ''
+  function submitForm() {
+    if (isEdit) submitEditComment(formObj.editingId, textarea.value, formObj, ctx)
+    else submitNewComment(textarea.value, formObj, ctx)
+  }
   textarea.addEventListener('keydown', function(e) {
     e.stopPropagation()
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault()
-      submitNewComment(textarea.value, formObj, ctx)
+      submitForm()
     }
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -3198,8 +3251,8 @@ function renderCommentFormUI(ctx, formObj) {
   cancelBtn.addEventListener('click', () => cancelComment(formObj, ctx))
   const submitBtn = document.createElement('button')
   submitBtn.className = 'btn btn-sm btn-primary'
-  submitBtn.textContent = 'Comment'
-  submitBtn.addEventListener('click', () => submitNewComment(textarea.value, formObj, ctx))
+  submitBtn.textContent = isEdit ? 'Save' : 'Comment'
+  submitBtn.addEventListener('click', submitForm)
   actions.appendChild(cancelBtn)
   actions.appendChild(submitBtn)
   form.appendChild(actions)
@@ -3325,6 +3378,14 @@ function rerenderPanel(ctx) {
   if (ctx._commentsPanel?.classList.contains('comments-panel-open')) {
     renderCommentsPanel(ctx)
   }
+  // Keep the inline Review Conversation section + tree row in sync with any
+  // comment change (additions, edits, resolves, replies). These are cheap.
+  renderReviewConversation(ctx)
+  const conversationSection = document.getElementById('treeConversationSection')
+  if (conversationSection && ctx.multiFile) {
+    conversationSection.innerHTML = ''
+    conversationSection.appendChild(buildReviewConversationTreeRow(ctx))
+  }
 }
 
 // ---- Comments panel helpers -------------------------------------------------
@@ -3366,24 +3427,22 @@ function renderCommentsPanel(ctx) {
     return true
   }
 
-  // Review comment form at top
-  const reviewForm = ctx.activeForms.find(f => f.scope === 'review')
-  if (reviewForm) {
-    body.appendChild(renderCommentFormUI(ctx, reviewForm))
-  }
+  // Review-level (general) comments are composed/edited from the inline
+  // Review Conversation section at the top of the document; the panel only
+  // mirrors them as read-only cards that link back to the inline section.
 
   // Separate and filter comments by scope
   const reviewComments = ctx.comments.filter(c => c.scope === 'review').filter(visibleFilter)
   const fileAndLineComments = ctx.comments.filter(c => c.scope !== 'review').filter(visibleFilter)
 
-  if (ctx.comments.length === 0 && !reviewForm) {
+  if (ctx.comments.length === 0) {
     body.innerHTML += '<div class="comments-panel-empty">No comments yet</div>'
     updateExpandAllLabel(ctx)
     return
   }
 
   const filteredTotal = reviewComments.length + fileAndLineComments.length
-  if (filteredTotal === 0 && !reviewForm) {
+  if (filteredTotal === 0) {
     const emptyMsg = activeFilter === 'open' ? 'No open comments' : activeFilter === 'resolved' ? 'No resolved comments' : 'No comments yet'
     body.innerHTML += '<div class="comments-panel-empty">' + emptyMsg + '</div>'
     updateExpandAllLabel(ctx)
@@ -3395,7 +3454,7 @@ function renderCommentsPanel(ctx) {
     const group = document.createElement('div')
     group.className = 'comments-panel-file-group'
 
-    const groupName = createFileGroupHeader('Review', reviewComments.length, group)
+    const groupName = createFileGroupHeader('Review conversation', reviewComments.length, group)
     group.appendChild(groupName)
 
     const cards = document.createElement('div')
@@ -3672,8 +3731,16 @@ function renderPanelCard(ctx, comment, filePath) {
 
   wrapper.appendChild(card)
 
-  // Click to scroll for file/line comments (not review)
-  if (!isGeneral) {
+  // Click-to-scroll
+  if (isGeneral) {
+    // Panel cards for review comments link back to the inline Review
+    // Conversation section, mirroring crit/'s behaviour.
+    wrapper.style.cursor = 'pointer'
+    wrapper.addEventListener('click', function(e) {
+      if (e.target.closest('button')) return
+      scrollToReviewComment(ctx, comment.id)
+    })
+  } else {
     wrapper.style.cursor = 'pointer'
     wrapper.addEventListener('click', function(e) {
       if (e.target.closest('button')) return
@@ -3699,6 +3766,196 @@ function scrollToInlineComment(comment, ctx) {
     top: card.getBoundingClientRect().top + window.scrollY - offset,
     behavior: 'smooth'
   })
+  card.classList.add('comment-flash')
+  card.addEventListener('animationend', () => card.classList.remove('comment-flash'), { once: true })
+}
+
+// ===== Inline Review Conversation Section (top of document) =====
+
+const REVIEW_CONVERSATION_PATH = '__review_conversation__'
+const ICON_REVIEW_CONVERSATION =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v6A1.5 1.5 0 0 1 12.5 11H8.5l-3 2.75V11H3.5A1.5 1.5 0 0 1 2 9.5Z"/>' +
+  '</svg>'
+const ICON_REVIEW_CHEVRON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
+  '<path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+
+function isReviewConversationCollapsed() {
+  return localStorage.getItem('crit-review-conversation-collapsed') === '1'
+}
+
+function setReviewConversationCollapsed(collapsed) {
+  localStorage.setItem('crit-review-conversation-collapsed', collapsed ? '1' : '0')
+}
+
+function renderReviewConversation(ctx) {
+  const section = document.getElementById('reviewConversation')
+  if (!section) return
+
+  if (!ctx || !Array.isArray(ctx.comments)) {
+    section.hidden = true
+    return
+  }
+
+  section.hidden = false
+  section.innerHTML = ''
+
+  // Multi-file (git-style) view → left-anchor; single-doc view → centered.
+  if (!ctx.multiFile) {
+    section.dataset.docLayout = 'centered'
+  } else {
+    delete section.dataset.docLayout
+  }
+
+  const reviewForm = ctx.activeForms.find(f => f.scope === 'review')
+  const reviewComments = ctx.comments.filter(c => c.scope === 'review')
+
+  const collapsed = isReviewConversationCollapsed() && !reviewForm
+  section.classList.toggle('collapsed', collapsed)
+
+  // Header
+  const header = document.createElement('div')
+  header.className = 'review-conversation-header'
+
+  const toggle = document.createElement('button')
+  toggle.type = 'button'
+  toggle.className = 'review-conversation-toggle'
+  toggle.title = collapsed ? 'Expand review conversation' : 'Collapse review conversation'
+  toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+  toggle.setAttribute('aria-label', toggle.title)
+  toggle.innerHTML = ICON_REVIEW_CHEVRON
+  toggle.addEventListener('click', function() {
+    setReviewConversationCollapsed(!isReviewConversationCollapsed())
+    renderReviewConversation(ctx)
+  })
+  header.appendChild(toggle)
+
+  const iconSpan = document.createElement('span')
+  iconSpan.className = 'icon'
+  iconSpan.innerHTML = ICON_REVIEW_CONVERSATION
+  header.appendChild(iconSpan)
+
+  const labelText = document.createElement('span')
+  labelText.className = 'label'
+  labelText.textContent = 'Review conversation'
+  header.appendChild(labelText)
+
+  const unresolvedCount = reviewComments.filter(c => !c.resolved).length
+  if (unresolvedCount > 0) {
+    const count = document.createElement('span')
+    count.className = 'count'
+    count.textContent = String(unresolvedCount)
+    header.appendChild(count)
+  }
+  section.appendChild(header)
+
+  if (collapsed) return
+
+  const body = document.createElement('div')
+  body.className = 'review-conversation-body'
+  section.appendChild(body)
+
+  // Threads (existing comments). The editor renders inline at the matching
+  // position when the user is editing one.
+  for (const comment of reviewComments) {
+    if (reviewForm && reviewForm.editingId === comment.id) {
+      body.appendChild(renderCommentFormUI(ctx, reviewForm))
+    } else {
+      body.appendChild(createReviewConversationCard(ctx, comment))
+    }
+  }
+
+  // Footer: compose form (when active) or ghost "Add comment" button.
+  if (reviewForm && !reviewForm.editingId) {
+    body.appendChild(renderCommentFormUI(ctx, reviewForm))
+  } else {
+    const addMore = document.createElement('button')
+    addMore.className = 'review-conversation-add-more'
+    if (reviewComments.length === 0) addMore.classList.add('review-conversation-empty')
+    addMore.type = 'button'
+    addMore.textContent = 'Add comment'
+    addMore.addEventListener('click', function() { openReviewCommentForm(ctx) })
+    body.appendChild(addMore)
+  }
+}
+
+// A review-level card shown inline. Reuses renderPanelCard's structure (which
+// already builds resolve/edit/delete actions for own review comments) but
+// rewires the edit button to open the inline editor instead of a panel form.
+function createReviewConversationCard(ctx, comment) {
+  const card = renderPanelCard(ctx, comment, null)
+  // Drop the panel-comment-block class so width rules don't fight the inline section.
+  card.classList.remove('panel-comment-block')
+  // Inline cards should not navigate on click.
+  card.style.cursor = ''
+  // Replace the panel "delete" event-driven flow's edit affordance: panel-card
+  // for review scope renders only resolve+delete (no edit). Append an Edit
+  // button if the user owns this comment and one isn't already there.
+  if (comment.author_identity === ctx.identity) {
+    const actions = card.querySelector('.comment-actions')
+    if (actions && !actions.querySelector('.edit-btn')) {
+      const editBtn = document.createElement('button')
+      editBtn.className = 'edit-btn'
+      editBtn.title = 'Edit'
+      editBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" stroke-linejoin="round"/></svg>'
+      editBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        openReviewCommentEditForm(ctx, comment)
+      })
+      actions.appendChild(editBtn)
+    }
+  }
+  return card
+}
+
+function buildReviewConversationTreeRow(ctx) {
+  const row = document.createElement('div')
+  row.className = 'tree-conversation-row'
+  row.dataset.treePath = REVIEW_CONVERSATION_PATH
+  let inner =
+    '<span class="tree-conversation-icon">' + ICON_REVIEW_CONVERSATION + '</span>' +
+    '<span class="tree-conversation-name">Review conversation</span>'
+  const reviewComments = ctx.comments.filter(c => c.scope === 'review')
+  const unresolved = reviewComments.filter(c => !c.resolved).length
+  if (unresolved > 0) {
+    inner += '<span class="tree-conversation-badge">' + unresolved + '</span>'
+  }
+  row.innerHTML = inner
+  row.addEventListener('click', function() { scrollToReviewConversation(ctx) })
+  return row
+}
+
+function scrollToReviewConversation(ctx) {
+  if (isReviewConversationCollapsed()) {
+    setReviewConversationCollapsed(false)
+    renderReviewConversation(ctx)
+  }
+  const section = document.getElementById('reviewConversation')
+  if (!section) return
+  const rect = section.getBoundingClientRect()
+  const headerEl = document.querySelector('.crit-header')
+  const headerOffset = headerEl ? headerEl.offsetHeight : 0
+  if (rect.top < headerOffset || rect.top > window.innerHeight) {
+    section.scrollIntoView({ block: 'start', behavior: 'instant' })
+  }
+}
+
+function scrollToReviewComment(ctx, commentId) {
+  if (isReviewConversationCollapsed()) {
+    setReviewConversationCollapsed(false)
+    renderReviewConversation(ctx)
+  }
+  const section = document.getElementById('reviewConversation')
+  if (!section) return
+  const card = section.querySelector(`.comment-card[data-comment-id="${CSS.escape(commentId)}"]`)
+  if (!card) {
+    scrollToReviewConversation(ctx)
+    return
+  }
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  card.classList.remove('comment-flash')
+  void card.offsetWidth
   card.classList.add('comment-flash')
   card.addEventListener('animationend', () => card.classList.remove('comment-flash'), { once: true })
 }
@@ -3734,7 +3991,10 @@ function toggleCommentsPanel(ctx) {
 
 function getInlineCommentCards(ctx) {
   const panel = ctx._commentsPanel
-  return Array.from(ctx.el.querySelectorAll('.comment-card')).filter(card => {
+  // Search the whole main-content area so review-conversation cards (which
+  // live as siblings to ctx.el) are included in ] / [ navigation.
+  const root = document.querySelector('.crit-main-content') || ctx.el
+  return Array.from(root.querySelectorAll('.comment-card')).filter(card => {
     return !panel || !panel.contains(card)
   })
 }
@@ -4172,7 +4432,6 @@ export const DocumentRenderer = {
             <span class="comments-panel-count-badge" id="commentsPanelCountBadge">0</span>
           </div>
           <div class="comments-panel-header-actions">
-            <button class="comments-panel-add-btn" title="Add a general comment (Shift+G)">+ Add</button>
             <button class="comments-panel-close" title="Close comments panel" aria-label="Close comments panel">&#x2715;</button>
           </div>
         </div>
@@ -4190,9 +4449,6 @@ export const DocumentRenderer = {
     // Track active filter: 'all', 'open', 'resolved'
     ctx._commentsActiveFilter = 'all'
 
-    commentsPanel.querySelector('.comments-panel-add-btn').addEventListener('click', () => {
-      openReviewCommentForm(ctx)
-    })
     commentsPanel.querySelector('.comments-panel-close').addEventListener('click', () => {
       commentsPanel.classList.remove('comments-panel-open')
       syncCommentsPanelAria(false)
