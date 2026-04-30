@@ -1,5 +1,7 @@
 defmodule CritWeb.SettingsLiveTest do
-  use CritWeb.ConnCase, async: true
+  # async: false — tests in this file mutate Application.put_env(:crit, :selfhosted)
+  # which is global; running concurrently with other tests racing on that key flakes.
+  use CritWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
 

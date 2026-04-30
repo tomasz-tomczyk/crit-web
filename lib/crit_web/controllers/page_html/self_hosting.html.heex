@@ -427,6 +427,65 @@
           </div>
         </div>
       </div>
+
+      <%!-- Error monitoring group --%>
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden mt-3">
+        <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
+            Error monitoring
+          </span>
+        </div>
+        <div class="px-4 py-2.5 bg-(--crit-bg-card) border-b border-(--crit-border) flex items-center gap-2">
+          <span class="text-(--crit-brand) text-sm leading-none select-none">&#9432;</span>
+          <p class="text-sm text-(--crit-fg-secondary)">
+            All Sentry vars are optional. Leave them unset and no error data is sent
+            anywhere — the browser SDK isn't even loaded.
+          </p>
+        </div>
+        <div class="divide-y divide-(--crit-border)">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_DSN</code>
+            <p class="text-sm text-(--crit-fg-secondary)">
+              Backend
+              <a href="https://sentry.io" class="crit-link">Sentry</a>
+              DSN. Captures Elixir/Phoenix exceptions. Request bodies, cookies, and
+              comment text are scrubbed before events leave the server.
+            </p>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
+          </div>
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_FRONTEND_DSN</code>
+            <p class="text-sm text-(--crit-fg-secondary)">
+              Browser SDK DSN. The
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">@sentry/browser</code>
+              chunk is only fetched when this is set, so unset means zero third-party
+              requests from your users' browsers.
+            </p>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
+          </div>
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <div>
+              <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_ENV</code>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">prod</span>
+            </div>
+            <p class="text-sm text-(--crit-fg-secondary)">
+              Environment tag attached to events (e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">staging</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">prod</code>).
+            </p>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
+          </div>
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <div>
+              <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_RELEASE</code>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">app version</span>
+            </div>
+            <p class="text-sm text-(--crit-fg-secondary)">
+              Release tag for grouping events (e.g. a commit SHA or version string).
+              Falls back to the app version from <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">mix.exs</code>.
+            </p>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <%!-- Bring your own Postgres --%>
