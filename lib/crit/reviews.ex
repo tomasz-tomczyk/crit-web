@@ -682,8 +682,9 @@ defmodule Crit.Reviews do
   Delete a review by its id.
 
   Accepts an optional `owner_id` keyword argument. When provided, deletion is
-  only allowed if the review's `user_id` matches `owner_id` or if the review
-  has no owner (legacy reviews created before OAuth was introduced).
+  only allowed if the review's `user_id` matches `owner_id` exactly. Anonymous
+  reviews (where `review.user_id` is nil) cannot be deleted via this path —
+  they are deleted by their `delete_token` instead (`delete_review_by_token/1`).
 
   Returns `:ok`, `{:error, :not_found}`, or `{:error, :unauthorized}`.
   """
@@ -695,7 +696,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       review ->
-        if owner_id && review.user_id && review.user_id != owner_id do
+        if owner_id && review.user_id != owner_id do
           {:error, :unauthorized}
         else
           case Repo.delete(review) do

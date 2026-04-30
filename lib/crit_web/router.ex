@@ -78,7 +78,7 @@ defmodule CritWeb.Router do
     pipe_through [:browser, :noindex]
 
     live_session :review,
-      on_mount: [],
+      on_mount: [{CritWeb.Live.Hooks, :require_review_auth}],
       session: {CritWeb.ReviewLive, :session_opts, []} do
       live "/r/:token", ReviewLive, :show
     end
@@ -126,8 +126,16 @@ defmodule CritWeb.Router do
 
     get "/export/:token/review", ApiController, :export_review
     get "/export/:token/comments", ApiController, :export_comments
+  end
 
-    if Mix.env() in [:test, :dev] do
+  # Dev/test-only seed endpoints. Kept in a separate scope without ApiAuth
+  # so integration tests can mint users + comments on a selfhosted
+  # OAuth-enforced instance (where the regular /api scope returns 401 for
+  # anonymous requests). Compiled out of :prod entirely.
+  if Mix.env() in [:test, :dev] do
+    scope "/api", CritWeb do
+      pipe_through [:device_api, :noindex]
+
       post "/reviews/:token/seed-comment", ApiController, :seed_comment
       post "/reviews/:token/seed-reply/:comment_id", ApiController, :seed_reply
       post "/test/seed-user", ApiController, :seed_user
