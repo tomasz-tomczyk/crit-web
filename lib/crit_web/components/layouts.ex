@@ -115,16 +115,19 @@ defmodule CritWeb.Layouts do
   divider, then the identity popover (or "Sign in"), theme toggle, and a
   mobile hamburger. Pass `current_page` to mark the active marketing tab.
   """
-  attr :current_user, :any, default: nil
+  attr :current_scope, :any, default: nil
 
   attr :current_page, :atom,
     default: nil,
     doc: "one of :features, :getting_started, :self_hosting, :changelog, :integrations"
 
   def site_header(assigns) do
+    current_user = assigns.current_scope && assigns.current_scope.user
+
     assigns =
       assigns
-      |> assign(:user_initial, user_initial(assigns.current_user))
+      |> assign(:current_user, current_user)
+      |> assign(:user_initial, user_initial(current_user))
       |> assign(:github_oauth?, github_oauth?())
 
     ~H"""
@@ -406,17 +409,19 @@ defmodule CritWeb.Layouts do
   """
   attr :authenticated, :boolean, default: true
   attr :password_required, :boolean, default: false
-  attr :current_user, :any, default: nil
+  attr :current_scope, :any, default: nil
   attr :show_overview_link, :boolean, default: false
   attr :current_page, :atom, default: nil
 
   def dashboard_header(assigns) do
     host = if assigns.show_overview_link, do: CritWeb.Endpoint.host(), else: nil
+    current_user = assigns.current_scope && assigns.current_scope.user
 
     assigns =
       assigns
       |> assign(:host, host)
-      |> assign(:user_initial, user_initial(assigns.current_user))
+      |> assign(:current_user, current_user)
+      |> assign(:user_initial, user_initial(current_user))
 
     ~H"""
     <header class="bg-(--crit-bg-card) border-b border-(--crit-border)">

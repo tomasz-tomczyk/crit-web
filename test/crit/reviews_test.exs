@@ -570,7 +570,7 @@ defmodule Crit.ReviewsTest do
           "body" => "Second"
         })
 
-      {2, _} = Reviews.update_display_name(scope, "NewName")
+      assert :ok = Reviews.update_display_name(scope, "NewName")
 
       comments = Reviews.list_comments(review)
       assert Enum.all?(comments, &(&1.author_display_name == "NewName"))
@@ -624,14 +624,14 @@ defmodule Crit.ReviewsTest do
           "body" => "On review 2"
         })
 
-      {2, _} = Reviews.update_display_name(scope, "New")
+      assert :ok = Reviews.update_display_name(scope, "New")
 
       assert hd(Reviews.list_comments(review1)).author_display_name == "New"
       assert hd(Reviews.list_comments(review2)).author_display_name == "New"
     end
 
-    test "returns {0, nil} when identity has no comments" do
-      assert {0, _} = Reviews.update_display_name(anon_scope(), "Nobody")
+    test "returns :ok when identity has no comments" do
+      assert :ok = Reviews.update_display_name(anon_scope(), "Nobody")
     end
 
     test "no-ops for authenticated scopes" do

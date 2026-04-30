@@ -109,7 +109,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = comment ->
-        if comment_owned_by?(comment, scope.identity, Scope.user_id(scope)) do
+        if comment_owned_by?(scope, comment) do
           comment
           |> Comment.create_changeset(%{
             "start_line" => comment.start_line,
@@ -131,7 +131,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = comment ->
-        if comment_owned_by?(comment, scope.identity, Scope.user_id(scope)) do
+        if comment_owned_by?(scope, comment) do
           Repo.delete(comment)
         else
           {:error, :unauthorized}
@@ -139,12 +139,15 @@ defmodule Crit.Reviews do
     end
   end
 
-  defp comment_owned_by?(%Comment{user_id: nil, author_identity: ai}, identity, _user_id) do
-    not is_nil(ai) and ai == identity
+  defp comment_owned_by?(%Scope{} = scope, %Comment{user_id: nil, author_identity: ai}) do
+    not is_nil(ai) and ai == scope.identity
   end
 
-  defp comment_owned_by?(%Comment{user_id: uid}, _identity, current_user_id) do
-    not is_nil(current_user_id) and uid == current_user_id
+  defp comment_owned_by?(%Scope{} = scope, %Comment{user_id: uid}) do
+    case Scope.user_id(scope) do
+      nil -> false
+      current_user_id -> uid == current_user_id
+    end
   end
 
   @doc """
@@ -720,12 +723,14 @@ defmodule Crit.Reviews do
   Update the display name on all comments owned by the scope's identity.
 
   No-ops for authenticated scopes (their display name is derived from the user
-  record). Returns `{count, nil}` for anonymous, `:ok` otherwise.
+  record).
   """
   def update_display_name(%Scope{user: nil, identity: identity}, name)
       when is_binary(identity) and is_binary(name) do
     from(c in Comment, where: c.author_identity == ^identity)
     |> Repo.update_all(set: [author_display_name: name])
+
+    :ok
   end
 
   def update_display_name(%Scope{}, _name), do: :ok
@@ -760,43 +765,33 @@ defmodule Crit.Reviews do
   """
   def resolve_comment(%Scope{} = scope, comment_id, resolved, review_id)
       when is_boolean(resolved) do
-    with :ok <- check_resolve_permission(scope, comment_id, review_id) do
-      case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
-        nil -> {:error, :not_found}
-        %Comment{parent_id: parent} when parent != nil -> {:error, :not_found}
-        comment -> comment |> Ecto.Changeset.change(resolved: resolved) |> Repo.update()
-      end
+    with %Comment{parent_id: nil} = comment <-
+           Repo.get_by(Comment, id: comment_id, review_id: review_id) || {:error, :not_found},
+         %Review{} = review <- Repo.get(Review, review_id) || {:error, :not_found},
+         :ok <- can_resolve_comment?(scope, comment, review) do
+      comment |> Ecto.Changeset.change(resolved: resolved) |> Repo.update()
+    else
+      %Comment{parent_id: parent} when parent != nil -> {:error, :not_found}
+      {:error, _} = error -> error
     end
   end
 
-  defp check_resolve_permission(%Scope{} = scope, comment_id, review_id) do
-    case Repo.one(
-           from c in Comment,
-             where: c.id == ^comment_id and c.review_id == ^review_id,
-             join: r in Review,
-             on: r.id == c.review_id,
-             select: %{
-               comment_user_id: c.user_id,
-               comment_identity: c.author_identity,
-               review_user_id: r.user_id,
-               parent_id: c.parent_id
-             }
-         ) do
-      nil ->
-        {:error, :not_found}
+  defp can_resolve_comment?(%Scope{} = scope, %Comment{} = comment, %Review{} = review) do
+    scope_uid = Scope.user_id(scope)
 
-      %{parent_id: parent} when parent != nil ->
-        {:error, :not_found}
+    cond do
+      scope_uid != nil and scope_uid == review.user_id ->
+        :ok
 
-      %{comment_user_id: cuid, comment_identity: cident, review_user_id: ruid} ->
-        scope_uid = Scope.user_id(scope)
+      scope_uid != nil and scope_uid == comment.user_id ->
+        :ok
 
-        cond do
-          scope_uid != nil and scope_uid == ruid -> :ok
-          scope_uid != nil and scope_uid == cuid -> :ok
-          cuid == nil and scope.identity != nil and scope.identity == cident -> :ok
-          true -> {:error, :unauthorized}
-        end
+      comment.user_id == nil and scope.identity != nil and
+          scope.identity == comment.author_identity ->
+        :ok
+
+      true ->
+        {:error, :unauthorized}
     end
   end
 
@@ -848,7 +843,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = reply ->
-        if comment_owned_by?(reply, scope.identity, Scope.user_id(scope)) do
+        if comment_owned_by?(scope, reply) do
           reply |> Comment.reply_changeset(%{"body" => body}) |> Repo.update()
         else
           {:error, :unauthorized}
@@ -866,7 +861,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = reply ->
-        if comment_owned_by?(reply, scope.identity, Scope.user_id(scope)) do
+        if comment_owned_by?(scope, reply) do
           Repo.delete(reply)
         else
           {:error, :unauthorized}

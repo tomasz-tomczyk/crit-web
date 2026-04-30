@@ -9,19 +9,24 @@ defmodule CritWeb.ReviewController do
       name ->
         scope = conn.assigns.current_scope
 
-        if scope.identity do
-          Crit.Reviews.update_display_name(scope, name)
+        conn =
+          if scope.identity && scope.user == nil do
+            Crit.Reviews.update_display_name(scope, name)
 
-          for {_id, token} <- Crit.Reviews.reviews_for_identity(scope) do
-            Phoenix.PubSub.broadcast(
-              Crit.PubSub,
-              "review:#{token}",
-              {:display_name_changed, %{identity: scope.identity, name: name}}
-            )
+            for {_id, token} <- Crit.Reviews.reviews_for_identity(scope) do
+              Phoenix.PubSub.broadcast(
+                Crit.PubSub,
+                "review:#{token}",
+                {:display_name_changed, %{identity: scope.identity, name: name}}
+              )
+            end
+
+            put_session(conn, "display_name", name)
+          else
+            conn
           end
-        end
 
-        conn |> put_session("display_name", name) |> json(%{ok: true})
+        json(conn, %{ok: true})
     end
   end
 

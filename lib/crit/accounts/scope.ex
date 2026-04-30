@@ -17,7 +17,19 @@ defmodule Crit.Accounts.Scope do
   Mutually exclusive — never both set.
   """
   def for_session(session) when is_map(session) do
-    case load_user(Map.get(session, "user_id")) do
+    user =
+      case Map.get(session, "user_id") do
+        nil ->
+          nil
+
+        user_id ->
+          case Crit.Accounts.get_user(user_id) do
+            {:ok, user} -> user
+            {:error, :not_found} -> nil
+          end
+      end
+
+    case user do
       %User{} = user ->
         for_user(user)
 
@@ -61,13 +73,4 @@ defmodule Crit.Accounts.Scope do
   # expose private contact info.
   defp display_name_for(%User{name: name}) when is_binary(name) and name != "", do: name
   defp display_name_for(%User{}), do: "User"
-
-  defp load_user(nil), do: nil
-
-  defp load_user(user_id) do
-    case Crit.Accounts.get_user(user_id) do
-      {:ok, user} -> user
-      {:error, :not_found} -> nil
-    end
-  end
 end
