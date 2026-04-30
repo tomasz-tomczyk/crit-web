@@ -3,17 +3,16 @@ defmodule CritWeb.ReviewLive do
 
   alias Crit.Reviews
 
-  on_mount {CritWeb.Live.Hooks, :load_current_user}
+  # Auth is gated by the router's :require_review_auth on_mount hook, which
+  # also assigns :current_user (set to nil for anonymous visitors in public
+  # mode). No module-level on_mount needed here.
 
   @pubsub Crit.PubSub
 
   @impl true
   def mount(%{"token" => token}, session, socket) do
     current_user = socket.assigns.current_user
-
-    auth_required =
-      Application.get_env(:crit, :selfhosted) == true &&
-        Application.get_env(:crit, :oauth_provider) != nil
+    auth_required = Crit.Config.selfhosted_oauth?()
 
     # When authenticated, attribution flows through `user_id` (a verified FK).
     # `identity` (the session-owner token) is only used for anonymous
@@ -111,20 +110,10 @@ defmodule CritWeb.ReviewLive do
          |> assign(:show_round_diff, false)
          |> assign(:prev_round_snapshots, %{})
          |> assign(:diff_mode, "split")
-         |> assign(
-           :page_title,
-           if(auth_required && is_nil(current_user),
-             do: "Review - Crit",
-             else: display_filename(review)
-           )
-         )
+         |> assign(:page_title, display_filename(review))
          |> assign(
            :meta_description,
-           if(auth_required && is_nil(current_user),
-             do: "Sign in to view this review on Crit.",
-             else:
-               "Shared review of #{display_filename(review)} on Crit. View inline comments and add your own feedback."
-           )
+           "Shared review of #{display_filename(review)} on Crit. View inline comments and add your own feedback."
          )
          |> assign(:noindex, true)
          |> assign(:og_type, "article")
@@ -493,7 +482,10 @@ defmodule CritWeb.ReviewLive do
 
   @doc false
   def session_opts(conn) do
-    %{"user_id" => Plug.Conn.get_session(conn, "user_id")}
+    %{
+      "user_id" => Plug.Conn.get_session(conn, "user_id"),
+      "request_path" => conn.request_path
+    }
   end
 
   defp display_filename(%{files: [first | _]}), do: first.file_path

@@ -28,8 +28,5 @@ defmodule CritWeb.Plugs.ApiAuth do
     end
   end
 
-  defp enforced?(_conn) do
-    Application.get_env(:crit, :selfhosted) == true &&
-      Application.get_env(:crit, :oauth_provider) != nil
-  end
+  defp enforced?(_conn), do: Crit.Config.selfhosted_oauth?()
 end

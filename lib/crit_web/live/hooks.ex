@@ -23,6 +23,12 @@ defmodule CritWeb.Live.Hooks do
   - `:require_selfhosted_auth` — requires an authenticated user on a self-hosted instance.
     Assigns `authenticated`, `current_user`, `oauth_configured`, and `password_required`.
     Redirects to `/` if selfhosted mode is not enabled.
+
+  - `:require_review_auth` — assigns `current_user`. When the instance is selfhosted
+    AND an `oauth_provider` is configured, redirects unauthenticated visitors to the
+    OAuth login flow with `return_to` set to the current request path. Otherwise
+    (public/hosted mode, or selfhosted without OAuth) lets the request through with
+    `current_user` possibly nil.
   """
   def on_mount(:load_current_user, _params, session, socket) do
     current_user = load_user(session)
@@ -32,6 +38,22 @@ defmodule CritWeb.Live.Hooks do
 
   def on_mount(:require_selfhosted_auth, _params, session, socket) do
     selfhosted_auth(session, socket)
+  end
+
+  def on_mount(:require_review_auth, _params, session, socket) do
+    current_user = load_user(session)
+
+    cond do
+      current_user ->
+        {:cont, assign(socket, :current_user, current_user)}
+
+      Crit.Config.selfhosted_oauth?() ->
+        return_to = Map.get(session, "request_path", "/")
+        {:halt, redirect(socket, to: "/auth/login?return_to=#{URI.encode_www_form(return_to)}")}
+
+      true ->
+        {:cont, assign(socket, :current_user, nil)}
+    end
   end
 
   def on_mount(:require_user, _params, session, socket) do

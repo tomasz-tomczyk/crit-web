@@ -28,10 +28,8 @@
             </g>
           </svg>
         </a>
-        <%= if not (@auth_required and is_nil(@current_user)) do %>
-          <%= if @review.review_round > 1 do %>
-            <span class="crit-header-round">Round #{@review.review_round}</span>
-          <% end %>
+        <%= if @review.review_round > 1 do %>
+          <span class="crit-header-round">Round #{@review.review_round}</span>
         <% end %>
       </div>
       <div class="crit-header-identity">
@@ -352,70 +350,59 @@
     <ul class="crit-toc-list"></ul>
   </div>
 
-  <%= if @auth_required and is_nil(@current_user) do %>
-    <div class="crit-auth-gate">
-      <div class="crit-auth-gate-inner">
-        <p class="crit-auth-gate-msg">Sign in to view this review</p>
-        <a href={~p"/auth/login?#{%{return_to: ~p"/r/#{@review.token}"}}"} class="crit-signin-btn">
-          Sign in
-        </a>
-      </div>
+  <% owner? = @current_user && (is_nil(@review.user_id) || @review.user_id == @current_user.id) %>
+  <% author = @review.user %>
+  <% comment_count =
+    Enum.reduce(@review.comments, 0, fn c, acc ->
+      acc + 1 + length(c.replies)
+    end) %>
+  <% first_path =
+    case List.first(@review.files) do
+      nil -> nil
+      f -> f.file_path
+    end %>
+  <div class="crit-review-meta">
+    <div class="crit-review-meta-inner">
+      <CritWeb.Components.ReviewListingHeader.review_listing_header
+        path={first_path}
+        last_activity_at={@review.last_activity_at}
+        file_count={length(@review.files)}
+        comment_count={comment_count}
+        author={author}
+      >
+        <:actions :if={owner?}>
+          <button
+            phx-click="delete_review"
+            data-confirm="Delete this review? This cannot be undone."
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-(--crit-red) bg-(--crit-bg-card) text-(--crit-red) hover:bg-(--crit-red) hover:text-white transition-colors cursor-pointer ml-1 font-medium"
+            aria-label="Delete review"
+          >
+            <.icon name="hero-trash" class="size-3.5" />
+            <span>Delete</span>
+          </button>
+        </:actions>
+      </CritWeb.Components.ReviewListingHeader.review_listing_header>
     </div>
-  <% else %>
-    <% owner? = @current_user && (is_nil(@review.user_id) || @review.user_id == @current_user.id) %>
-    <% author = @review.user %>
-    <% comment_count =
-      Enum.reduce(@review.comments, 0, fn c, acc ->
-        acc + 1 + length(c.replies)
-      end) %>
-    <% first_path =
-      case List.first(@review.files) do
-        nil -> nil
-        f -> f.file_path
-      end %>
-    <div class="crit-review-meta">
-      <div class="crit-review-meta-inner">
-        <CritWeb.Components.ReviewListingHeader.review_listing_header
-          path={first_path}
-          last_activity_at={@review.last_activity_at}
-          file_count={length(@review.files)}
-          comment_count={comment_count}
-          author={author}
-        >
-          <:actions :if={owner?}>
-            <button
-              phx-click="delete_review"
-              data-confirm="Delete this review? This cannot be undone."
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-(--crit-red) bg-(--crit-bg-card) text-(--crit-red) hover:bg-(--crit-red) hover:text-white transition-colors cursor-pointer ml-1 font-medium"
-              aria-label="Delete review"
-            >
-              <.icon name="hero-trash" class="size-3.5" />
-              <span>Delete</span>
-            </button>
-          </:actions>
-        </CritWeb.Components.ReviewListingHeader.review_listing_header>
+  </div>
+  <div id="crit-main-layout" class="crit-main-layout">
+    <div id="fileTreePanel" class="tree-panel" style="display:none">
+      <div class="tree-header">
+        <span class="tree-title">Files</span>
+        <span id="fileTreeStats" class="tree-stats"></span>
       </div>
+      <div id="fileTreeBody" class="tree-body"></div>
     </div>
-    <div id="crit-main-layout" class="crit-main-layout">
-      <div id="fileTreePanel" class="tree-panel" style="display:none">
-        <div class="tree-header">
-          <span class="tree-title">Files</span>
-          <span id="fileTreeStats" class="tree-stats"></span>
-        </div>
-        <div id="fileTreeBody" class="tree-body"></div>
-      </div>
 
-      <div class="crit-main-content">
-        <div
-          id="document-renderer"
-          phx-hook=".DocumentRenderer"
-          phx-update="ignore"
-          data-identity={@identity}
-          data-review-round={@review.review_round || 0}
-        >
-          <div class="crit-loading">Loading document...</div>
-        </div>
+    <div class="crit-main-content">
+      <div
+        id="document-renderer"
+        phx-hook=".DocumentRenderer"
+        phx-update="ignore"
+        data-identity={@identity}
+        data-review-round={@review.review_round || 0}
+      >
+        <div class="crit-loading">Loading document...</div>
       </div>
     </div>
-  <% end %>
+  </div>
 </div>
