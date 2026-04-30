@@ -32,7 +32,9 @@ defmodule Crit.SentryFilter do
     scrubbed =
       qs
       |> URI.decode_query()
-      |> Enum.map(fn {k, v} -> if k in @sensitive_query_params, do: {k, "[Filtered]"}, else: {k, v} end)
+      |> Enum.map(fn {k, v} ->
+        if k in @sensitive_query_params, do: {k, "[Filtered]"}, else: {k, v}
+      end)
       |> URI.encode_query()
 
     %{event | request: %{req | query_string: scrubbed}}
