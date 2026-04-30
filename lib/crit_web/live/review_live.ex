@@ -248,7 +248,8 @@ defmodule CritWeb.ReviewLive do
         {:noreply, socket}
 
       name ->
-        scope = Scope.put_display_name(socket.assigns.current_scope, name)
+        %{current_scope: scope} = socket.assigns
+        scope = Scope.put_display_name(scope, name)
 
         {:noreply,
          socket
