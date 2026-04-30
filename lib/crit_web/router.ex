@@ -11,23 +11,27 @@ defmodule CritWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug CritWeb.Plugs.SecurityHeaders
+    plug CritWeb.Plugs.RateLimit
     plug :fetch_current_scope_for_user
   end
 
   pipeline :api do
     plug :accepts, ["json"]
     plug CritWeb.Plugs.SecurityHeaders
+    plug CritWeb.Plugs.RateLimit, response: :json
     plug CritWeb.Plugs.ApiAuth
   end
 
   pipeline :device_api do
     plug :accepts, ["json"]
     plug CritWeb.Plugs.SecurityHeaders
+    plug CritWeb.Plugs.RateLimit, response: :json
   end
 
   pipeline :auth_api do
     plug :accepts, ["json"]
     plug CritWeb.Plugs.SecurityHeaders
+    plug CritWeb.Plugs.RateLimit, response: :json
     plug CritWeb.Plugs.RequireBearerAuth
   end
 
@@ -74,7 +78,8 @@ defmodule CritWeb.Router do
     get "/auth/cli/success", DeviceController, :success
   end
 
-  # Review pages and dashboard — noindex
+  # Review pages and dashboard — noindex (review page also gets no-referrer
+  # via :put_noindex)
   scope "/", CritWeb do
     pipe_through [:browser, :noindex]
 
@@ -144,6 +149,8 @@ defmodule CritWeb.Router do
   end
 
   defp put_noindex(conn, _opts) do
-    Plug.Conn.put_resp_header(conn, "x-robots-tag", "noindex")
+    conn
+    |> Plug.Conn.put_resp_header("x-robots-tag", "noindex")
+    |> Plug.Conn.put_resp_header("referrer-policy", "no-referrer")
   end
 end

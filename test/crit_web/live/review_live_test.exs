@@ -32,6 +32,12 @@ defmodule CritWeb.ReviewLiveTest do
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
       assert page_title(view) =~ hd(review.files).file_path
     end
+
+    test "sends Referrer-Policy: no-referrer", %{conn: conn, review: review} do
+      conn = get(conn, ~p"/r/#{review.token}")
+      assert get_resp_header(conn, "referrer-policy") == ["no-referrer"]
+      assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
+    end
   end
 
   describe "mount with multi-file review" do
