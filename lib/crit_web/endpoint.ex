@@ -12,8 +12,8 @@ defmodule CritWeb.Endpoint do
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]],
+    longpoll: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
