@@ -49,10 +49,20 @@ end
 
 # Optional separate DSN for the browser SDK. Injected into the page only when set.
 if frontend_dsn = System.get_env("SENTRY_FRONTEND_DSN") do
+  ingest_origin =
+    case URI.parse(frontend_dsn) do
+      %URI{scheme: scheme, host: host} when is_binary(scheme) and is_binary(host) ->
+        "#{scheme}://#{host}"
+
+      _ ->
+        nil
+    end
+
   config :crit, :sentry_frontend, %{
     dsn: frontend_dsn,
     environment: System.get_env("SENTRY_ENV") || "prod",
-    release: System.get_env("SENTRY_RELEASE")
+    release: System.get_env("SENTRY_RELEASE"),
+    ingest_origin: ingest_origin
   }
 end
 
