@@ -3238,3 +3238,4 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .tree-conversation-row.active .tree-conversation-badge {
   color: var(--crit-brand);
 }
+
