@@ -24,8 +24,8 @@ defmodule CritWeb.ReviewLiveTest do
       assert html =~ hd(review.files).file_path
     end
 
-    test "redirects to home for invalid token", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/r/nonexistent-token")
+    test "renders 404 for invalid token", %{conn: conn} do
+      assert_error_sent 404, fn -> live(conn, ~p"/r/nonexistent-token") end
     end
 
     test "sets page title to first file path", %{conn: conn, review: review} do

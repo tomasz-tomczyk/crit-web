@@ -68,7 +68,9 @@ defmodule CritWeb.PageControllerTest do
 
     test "returns 404 for an unknown tool", %{conn: conn} do
       conn = get(conn, ~p"/integrations/does-not-exist")
-      assert response(conn, 404) =~ "Not Found"
+      body = response(conn, 404)
+      assert body =~ "This page was"
+      assert body =~ "not found"
     end
   end
 end

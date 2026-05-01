@@ -17,7 +17,7 @@ config :crit, CritWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: CritWeb.ErrorHTML, json: CritWeb.ErrorJSON],
-    layout: false
+    layout: {CritWeb.Layouts, :root}
   ],
   pubsub_server: Crit.PubSub,
   live_view: [signing_salt: "WyzCaSCk"]

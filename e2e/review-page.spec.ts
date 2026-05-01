@@ -52,10 +52,12 @@ test.describe("Review Page — Loading", () => {
     ).toContainText("Get prompt");
   });
 
-  test("returns 404 flash for invalid token", async ({ page }) => {
-    await page.goto("/r/nonexistent-token-12345");
-    // Should redirect to home with flash error
-    await expect(page).toHaveURL("/");
+  test("renders 404 page for invalid token", async ({ page }) => {
+    const response = await page.goto("/r/nonexistent-token-12345");
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "not found"
+    );
   });
 });
 
