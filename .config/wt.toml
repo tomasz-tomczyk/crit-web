@@ -1,5 +1,7 @@
-[pre-start]
+[[pre-start]]
 mise-trust = "mise trust ."
+
+[[pre-start]]
 direnv-allow = "direnv allow"
 
 # Copy build caches from source branch worktree
