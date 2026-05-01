@@ -37,12 +37,12 @@ defmodule CritWeb.Plugs.RateLimit do
         {:allow, _} ->
           conn
 
-        {:deny, _} ->
+        {:deny, retry_after} ->
           {content_type, body} = body_for(response)
 
           conn
           |> put_resp_content_type(content_type)
-          |> put_resp_header("retry-after", "60")
+          |> put_resp_header("retry-after", Integer.to_string(div(retry_after, 1000)))
           |> send_resp(429, body)
           |> halt()
       end

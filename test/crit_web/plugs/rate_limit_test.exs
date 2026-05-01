@@ -36,7 +36,9 @@ defmodule CritWeb.Plugs.RateLimitTest do
       assert blocked.status == 429
       assert blocked.resp_body == "Too many requests"
       assert ["text/plain" <> _] = get_resp_header(blocked, "content-type")
-      assert get_resp_header(blocked, "retry-after") == ["60"]
+      [retry] = get_resp_header(blocked, "retry-after")
+      assert {n, ""} = Integer.parse(retry)
+      assert n >= 0 and n <= 60
     end
 
     test "returns JSON body when response: :json", %{conn: conn, ip: ip} do
@@ -46,7 +48,9 @@ defmodule CritWeb.Plugs.RateLimitTest do
       assert blocked.status == 429
       assert blocked.resp_body == ~s({"error":"Too many requests"})
       assert ["application/json" <> _] = get_resp_header(blocked, "content-type")
-      assert get_resp_header(blocked, "retry-after") == ["60"]
+      [retry] = get_resp_header(blocked, "retry-after")
+      assert {n, ""} = Integer.parse(retry)
+      assert n >= 0 and n <= 60
     end
 
     test "rate limit is per-IP", %{conn: conn} do

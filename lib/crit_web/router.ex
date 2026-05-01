@@ -59,6 +59,8 @@ defmodule CritWeb.Router do
     get "/changelog", PageController, :changelog
 
     post "/set-name", ReviewController, :set_name
+    # POST /auth/login = legacy admin password login (selfhosted instances).
+    # GET  /auth/login = OAuth provider redirect (initiates the OAuth flow).
     post "/auth/login", AuthController, :login
     post "/auth/logout", AuthController, :logout
 

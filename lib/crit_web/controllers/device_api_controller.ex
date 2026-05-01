@@ -82,9 +82,7 @@ defmodule CritWeb.DeviceApiController do
     conn |> put_status(400) |> json(%{error: "device_code is required"})
   end
 
-  defp oauth_configured? do
-    Application.get_env(:crit, :oauth_provider) != nil
-  end
+  defp oauth_configured?, do: Crit.Config.oauth_configured?()
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)

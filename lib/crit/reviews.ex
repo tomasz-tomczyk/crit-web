@@ -18,7 +18,7 @@ defmodule Crit.Reviews do
             comments:
               ^from(c in Comment,
                 where: is_nil(c.parent_id),
-                order_by: [asc: c.start_line, asc: c.end_line],
+                order_by: [asc: c.start_line, asc: c.end_line, asc: c.inserted_at],
                 preload: [:user, replies: [:user]]
               )
           ]
@@ -59,7 +59,7 @@ defmodule Crit.Reviews do
     Repo.all(
       from c in Comment,
         where: c.review_id == ^review_id and is_nil(c.parent_id),
-        order_by: [asc: c.start_line, asc: c.end_line],
+        order_by: [asc: c.start_line, asc: c.end_line, asc: c.inserted_at],
         preload: [:user, replies: [:user]]
     )
   end
@@ -111,12 +111,7 @@ defmodule Crit.Reviews do
       %Comment{} = comment ->
         if comment_owned_by?(scope, comment) do
           comment
-          |> Comment.create_changeset(%{
-            "start_line" => comment.start_line,
-            "end_line" => comment.end_line,
-            "body" => body,
-            "scope" => comment.scope || "line"
-          })
+          |> Comment.body_changeset(%{"body" => body})
           |> Repo.update()
         else
           {:error, :unauthorized}
@@ -165,11 +160,17 @@ defmodule Crit.Reviews do
         review_comments_attrs \\ [],
         opts \\ []
       ) do
-    total_size = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
+    total_bytes = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
+
+    total_lines =
+      files_attrs
+      |> Enum.map(&((&1["content"] || "") |> String.split("\n") |> length()))
+      |> Enum.sum()
+
     user_id = Scope.user_id(scope)
     cli_args = Keyword.get(opts, :cli_args) || []
 
-    if total_size > @max_total_size do
+    if total_bytes > @max_total_size do
       {:error, :total_size_exceeded}
     else
       review_changeset =
@@ -206,12 +207,6 @@ defmodule Crit.Reviews do
       |> case do
         {:ok, %{review: review}} ->
           comment_count = length(comments_attrs) + length(review_comments_attrs)
-          total_bytes = files_attrs |> Enum.map(&byte_size(&1["content"] || "")) |> Enum.sum()
-
-          total_lines =
-            files_attrs
-            |> Enum.map(&((&1["content"] || "") |> String.split("\n") |> length()))
-            |> Enum.sum()
 
           Statistics.increment_review(
             length(files_attrs),

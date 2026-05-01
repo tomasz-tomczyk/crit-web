@@ -59,6 +59,19 @@ defmodule Crit.Comment do
     end
   end
 
+  @doc """
+  Changeset for editing only the body of an existing comment. Mirrors the
+  `:body` validations in `create_changeset/2` but does not re-validate
+  immutable fields (start_line/end_line/scope) which the caller would
+  otherwise need to re-pass.
+  """
+  def body_changeset(comment, attrs) do
+    comment
+    |> cast(attrs, [:body])
+    |> validate_required([:body])
+    |> validate_length(:body, max: 51_200, message: "must be at most 50 KB")
+  end
+
   @doc "Changeset for creating a reply (comment with parent_id)."
   def reply_changeset(comment, attrs) do
     comment

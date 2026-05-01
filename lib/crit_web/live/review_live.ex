@@ -87,7 +87,7 @@ defmodule CritWeb.ReviewLive do
         {:ok,
          socket
          |> assign(:review, review)
-         |> assign(:oauth_configured, Application.get_env(:crit, :oauth_provider) != nil)
+         |> assign(:oauth_configured, Crit.Config.oauth_configured?())
          |> assign(:auth_required, auth_required)
          |> assign(:demo?, demo?)
          |> assign(:local_prompt_text, local_prompt_text)
