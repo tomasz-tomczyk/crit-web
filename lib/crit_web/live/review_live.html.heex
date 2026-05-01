@@ -376,10 +376,10 @@
           <button
             phx-click="delete_review"
             data-confirm="Delete this review? This cannot be undone."
-            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-(--crit-red) bg-(--crit-bg-card) text-(--crit-red) hover:bg-(--crit-red) hover:text-white transition-colors cursor-pointer ml-1 font-medium"
+            class="crit-delete-btn"
             aria-label="Delete review"
           >
-            <.icon name="hero-trash" class="size-3.5" />
+            <.icon name="hero-trash" />
             <span>Delete</span>
           </button>
         </:actions>

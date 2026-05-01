@@ -3910,7 +3910,7 @@ function createReviewConversationCard(ctx, comment) {
   const card = wrapper.querySelector('.comment-card') || wrapper
   card.style.cursor = ''
   // Append Edit button for owners (panel-card builds resolve+delete only for review scope).
-  if (comment.author_identity === ctx.identity) {
+  if (isOwnComment(comment, ctx)) {
     const actions = card.querySelector('.comment-actions')
     if (actions && !actions.querySelector('.edit-btn')) {
       const editBtn = document.createElement('button')
