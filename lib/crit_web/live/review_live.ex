@@ -21,10 +21,7 @@ defmodule CritWeb.ReviewLive do
   defp mount_review(token, socket, %Scope{} = scope, auth_required) do
     case Reviews.get_by_token(token) do
       nil ->
-        {:ok,
-         socket
-         |> put_flash(:error, "Review not found.")
-         |> redirect(to: ~p"/"), layout: {CritWeb.Layouts, :review}}
+        raise CritWeb.NotFoundError
 
       review ->
         demo? = review.token == Application.get_env(:crit, :demo_review_token)
