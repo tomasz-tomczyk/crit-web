@@ -4249,7 +4249,7 @@ function renderShortcutsPane() {
       { key: '<kbd>[</kbd>', action: 'Previous comment' },
     ]},
     { label: 'Comments', shortcuts: [
-      { key: '<kbd>c</kbd>', action: 'Comment on focused block' },
+      { key: '<kbd>c</kbd>', action: 'Comment on focused block (or text selection, with quote)' },
       { key: '<kbd>e</kbd>', action: 'Edit comment on focused block' },
       { key: '<kbd>d</kbd>', action: 'Delete comment on focused block' },
       { key: '<kbd>Shift</kbd>+<kbd>G</kbd>', action: 'General comment' },
@@ -4748,64 +4748,50 @@ export const DocumentRenderer = {
       }
     })
 
-    // ===== Select-to-Comment: open comment form on text selection =====
-    ctx._mouseupHandler = (e) => {
-      // Don't interfere with gutter interactions (drag-to-select, + button clicks).
-      if (ctx.dragState) return
-      if (e.target.closest('.line-comment-gutter')) return
+    // ===== Select-to-Comment helper =====
+    // Selection alone never opens the form — copying text stays unhindered.
+    // The user presses `c` after selecting to comment on the selection.
+    // Returns true if a form was opened from an active selection.
+    const tryOpenFormFromSelection = () => {
+      const selection = window.getSelection()
+      const range = getLineRangeFromSelection(selection)
+      if (!range) return false
 
-      // Small delay to let the browser finalize the selection
-      requestAnimationFrame(() => {
-        const selection = window.getSelection()
-        const range = getLineRangeFromSelection(selection)
-        if (!range) return
-
-        // If any comment form is already open, don't hijack text selection —
-        // the user is selecting text to copy, not to open another comment.
-        if (ctx.activeForms.length > 0) return
-
-        // Capture the selected text before clearing, for the quote field.
-        // If the selection covers the full text of the line range, skip it — redundant.
-        let quote = null
-        try {
-          let selectedText = selection.toString().trim()
-          if (selectedText) {
-            // Get the full text content of the lines in this range to compare.
-            let fullText = ''
-            for (let ln = range.startLine; ln <= range.endLine; ln++) {
-              ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el) {
-                if (el.dataset.filePath !== range.filePath) return
-                const s = parseInt(el.dataset.startLine), e = parseInt(el.dataset.endLine)
-                if (s <= ln && e >= ln) {
-                  const content = el.querySelector('.line-content')
-                  if (content) fullText += (fullText ? '\n' : '') + content.textContent.trim()
-                }
-              })
-            }
-            // Only include quote if it's a partial selection (not the full line content)
-            const normalizedSelected = selectedText.replace(/\s+/g, ' ')
-            const normalizedFull = fullText.trim().replace(/\s+/g, ' ')
-            if (normalizedSelected !== normalizedFull && selectedText.length <= 300) {
-              quote = selectedText
-            }
+      let quote = null
+      try {
+        let selectedText = selection.toString().trim()
+        if (selectedText) {
+          let fullText = ''
+          for (let ln = range.startLine; ln <= range.endLine; ln++) {
+            ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el) {
+              if (el.dataset.filePath !== range.filePath) return
+              const s = parseInt(el.dataset.startLine), endLn = parseInt(el.dataset.endLine)
+              if (s <= ln && endLn >= ln) {
+                const content = el.querySelector('.line-content')
+                if (content) fullText += (fullText ? '\n' : '') + content.textContent.trim()
+              }
+            })
           }
-        } catch (_) { /* quote is a nice-to-have, don't break form opening */ }
+          const normalizedSelected = selectedText.replace(/\s+/g, ' ')
+          const normalizedFull = fullText.trim().replace(/\s+/g, ' ')
+          if (normalizedSelected !== normalizedFull && selectedText.length <= 300) {
+            quote = selectedText
+          }
+        }
+      } catch (_) { /* quote is a nice-to-have, don't break form opening */ }
 
-        // Clear the browser selection — the form is the interaction now
-        selection.removeAllRanges()
-
-        // Open the comment form using the same flow as gutter click / 'c' key.
-        openForm(ctx, {
-          filePath: range.filePath,
-          afterBlockIndex: range.afterBlockIndex,
-          startLine: range.startLine,
-          endLine: range.endLine,
-          editingId: null,
-          quote: quote,
-        })
+      selection.removeAllRanges()
+      openForm(ctx, {
+        filePath: range.filePath,
+        afterBlockIndex: range.afterBlockIndex,
+        startLine: range.startLine,
+        endLine: range.endLine,
+        editingId: null,
+        quote: quote,
       })
+      return true
     }
-    document.addEventListener('mouseup', ctx._mouseupHandler)
+    ctx._tryOpenFormFromSelection = tryOpenFormFromSelection
 
     ctx._keydownHandler = (e) => {
       const tag = e.target.tagName
@@ -4878,6 +4864,9 @@ export const DocumentRenderer = {
         }
         case 'c': {
           e.preventDefault()
+          // If text is selected, comment on the selection (with quote).
+          // Otherwise fall back to the focused block.
+          if (ctx._tryOpenFormFromSelection && ctx._tryOpenFormFromSelection()) break
           if (ctx.focusedBlockIndex < 0) break
           const lineBlocks = getFocusedLineBlocks(ctx)
           const block = lineBlocks[ctx.focusedBlockIndex]
@@ -4954,9 +4943,6 @@ export const DocumentRenderer = {
     document.body.classList.remove("dragging")
     if (this._scrollHandler) {
       window.removeEventListener("scroll", this._scrollHandler)
-    }
-    if (this._mouseupHandler) {
-      document.removeEventListener("mouseup", this._mouseupHandler)
     }
     if (this._keydownHandler) {
       document.removeEventListener("keydown", this._keydownHandler)
