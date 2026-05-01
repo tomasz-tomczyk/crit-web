@@ -22,6 +22,24 @@
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
+/* LiveView connection-state indicators (#client-error / #server-error in
+   layouts.ex flash_group). Phoenix adds .phx-client-error / .phx-server-error
+   to <body> while the socket is down. We delay revealing the banner by
+   ~1.5s so routine sub-second mobile WebSocket drops (tab background, lock
+   screen, network handoff) don't flash a "disconnected" message. Hide
+   fades out over 200ms on reconnect. Pattern from Livebook / Fly.io. */
+#client-error, #server-error {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 200ms ease-in 0s, visibility 0s linear 200ms;
+}
+.phx-client-error #client-error,
+.phx-server-error #server-error {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 200ms ease-in 1500ms, visibility 0s linear 1500ms;
+}
+
 /* This file is for your main application CSS */
 
 /* ===== Crit Review Page — CSS Variables ===== */

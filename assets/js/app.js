@@ -64,21 +64,48 @@ function initSentry(liveSocket) {
       },
     })
 
-    // LiveView socket errors hit console.error, not window.onerror —
-    // wire them to Sentry explicitly. onError fires on every reconnect
-    // backoff tick during outages, so dedupe until the next successful open.
+    // LiveView socket errors hit console.error, not window.onerror.
+    // onError fires on every reconnect backoff tick — most are routine
+    // mobile WebSocket drops (tab background, lock screen, network handoff)
+    // that Phoenix recovers from in milliseconds. Only surface to Sentry
+    // when the failed state persists past 5s without a successful reconnect.
     const socket = liveSocket?.getSocket?.()
     if (socket) {
-      let reported = false
+      const PERSISTENCE_MS = 5000
+      let pendingTimer = null
+      let consecutiveErrors = 0
+      let firstErrorAt = null
+      let lastOpenAt = Date.now()
+
       socket.onError(err => {
-        if (reported) return
-        reported = true
-        Sentry.captureMessage("LiveSocket transport error", {
-          level: "error",
-          extra: { type: err?.type, message: String(err?.message ?? err) },
-        })
+        consecutiveErrors += 1
+        if (firstErrorAt === null) firstErrorAt = Date.now()
+        if (pendingTimer !== null) return
+        const errSnapshot = err
+        pendingTimer = setTimeout(() => {
+          pendingTimer = null
+          Sentry.captureMessage("LiveSocket transport error (persistent)", {
+            level: "warning",
+            extra: {
+              type: errSnapshot?.type,
+              message: String(errSnapshot?.message ?? errSnapshot),
+              consecutive_errors: consecutiveErrors,
+              ms_since_last_open: lastOpenAt ? Date.now() - lastOpenAt : null,
+              transport: socket.transport?.name || socket.transport?.constructor?.name || null,
+            },
+          })
+        }, PERSISTENCE_MS)
       })
-      socket.onOpen(() => { reported = false })
+
+      socket.onOpen(() => {
+        lastOpenAt = Date.now()
+        consecutiveErrors = 0
+        firstErrorAt = null
+        if (pendingTimer !== null) {
+          clearTimeout(pendingTimer)
+          pendingTimer = null
+        }
+      })
     }
   }).catch(() => {})
 }
