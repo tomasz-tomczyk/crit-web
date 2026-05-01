@@ -1205,6 +1205,24 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .btn-primary:hover { background: var(--crit-brand-cta-hover); box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 .btn-sm { font-size: 12px; padding: 3px 10px; }
 
+/* Delete button used in review meta header (red outlined, fills on hover) */
+.crit-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  margin-left: 4px;
+  border: 1px solid var(--crit-red);
+  border-radius: 6px;
+  background: var(--crit-bg-card);
+  color: var(--crit-red);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.crit-delete-btn:hover { background: var(--crit-red); color: #fff; }
+.crit-delete-btn svg { width: 14px; height: 14px; }
+
 /* ===== User Pill (logged-in identity) ===== */
 .crit-user-pill {
   display: inline-flex;
