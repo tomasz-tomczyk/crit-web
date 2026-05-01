@@ -141,24 +141,78 @@ test.describe("Comments — Add via UI", () => {
     await expect(page.locator('.comment-form textarea').first()).toHaveValue("draft text");
   });
 
-  test("cancels a comment form with Escape", async ({ page }) => {
+  test("Escape on empty comment form closes silently", async ({ page }) => {
     await loadReview(page, token);
 
-    const firstGutter = page.locator(".line-gutter").first();
-    await firstGutter.click();
-
+    await page.locator(".line-gutter").first().click();
     const textarea = page.locator(".comment-form textarea");
     await expect(textarea).toBeVisible({ timeout: 5_000 });
-    await textarea.fill("This will be cancelled");
 
-    // Press Escape to cancel
+    // No content -> no confirm dialog, form just closes
     await textarea.press("Escape");
 
-    // The comment form should disappear
     await expect(page.locator(".comment-form")).not.toBeVisible();
-
-    // No comment card should appear
     expect(await page.locator(".comment-card").count()).toBe(0);
+  });
+
+  test("Escape on non-empty comment form prompts confirm; OK discards", async ({ page }) => {
+    await loadReview(page, token);
+
+    await page.locator(".line-gutter").first().click();
+    const textarea = page.locator(".comment-form textarea");
+    await expect(textarea).toBeVisible({ timeout: 5_000 });
+    await textarea.fill("Detailed draft we don't want to lose by accident");
+
+    // Accept the confirm dialog -> discard
+    page.once("dialog", (dialog) => {
+      expect(dialog.type()).toBe("confirm");
+      expect(dialog.message()).toMatch(/discard/i);
+      dialog.accept();
+    });
+    await textarea.press("Escape");
+
+    await expect(page.locator(".comment-form")).not.toBeVisible();
+    expect(await page.locator(".comment-card").count()).toBe(0);
+  });
+
+  test("Escape on non-empty comment form prompts confirm; Cancel keeps draft", async ({ page }) => {
+    await loadReview(page, token);
+
+    await page.locator(".line-gutter").first().click();
+    const textarea = page.locator(".comment-form textarea");
+    await expect(textarea).toBeVisible({ timeout: 5_000 });
+    const draft = "Detailed draft we don't want to lose by accident";
+    await textarea.fill(draft);
+
+    // Dismiss the confirm dialog -> keep the form with content
+    page.once("dialog", (dialog) => {
+      expect(dialog.type()).toBe("confirm");
+      dialog.dismiss();
+    });
+    await textarea.press("Escape");
+
+    await expect(page.locator(".comment-form textarea")).toBeVisible();
+    await expect(page.locator(".comment-form textarea")).toHaveValue(draft);
+  });
+
+  test("Cancel button on non-empty comment form discards immediately (no confirm)", async ({ page }) => {
+    await loadReview(page, token);
+
+    await page.locator(".line-gutter").first().click();
+    const textarea = page.locator(".comment-form textarea");
+    await expect(textarea).toBeVisible({ timeout: 5_000 });
+    await textarea.fill("Important draft");
+
+    // Cancel is an explicit, labeled discard — no confirm should appear.
+    let dialogShown = false;
+    page.on("dialog", (dialog) => {
+      dialogShown = true;
+      dialog.dismiss();
+    });
+
+    await page.locator(".comment-form").getByRole("button", { name: "Cancel" }).click();
+    await expect(page.locator(".comment-form")).not.toBeVisible();
+    expect(dialogShown).toBe(false);
   });
 });
 

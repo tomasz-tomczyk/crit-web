@@ -2575,7 +2575,7 @@ function createCommentForm(formObj, ctx) {
     } else if (e.key === "Escape") {
       e.preventDefault()
       e.stopPropagation()
-      cancelComment(formObj, ctx)
+      if (confirmDiscardIfDirty(formObj)) cancelComment(formObj, ctx)
     }
   })
 
@@ -2652,7 +2652,7 @@ function createInlineEditor(comment, formObj, ctx) {
     } else if (e.key === "Escape") {
       e.preventDefault()
       e.stopPropagation()
-      cancelComment(formObj, ctx)
+      if (confirmDiscardIfDirty(formObj)) cancelComment(formObj, ctx)
     }
   })
 
@@ -2722,6 +2722,15 @@ function submitEditComment(id, body, formObj, ctx) {
   ctx.pushEvent("edit_comment", { id, body: body.trim() })
   removeForm(ctx, formObj.formKey)
   render(ctx)
+}
+
+// Returns true if the user confirms discarding (or the draft is empty).
+// Returns false if the user cancels the confirm — caller should keep the form open.
+function confirmDiscardIfDirty(formObj) {
+  const ta = document.querySelector('textarea[data-form-key="' + formObj.formKey + '"]')
+  if (!ta) return true
+  if (!ta.value.trim()) return true
+  return window.confirm("Discard comment?")
 }
 
 function cancelComment(formObj, ctx) {
@@ -2948,7 +2957,7 @@ function editReply(commentId, reply, ctx) {
   replyEl.appendChild(btnRow)
 
   cancelBtn.addEventListener('click', () => {
-    // Re-render to restore the original state
+    // Cancel button is an explicit, labeled discard — no confirm.
     render(ctx)
   })
 
@@ -2967,7 +2976,9 @@ function editReply(commentId, reply, ctx) {
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
-      cancelBtn.click()
+      const changed = textarea.value !== currentText
+      if (changed && textarea.value.trim() && !window.confirm("Discard comment?")) return
+      render(ctx)
     }
   })
 }
@@ -3257,7 +3268,7 @@ function renderCommentFormUI(ctx, formObj) {
     }
     if (e.key === 'Escape') {
       e.preventDefault()
-      cancelComment(formObj, ctx)
+      if (confirmDiscardIfDirty(formObj)) cancelComment(formObj, ctx)
     }
   })
   form.appendChild(textarea)
@@ -4928,7 +4939,8 @@ export const DocumentRenderer = {
         case 'Escape': {
           e.preventDefault()
           if (ctx.activeForms.length > 0) {
-            cancelComment(ctx.activeForms[ctx.activeForms.length - 1], ctx)
+            const top = ctx.activeForms[ctx.activeForms.length - 1]
+            if (confirmDiscardIfDirty(top)) cancelComment(top, ctx)
           } else if (ctx.focusedBlockIndex >= 0) {
             clearFocus(ctx)
           }

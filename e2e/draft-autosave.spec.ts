@@ -144,7 +144,8 @@ test.describe("Draft Autosave", () => {
       expect(count).toBe(1);
     }).toPass({ timeout: 3_000 });
 
-    // Cancel via Escape
+    // Cancel via Escape — non-empty draft prompts confirm; accept to discard
+    page.once("dialog", (dialog) => dialog.accept());
     await textarea.press("Escape");
     await expect(page.locator(".comment-form")).not.toBeVisible();
 
