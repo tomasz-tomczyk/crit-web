@@ -147,7 +147,8 @@ defmodule CritWeb.PageController do
       ],
       author: "Omer",
       role: "Principal Engineer",
-      link: "https://x.com/omervk"
+      link: "https://x.com/omervk",
+      avatar: "/images/testimonials/omervk.jpg"
     },
     %{
       highlight: "Review and iterate on plans, down to specific sections.",
@@ -157,7 +158,8 @@ defmodule CritWeb.PageController do
       ],
       author: "Ullrich Schäfer",
       role: "Engineering Manager @ Pitch",
-      link: "https://www.linkedin.com/in/ullrichschaefer/"
+      link: "https://www.linkedin.com/in/ullrichschaefer/",
+      avatar: "/images/testimonials/ullrichschaefer.jpg"
     },
     %{
       highlight: "It's like a pull request review but for your plan.",
@@ -168,7 +170,8 @@ defmodule CritWeb.PageController do
       ],
       author: "Vincent",
       role: "Senior Software Engineer",
-      link: "https://x.com/vineus"
+      link: "https://x.com/vineus",
+      avatar: "/images/testimonials/vineus.jpg"
     },
     %{
       highlight: "Genuinely game changing for agentic workflows.",
@@ -179,7 +182,8 @@ defmodule CritWeb.PageController do
       ],
       author: "@vereisyaps",
       role: "Tech Lead",
-      link: "https://x.com/vereisyaps"
+      link: "https://x.com/vereisyaps",
+      avatar: "/images/testimonials/vereisyaps.png"
     }
   ]
 

@@ -17,14 +17,12 @@
 
     <%!-- Install --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          01
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Install</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">Single binary, zero dependencies.</p>
-        </div>
+      <div class="mb-5 max-w-[640px]">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Install Crit</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Single binary, zero dependencies. Pick a package manager below — installs in
+          seconds and works offline after that.
+        </p>
       </div>
       <CritWeb.PageHTML.install_widget />
 
@@ -36,18 +34,11 @@
 
     <%!-- Step 2: Open for review --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          02
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Open a file for review</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Pass any file, or run
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit</code>
-            with no args to auto-detect changes in your repo.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Open a file for review</h2>
+        <p phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Pass any file as an argument, or run <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit</code> with no args to auto-detect changes in your current repo.
+        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
@@ -94,16 +85,12 @@
 
     <%!-- Step 3: Leave comments --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          03
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Leave inline comments</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Click a line number or drag across a range. GitHub-style review UI.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Leave inline comments</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Click a line number to comment on a single line, or drag across a range to
+          comment on a block. The interface is deliberately close to GitHub's PR review.
+        </p>
       </div>
 
       <%!-- Mock review UI --%>
@@ -201,16 +188,13 @@
 
     <%!-- Step 4: Hand off and iterate --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          04
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Finish review and hand off</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Click <strong class="text-(--crit-fg-secondary)">Finish Review</strong>. Your agent gets notified automatically.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Finish review and hand off</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          When you're done, hit <strong class="text-(--crit-fg-primary)">Finish Review</strong>.
+          Your agent gets notified, picks up the comments, and edits the file. Crit reloads
+          with a diff so you can keep iterating without losing context.
+        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
@@ -253,13 +237,13 @@
     </section>
 
     <%!-- What's next --%>
-    <section>
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
-        What's next
-      </p>
-      <h2 class="text-2xl font-extrabold tracking-tight mb-6 max-sm:text-xl">
+    <section class="border-t border-(--crit-border) pt-12">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-2 max-sm:text-xl">
         Go deeper<span class="text-(--crit-brand)">.</span>
       </h2>
+      <p class="text-sm text-(--crit-fg-secondary) mb-6 max-w-[520px] leading-relaxed">
+        That's the whole loop. From here, browse the rest of what Crit can do.
+      </p>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
         <a

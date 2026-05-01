@@ -40,16 +40,13 @@
 
     <%!-- Prerequisites --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          01
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Prerequisites</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Docker with Compose. That's it.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px]">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">What you'll need</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Docker with the Compose plugin and a Postgres 17 database. Compose ships with
+          Docker Desktop and most server installs, and the example config bundles its own
+          Postgres if you don't already have one.
+        </p>
       </div>
 
       <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
@@ -80,16 +77,12 @@
 
     <%!-- Quick start --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          02
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Download and configure</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Grab the example files and generate a secret key.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Download and configure</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Grab the example Docker Compose file and a starter <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code>,
+          then generate a secret key for signing cookies.
+        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
@@ -137,16 +130,12 @@
 
     <%!-- Start --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          03
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Start the services</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            One command. Database migrations run automatically.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Start the services</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          One command brings the stack up. Database migrations run automatically on boot,
+          so you don't have to wire anything else in.
+        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
@@ -182,16 +171,11 @@
 
     <%!-- Environment variables --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          04
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Environment variables</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            All configuration lives in <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code>.
-          </p>
-        </div>
+      <div phx-no-format class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Environment variables</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Every knob lives in <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code> — grouped below by what they control.
+        </p>
       </div>
 
       <%!-- Table column headers --%>
@@ -489,16 +473,13 @@
 
     <%!-- Bring your own Postgres --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          05
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Using your own Postgres</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Skip the bundled database and point to an existing instance.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Using your own Postgres</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Already have a managed Postgres (RDS, Supabase, Neon, anything)? Skip the
+          bundled database and run crit-web as a single container pointed at your existing
+          instance.
+        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
@@ -542,16 +523,12 @@
 
     <%!-- Updating --%>
     <section class="mb-16 max-sm:mb-12">
-      <div class="flex items-baseline gap-4 mb-5">
-        <span class="font-mono text-2xl font-bold text-(--crit-brand) leading-none select-none">
-          06
-        </span>
-        <div>
-          <h2 class="text-2xl font-extrabold tracking-tight">Updating</h2>
-          <p class="text-sm text-(--crit-fg-muted) mt-0.5">
-            Pull the latest image and restart.
-          </p>
-        </div>
+      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Staying up to date</h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Updates are a pull and a restart. Migrations run on boot, so you don't have to
+          coordinate anything.
+        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg overflow-hidden">
@@ -579,18 +556,15 @@
     </section>
 
     <%!-- Docker image tags --%>
-    <section class="mb-16 max-sm:mb-12">
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
-        Docker Image
-      </p>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
       <h2 class="text-2xl font-extrabold tracking-tight mb-2 max-sm:text-xl">
-        Available tags<span class="text-(--crit-brand)">.</span>
+        Available image tags<span class="text-(--crit-brand)">.</span>
       </h2>
-      <p class="text-sm text-(--crit-fg-secondary) mb-6 leading-relaxed">
-        Images are published to <a
+      <p class="text-sm text-(--crit-fg-secondary) mb-6 leading-relaxed max-w-[640px]">
+        Images are published to the <a
           href="https://github.com/tomasz-tomczyk/crit-web/pkgs/container/crit-web"
           class="crit-link"
-        >GitHub Container Registry</a>.
+        >GitHub Container Registry</a>. Pick a tag based on how aggressive you want updates to be.
       </p>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
@@ -618,13 +592,13 @@
     </section>
 
     <%!-- What's next --%>
-    <section>
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
-        What's next
-      </p>
-      <h2 class="text-2xl font-extrabold tracking-tight mb-6 max-sm:text-xl">
+    <section class="border-t border-(--crit-border) pt-12">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-2 max-sm:text-xl">
         Keep going<span class="text-(--crit-brand)">.</span>
       </h2>
+      <p class="text-sm text-(--crit-fg-secondary) mb-6 max-w-[520px] leading-relaxed">
+        Now that the server is up, point the CLI at it or wire up your editor.
+      </p>
 
       <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
         <a

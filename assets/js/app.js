@@ -274,27 +274,6 @@ if (ytFacade) {
   ytFacade.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate() }})
 }
 
-// Home page: feature cards scroll-triggered reveal
-const featuresGrid = document.getElementById("features-grid")
-if (featuresGrid) {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const cards = featuresGrid.querySelectorAll(".feature-card")
-        cards.forEach((card, i) => {
-          setTimeout(() => card.classList.add("revealed"), i * 80)
-        })
-        const selfHosting = document.querySelector("#self-hosting-card .feature-card")
-        if (selfHosting) {
-          setTimeout(() => selfHosting.classList.add("revealed"), cards.length * 80)
-        }
-        observer.unobserve(entry.target)
-      }
-    })
-  }, { threshold: 0.05 })
-  observer.observe(featuresGrid)
-}
-
 // Home page: testimonials scroll-triggered reveal
 const testimonialsGrid = document.getElementById("testimonials-grid")
 if (testimonialsGrid) {
