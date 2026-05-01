@@ -17,7 +17,19 @@ jobs:
       url: https://crit.md
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Register Sentry release
+        uses: getsentry/action-release@v3
+        with:
+          environment: production
+          version: ${{ github.sha }}
+          projects: crit-web-backend crit-web-frontend
+          set_commits: auto
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: crit-md
       - run: flyctl deploy --remote-only --env SENTRY_RELEASE=${{ github.sha }}
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
