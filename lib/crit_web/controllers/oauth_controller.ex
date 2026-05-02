@@ -75,6 +75,7 @@ defmodule CritWeb.OAuthController do
   end
 
   # Only allow local paths to prevent open redirect attacks.
+  defp safe_return_to("//" <> _), do: nil
   defp safe_return_to("/" <> _ = path), do: path
   defp safe_return_to(_), do: nil
 
