@@ -1199,6 +1199,136 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "resolve_attribution via upsert_review (re-share roundtrip)" do
+    # Exercises Reviews.resolve_attribution/3 indirectly through upsert_review,
+    # which is the only public path that surfaces it. Each test isolates one
+    # branch of the function (first-clause carry-forward, current-user match,
+    # blank-payload no-claim, foreign-payload spoof).
+
+    test "re-share by a different sharer preserves the original commenter's user_id" do
+      author = insert_user!(%{name: "Alice"})
+      sharer = insert_user!(%{name: "Bob"})
+
+      # Initial share: Alice creates a review and posts a comment with external_id.
+      # Initial-share path writes user_id = current_user_id from the bearer token
+      # (Alice). external_id is what the carry-forward looks up on re-share.
+      author_scope = Scope.for_user(author)
+
+      {:ok, review} =
+        Reviews.create_review(
+          author_scope,
+          [%{"path" => "f.md", "content" => "v1"}],
+          1,
+          [
+            %{
+              "file" => "f.md",
+              "start_line" => 1,
+              "end_line" => 1,
+              "body" => "alice's note",
+              "external_id" => "local-c1",
+              "user_id" => author.id
+            }
+          ],
+          []
+        )
+
+      review = Reviews.get_by_token(review.token)
+      [alice_comment] = review.comments
+      assert alice_comment.user_id == author.id
+
+      # Re-share by Bob: same external_id, but Bob is the bearer-token user.
+      # The first clause of resolve_attribution must preserve Alice's user_id.
+      bob_scope = Scope.for_user(sharer)
+
+      {:ok, _, _} =
+        Reviews.upsert_review(bob_scope, review.token, review.delete_token, %{
+          "files" => [%{"path" => "f.md", "content" => "v2"}],
+          "comments" => [
+            %{
+              "file" => "f.md",
+              "start_line" => 1,
+              "end_line" => 1,
+              "body" => "alice's note (edited)",
+              "external_id" => "local-c1"
+            }
+          ],
+          "review_round" => 1
+        })
+
+      updated = Reviews.get_by_token(review.token)
+      [carried] = updated.comments
+      assert carried.external_id == "local-c1"
+      assert carried.user_id == author.id, "expected carry-forward to preserve Alice's user_id"
+      assert carried.author_identity == nil
+    end
+
+    test "spoofed payload user_id (authenticated sharer claims someone else's id) → NULL" do
+      author = insert_user!(%{name: "Alice"})
+      sharer = insert_user!(%{name: "Bob"})
+      bob_scope = Scope.for_user(sharer)
+
+      # Bob shares a brand-new comment (no roundtrip-matching external_id) but the
+      # payload claims user_id = Alice's id. resolve_attribution must drop to
+      # NULL with "imported" sentinel — the only trusted attribution is the
+      # current_user_id from the bearer.
+      {:ok, review} =
+        Reviews.create_review(bob_scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      {:ok, _, _} =
+        Reviews.upsert_review(bob_scope, review.token, review.delete_token, %{
+          "files" => [%{"path" => "f.md", "content" => "v2"}],
+          "comments" => [
+            %{
+              "file" => "f.md",
+              "start_line" => 1,
+              "end_line" => 1,
+              "body" => "spoofed",
+              "external_id" => "local-spoof",
+              "user_id" => author.id
+            }
+          ],
+          "review_round" => 1
+        })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.user_id == nil
+      assert comment.author_identity == "imported"
+    end
+
+    test "authenticated sharer with blank payload user_id stays NULL (no retroactive claim)" do
+      sharer = insert_user!(%{name: "Bob"})
+      bob_scope = Scope.for_user(sharer)
+
+      {:ok, review} =
+        Reviews.create_review(bob_scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      # Re-share with a fresh comment whose payload user_id is blank/nil.
+      # The "blank → anonymous" branch lets users who logged in mid-flow share
+      # earlier anonymous comments without retroactively claiming them.
+      {:ok, _, _} =
+        Reviews.upsert_review(bob_scope, review.token, review.delete_token, %{
+          "files" => [%{"path" => "f.md", "content" => "v2"}],
+          "comments" => [
+            %{
+              "file" => "f.md",
+              "start_line" => 1,
+              "end_line" => 1,
+              "body" => "earlier anon comment",
+              "external_id" => "local-anon",
+              "user_id" => ""
+            }
+          ],
+          "review_round" => 1
+        })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.user_id == nil
+      assert comment.author_identity == "imported"
+    end
+  end
+
   describe "delete_review/2 (scope)" do
     test "anonymous → :unauthorized" do
       review = review_fixture()

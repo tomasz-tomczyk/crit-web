@@ -69,6 +69,64 @@ defmodule CritWeb.OAuthControllerTest do
     end
   end
 
+  describe "GET /auth/login return_to open-redirect guard" do
+    # Exercises OAuthController.safe_return_to/1 by hitting the public login
+    # endpoint and inspecting the session it stores. Only local "/path" values
+    # are accepted; external URLs, protocol-relative URLs, and anything else
+    # must be dropped (stored as nil → callback falls back to /dashboard).
+    setup do
+      original = Application.get_env(:crit, :oauth_provider)
+
+      Application.put_env(:crit, :oauth_provider,
+        strategy: CritWeb.OAuthControllerTest.StubStrategy,
+        client_id: "test",
+        client_secret: "test"
+      )
+
+      on_exit(fn ->
+        if original,
+          do: Application.put_env(:crit, :oauth_provider, original),
+          else: Application.delete_env(:crit, :oauth_provider)
+      end)
+
+      :ok
+    end
+
+    test "stores a local /path return_to in session" do
+      conn = get(build_conn(), ~p"/auth/login", %{"return_to" => "/r/abc123"})
+      assert get_session(conn, :oauth_return_to) == "/r/abc123"
+    end
+
+    test "drops https://evil.com (full external URL)" do
+      conn = get(build_conn(), ~p"/auth/login", %{"return_to" => "https://evil.com/steal"})
+      assert get_session(conn, :oauth_return_to) == nil
+    end
+
+    test "drops //evil.com (protocol-relative URL)" do
+      conn = get(build_conn(), ~p"/auth/login", %{"return_to" => "//evil.com/steal"})
+      assert get_session(conn, :oauth_return_to) == nil
+    end
+
+    test "drops bare hostnames and other non-local values" do
+      for bad <- ["evil.com", "javascript:alert(1)", "ftp://x", ""] do
+        conn = get(build_conn(), ~p"/auth/login", %{"return_to" => bad})
+
+        assert get_session(conn, :oauth_return_to) == nil,
+               "expected #{inspect(bad)} to be dropped from session"
+      end
+    end
+
+    test "callback redirects to / (default) when no return_to was stored" do
+      conn =
+        build_conn()
+        |> init_test_session(%{oauth_session_params: %{}})
+        |> get(~p"/auth/login/callback", %{"code" => "test_code"})
+
+      # No oauth_return_to in session → callback falls back to /dashboard.
+      assert redirected_to(conn) == ~p"/dashboard"
+    end
+  end
+
   defmodule StubStrategy do
     @moduledoc false
 

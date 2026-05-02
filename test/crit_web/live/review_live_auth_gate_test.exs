@@ -57,6 +57,21 @@ defmodule CritWeb.ReviewLiveAuthGateTest do
       refute_receive {:comments_full_sync, _}, 50
     end
 
+    test "auth gate fires before 404 for non-existent token (redirect, not crash)", %{conn: conn} do
+      # Documents the intended ordering: in selfhosted+OAuth mode, the
+      # `:require_review_scope` on_mount hook runs BEFORE `mount/3`. So an
+      # anonymous visitor hitting an unknown review token must be redirected
+      # to OAuth login (the scope gate) rather than crashing with NotFoundError
+      # (which would only fire from inside mount/3 after auth passed). This
+      # ordering avoids leaking review-existence to unauthenticated probes.
+      bogus_token = "does-not-exist-#{System.unique_integer([:positive])}"
+
+      assert {:error, {:redirect, %{to: to}}} = live(conn, ~p"/r/#{bogus_token}")
+      assert to =~ "/auth/login"
+      assert to =~ "return_to="
+      assert to =~ URI.encode_www_form("/r/#{bogus_token}")
+    end
+
     test "shows review content when logged in", %{conn: conn, review: review} do
       {:ok, user} =
         Crit.Accounts.find_or_create_from_oauth("github", %{

@@ -56,6 +56,26 @@ defmodule Crit.ReviewCleanerTest do
     assert Repo.get(Review, review.id)
   end
 
+  test "demo review survives cleaner sweep even when stale" do
+    # Verifies that the demo_review_token guard inside delete_inactive/1 is
+    # honored when invoked through the periodic ReviewCleaner. A stale review
+    # whose token matches the configured demo token must NOT be deleted.
+    demo = review_fixture()
+    other = review_fixture()
+
+    Application.put_env(:crit, :demo_review_token, demo.token)
+    on_exit(fn -> Application.delete_env(:crit, :demo_review_token) end)
+
+    set_last_activity(demo, 31)
+    set_last_activity(other, 31)
+
+    start_supervised!({ReviewCleaner, []})
+    Process.sleep(50)
+
+    assert Repo.get(Review, demo.id), "demo review must survive sweep"
+    assert is_nil(Repo.get(Review, other.id)), "non-demo stale review must be deleted"
+  end
+
   test "runs cleanup repeatedly on the interval" do
     r1 = review_fixture()
 
