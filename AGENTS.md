@@ -1,14 +1,8 @@
 # Crit Web — Development Guide
 
-## Quick Start
+Hosted Phoenix LiveView app that receives shared reviews from the [Crit](https://github.com/tomasz-tomczyk/crit) local CLI and renders them at `/r/:token`. Same review surface as the local tool — see `../CLAUDE.md` for the parity contract.
 
-```bash
-mise run up               # Install deps, setup DB, start server on :4000
-mix test                  # Run all tests
-mix precommit             # Full CI check: compile, format, sobelow, audit, test
-```
-
-## Project Structure
+## Project map
 
 ```
 crit-web/
@@ -16,149 +10,155 @@ crit-web/
 │   ├── crit/                        # Domain logic
 │   │   ├── application.ex           # OTP app supervision tree
 │   │   ├── repo.ex                  # Ecto repo
-│   │   ├── review.ex                # Review schema (token, document, delete_token)
-│   │   ├── comment.ex               # Comment schema (review_id, start_line, end_line, body, parent_id, resolved)
-│   │   ├── reviews.ex               # Context: create/get/delete reviews with comments
+│   │   ├── schema.ex                # Base schema module
+│   │   ├── review.ex                # Review schema (token, delete_token, last_activity_at, review_round, cli_args)
+│   │   ├── comment.ex               # Comment schema (review_id, parent_id, start_line, end_line, body, scope, resolved, author_identity, author_display_name, file_path, quote, external_id)
+│   │   ├── review_round_snapshot.ex # Per-round snapshot of review files
+│   │   ├── reviews.ex               # Context: create/get/delete reviews with comments (10 MB total limit)
+│   │   ├── review_cleaner.ex        # Periodic cleanup of inactive reviews (30 days)
 │   │   ├── output.ex                # Formats review data for API responses
-│   │   ├── display_name.ex          # Author display name logic
+│   │   ├── display_name.ex          # Author display name logic (40-char max)
 │   │   ├── integrations.ex          # Integration metadata (editors, AI tools)
 │   │   ├── changelog.ex             # GenServer: fetches and caches GitHub releases
 │   │   ├── rate_limit.ex            # Hammer-based rate limiting
 │   │   ├── release.ex               # Release migration helpers
-│   │   ├── review_cleaner.ex        # Periodic cleanup of expired reviews
-│   │   ├── review_file.ex           # Review file schema
-│   │   └── schema.ex                # Base schema module
+│   │   ├── config.ex                # Runtime config helpers
+│   │   ├── statistics.ex / statistic.ex   # Usage statistics
+│   │   ├── accounts.ex + accounts/scope.ex # Phoenix 1.8 scope-based auth
+│   │   ├── user.ex / user_api_token.ex     # Authenticated user + CLI bearer tokens
+│   │   ├── device_codes.ex / device_code.ex / device_code_cleaner.ex # OAuth device flow
+│   │   ├── sentry_filter.ex / sentry_http_client.ex # Sentry plumbing
 │   ├── crit_web/
-│   │   ├── router.ex                # Routes: pages, /r/:token LiveView, /api/*
+│   │   ├── router.ex                # Routes: marketing, /r/:token, /dashboard, /settings, /overview, /api/*, /api/device/*, /api/auth/*, /auth/cli/*
 │   │   ├── endpoint.ex              # Phoenix endpoint
-│   │   ├── controllers/
-│   │   │   ├── api_controller.ex    # JSON API: POST /api/reviews, DELETE, export
-│   │   │   ├── auth_controller.ex   # Admin login/logout
-│   │   │   ├── health_controller.ex # Health check endpoint
-│   │   │   ├── page_controller.ex   # Static pages: home, features, integrations, terms, privacy
-│   │   │   ├── review_controller.ex # set-name action
-│   │   │   └── page_html.ex         # Page view module
+│   │   ├── user_auth.ex             # Auth plug + on_mount hooks; sets current_scope
+│   │   ├── controllers/             # page, review, api, auth, oauth, health, device, device_api, auth_api
 │   │   ├── live/
-│   │   │   ├── review_live.ex       # LiveView for /r/:token — loads review, assigns data
-│   │   │   └── review_live.html.heex # Review page template (uses crit-* CSS classes)
-│   │   ├── components/
-│   │   │   ├── core_components.ex   # Shared Phoenix components
-│   │   │   └── layouts.ex           # Layout module
-│   │   └── plugs/
-│   │       ├── identity.ex          # Session-based visitor identity
-│   │       ├── security_headers.ex  # CSP, HSTS, etc.
-│   │       ├── localhost_cors.ex    # CORS for local crit CLI → crit-web API
-│   │       └── canonical_host.ex    # Host redirect
+│   │   │   ├── review_live.ex       # LiveView for /r/:token
+│   │   │   ├── review_live.html.heex # Review page template (uses crit-* CSS classes)
+│   │   │   ├── dashboard_live.ex    # User dashboard
+│   │   │   ├── settings_live.ex     # User settings
+│   │   │   ├── overview_live.ex     # Selfhost admin overview
+│   │   │   └── tokens_live.ex       # CLI token management
+│   │   ├── components/              # core_components.ex, layouts.ex
+│   │   └── plugs/                   # security_headers, rate_limit, api_auth, require_bearer_auth, localhost_cors, canonical_host
 │   └── mix/tasks/
-│       └── crit.refresh_integrations.ex  # Mix task for integration data
+│       └── crit.refresh_integrations.ex
 ├── assets/
 │   ├── js/
 │   │   ├── app.js                   # Phoenix JS setup + LiveView hooks
 │   │   └── document-renderer.js     # Port of crit local's rendering logic
 │   └── css/
 │       └── app.css                  # Review page CSS (crit-* classes) + Tailwind
-├── priv/repo/migrations/            # Ecto migrations
+├── priv/repo/migrations/
 ├── config/                          # Dev/test/prod/runtime config
 ├── test/                            # ExUnit tests
 └── .github/workflows/ci.yml         # CI: format, compile, sobelow, audit, test
 ```
 
-## Key Architecture
+## Key architecture
 
-1. **Review page rendering** — the LiveView loads review data, then `document-renderer.js` (a Phoenix hook) renders the markdown client-side using markdown-it + highlight.js + mermaid. This mirrors how `crit` local renders.
-2. **API for CLI uploads** — `POST /api/reviews` accepts `{document, comments, metadata}` from the CLI's Share button. Returns `{url, delete_token}`.
+1. **Review page rendering** — the LiveView loads review data, then `document-renderer.js` (a Phoenix hook) renders the markdown client-side using markdown-it + highlight.js + mermaid. Mirrors `crit` local's rendering.
+2. **API for CLI uploads** — `POST /api/reviews` accepts review files + comments + metadata from the CLI's Share button. `PUT /api/reviews/:token` upserts updates and bumps `review_round`. Returns `{url, delete_token}`.
 3. **Delete via token** — reviews are deleted by passing the `delete_token` (not auth). The CLI stores this in the review file.
-4. **Rate limiting** — Hammer-based, applied to API create/delete endpoints.
-5. **Identity** — session-based visitor ID via `Plugs.Identity`, used for display names on comments.
-6. **Comment threading** — comments support nested replies (`parent_id` self-referential FK) and a `resolved` boolean. The review LiveView handles reply CRUD and resolve/unresolve via `push_event`.
+4. **Rate limiting** — Hammer-based via `CritWeb.Plugs.RateLimit`, applied across browser + API pipelines.
+5. **Auth + identity** — Phoenix 1.8 scope pattern: `Crit.Accounts.Scope` carries either an authenticated `user` (OAuth or selfhost password) or an anonymous `identity` (session-bound visitor ID), plus a `display_name`. `CritWeb.UserAuth` plug + `on_mount` hooks set `conn.assigns.current_scope` / `socket.assigns.current_scope`. `user` and `identity` are mutually exclusive — see `lib/crit_web/CLAUDE.md` for the full scope contract.
+6. **CLI auth** — OAuth device flow (`/api/device/*`, `/auth/cli/*`) issues bearer tokens (`UserApiToken`) used by the CLI. `Plugs.RequireBearerAuth` gates `/api/auth/*`.
+7. **Comment threading** — comments support nested replies (`parent_id` self-referential FK) and `resolved` boolean. Comments have `scope` (`"line"` / `"file"` / `"review"`) and an optional `file_path` / `quote`. The review LiveView handles reply CRUD and resolve/unresolve.
+8. **Limits**: HTTPS only, `noindex` meta on review/auth pages, **10 MB** total review payload (`@max_total_size` in `reviews.ex`), 50 KB per comment body (`51_200`), 40-char display name, 500-char file path, 64 CLI args x 256 bytes. Reviews expire after 30 days of inactivity (`last_activity_at`). Rate-limit write endpoints per IP.
+9. **Stack**: Elixir 1.19.5 / OTP 28.1 / PostgreSQL 17 / Phoenix 1.8.5 / LiveView 1.1. Tailwind v4 (via `@import "tailwindcss" source(none);` in `app.css` — no `tailwind.config.js`). Bandit HTTP server.
 
-## Routes
+<important if="you need to run, build, test, or pre-commit-check crit-web">
 
-**Browser:**
+```bash
+mise run up               # Install deps, setup DB, start server on :4000
+mix test                  # Run all tests
+mix test path/to/test.exs:42  # One test by line
+mix precommit             # compile --warnings-as-errors, deps.unlock --unused, format, sobelow --skip, deps.audit, test
+```
+
+Tests use `DataCase` (database) or `ConnCase` (HTTP). Test database: `crit_test`. Local Postgres listens on **5433** (host) → 5432 (container) — pass `DB_PORT=5433` for `mix test` / `mix precommit` (see `../CLAUDE.md`). Always run `mix precommit` when done with a change.
+
+CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, Elixir 1.19 / OTP 28), with `mix coveralls.json` instead of plain `mix test` for Codecov upload.
+</important>
+
+<important if="you need to know the route surface or are adding/modifying a route">
+
+**Marketing / public (browser, indexable):**
 
 - `/` — homepage
 - `/features`, `/features/:slug` — feature pages
-- `/integrations` — integrations page
-- `/getting-started` — getting started guide
-- `/self-hosting` — self-hosting documentation
-- `/changelog` — auto-fetched GitHub release notes
-- `/terms`, `/privacy` — legal pages
-- `POST /auth/login`, `POST /auth/logout` — admin auth
-- `/r/:token` — review LiveView (the core page)
-- `POST /set-name` — set display name
+- `/integrations`, `/integrations/:tool` — integrations
+- `/getting-started`, `/self-hosting`, `/changelog` — docs / release notes
+- `/terms`, `/privacy` — legal
+- `GET /health` — healthcheck (no pipeline)
 
-**API (`/api`):**
+**Auth (browser):**
+
+- `GET /auth/login` — OAuth provider redirect
+- `GET /auth/login/callback` — OAuth callback
+- `POST /auth/login` — selfhost password login (legacy)
+- `POST /auth/logout`, `DELETE /auth/logout`
+- `POST /set-name` — set anonymous display name
+- `/auth/cli`, `/auth/cli/authorize` (`GET`/`POST`), `/auth/cli/cancel`, `/auth/cli/success` — CLI OAuth device-flow browser pages (noindex)
+
+**LiveViews (browser, noindex):**
+
+- `/r/:token` — review surface (`live_session :review`)
+- `/dashboard`, `/settings` — `live_session :user`, requires authenticated user
+- `/overview` — `live_session :admin`, selfhost admin only
+
+**API (`/api`, all noindex):**
 
 - `POST /reviews` — create review (from CLI share)
-- `DELETE /reviews` — delete review (requires delete_token)
+- `PUT /reviews/:token` — upsert review (bumps `review_round`)
+- `DELETE /reviews` — delete review (requires `delete_token`)
+- `OPTIONS /reviews` — CORS preflight
 - `GET /reviews/:token/document` — review document content
 - `GET /reviews/:token/comments` — review comments
-- `GET /export/:token/review` — export review data
-- `GET /export/:token/comments` — export comments
+- `GET /export/:token/review`, `GET /export/:token/comments` — export
 
-## Styling Rules
+**Device-flow API (`/api/device`, no ApiAuth):**
+
+- `POST /code`, `POST /token` — OAuth device-flow endpoints
+
+**Bearer-auth API (`/api/auth`):**
+
+- `GET /whoami` — current user info
+- `DELETE /token` — revoke current bearer token
+
+**Test/dev seeding (`/api/...`, compiled out of prod):** `seed-comment`, `seed-reply`, `seed-user`.
+</important>
+
+<important if="you are modifying CSS in app.css or working on a page's styling">
 
 **Review page** (`/r/:token`): Custom CSS only. All styles in `app.css` using `--crit-*` CSS variables and `.crit-*` / `.line-*` / `.comment-*` classes. No Tailwind utilities. Must match `crit` local's look.
 
 **All other pages**: Tailwind utility classes in templates. No custom CSS classes in `app.css`.
 
-See the monorepo CLAUDE.md (`../CLAUDE.md`) for the full parity contract between crit local and crit-web.
+Don't:
+- Use Tailwind utilities on the review page
+- Add component libraries for the review surface
+- Add `.home-*` or `.legal-*` CSS classes to `app.css` — use Tailwind in templates
+- Use `@apply` when writing raw CSS
 
-## Testing
+See `../CLAUDE.md` for the full parity contract between crit local and crit-web.
+</important>
 
-```bash
-mix test                              # All tests
-mix test test/crit/reviews_test.exs   # One file
-mix test test/crit/reviews_test.exs:42  # One test by line
-```
+<important if="you are adding or modifying frontend JS in assets/js/">
 
-Tests use `DataCase` (database) or `ConnCase` (HTTP). The test database is `crit_test`.
+- `document-renderer.js` uses markdown-it, highlight.js, mermaid — must stay version-aligned with `../crit/package.json`. See `../CLAUDE.md`.
+- Only `app.js` and `app.css` bundles are supported — import vendor deps, don't reference external scripts in layouts.
+- **Never** write inline `<script>` tags in templates. Use colocated hooks (`:type={Phoenix.LiveView.ColocatedHook}`, name starts with `.`) or external hooks in `assets/js/`.
+- **Never** attach listeners via `document.getElementById("x").addEventListener(...)` in `app.js` for elements rendered inside LiveView templates — they break across client-side patches (`<.link navigate={...}>`) because the new DOM node isn't the one you bound to. Use `JS` commands, a hook, or document-level event delegation.
+</important>
 
-## CI
+<important if="you are making HTTP requests from Elixir code">
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on push to main and PRs:
+Use `:req` (`Req`) for HTTP requests. **Avoid** `:httpoison`, `:tesla`, `:httpc`.
+</important>
 
-1. `mix format --check-formatted`
-2. `mix compile --warnings-as-errors`
-3. `mix sobelow --skip`
-4. `mix deps.audit`
-5. `mix test`
-
-Elixir 1.19 / OTP 28 / PostgreSQL 17.
-
-## Frontend JS Dependencies
-
-`document-renderer.js` uses markdown-it, highlight.js, and mermaid — must stay version-aligned with `../crit/package.json`. See monorepo CLAUDE.md for details.
-
-## What NOT to Do
-
-- Don't use Tailwind utilities on the review page — custom CSS only
-- Don't add component libraries for the review surface
-- Don't create a separate build pipeline for review JS — it's a single hook file
-- Don't add `.home-*` or `.legal-*` CSS classes to `app.css` — use Tailwind in templates
-
----
-
-## Crit local context
-
-**crit-web** is the hosted share target for [Crit](https://github.com/tomasz-tomczyk/crit) — a local-first Go CLI for reviewing code changes and markdown files with inline comments. When users click Share in local Crit, it POSTs document + comments to `POST /api/reviews`, gets back `{url, delete_token}`, and shows the share link.
-
-**Comment shape** (same in both): `id`, `start_line`, `end_line`, `body`, `author`, `resolved`, `replies` (nested comments with `parent_id`), `created_at`, `updated_at` (ISO8601).
-
-**Security/limits**: HTTPS only, `noindex` meta, 5 MB document, 50 KB per comment body, 500 comments per review. Rate-limit write endpoints and 404s per IP.
-
-**Reviews expire** after 30 days of inactivity (`last_activity_at`).
-
----
-
-## Project guidelines
-
-- Use `mix precommit` alias when you are done with all changes and fix any pending issues
-- Use `:req` (`Req`) for HTTP requests — **avoid** `:httpoison`, `:tesla`, `:httpc`
-- **Never** use `@apply` when writing raw CSS
-- Only `app.js` and `app.css` bundles are supported — import vendor deps, don't reference external scripts in layouts
-- **Never** write inline `<script>` tags in templates
-- Tailwindcss v4 uses `@import "tailwindcss" source(none);` syntax in `app.css` — no `tailwind.config.js`
+<important if="you are writing or modifying LiveView templates (.heex) or HEEx fragments">
 
 ### Phoenix v1.8
 
@@ -167,43 +167,7 @@ Elixir 1.19 / OTP 28 / PostgreSQL 17.
 - Use `<.input>` from `core_components.ex` for form inputs. Overriding `class=` replaces all default classes
 - `<.flash_group>` lives in `layouts.ex` only — never call it elsewhere
 
-<!-- usage-rules-start -->
-
-<!-- phoenix:elixir-start -->
-
-## Elixir gotchas
-
-- Lists don't support index access (`mylist[i]`) — use `Enum.at/2`
-- Block expressions (`if`, `case`, `cond`) must bind the result: `socket = if ... do ... end`
-- Don't use map access (`changeset[:field]`) on structs — use `my_struct.field` or `Ecto.Changeset.get_field/2`
-- Don't use `String.to_atom/1` on user input (memory leak)
-- One module per file
-- Predicate functions end in `?` — reserve `is_` prefix for guards
-- Use `start_supervised!/1` in tests, avoid `Process.sleep/1`
-<!-- phoenix:elixir-end -->
-
-<!-- phoenix:phoenix-start -->
-
-## Phoenix guidelines
-
-- Router `scope` blocks auto-prefix the module alias — don't add your own `alias`
-- `Phoenix.View` is removed — don't use it
-<!-- phoenix:phoenix-end -->
-
-<!-- phoenix:ecto-start -->
-
-## Ecto guidelines
-
-- Preload associations in queries when accessed in templates
-- `Ecto.Schema` uses `:string` type even for `:text` columns
-- Use `Ecto.Changeset.get_field/2` to access changeset fields
-- Don't list programmatic fields (e.g. `user_id`) in `cast` — set them explicitly
-- Use `mix ecto.gen.migration` to generate migration files
-<!-- phoenix:ecto-end -->
-
-<!-- phoenix:html-start -->
-
-## HEEx guidelines
+### HEEx
 
 - Use `~H` or `.html.heex` — never `~E`
 - Use `to_form/2` + `<.form for={@form}>` + `<.input field={@form[:field]}>` — never pass changesets to templates
@@ -214,13 +178,11 @@ Elixir 1.19 / OTP 28 / PostgreSQL 17.
 - Use `{...}` for attribute interpolation, `<%= ... %>` for block constructs (`if`, `for`, `cond`) in tag bodies
 - Use `<%!-- comment --%>` for HEEx comments
 - Use `:for` comprehensions, not `Enum.each`
-<!-- phoenix:html-end -->
+</important>
 
-<!-- phoenix:liveview-start -->
+<important if="you are writing or modifying LiveView modules (Live*.ex) or LiveView hooks">
 
-## LiveView guidelines
-
-- Use `<.link navigate={href}>` / `<.link patch={href}>` — never `live_redirect`/`live_patch`
+- Use `<.link navigate={href}>` / `<.link patch={href}>` — never `live_redirect` / `live_patch`
 - Avoid LiveComponents unless specifically needed
 - Name LiveViews with `Live` suffix (e.g. `CritWeb.ReviewLive`)
 
@@ -235,17 +197,32 @@ Elixir 1.19 / OTP 28 / PostgreSQL 17.
 ### JS hooks
 
 - `phx-hook="MyHook"` requires a unique `id` and `phx-update="ignore"` if the hook manages its own DOM
-- Never write raw `<script>` tags — use colocated hooks (`:type={Phoenix.LiveView.ColocatedHook}`, name starts with `.`) or external hooks in `assets/js/`
 - Use `push_event/3` server→client, `this.pushEvent` client→server
 - For UI toggles (popovers, dropdowns, mobile drawers, tabs), prefer `Phoenix.LiveView.JS` commands declaratively in the template — `JS.toggle_attribute({"hidden", "hidden"}, to: "#el")`, `JS.toggle_attribute({"aria-expanded", "true", "false"})`, `JS.toggle/1`. Pipe them together for multi-step toggles
 - For behaviors `JS` can't express (click-outside, Escape close, focus traps), use a colocated hook scoped to the element. Hooks have lifecycle (`mounted`/`destroyed`) so listeners clean up on unmount
-- **Never** attach listeners via `document.getElementById("x").addEventListener(...)` in `app.js` for elements rendered inside LiveView templates — they break across client-side patches (`<.link navigate={...}>`) because the new DOM node isn't the one you bound to. Either use `JS` commands, a hook, or document-level event delegation if you really need vanilla JS
 
 ### LiveView tests
 
 - Use `Phoenix.LiveViewTest` + `LazyHTML` for assertions
 - Test with `element/2`, `has_element/2` — never match raw HTML
 - Test outcomes, not implementation details
-<!-- phoenix:liveview-end -->
+</important>
 
-<!-- usage-rules-end -->
+<important if="you are writing or modifying Ecto queries, schemas, changesets, or migrations">
+
+- Preload associations in queries when accessed in templates
+- `Ecto.Schema` uses `:string` type even for `:text` columns
+- Use `Ecto.Changeset.get_field/2` to access changeset fields — don't use map access (`changeset[:field]`) on structs
+- Don't list programmatic fields (e.g. `user_id`) in `cast` — set them explicitly
+- Use `mix ecto.gen.migration` to generate migration files
+</important>
+
+<important if="you are writing or modifying any Elixir code in this project">
+
+- Lists don't support index access (`mylist[i]`) — use `Enum.at/2`
+- Block expressions (`if`, `case`, `cond`) must bind the result: `socket = if ... do ... end`
+- Don't use `String.to_atom/1` on user input (memory leak)
+- Use `start_supervised!/1` in tests, avoid `Process.sleep/1`
+- Router `scope` blocks auto-prefix the module alias — don't add your own `alias`
+- `Phoenix.View` is removed — don't use it
+</important>
