@@ -12,7 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@sanity/diff-match-patch": "^3.2.0",
-    "@sentry/browser": "^9.47.1",
+    "@sentry/browser": "^10.51.0",
     "@tailwindcss/typography": "^0.5.19",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.1",
