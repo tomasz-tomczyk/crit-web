@@ -1,5 +1,5 @@
 defmodule CritWeb.ReviewLiveVisibilityTest do
-  use CritWeb.ConnCase, async: false
+  use CritWeb.ConnCase, async: true
   import Phoenix.LiveViewTest
   import Crit.ReviewsFixtures
 
@@ -19,12 +19,6 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
 
   defp log_in(conn, user), do: init_test_session(conn, %{user_id: user.id})
 
-  setup do
-    Application.put_env(:crit, :selfhosted, false)
-    on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
-    :ok
-  end
-
   test "owner of an unlisted review sees the Unlisted dropdown and can promote to Public", %{
     conn: conn
   } do
@@ -35,7 +29,13 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
     assert html =~ "Unlisted"
     assert has_element?(view, "[data-test=visibility-menu]")
+    assert has_element?(view, "#visibility-popover[role=dialog]")
+    assert has_element?(view, "#visibility-trigger[aria-controls=visibility-popover]")
     assert has_element?(view, "[data-test=make-public][data-confirm]")
+    # Copy-pin: a future "soften" of this warning should be a deliberate decision.
+    assert html =~ "can&#39;t be undone"
+
+    file_path = hd(review.files).file_path
 
     rendered = view |> element("[data-test=make-public]") |> render_click()
 
@@ -44,6 +44,9 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     assert rendered =~ "Search engines may index it"
     refute rendered =~ "Unlisted"
     assert rendered =~ "Public"
+    # Map.merge preserves preloads → review still renders with its files/comments
+    # in the same socket without a remount.
+    assert rendered =~ file_path
   end
 
   test "owner of an already-public review sees the Public status pill and no menu", %{

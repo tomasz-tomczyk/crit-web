@@ -158,20 +158,26 @@ defmodule Crit.Reviews do
 
   defp fetch_review_for_owner(%Scope{} = scope, review_id) do
     with {:ok, uuid} <- Ecto.UUID.cast(review_id),
-         %Review{} = review <- Repo.get(Review, uuid) do
-      authorize_owner(review, scope)
+         %Review{} = review <- Repo.get(Review, uuid),
+         true <- scope_can_modify_review?(scope, review) do
+      {:ok, review}
     else
+      false -> {:error, :unauthorized}
       _ -> {:error, :not_found}
     end
   end
 
-  defp authorize_owner(%Review{user_id: nil}, _scope), do: {:error, :unauthorized}
+  # Owner-only mutation gate. Anonymous-owned reviews (`user_id: nil`) are
+  # never modifiable through scope-authed paths — they're administered via
+  # their `delete_token` (see `delete_by_delete_token/1`). When admin scopes
+  # land, this is the seam to extend.
+  defp scope_can_modify_review?(%Scope{}, %Review{user_id: nil}), do: false
 
-  defp authorize_owner(%Review{user_id: owner_id} = review, %Scope{} = scope) do
+  defp scope_can_modify_review?(%Scope{} = scope, %Review{user_id: owner_id}) do
     case Scope.user_id(scope) do
-      nil -> {:error, :unauthorized}
-      ^owner_id -> {:ok, review}
-      _ -> {:error, :unauthorized}
+      nil -> false
+      ^owner_id -> true
+      _ -> false
     end
   end
 
@@ -746,21 +752,19 @@ defmodule Crit.Reviews do
   Returns `:ok`, `{:error, :not_found}`, `{:error, :unauthorized}`, or
   `{:error, :delete_failed}`.
   """
-  def delete_review(%Scope{user: nil}, _id), do: {:error, :unauthorized}
-
-  def delete_review(%Scope{user: %User{id: owner_id}}, id) do
+  def delete_review(%Scope{} = scope, id) do
     case Repo.get(Review, id) do
       nil ->
         {:error, :not_found}
 
       review ->
-        if review.user_id != owner_id do
-          {:error, :unauthorized}
-        else
+        if scope_can_modify_review?(scope, review) do
           case Repo.delete(review) do
             {:ok, _} -> :ok
             {:error, _} -> {:error, :delete_failed}
           end
+        else
+          {:error, :unauthorized}
         end
     end
   end
