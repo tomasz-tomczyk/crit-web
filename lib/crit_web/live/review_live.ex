@@ -130,10 +130,7 @@ defmodule CritWeb.ReviewLive do
          |> assign(:review, merged)
          |> assign(:noindex, false)
          |> assign(:canonical_url, canonical_url)
-         |> put_flash(
-           :info,
-           "Review is now public — search engines may index it. This cannot be undone."
-         )}
+         |> put_flash(:info, "Review is now public. Search engines may index it.")}
 
       {:error, :already_public} ->
         {:noreply, put_flash(socket, :info, "Review is already public.")}

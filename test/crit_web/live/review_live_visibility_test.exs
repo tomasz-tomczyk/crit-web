@@ -25,7 +25,7 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     :ok
   end
 
-  test "owner of an unlisted review sees Make public with confirm prompt and can promote", %{
+  test "owner of an unlisted review sees the Unlisted dropdown and can promote to Public", %{
     conn: conn
   } do
     user = owner_fixture()
@@ -33,49 +33,50 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     conn = log_in(conn, user)
 
     {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
-    assert html =~ "Make public"
+    assert html =~ "Unlisted"
+    assert has_element?(view, "[data-test=visibility-menu]")
     assert has_element?(view, "[data-test=make-public][data-confirm]")
 
     rendered = view |> element("[data-test=make-public]") |> render_click()
 
     assert Reviews.get_by_token(review.token).visibility == :public
-    assert rendered =~ "search engines may index it"
-    refute rendered =~ "Make public"
+    assert rendered =~ "Review is now public"
+    assert rendered =~ "Search engines may index it"
+    refute rendered =~ "Unlisted"
     assert rendered =~ "Public"
   end
 
-  test "owner of an already-public review sees a Public badge with delete-to-unlist tooltip", %{
-    conn: conn
-  } do
+  test "owner of an already-public review sees the Public badge and no menu", %{conn: conn} do
     user = owner_fixture()
     review = review_fixture(user_id: user.id)
     {:ok, _} = Reviews.make_public(Scope.for_user(user), review.id)
     conn = log_in(conn, user)
 
-    {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
-    refute html =~ "Make public"
+    {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
+    refute has_element?(view, "[data-test=visibility-menu]")
+    refute has_element?(view, "[data-test=make-public]")
     assert html =~ "Public"
-    assert html =~ "delete the review to unlist"
+    assert html =~ "To remove access, delete the review"
   end
 
-  test "non-owner sees the Unlisted badge but no make-public button", %{conn: conn} do
+  test "non-owner sees no visibility control on an unlisted review", %{conn: conn} do
     owner = owner_fixture()
     other = owner_fixture()
     review = review_fixture(user_id: owner.id)
     conn = log_in(conn, other)
 
-    {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
-    refute html =~ "Make public"
-    assert html =~ "Unlisted"
+    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    refute has_element?(view, "[data-test=visibility-menu]")
+    refute has_element?(view, "[data-test=make-public]")
   end
 
-  test "anonymous visitor sees the Unlisted badge but no make-public button", %{conn: conn} do
+  test "anonymous visitor sees no visibility control", %{conn: conn} do
     owner = owner_fixture()
     review = review_fixture(user_id: owner.id)
 
-    {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
-    refute html =~ "Make public"
-    assert html =~ "Unlisted"
+    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    refute has_element?(view, "[data-test=visibility-menu]")
+    refute has_element?(view, "[data-test=make-public]")
   end
 
   test "public review renders without noindex meta and with canonical link", %{conn: conn} do

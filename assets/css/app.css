@@ -1100,27 +1100,88 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 }
 .crit-round-diff-btn--active:hover { background: var(--crit-brand-hover); border-color: var(--crit-brand-hover); }
 
-.crit-visibility-btn {
-  padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid var(--crit-border);
-  background: var(--crit-editor-bg-elevated);
-  color: var(--crit-editor-fg);
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background 0.15s, color 0.15s;
-  font-family: inherit;
+/* Visibility control sits next to the Delete button in the review meta header */
+.crit-visibility-menu {
+  position: relative;
+  display: inline-block;
 }
-button.crit-visibility-btn:hover { background: var(--crit-editor-bg-elevated); }
-.crit-visibility-btn--unlisted {
-  cursor: default;
+.crit-visibility-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+  background: var(--crit-bg-card);
+  color: var(--crit-fg-primary);
+  font-family: inherit;
+  font-weight: 500;
+  font-size: inherit;
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.crit-visibility-btn::-webkit-details-marker { display: none; }
+.crit-visibility-menu summary.crit-visibility-btn:hover {
+  background: var(--crit-editor-bg-elevated);
+  border-color: var(--crit-fg-muted);
+}
+.crit-visibility-chevron {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.15s;
+}
+.crit-visibility-menu[open] > summary .crit-visibility-chevron {
+  transform: rotate(180deg);
+}
+.crit-visibility-menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 240px;
+  padding: 4px;
+  background: var(--crit-bg-card);
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.crit-visibility-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--crit-fg-primary);
+  text-align: left;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+.crit-visibility-menu-item:hover { background: var(--crit-editor-bg-elevated); }
+.crit-visibility-menu-item-title { font-weight: 500; }
+.crit-visibility-menu-item-hint {
+  font-size: 12px;
+  color: var(--crit-fg-muted);
+  font-weight: 400;
 }
 .crit-visibility-btn--public {
-  background: var(--crit-brand);
-  color: #fff;
-  border-color: var(--crit-brand);
+  background: transparent;
+  border-color: var(--crit-border);
+  color: var(--crit-fg-muted);
   cursor: default;
+  font-weight: 400;
+}
+.crit-visibility-btn--public::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--crit-brand);
+  margin-right: 2px;
 }
 
 .crit-diff-mode-toggle {
