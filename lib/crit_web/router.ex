@@ -82,6 +82,7 @@ defmodule CritWeb.Router do
     get "/auth/cli/success", DeviceController, :success
 
     get "/r/:token/raw/*file_path", RawController, :show
+    get "/share-receiver", ShareReceiverController, :index
   end
 
   # Review page — visibility-driven noindex/referrer is set in the layout via
