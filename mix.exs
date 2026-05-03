@@ -90,10 +90,11 @@ defmodule Crit.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind crit", "esbuild crit"],
+      "assets.build": ["compile", "tailwind crit", "esbuild crit", "esbuild share_receiver"],
       "assets.deploy": [
         "tailwind crit --minify",
         "esbuild crit --minify",
+        "esbuild share_receiver --minify",
         "phx.digest"
       ],
       precommit: [
