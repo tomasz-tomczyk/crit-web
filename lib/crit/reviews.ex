@@ -134,6 +134,54 @@ defmodule Crit.Reviews do
     end
   end
 
+  @doc """
+  Promote a review from :unlisted to :public. Only the authenticated owner
+  (`scope.user.id == review.user_id`) may promote.
+
+  Visibility is one-way: there is no `make_unlisted/2`. Per the gist model,
+  the URL is the review's public identity — to "unpublish", delete and recreate.
+
+  Returns `{:ok, review}`, `{:error, :not_found}`, `{:error, :unauthorized}`,
+  `{:error, :already_public}`, or `{:error, %Ecto.Changeset{}}`.
+  """
+  def make_public(%Scope{} = scope, review_id) do
+    with {:ok, review} <- fetch_review_for_owner(scope, review_id),
+         :ok <- ensure_unlisted(review) do
+      review
+      |> Review.visibility_changeset(%{visibility: :public})
+      |> Repo.update()
+    end
+  end
+
+  defp ensure_unlisted(%Review{visibility: :unlisted}), do: :ok
+  defp ensure_unlisted(%Review{visibility: :public}), do: {:error, :already_public}
+
+  defp fetch_review_for_owner(%Scope{} = scope, review_id) do
+    case Repo.get(Review, review_id) do
+      nil ->
+        {:error, :not_found}
+
+      %Review{user_id: owner_id} = review ->
+        scope_uid = Scope.user_id(scope)
+
+        if scope_uid != nil and scope_uid == owner_id do
+          {:ok, review}
+        else
+          {:error, :unauthorized}
+        end
+    end
+  end
+
+  @doc "Returns tokens of every review with `visibility: :public`, ordered by recency."
+  def list_public_review_tokens do
+    Repo.all(
+      from r in Review,
+        where: r.visibility == :public,
+        order_by: [desc: r.last_activity_at],
+        select: r.token
+    )
+  end
+
   defp comment_owned_by?(%Scope{} = scope, %Comment{user_id: nil, author_identity: ai}) do
     not is_nil(ai) and ai == scope.identity
   end
