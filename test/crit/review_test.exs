@@ -37,4 +37,22 @@ defmodule Crit.ReviewTest do
       assert changeset.changes[:review_round] == 2
     end
   end
+
+  describe "visibility" do
+    test "default visibility is :unlisted" do
+      {:ok, review} =
+        %Review{}
+        |> Review.create_changeset(%{})
+        |> Crit.Repo.insert()
+
+      assert review.visibility == :unlisted
+    end
+
+    test "visibility_changeset/2 accepts :public and :unlisted, rejects others" do
+      review = %Review{visibility: :unlisted}
+      assert Review.visibility_changeset(review, %{visibility: :public}).valid?
+      assert Review.visibility_changeset(review, %{visibility: :unlisted}).valid?
+      refute Review.visibility_changeset(review, %{visibility: :secret}).valid?
+    end
+  end
 end

@@ -7,6 +7,7 @@ defmodule Crit.Review do
     field :last_activity_at, :utc_datetime
     field :review_round, :integer, default: 0
     field :cli_args, {:array, :string}, default: []
+    field :visibility, Ecto.Enum, values: [:unlisted, :public], default: :unlisted
 
     belongs_to :user, Crit.User, type: :binary_id
 
@@ -42,6 +43,14 @@ defmodule Crit.Review do
     review
     |> cast(attrs, [:review_round, :cli_args])
     |> validate_cli_args()
+  end
+
+  @doc "Changeset for owner-driven visibility updates."
+  def visibility_changeset(review, attrs) do
+    review
+    |> cast(attrs, [:visibility])
+    |> validate_required([:visibility])
+    |> validate_inclusion(:visibility, [:unlisted, :public])
   end
 
   defp validate_cli_args(changeset) do
