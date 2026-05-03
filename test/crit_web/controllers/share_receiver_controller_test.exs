@@ -7,7 +7,7 @@ defmodule CritWeb.ShareReceiverControllerTest do
       html = conn |> get(~p"/share-receiver") |> html_response(200)
       assert html =~ ~s|id="share-receiver"|
       # No nested <html>: should appear exactly once.
-      assert (html |> String.split("<html") |> length()) == 2
+      assert html |> String.split("<html") |> length() == 2
     end
 
     test "is noindexed", %{conn: conn} do

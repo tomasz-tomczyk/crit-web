@@ -591,6 +591,56 @@
       </div>
     </section>
 
+    <%!-- Behind an SSO reverse proxy --%>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-2 max-sm:text-xl">
+        Behind an SSO reverse proxy<span class="text-(--crit-brand)">?</span>
+      </h2>
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
+        If your Crit instance sits behind an SSO reverse proxy (Cloudflare Access,
+        Tailscale Funnel, oauth2-proxy, etc.), the local CLI can't authenticate
+        to
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          /api/reviews
+        </code>
+        from the terminal — the proxy redirects to a login page. Set
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          share_flow: "popup"
+        </code>
+        in your
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          ~/.config/crit/crit.json
+        </code>
+        to route Share, Pull, Re-share, and Unpublish through a browser popup
+        that carries your existing proxy session cookie.
+      </p>
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
+        Limitations: the terminal commands <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">crit share</code>, <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">crit fetch</code>,
+        and
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          crit unpublish
+        </code>
+        remain unavailable behind SSO — use the in-browser buttons. For terminal
+        or CI access, ask the proxy admin about
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          Authorization: Bearer
+        </code>
+        passthrough on <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">/api/reviews*</code>,
+        which works with the existing
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          crit auth
+        </code>
+        device flow.
+      </p>
+      <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          share_flow
+        </code>
+        must be set on the <strong>CLI</strong>
+        side, not on this hosted instance.
+      </p>
+    </section>
+
     <%!-- What's next --%>
     <section class="border-t border-(--crit-border) pt-12">
       <h2 class="text-2xl font-extrabold tracking-tight mb-2 max-sm:text-xl">
