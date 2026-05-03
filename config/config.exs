@@ -30,6 +30,12 @@ config :esbuild,
       ~w(js/app.js --bundle --splitting --format=esm --target=esnext --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
+  ],
+  share_receiver: [
+    args:
+      ~w(js/share_receiver/index.js --bundle --format=iife --target=es2020 --outdir=../priv/static/assets/js/share_receiver),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
 
 # Configure tailwind (the version is required)
