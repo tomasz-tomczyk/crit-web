@@ -33,7 +33,10 @@ defmodule CritWeb.ReviewLiveTest do
       assert page_title(view) =~ hd(review.files).file_path
     end
 
-    test "renders noindex + no-referrer meta for an unlisted review", %{conn: conn, review: review} do
+    test "renders noindex + no-referrer meta for an unlisted review", %{
+      conn: conn,
+      review: review
+    } do
       {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
       assert html =~ ~s(name="robots" content="noindex, nofollow")
       assert html =~ ~s(name="referrer" content="no-referrer")

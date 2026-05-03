@@ -112,8 +112,7 @@ defmodule CritWeb.ReviewLive do
          |> assign(:noindex, not public?)
          |> assign(:og_type, "article")
          |> assign(:canonical_url, canonical_url)
-         |> assign(:owner?, owner?),
-         layout: {CritWeb.Layouts, :review}}
+         |> assign(:owner?, owner?), layout: {CritWeb.Layouts, :review}}
     end
   end
 
