@@ -1,0 +1,27 @@
+<%!-- Layoutless: rendered without root or inner layout. No app.css / app.js.
+     Inline CSS is intentional — receiver is a single-purpose 1-page relay. --%>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>crit — share receiver</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, -apple-system, sans-serif; }
+      body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: Canvas; color: CanvasText; }
+      #share-receiver { text-align: center; padding: 2rem; max-width: 32rem; }
+      #status { font-size: 1.125rem; margin: 0; }
+      .spinner { width: 1.25rem; height: 1.25rem; display: inline-block; vertical-align: middle; margin-right: 0.5rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/share_receiver/index.js"}>
+    </script>
+  </head>
+  <body>
+    <main id="share-receiver">
+      <p id="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>Authenticating…
+      </p>
+    </main>
+  </body>
+</html>
