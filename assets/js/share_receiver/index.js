@@ -13,38 +13,51 @@
 // Port lifecycle: this script owns port2. When the page navigates or the
 // popup closes, port2 is GC'd implicitly — no explicit cleanup needed on
 // this side. The opener closes its port1 in session.close().
-(function () {
-  'use strict';
+//
+// The bundler wraps this whole module in an IIFE (esbuild --format=iife),
+// so top-level statements only run once when the script loads.
 
-  const status = document.getElementById('status');
-  function setStatus(text) {
-    if (status) status.textContent = text;
-  }
+import * as handlers from './handlers.js';
 
-  const hashNonce = (window.location.hash.match(/[#&]nonce=([A-Za-z0-9_-]+)/) ||
-    [])[1];
-  if (!hashNonce) {
-    setStatus('Error: missing handshake nonce.');
-    return;
-  }
-  if (!window.opener) {
-    setStatus(
-      'Error: this page must be opened from the crit app (window.opener is null — possibly blocked by COOP).'
-    );
-    return;
-  }
+// Map op type -> handler. The opener picks an op via msg.type; unknown ops
+// reject with 'unknown op: …'.
+window.__handlers = {
+  share: handlers.share,
+  fetch: handlers.fetchComments,
+  upsert: handlers.upsert,
+  unpublish: handlers.unpublish,
+};
 
+const status = document.getElementById('status');
+function setStatus(text) {
+  if (status) status.textContent = text;
+}
+
+const hashNonce = (window.location.hash.match(/[#&]nonce=([A-Za-z0-9_-]+)/) ||
+  [])[1];
+
+if (!hashNonce) {
+  setStatus('Error: missing handshake nonce.');
+} else if (!window.opener) {
+  setStatus(
+    'Error: this page must be opened from the crit app (window.opener is null — possibly blocked by COOP).'
+  );
+} else {
+  startHandshake(hashNonce);
+}
+
+function startHandshake(nonce) {
   let port = null;
   let initialized = false;
 
   function onInit(event) {
     if (initialized) return;
-    if (!event.data || event.data.type !== 'init' || event.data.nonce !== hashNonce) return;
+    if (!event.data || event.data.type !== 'init' || event.data.nonce !== nonce) return;
     if (!event.ports || !event.ports[0]) return;
     initialized = true;
     window.removeEventListener('message', onInit);
     port = event.ports[0];
-    port.onmessage = onPortMessage;
+    port.onmessage = (e) => onPortMessage(port, e);
     port.start();
     setStatus('Ready.');
   }
@@ -55,28 +68,27 @@
   // window.open() (see openShareReceiver in crit/frontend/app.js), so this
   // is race-free.
   try {
-    window.opener.postMessage({ type: 'ready', nonce: hashNonce }, '*');
+    window.opener.postMessage({ type: 'ready', nonce }, '*');
   } catch (_err) {
     setStatus('Error: cannot reach opener.');
-    return;
   }
+}
 
-  async function onPortMessage(event) {
-    const msg = event.data || {};
-    setStatus('Processing ' + (msg.type || 'request') + '…');
-    try {
-      const handler = window.__handlers && window.__handlers[msg.type];
-      if (!handler) throw new Error('unknown op: ' + msg.type);
-      const result = await handler(msg);
-      port.postMessage({ requestId: msg.requestId, ok: true, data: result });
-      setStatus('Done.');
-    } catch (err) {
-      port.postMessage({
-        requestId: msg.requestId,
-        ok: false,
-        error: String((err && err.message) || err),
-      });
-      setStatus('Error: ' + ((err && err.message) || err));
-    }
+async function onPortMessage(port, event) {
+  const msg = event.data || {};
+  setStatus('Processing ' + (msg.type || 'request') + '…');
+  try {
+    const handler = window.__handlers && window.__handlers[msg.type];
+    if (!handler) throw new Error('unknown op: ' + msg.type);
+    const result = await handler(msg);
+    port.postMessage({ requestId: msg.requestId, ok: true, data: result });
+    setStatus('Done.');
+  } catch (err) {
+    port.postMessage({
+      requestId: msg.requestId,
+      ok: false,
+      error: String((err && err.message) || err),
+    });
+    setStatus('Error: ' + ((err && err.message) || err));
   }
-})();
+}
