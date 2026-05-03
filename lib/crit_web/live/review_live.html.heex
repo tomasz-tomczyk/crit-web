@@ -405,7 +405,7 @@
                     )
                   }
                 >
-                  <.icon name="hero-eye-slash" />
+                  <.icon name="hero-eye-slash" class="size-3" />
                   <span>Unlisted</span>
                 </button>
                 <div
@@ -417,7 +417,7 @@
                 >
                   <div class="crit-vis-current">
                     <div class="crit-vis-current-icon">
-                      <.icon name="hero-eye-slash" />
+                      <.icon name="hero-eye-slash" class="size-3" />
                     </div>
                     <div class="crit-vis-current-text">
                       <span class="crit-vis-current-label">Unlisted</span>
@@ -435,7 +435,7 @@
                     class="crit-vis-promote"
                   >
                     <div class="crit-vis-promote-icon">
-                      <.icon name="hero-globe-alt" />
+                      <.icon name="hero-globe-alt" class="size-3" />
                     </div>
                     <div class="crit-vis-promote-text">
                       <span class="crit-vis-promote-title">Make public</span>
@@ -445,7 +445,7 @@
                     </div>
                   </button>
                   <div class="crit-vis-notice">
-                    <.icon name="hero-information-circle" />
+                    <.icon name="hero-information-circle" class="size-3" />
                     Making a review public can't be undone.
                   </div>
                 </div>
@@ -457,7 +457,7 @@
                 title="Public — indexed by search engines. To remove access, delete the review."
                 aria-label="Visibility: Public"
               >
-                <.icon name="hero-globe-alt" /> Public
+                <.icon name="hero-globe-alt" class="size-3" /> Public
               </span>
             <% @review.visibility == :public -> %>
               <span
@@ -466,7 +466,7 @@
                 title="Public — indexed by search engines."
                 aria-label="Visibility: Public"
               >
-                <.icon name="hero-globe-alt" /> Public
+                <.icon name="hero-globe-alt" class="size-3" /> Public
               </span>
             <% true -> %>
               <span
@@ -475,7 +475,7 @@
                 title="Unlisted — only people with the URL can see this review."
                 aria-label="Visibility: Unlisted"
               >
-                <.icon name="hero-eye-slash" /> Unlisted
+                <.icon name="hero-eye-slash" class="size-3" /> Unlisted
               </span>
           <% end %>
           <%= if owner? do %>
