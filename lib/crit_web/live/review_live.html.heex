@@ -352,7 +352,7 @@
     <ul class="crit-toc-list"></ul>
   </div>
 
-  <% owner? = @current_scope.user && @review.user_id == @current_scope.user.id %>
+  <% owner? = !!(@current_scope.user && @review.user_id == @current_scope.user.id) %>
   <% author = @review.user %>
   <% comment_count =
     Enum.reduce(@review.comments, 0, fn c, acc ->
@@ -372,51 +372,123 @@
         comment_count={comment_count}
         author={author}
       >
-        <:actions :if={owner?}>
-          <%= case @review.visibility do %>
-            <% :unlisted -> %>
-              <details class="crit-visibility-menu" data-test="visibility-menu">
-                <summary
-                  class="crit-visibility-btn"
-                  title="URL-only access. Not indexed by search engines."
+        <:actions>
+          <%= cond do %>
+            <% owner? and @review.visibility == :unlisted -> %>
+              <div
+                class="crit-vis"
+                id="visibility-control"
+                data-test="visibility-menu"
+                phx-click-away={
+                  Phoenix.LiveView.JS.set_attribute({"hidden", "hidden"},
+                    to: "#visibility-popover"
+                  )
+                  |> Phoenix.LiveView.JS.set_attribute({"aria-expanded", "false"},
+                    to: "#visibility-trigger"
+                  )
+                }
+              >
+                <button
+                  type="button"
+                  id="visibility-trigger"
+                  class="crit-vis-trigger"
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                  aria-controls="visibility-popover"
+                  title="Unlisted — only people with the URL can see this review."
+                  phx-click={
+                    Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"},
+                      to: "#visibility-popover"
+                    )
+                    |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"},
+                      to: "#visibility-trigger"
+                    )
+                  }
                 >
+                  <.icon name="hero-eye-slash" />
                   <span>Unlisted</span>
-                  <.icon name="hero-chevron-down" class="crit-visibility-chevron" />
-                </summary>
-                <div class="crit-visibility-menu-panel" role="menu">
+                </button>
+                <div
+                  id="visibility-popover"
+                  class="crit-vis-popover"
+                  role="dialog"
+                  aria-label="Visibility settings"
+                  hidden
+                >
+                  <div class="crit-vis-current">
+                    <div class="crit-vis-current-icon">
+                      <.icon name="hero-eye-slash" />
+                    </div>
+                    <div class="crit-vis-current-text">
+                      <span class="crit-vis-current-label">Unlisted</span>
+                      <span class="crit-vis-current-desc">
+                        Only people with the URL can see this
+                      </span>
+                    </div>
+                  </div>
+                  <div class="crit-vis-divider"></div>
                   <button
                     type="button"
-                    role="menuitem"
                     phx-click="make_public"
                     data-test="make-public"
                     data-confirm="Make this review public? Search engines will be able to index and cache it. You can delete the review later, but you can't un-expose a URL that's already been crawled."
-                    class="crit-visibility-menu-item"
+                    class="crit-vis-promote"
                   >
-                    <span class="crit-visibility-menu-item-title">Public</span>
-                    <span class="crit-visibility-menu-item-hint">
-                      Indexed by search engines. Promoting is permanent.
-                    </span>
+                    <div class="crit-vis-promote-icon">
+                      <.icon name="hero-globe-alt" />
+                    </div>
+                    <div class="crit-vis-promote-text">
+                      <span class="crit-vis-promote-title">Make public</span>
+                      <span class="crit-vis-promote-desc">
+                        Anyone can find and view it. Indexed by search engines.
+                      </span>
+                    </div>
                   </button>
+                  <div class="crit-vis-notice">
+                    <.icon name="hero-information-circle" />
+                    Making a review public can't be undone.
+                  </div>
                 </div>
-              </details>
-            <% :public -> %>
+              </div>
+            <% @review.visibility == :public and owner? -> %>
               <span
-                class="crit-visibility-btn crit-visibility-btn--public"
+                class="crit-vis-status"
                 data-test="visibility-badge"
-                title="Public. To remove access, delete the review."
+                title="Public — indexed by search engines. To remove access, delete the review."
+                aria-label="Visibility: Public"
               >
-                Public
+                <.icon name="hero-globe-alt" /> Public
+              </span>
+            <% @review.visibility == :public -> %>
+              <span
+                class="crit-vis-badge"
+                data-test="visibility-badge"
+                title="Public — indexed by search engines."
+                aria-label="Visibility: Public"
+              >
+                <.icon name="hero-globe-alt" /> Public
+              </span>
+            <% true -> %>
+              <span
+                class="crit-vis-badge"
+                data-test="visibility-badge"
+                title="Unlisted — only people with the URL can see this review."
+                aria-label="Visibility: Unlisted"
+              >
+                <.icon name="hero-eye-slash" /> Unlisted
               </span>
           <% end %>
-          <button
-            phx-click="delete_review"
-            data-confirm="Delete this review? This cannot be undone."
-            class="crit-delete-btn"
-            aria-label="Delete review"
-          >
-            <.icon name="hero-trash" />
-            <span>Delete</span>
-          </button>
+          <%= if owner? do %>
+            <button
+              phx-click="delete_review"
+              data-confirm="Delete this review? This cannot be undone."
+              class="crit-delete-btn"
+              aria-label="Delete review"
+            >
+              <.icon name="hero-trash" />
+              <span>Delete</span>
+            </button>
+          <% end %>
         </:actions>
       </CritWeb.Components.ReviewListingHeader.review_listing_header>
     </div>

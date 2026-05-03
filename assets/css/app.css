@@ -1100,89 +1100,143 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 }
 .crit-round-diff-btn--active:hover { background: var(--crit-brand-hover); border-color: var(--crit-brand-hover); }
 
-/* Visibility control sits next to the Delete button in the review meta header */
-.crit-visibility-menu {
-  position: relative;
-  display: inline-block;
-}
-.crit-visibility-btn {
+/* ── Visibility control ──────────────────────────────────────────────── */
+/* Notion-inspired: ghost trigger with always-visible label, popover that  */
+/* feels like part of the document surface. Sits in the review meta       */
+/* header next to the Delete button.                                       */
+
+.crit-vis { position: relative; display: inline-flex; align-items: center; }
+
+/* Trigger (Owner + Unlisted): muted, lights up on hover/open */
+.crit-vis-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border: 1px solid var(--crit-border);
-  border-radius: 6px;
-  background: var(--crit-bg-card);
-  color: var(--crit-fg-primary);
-  font-family: inherit;
-  font-weight: 500;
-  font-size: inherit;
-  cursor: pointer;
-  list-style: none;
-  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
-}
-.crit-visibility-btn::-webkit-details-marker { display: none; }
-.crit-visibility-menu summary.crit-visibility-btn:hover {
-  background: var(--crit-editor-bg-elevated);
-  border-color: var(--crit-fg-muted);
-}
-.crit-visibility-chevron {
-  width: 12px;
-  height: 12px;
-  transition: transform 0.15s;
-}
-.crit-visibility-menu[open] > summary .crit-visibility-chevron {
-  transform: rotate(180deg);
-}
-.crit-visibility-menu-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 20;
-  min-width: 240px;
-  padding: 4px;
-  background: var(--crit-bg-card);
-  border: 1px solid var(--crit-border);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-.crit-visibility-menu-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  padding: 6px 10px;
+  gap: 5px;
+  padding: 4px 8px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
+  color: var(--crit-fg-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s, color 0.12s;
+}
+.crit-vis-trigger:hover,
+.crit-vis-trigger[aria-expanded="true"] {
+  background: var(--crit-editor-bg-elevated);
   color: var(--crit-fg-primary);
+}
+.crit-vis-trigger svg { width: 14px; height: 14px; opacity: 0.7; }
+.crit-vis-trigger:hover svg,
+.crit-vis-trigger[aria-expanded="true"] svg { opacity: 1; }
+
+/* Popover */
+.crit-vis-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: 280px;
+  background: var(--crit-bg-elevated);
+  border: 1px solid var(--crit-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+[data-theme="light"] .crit-vis-popover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+.crit-vis-popover[hidden] { display: none; }
+
+/* Current state row — informational */
+.crit-vis-current {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px 10px;
+}
+.crit-vis-current-icon {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  background: var(--crit-bg-card);
+  border: 1px solid var(--crit-border);
+  color: var(--crit-fg-muted);
+}
+.crit-vis-current-icon svg { width: 14px; height: 14px; }
+.crit-vis-current-text { display: flex; flex-direction: column; gap: 1px; }
+.crit-vis-current-label { font-size: 13px; font-weight: 500; color: var(--crit-fg-primary); line-height: 1.3; }
+.crit-vis-current-desc  { font-size: 11px; color: var(--crit-fg-muted); line-height: 1.4; }
+
+.crit-vis-divider { height: 1px; background: var(--crit-border); margin: 0 14px; }
+
+/* Promote action row */
+.crit-vis-promote {
+  display: flex; align-items: flex-start; gap: 10px;
+  width: 100%;
+  padding: 10px 14px 12px;
+  border: 0;
+  background: transparent;
   text-align: left;
   font-family: inherit;
-  font-size: inherit;
   cursor: pointer;
+  border-radius: 0;
+  transition: background-color 0.12s;
 }
-.crit-visibility-menu-item:hover { background: var(--crit-editor-bg-elevated); }
-.crit-visibility-menu-item-title { font-weight: 500; }
-.crit-visibility-menu-item-hint {
+.crit-vis-promote:hover { background: var(--crit-brand-subtle); }
+.crit-vis-promote:focus-visible { outline: 2px solid var(--crit-brand); outline-offset: -2px; }
+.crit-vis-promote-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  background: var(--crit-brand-bg);
+  color: var(--crit-brand);
+}
+.crit-vis-promote-icon svg { width: 14px; height: 14px; }
+.crit-vis-promote-text { display: flex; flex-direction: column; gap: 2px; }
+.crit-vis-promote-title { font-size: 13px; font-weight: 500; color: var(--crit-fg-primary); line-height: 1.3; }
+.crit-vis-promote-desc  { font-size: 11px; color: var(--crit-fg-muted); line-height: 1.4; }
+
+/* One-way notice */
+.crit-vis-notice {
+  display: flex; align-items: center; gap: 5px;
+  padding: 0 14px 10px;
+  font-size: 11px;
+  color: var(--crit-fg-muted);
+  line-height: 1.4;
+}
+.crit-vis-notice svg { width: 11px; height: 11px; opacity: 0.7; flex-shrink: 0; }
+
+/* Owner + Public — filled brand pill, non-interactive */
+.crit-vis-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 500;
+  background: var(--crit-brand-bg);
+  color: var(--crit-brand);
+  cursor: default;
+  white-space: nowrap;
+  user-select: none;
+}
+.crit-vis-status svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* Non-owner — bare badge */
+.crit-vis-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 6px;
   font-size: 12px;
   color: var(--crit-fg-muted);
-  font-weight: 400;
-}
-.crit-visibility-btn--public {
-  background: transparent;
-  border-color: var(--crit-border);
-  color: var(--crit-fg-muted);
   cursor: default;
-  font-weight: 400;
+  white-space: nowrap;
+  user-select: none;
+  border-radius: 4px;
 }
-.crit-visibility-btn--public::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--crit-brand);
-  margin-right: 2px;
-}
+.crit-vis-badge svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.7; }
 
 .crit-diff-mode-toggle {
   display: inline-flex;

@@ -46,7 +46,9 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     assert rendered =~ "Public"
   end
 
-  test "owner of an already-public review sees the Public badge and no menu", %{conn: conn} do
+  test "owner of an already-public review sees the Public status pill and no menu", %{
+    conn: conn
+  } do
     user = owner_fixture()
     review = review_fixture(user_id: user.id)
     {:ok, _} = Reviews.make_public(Scope.for_user(user), review.id)
@@ -59,24 +61,42 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     assert html =~ "To remove access, delete the review"
   end
 
-  test "non-owner sees no visibility control on an unlisted review", %{conn: conn} do
+  test "non-owner sees a read-only Unlisted badge but no menu or make-public button", %{
+    conn: conn
+  } do
     owner = owner_fixture()
     other = owner_fixture()
     review = review_fixture(user_id: owner.id)
     conn = log_in(conn, other)
 
-    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
     refute has_element?(view, "[data-test=visibility-menu]")
     refute has_element?(view, "[data-test=make-public]")
+    assert html =~ "Unlisted"
   end
 
-  test "anonymous visitor sees no visibility control", %{conn: conn} do
+  test "anonymous visitor sees a read-only Unlisted badge", %{conn: conn} do
     owner = owner_fixture()
     review = review_fixture(user_id: owner.id)
 
-    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
     refute has_element?(view, "[data-test=visibility-menu]")
     refute has_element?(view, "[data-test=make-public]")
+    assert html =~ "Unlisted"
+  end
+
+  test "non-owner viewing a public review sees a read-only Public badge", %{conn: conn} do
+    owner = owner_fixture()
+    other = owner_fixture()
+    review = review_fixture(user_id: owner.id)
+    {:ok, _} = Reviews.make_public(Scope.for_user(owner), review.id)
+    conn = log_in(conn, other)
+
+    {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
+    refute has_element?(view, "[data-test=visibility-menu]")
+    refute has_element?(view, "[data-test=make-public]")
+    assert html =~ "Public"
+    assert html =~ "indexed by search engines"
   end
 
   test "public review renders without noindex meta and with canonical link", %{conn: conn} do
