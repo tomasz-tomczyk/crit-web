@@ -22,6 +22,7 @@
     />
     <%= if assigns[:noindex] || Application.get_env(:crit, :selfhosted) do %>
       <meta name="robots" content="noindex, nofollow" />
+      <meta name="referrer" content="no-referrer" />
     <% end %>
     <link :if={assigns[:canonical_url]} rel="canonical" href={@canonical_url} />
 

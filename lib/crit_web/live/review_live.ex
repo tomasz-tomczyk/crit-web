@@ -29,6 +29,12 @@ defmodule CritWeb.ReviewLive do
         display_name = scope.display_name
         user_id = Scope.user_id(scope)
 
+        public? = review.visibility == :public
+        owner? = user_id != nil and user_id == review.user_id
+
+        canonical_url =
+          if public?, do: CritWeb.Endpoint.url() <> "/r/#{review.token}", else: nil
+
         files_data =
           Enum.map(review.files, fn f ->
             %{path: f.file_path, content: f.content, position: f.position, status: f.status}
@@ -103,9 +109,10 @@ defmodule CritWeb.ReviewLive do
            :meta_description,
            "Shared review of #{display_filename(review)} on Crit. View inline comments and add your own feedback."
          )
-         |> assign(:noindex, true)
+         |> assign(:noindex, not public?)
          |> assign(:og_type, "article")
-         |> assign(:canonical_url, CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"),
+         |> assign(:canonical_url, canonical_url)
+         |> assign(:owner?, owner?),
          layout: {CritWeb.Layouts, :review}}
     end
   end
