@@ -355,4 +355,87 @@ defmodule CritWeb.PageController do
   defp canonical_url(conn) do
     "#{CritWeb.Endpoint.url()}#{conn.request_path}"
   end
+
+  @sitemap_paths [
+    {"/", "weekly", "1.0"},
+    {"/features", "weekly", "0.9"},
+    {"/features/inline-comments", "monthly", "0.8"},
+    {"/features/split-unified-diff", "monthly", "0.8"},
+    {"/features/ai-review-loop", "monthly", "0.8"},
+    {"/features/vim-keybindings", "monthly", "0.8"},
+    {"/features/share-reviews", "monthly", "0.8"},
+    {"/features/syntax-highlighting", "monthly", "0.8"},
+    {"/features/mermaid-diagrams", "monthly", "0.8"},
+    {"/integrations", "monthly", "0.8"},
+    {"/integrations/claude-code", "monthly", "0.8"},
+    {"/integrations/cursor", "monthly", "0.8"},
+    {"/integrations/github-copilot", "monthly", "0.8"},
+    {"/integrations/opencode", "monthly", "0.8"},
+    {"/integrations/codex", "monthly", "0.8"},
+    {"/integrations/windsurf", "monthly", "0.8"},
+    {"/integrations/cline", "monthly", "0.8"},
+    {"/integrations/aider", "monthly", "0.8"},
+    {"/getting-started", "monthly", "0.9"},
+    {"/self-hosting", "monthly", "0.7"},
+    {"/changelog", "daily", "0.7"},
+    {"/terms", "monthly", "0.3"},
+    {"/privacy", "monthly", "0.3"}
+  ]
+
+  def robots_txt(conn, _params) do
+    body =
+      if Application.get_env(:crit, :selfhosted, false) do
+        """
+        User-agent: *
+        Disallow: /
+        """
+      else
+        """
+        User-agent: *
+        Allow: /
+        Disallow: /api/
+        Disallow: /dashboard
+        Disallow: /set-name
+        Disallow: /auth/
+
+        Sitemap: #{CritWeb.Endpoint.url()}/sitemap.xml
+        """
+      end
+
+    conn
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, body)
+  end
+
+  def sitemap_xml(conn, _params) do
+    base = CritWeb.Endpoint.url()
+
+    static_entries =
+      Enum.map(@sitemap_paths, fn {p, f, pr} -> sitemap_entry(base <> p, f, pr) end)
+
+    review_entries =
+      Crit.Reviews.list_public_review_tokens()
+      |> Enum.map(fn token -> sitemap_entry(base <> "/r/#{token}", "weekly", "0.5") end)
+
+    body = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    #{Enum.join(static_entries ++ review_entries, "\n")}
+    </urlset>
+    """
+
+    conn
+    |> put_resp_content_type("application/xml")
+    |> send_resp(200, body)
+  end
+
+  defp sitemap_entry(url, freq, priority) do
+    """
+      <url>
+        <loc>#{url}</loc>
+        <changefreq>#{freq}</changefreq>
+        <priority>#{priority}</priority>
+      </url>\
+    """
+  end
 end

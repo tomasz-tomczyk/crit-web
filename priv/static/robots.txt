@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /r/
-Disallow: /api/
-Disallow: /dashboard
-Disallow: /set-name
-Disallow: /auth/
-
-Sitemap: https://crit.md/sitemap.xml
