@@ -157,18 +157,21 @@ defmodule Crit.Reviews do
   defp ensure_unlisted(%Review{visibility: :public}), do: {:error, :already_public}
 
   defp fetch_review_for_owner(%Scope{} = scope, review_id) do
-    case Repo.get(Review, review_id) do
-      nil ->
-        {:error, :not_found}
+    with {:ok, uuid} <- Ecto.UUID.cast(review_id),
+         %Review{} = review <- Repo.get(Review, uuid) do
+      authorize_owner(review, scope)
+    else
+      _ -> {:error, :not_found}
+    end
+  end
 
-      %Review{user_id: owner_id} = review ->
-        scope_uid = Scope.user_id(scope)
+  defp authorize_owner(%Review{user_id: nil}, _scope), do: {:error, :unauthorized}
 
-        if scope_uid != nil and scope_uid == owner_id do
-          {:ok, review}
-        else
-          {:error, :unauthorized}
-        end
+  defp authorize_owner(%Review{user_id: owner_id} = review, %Scope{} = scope) do
+    case Scope.user_id(scope) do
+      nil -> {:error, :unauthorized}
+      ^owner_id -> {:ok, review}
+      _ -> {:error, :unauthorized}
     end
   end
 

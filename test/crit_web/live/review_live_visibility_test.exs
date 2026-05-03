@@ -36,11 +36,12 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     assert html =~ "Make public"
     assert has_element?(view, "[data-test=make-public][data-confirm]")
 
-    view |> element("[data-test=make-public]") |> render_click()
+    rendered = view |> element("[data-test=make-public]") |> render_click()
 
     assert Reviews.get_by_token(review.token).visibility == :public
-    refute render(view) =~ "Make public"
-    assert render(view) =~ "Public"
+    assert rendered =~ "search engines may index it"
+    refute rendered =~ "Make public"
+    assert rendered =~ "Public"
   end
 
   test "owner of an already-public review sees a Public badge with delete-to-unlist tooltip", %{

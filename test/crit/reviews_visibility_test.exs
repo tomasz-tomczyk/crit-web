@@ -70,6 +70,30 @@ defmodule Crit.ReviewsVisibilityTest do
              Reviews.make_public(Scope.for_user(user), Ecto.UUID.generate())
   end
 
+  test "non-UUID review_id returns :not_found instead of raising" do
+    user = owner_user_fixture()
+
+    assert {:error, :not_found} =
+             Reviews.make_public(Scope.for_user(user), "not-a-uuid")
+  end
+
+  test "anonymous-owned review cannot be promoted by an authed visitor" do
+    other = owner_user_fixture()
+
+    {:ok, review} =
+      Reviews.create_review(
+        Scope.for_visitor("anon-#{System.unique_integer([:positive])}"),
+        [%{"path" => "a.md", "content" => "x"}],
+        0,
+        []
+      )
+
+    assert review.user_id == nil
+
+    assert {:error, :unauthorized} =
+             Reviews.make_public(Scope.for_user(other), review.id)
+  end
+
   test "list_public_review_tokens/0 returns only public review tokens" do
     user = owner_user_fixture()
     scope = Scope.for_user(user)

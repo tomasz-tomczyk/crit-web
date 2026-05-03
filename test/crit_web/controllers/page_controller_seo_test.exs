@@ -1,6 +1,7 @@
 defmodule CritWeb.PageControllerSeoTest do
   use CritWeb.ConnCase, async: false
   import Crit.ReviewsFixtures
+  import Ecto.Query
 
   alias Crit.Accounts.Scope
   alias Crit.Reviews
@@ -62,6 +63,34 @@ defmodule CritWeb.PageControllerSeoTest do
       body = conn |> get(~p"/sitemap.xml") |> response(200)
       assert body =~ "/r/#{public_review.token}"
       refute body =~ "/r/#{unlisted_review.token}"
+    end
+
+    test "is well-formed XML when no public reviews exist", %{conn: conn} do
+      body = conn |> get(~p"/sitemap.xml") |> response(200)
+      assert body =~ ~s(<?xml version="1.0" encoding="UTF-8"?>)
+      assert body =~ "<urlset"
+      assert body =~ "</urlset>"
+      {doc, _rest} = :xmerl_scan.string(String.to_charlist(body))
+      assert is_tuple(doc) and elem(doc, 0) == :xmlElement
+    end
+
+    test "orders public reviews by recency (most recent first)", %{conn: conn} do
+      user = user_fixture()
+      older = review_fixture(user_id: user.id)
+      newer = review_fixture(user_id: user.id)
+
+      {:ok, _} = Reviews.make_public(Scope.for_user(user), older.id)
+      {:ok, _} = Reviews.make_public(Scope.for_user(user), newer.id)
+
+      Crit.Repo.update_all(
+        from(r in Crit.Review, where: r.id == ^older.id),
+        set: [last_activity_at: ~U[2020-01-01 00:00:00Z]]
+      )
+
+      body = conn |> get(~p"/sitemap.xml") |> response(200)
+      newer_idx = :binary.match(body, "/r/#{newer.token}") |> elem(0)
+      older_idx = :binary.match(body, "/r/#{older.token}") |> elem(0)
+      assert newer_idx < older_idx
     end
   end
 end
