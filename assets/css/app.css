@@ -1642,7 +1642,7 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   border-radius: 4px;
   padding: 6px 8px;
   font-family: var(--crit-font-body);
-  font-size: 13px;
+  font-size: 14px;
   resize: vertical;
   box-sizing: border-box;
 }
@@ -1662,7 +1662,7 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   background: var(--crit-editor-bg-elevated);
   color: var(--crit-editor-fg);
   font-family: var(--crit-font-body);
-  font-size: 13px;
+  font-size: 14px;
   box-sizing: border-box;
   cursor: text;
 }
@@ -1693,7 +1693,7 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   background: var(--crit-editor-comment-bg);
   color: var(--crit-editor-fg);
   font-family: var(--crit-font-body);
-  font-size: 13px;
+  font-size: 14px;
   resize: vertical;
   box-sizing: border-box;
 }
