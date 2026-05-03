@@ -117,6 +117,36 @@ defmodule CritWeb.ReviewLive do
     end
   end
 
+  def handle_event("make_public", _params, socket) do
+    scope = socket.assigns.current_scope
+    review = socket.assigns.review
+
+    case Reviews.make_public(scope, review.id) do
+      {:ok, updated} ->
+        canonical_url = CritWeb.Endpoint.url() <> "/r/#{updated.token}"
+        merged = Map.merge(review, Map.take(updated, [:visibility]))
+
+        {:noreply,
+         socket
+         |> assign(:review, merged)
+         |> assign(:noindex, false)
+         |> assign(:canonical_url, canonical_url)
+         |> put_flash(
+           :info,
+           "Review is now public — search engines may index it. This cannot be undone."
+         )}
+
+      {:error, :already_public} ->
+        {:noreply, put_flash(socket, :info, "Review is already public.")}
+
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "Not allowed.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not make the review public.")}
+    end
+  end
+
   def handle_event("delete_review", _params, socket) do
     %{review: review, current_scope: scope} = socket.assigns
 

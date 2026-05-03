@@ -102,6 +102,41 @@
     </div>
     <div class="crit-header-actions">
       <div class="crit-header-actions-left">
+        <%= case @review.visibility do %>
+          <% :public -> %>
+            <span
+              class="crit-visibility-btn crit-visibility-btn--public"
+              data-test="visibility-badge"
+              title={
+                if @owner?,
+                  do:
+                    "This review is public. Visibility cannot be reverted — delete the review to unlist it.",
+                  else: "This review is publicly indexable."
+              }
+            >
+              Public
+            </span>
+          <% :unlisted -> %>
+            <span
+              class="crit-visibility-btn crit-visibility-btn--unlisted"
+              data-test="visibility-badge"
+              title="Only people with the URL can find this review. Search engines won't index it."
+            >
+              Unlisted
+            </span>
+        <% end %>
+        <%= if @owner? and @review.visibility == :unlisted do %>
+          <button
+            type="button"
+            phx-click="make_public"
+            data-test="make-public"
+            data-confirm="Make this review public? Anyone with the URL — including search engines — will be able to find it. This cannot be undone."
+            class="crit-visibility-btn"
+            title="Make this review indexable by search engines. One-way — cannot be undone."
+          >
+            Make public
+          </button>
+        <% end %>
         <%= if @has_previous_round do %>
           <div class="crit-round-diff-toggle">
             <button

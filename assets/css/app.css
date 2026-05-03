@@ -1100,6 +1100,29 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 }
 .crit-round-diff-btn--active:hover { background: var(--crit-brand-hover); border-color: var(--crit-brand-hover); }
 
+.crit-visibility-btn {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--crit-border);
+  background: var(--crit-editor-bg-elevated);
+  color: var(--crit-editor-fg);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+button.crit-visibility-btn:hover { background: var(--crit-editor-bg-elevated); }
+.crit-visibility-btn--unlisted {
+  cursor: default;
+}
+.crit-visibility-btn--public {
+  background: var(--crit-brand);
+  color: #fff;
+  border-color: var(--crit-brand);
+  cursor: default;
+}
+
 .crit-diff-mode-toggle {
   display: inline-flex;
   background: var(--crit-editor-bg-elevated);
