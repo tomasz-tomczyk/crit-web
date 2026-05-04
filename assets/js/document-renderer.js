@@ -3855,6 +3855,16 @@ function renderReviewConversation(ctx) {
   const reviewForm = ctx.activeForms.find(f => f.scope === 'review')
   const reviewComments = ctx.comments.filter(c => c.scope === 'review')
 
+  // When commenting is disallowed AND there are no existing review-level
+  // comments, the section has nothing to read and no affordance to offer —
+  // hide it entirely instead of rendering an empty header. If a comment
+  // exists, keep the section visible (users can still read/resolve threads;
+  // the "Add comment" button stays gated by canComment below).
+  if (ctx.canComment === false && reviewComments.length === 0 && !reviewForm) {
+    section.hidden = true
+    return
+  }
+
   const collapsed = isReviewConversationCollapsed() && !reviewForm
   section.classList.toggle('collapsed', collapsed)
 
