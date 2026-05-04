@@ -38,6 +38,29 @@ defmodule Crit.ReviewTest do
     end
   end
 
+  describe "update_changeset/2" do
+    test "default comment_policy is :open" do
+      {:ok, review} =
+        %Review{}
+        |> Review.create_changeset(%{})
+        |> Crit.Repo.insert()
+
+      assert review.comment_policy == :open
+    end
+
+    test "update_changeset/2 accepts valid comment_policy values" do
+      review = %Review{comment_policy: :open}
+      assert Review.update_changeset(review, %{comment_policy: :open}).valid?
+      assert Review.update_changeset(review, %{comment_policy: :logged_in_only}).valid?
+      assert Review.update_changeset(review, %{comment_policy: :disallowed}).valid?
+    end
+
+    test "update_changeset/2 rejects unknown comment_policy values" do
+      review = %Review{comment_policy: :open}
+      refute Review.update_changeset(review, %{comment_policy: :secret}).valid?
+    end
+  end
+
   describe "visibility" do
     test "default visibility is :unlisted" do
       {:ok, review} =

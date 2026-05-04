@@ -1,4 +1,4 @@
-<div class="crit-page">
+<div class={["crit-page", not @can_comment? && "crit-no-comments"]}>
   <div class="crit-header">
     <div class="crit-header-bar">
       <div class="crit-header-left">
@@ -375,81 +375,52 @@
         <:actions>
           <%= cond do %>
             <% owner? and @review.visibility == :unlisted -> %>
-              <div
-                class="crit-vis"
-                id="visibility-control"
-                data-test="visibility-menu"
-                phx-click-away={
-                  Phoenix.LiveView.JS.set_attribute({"hidden", "hidden"},
-                    to: "#visibility-popover"
-                  )
-                  |> Phoenix.LiveView.JS.set_attribute({"aria-expanded", "false"},
-                    to: "#visibility-trigger"
-                  )
-                }
+              <CritWeb.Components.PopoverMenu.popover_menu
+                id="visibility-menu"
+                test_prefix="visibility"
+                panel_label="Visibility settings"
               >
-                <button
-                  type="button"
-                  id="visibility-trigger"
-                  class="crit-vis-trigger"
-                  aria-haspopup="dialog"
-                  aria-expanded="false"
-                  aria-controls="visibility-popover"
-                  title="Unlisted — only people with the URL can see this review."
-                  phx-click={
-                    Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"},
-                      to: "#visibility-popover"
-                    )
-                    |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"},
-                      to: "#visibility-trigger"
-                    )
-                  }
-                >
+                <:trigger>
                   <.icon name="hero-eye-slash" class="size-3" />
                   <span>Unlisted</span>
-                </button>
-                <div
-                  id="visibility-popover"
-                  class="crit-vis-popover"
-                  role="dialog"
-                  aria-label="Visibility settings"
-                  hidden
-                >
-                  <div class="crit-vis-current">
-                    <div class="crit-vis-current-icon">
-                      <.icon name="hero-eye-slash" class="size-3" />
-                    </div>
-                    <div class="crit-vis-current-text">
-                      <span class="crit-vis-current-label">Unlisted</span>
-                      <span class="crit-vis-current-desc">
-                        Only people with the URL can see this
-                      </span>
-                    </div>
+                </:trigger>
+                <div class="crit-vis-current">
+                  <div class="crit-vis-current-icon">
+                    <.icon name="hero-eye-slash" class="size-3" />
                   </div>
-                  <div class="crit-vis-divider"></div>
-                  <button
-                    type="button"
-                    phx-click="make_public"
-                    data-test="make-public"
-                    data-confirm="Make this review public? Search engines will be able to index and cache it. You can delete the review later, but you can't un-expose a URL that's already been crawled."
-                    class="crit-vis-promote"
-                  >
-                    <div class="crit-vis-promote-icon">
-                      <.icon name="hero-globe-alt" class="size-3" />
-                    </div>
-                    <div class="crit-vis-promote-text">
-                      <span class="crit-vis-promote-title">Make public</span>
-                      <span class="crit-vis-promote-desc">
-                        Anyone can find and view it. Indexed by search engines.
-                      </span>
-                    </div>
-                  </button>
-                  <div class="crit-vis-notice">
-                    <.icon name="hero-information-circle" class="size-3" />
-                    Making a review public can't be undone.
+                  <div class="crit-vis-current-text">
+                    <span class="crit-vis-current-label">Unlisted</span>
+                    <span class="crit-vis-current-desc">
+                      Only people with the URL can see this
+                    </span>
                   </div>
                 </div>
-              </div>
+                <div class="crit-vis-divider"></div>
+                <button
+                  type="button"
+                  phx-click={
+                    CritWeb.Components.PopoverMenu.close_js("visibility-menu")
+                    |> Phoenix.LiveView.JS.push("make_public")
+                  }
+                  data-test="make-public"
+                  data-confirm="Make this review public? Search engines will be able to index and cache it. You can delete the review later, but you can't un-expose a URL that's already been crawled."
+                  class="crit-vis-promote"
+                >
+                  <div class="crit-vis-promote-icon">
+                    <.icon name="hero-globe-alt" class="size-3" />
+                  </div>
+                  <div class="crit-vis-promote-text">
+                    <span class="crit-vis-promote-title">Make public</span>
+                    <span class="crit-vis-promote-desc">
+                      Anyone can find and view it. Indexed by search engines.
+                    </span>
+                  </div>
+                </button>
+                <div class="crit-vis-notice">
+                  <.icon name="hero-information-circle" class="size-3" />
+                  Making a review public can't be undone.
+                </div>
+              </CritWeb.Components.PopoverMenu.popover_menu>
             <% @review.visibility == :public and owner? -> %>
               <span
                 class="crit-vis-status"
@@ -478,6 +449,59 @@
                 <.icon name="hero-eye-slash" class="size-3" /> Unlisted
               </span>
           <% end %>
+          <%= cond do %>
+            <% @owner? -> %>
+              <CritWeb.Components.PopoverMenu.popover_menu
+                id="comment-policy-menu"
+                test_prefix="comment-policy"
+                panel_label="Comment policy"
+              >
+                <:trigger>
+                  <.icon name="hero-chat-bubble-left-right" class="size-3" />
+                  <span>{CritWeb.ReviewLive.comment_policy_label(@comment_policy)}</span>
+                  <.icon name="hero-chevron-down" class="size-3" />
+                </:trigger>
+                <%= for option <- [:open, :logged_in_only, :disallowed] do %>
+                  <button
+                    type="button"
+                    phx-click={
+                      CritWeb.Components.PopoverMenu.close_js("comment-policy-menu")
+                      |> Phoenix.LiveView.JS.push("update_comment_policy")
+                    }
+                    phx-value-policy={option}
+                    data-test={"comment-policy-set-#{option}"}
+                    class="crit-comment-policy-option"
+                    aria-current={@comment_policy == option}
+                  >
+                    <div class="crit-comment-policy-option-icon">
+                      <.icon name={CritWeb.ReviewLive.comment_policy_icon(option)} class="size-3" />
+                    </div>
+                    <div class="crit-comment-policy-option-text">
+                      <span class="crit-comment-policy-option-title">
+                        {CritWeb.ReviewLive.comment_policy_label(option)}
+                      </span>
+                      <span class="crit-comment-policy-option-desc">
+                        {CritWeb.ReviewLive.comment_policy_description(option)}
+                      </span>
+                    </div>
+                  </button>
+                <% end %>
+              </CritWeb.Components.PopoverMenu.popover_menu>
+            <% @comment_policy != :open -> %>
+              <span
+                class="crit-comment-policy-badge"
+                data-test="comment-policy-badge"
+                title={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
+                aria-label={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
+              >
+                <.icon
+                  name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)}
+                  class="size-3"
+                />
+                {CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
+              </span>
+            <% true -> %>
+          <% end %>
           <%= if owner? do %>
             <button
               phx-click="delete_review"
@@ -493,7 +517,31 @@
       </CritWeb.Components.ReviewListingHeader.review_listing_header>
     </div>
   </div>
-  <div id="crit-main-layout" class="crit-main-layout">
+  <%= if @comment_policy == :logged_in_only and not @can_comment? do %>
+    <div class="crit-signin-banner" role="status" aria-live="polite" data-test="signin-banner">
+      <div class="crit-signin-pill">
+        <.icon name="hero-user" class="size-3" />
+        <span>Sign-in required</span>
+      </div>
+      <span class="crit-signin-banner-text">
+        Only signed-in users can comment on this review.
+      </span>
+      <a href={~p"/auth/login?return_to=#{@current_path}"} class="crit-signin-banner-link">
+        Sign in
+      </a>
+    </div>
+  <% end %>
+  <%!--
+    `phx-update="ignore"` on the main layout: every child node here
+    (review-conversation cards, file-tree contents, the JS-appended
+    comments panel) is rendered and mutated by document-renderer.js.
+    Without ignore, any LV diff (e.g. updating @comment_policy) would
+    morphdom-patch this subtree back to its empty template, wiping the
+    existing review-level comments, file tree, and comments panel.
+    The only dynamic Elixir lives inside `#document-renderer`, which is
+    itself phx-update="ignore" and reads its own data-* attrs via the hook.
+  --%>
+  <div id="crit-main-layout" class="crit-main-layout" phx-update="ignore">
     <div id="fileTreePanel" class="tree-panel" style="display:none">
       <div id="treeConversationSection" class="tree-section--conversation"></div>
       <div class="tree-header">

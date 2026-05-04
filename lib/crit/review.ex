@@ -9,6 +9,10 @@ defmodule Crit.Review do
     field :cli_args, {:array, :string}, default: []
     field :visibility, Ecto.Enum, values: [:unlisted, :public], default: :unlisted
 
+    field :comment_policy, Ecto.Enum,
+      values: [:open, :logged_in_only, :disallowed],
+      default: :open
+
     belongs_to :user, Crit.User, type: :binary_id
 
     has_many :comments, Crit.Comment
@@ -41,8 +45,9 @@ defmodule Crit.Review do
   """
   def update_changeset(review, attrs) do
     review
-    |> cast(attrs, [:review_round, :cli_args])
+    |> cast(attrs, [:review_round, :cli_args, :comment_policy])
     |> validate_cli_args()
+    |> validate_inclusion(:comment_policy, [:open, :logged_in_only, :disallowed])
   end
 
   @doc "Changeset for owner-driven visibility updates."

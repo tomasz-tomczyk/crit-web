@@ -74,7 +74,13 @@ defmodule Crit.Reviews do
   Opts:
     * `:file_path` — file path the comment is anchored to
   """
-  def create_comment(%Scope{} = scope, %Review{id: review_id}, attrs, opts \\ []) do
+  def create_comment(%Scope{} = scope, %Review{} = review, attrs, opts \\ []) do
+    with :ok <- check_comment_policy(scope, review) do
+      do_create_comment(scope, review, attrs, opts)
+    end
+  end
+
+  defp do_create_comment(%Scope{} = scope, %Review{id: review_id}, attrs, opts) do
     user_id = Scope.user_id(scope)
     identity = scope.identity
     display_name = scope.display_name
@@ -95,6 +101,14 @@ defmodule Crit.Reviews do
       _ -> :ok
     end)
   end
+
+  defp check_comment_policy(_scope, %Review{comment_policy: :disallowed}),
+    do: {:error, :comments_disallowed}
+
+  defp check_comment_policy(%Scope{user: nil}, %Review{comment_policy: :logged_in_only}),
+    do: {:error, :comments_require_login}
+
+  defp check_comment_policy(_scope, _review), do: :ok
 
   @doc """
   Update a comment's body if the caller's scope owns it.
@@ -155,6 +169,48 @@ defmodule Crit.Reviews do
 
   defp ensure_unlisted(%Review{visibility: :unlisted}), do: :ok
   defp ensure_unlisted(%Review{visibility: :public}), do: {:error, :already_public}
+
+  @doc """
+  Owner-scoped update of arbitrary whitelisted attrs. The whitelist is the
+  `cast` list in `Review.update_changeset/2` — unknown keys are silently dropped.
+
+  Intentionally generic: this is the forward seam for owner-writable review
+  fields. Adding a new writable column means extending `Review.update_changeset/2`'s
+  cast list — no new context function required. Callers (LiveView events, API
+  controllers) pass an attrs map straight through.
+
+  Returns `{:ok, review}`, `{:error, :not_found}`, `{:error, :unauthorized}`,
+  or `{:error, %Ecto.Changeset{}}`.
+  """
+  def update_review(%Scope{} = scope, review_id, attrs) when is_map(attrs) do
+    with {:ok, review} <- fetch_review_for_owner(scope, review_id),
+         {:ok, updated} <-
+           review
+           |> Review.update_changeset(attrs)
+           |> Repo.update() do
+      maybe_broadcast_policy_changed(review, updated)
+      {:ok, updated}
+    end
+  end
+
+  def update_review(_scope, _id, _attrs), do: {:error, :unauthorized}
+
+  # Broadcast cross-tab policy changes only when the value actually changed.
+  # Same topic ("review:#{token}") that ReviewLive subscribes to in mount/3.
+  # Uses broadcast_from(self(), ...) so the originating LV (which already
+  # applied the change in handle_event) doesn't run a redundant handle_info.
+  defp maybe_broadcast_policy_changed(%Review{comment_policy: old}, %Review{comment_policy: new})
+       when old == new,
+       do: :ok
+
+  defp maybe_broadcast_policy_changed(_old, %Review{} = updated) do
+    Phoenix.PubSub.broadcast_from(
+      Crit.PubSub,
+      self(),
+      "review:#{updated.token}",
+      {:policy_changed, updated.id, %{comment_policy: updated.comment_policy}}
+    )
+  end
 
   defp fetch_review_for_owner(%Scope{} = scope, review_id) do
     with {:ok, uuid} <- Ecto.UUID.cast(review_id),
@@ -852,34 +908,47 @@ defmodule Crit.Reviews do
   Same attribution rules as `create_comment/4`.
   """
   def create_reply(%Scope{} = scope, comment_id, attrs, review_id) do
+    query =
+      from c in Comment,
+        where: c.id == ^comment_id and c.review_id == ^review_id,
+        join: r in Review,
+        on: r.id == c.review_id,
+        select: {c, r}
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :not_found}
+
+      {%Comment{parent_id: parent}, _r} when parent != nil ->
+        {:error, :not_found}
+
+      {parent, review} ->
+        with :ok <- check_comment_policy(scope, review) do
+          do_create_reply(scope, parent, attrs)
+        end
+    end
+  end
+
+  defp do_create_reply(%Scope{} = scope, %Comment{} = parent, attrs) do
     user_id = Scope.user_id(scope)
     identity = scope.identity
     display_name = scope.display_name
 
-    case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
-      nil ->
-        {:error, :not_found}
+    %Comment{}
+    |> Comment.reply_changeset(attrs)
+    |> Ecto.Changeset.put_change(:parent_id, parent.id)
+    |> Ecto.Changeset.put_change(:review_id, parent.review_id)
+    |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
+    |> Ecto.Changeset.put_change(:user_id, user_id)
+    |> Ecto.Changeset.put_change(:author_display_name, display_name)
+    |> Repo.insert()
+    |> case do
+      {:ok, reply} ->
+        Statistics.increment_comment()
+        {:ok, Repo.preload(reply, :user)}
 
-      %Comment{parent_id: parent} when parent != nil ->
-        {:error, :not_found}
-
-      parent ->
-        %Comment{}
-        |> Comment.reply_changeset(attrs)
-        |> Ecto.Changeset.put_change(:parent_id, comment_id)
-        |> Ecto.Changeset.put_change(:review_id, parent.review_id)
-        |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
-        |> Ecto.Changeset.put_change(:user_id, user_id)
-        |> Ecto.Changeset.put_change(:author_display_name, display_name)
-        |> Repo.insert()
-        |> case do
-          {:ok, reply} ->
-            Statistics.increment_comment()
-            {:ok, Repo.preload(reply, :user)}
-
-          other ->
-            other
-        end
+      other ->
+        other
     end
   end
 

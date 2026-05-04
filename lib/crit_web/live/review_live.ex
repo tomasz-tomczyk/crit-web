@@ -2,6 +2,7 @@ defmodule CritWeb.ReviewLive do
   use CritWeb, :live_view
 
   alias Crit.Accounts.Scope
+  alias Crit.Review
   alias Crit.Reviews
 
   # Auth is gated by the router's :require_review_scope on_mount hook
@@ -52,7 +53,8 @@ defmodule CritWeb.ReviewLive do
             push_event(socket, "init", %{
               comments: serialize_comments(comments),
               display_name: display_name,
-              files: files_data
+              files: files_data,
+              can_comment: can_comment?(scope, review)
             })
           else
             socket
@@ -112,7 +114,10 @@ defmodule CritWeb.ReviewLive do
          |> assign(:noindex, not public?)
          |> assign(:og_type, "article")
          |> assign(:canonical_url, canonical_url)
-         |> assign(:owner?, owner?), layout: {CritWeb.Layouts, :review}}
+         |> assign(:owner?, owner?)
+         |> assign(:comment_policy, review.comment_policy)
+         |> assign(:can_comment?, can_comment?(scope, review))
+         |> assign(:current_path, ~p"/r/#{review.token}"), layout: {CritWeb.Layouts, :review}}
     end
   end
 
@@ -140,6 +145,36 @@ defmodule CritWeb.ReviewLive do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not make the review public.")}
+    end
+  end
+
+  def handle_event("update_comment_policy", %{"policy" => raw}, socket) do
+    scope = socket.assigns.current_scope
+    review = socket.assigns.review
+
+    with {:ok, policy} <- parse_comment_policy(raw),
+         {:ok, updated} <- Reviews.update_review(scope, review.id, %{comment_policy: policy}) do
+      merged = Map.merge(review, Map.take(updated, [:comment_policy]))
+
+      {:noreply,
+       socket
+       |> assign(:review, merged)
+       |> assign(:comment_policy, updated.comment_policy)
+       |> assign(:can_comment?, can_comment?(scope, updated))
+       |> push_event("policy_changed", %{can_comment: can_comment?(scope, updated)})
+       |> put_flash(:info, flash_for_policy(updated.comment_policy))}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid comment policy.")}
+
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "Not allowed.")}
+
+      {:error, :not_found} ->
+        {:noreply, put_flash(socket, :error, "Review not found.")}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash(socket, :error, "Could not update the comment policy.")}
     end
   end
 
@@ -434,6 +469,28 @@ defmodule CritWeb.ReviewLive do
     {:noreply, push_event(socket, "display_name_changed", payload)}
   end
 
+  @impl true
+  # Cross-tab observer path: no flash and no :owner? recompute — the actor lives
+  # in another tab/session, so this socket is just mirroring state, not reacting
+  # to its own user's action. Don't mirror the handle_event flash here.
+  def handle_info({:policy_changed, review_id, %{comment_policy: new_policy}}, socket) do
+    review = socket.assigns.review
+
+    if review.id == review_id do
+      scope = socket.assigns.current_scope
+      merged = Map.merge(review, %{comment_policy: new_policy})
+
+      {:noreply,
+       socket
+       |> assign(:review, merged)
+       |> assign(:comment_policy, new_policy)
+       |> assign(:can_comment?, can_comment?(scope, merged))
+       |> push_event("policy_changed", %{can_comment: can_comment?(scope, merged)})}
+    else
+      {:noreply, socket}
+    end
+  end
+
   defp broadcast_from_review(socket, message) do
     token = socket.assigns.review.token
     Phoenix.PubSub.broadcast_from(@pubsub, self(), "review:#{token}", message)
@@ -496,4 +553,32 @@ defmodule CritWeb.ReviewLive do
 
   defp display_filename(%{files: [first | _]}), do: first.file_path
   defp display_filename(_), do: "Review"
+
+  defp can_comment?(_scope, %Review{comment_policy: :disallowed}), do: false
+  defp can_comment?(%Scope{user: nil}, %Review{comment_policy: :logged_in_only}), do: false
+  defp can_comment?(_scope, _review), do: true
+
+  defp parse_comment_policy("open"), do: {:ok, :open}
+  defp parse_comment_policy("logged_in_only"), do: {:ok, :logged_in_only}
+  defp parse_comment_policy("disallowed"), do: {:ok, :disallowed}
+  defp parse_comment_policy(_), do: :error
+
+  defp flash_for_policy(:open), do: "Comments are now open to everyone."
+  defp flash_for_policy(:logged_in_only), do: "Only signed-in users can comment now."
+  defp flash_for_policy(:disallowed), do: "New comments are turned off for this review."
+
+  @doc false
+  def comment_policy_icon(:open), do: "hero-chat-bubble-left-right"
+  def comment_policy_icon(:logged_in_only), do: "hero-user"
+  def comment_policy_icon(:disallowed), do: "hero-no-symbol"
+
+  @doc false
+  def comment_policy_label(:open), do: "Open"
+  def comment_policy_label(:logged_in_only), do: "Login required"
+  def comment_policy_label(:disallowed), do: "Disabled"
+
+  @doc false
+  def comment_policy_description(:open), do: "Anyone can comment, signed in or not."
+  def comment_policy_description(:logged_in_only), do: "Only signed-in users can comment."
+  def comment_policy_description(:disallowed), do: "Nobody can post new comments."
 end

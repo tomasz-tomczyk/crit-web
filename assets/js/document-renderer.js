@@ -1590,11 +1590,13 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
     commentGutter.dataset.startLine = block.startLine
     commentGutter.dataset.endLine = block.endLine
     commentGutter.dataset.filePath = file.path
-    const lineAdd = document.createElement('span')
-    lineAdd.className = 'line-add'
-    lineAdd.textContent = '+'
-    commentGutter.appendChild(lineAdd)
-    commentGutter.addEventListener('mousedown', (e) => handleGutterMouseDown(e, ctx))
+    if (ctx.canComment !== false) {
+      const lineAdd = document.createElement('span')
+      lineAdd.className = 'line-add'
+      lineAdd.textContent = '+'
+      commentGutter.appendChild(lineAdd)
+      commentGutter.addEventListener('mousedown', (e) => handleGutterMouseDown(e, ctx))
+    }
     lineBlockEl.appendChild(commentGutter)
   } else {
     const roGutter = document.createElement('div')
@@ -1810,8 +1812,10 @@ function renderFileSection(ctx, file) {
     '<span class="file-header-name"><span class="dir">' + escapeHtml(dirPath) + '</span>' + escapeHtml(fileName) + '</span>' +
     (file.orphaned ? '<span class="file-header-badge removed">Removed</span>' : '')
 
-  // File comment button — not for orphaned files (no point adding comments to removed files)
-  if (!file.orphaned) {
+  // File comment button — not for orphaned files (no point adding comments to removed files).
+  // Also gated on canComment: when policy disallows new comments, don't create the
+  // affordance or its click handler.
+  if (!file.orphaned && ctx.canComment !== false) {
     const fileCommentBtn = document.createElement('button')
     fileCommentBtn.className = 'file-comment-btn'
     fileCommentBtn.title = 'Add file comment'
@@ -2160,14 +2164,18 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
 
   const commentGutter = document.createElement("div")
   commentGutter.className = "line-comment-gutter"
-  const lineAdd = document.createElement("span")
-  lineAdd.className = "line-add"
-  lineAdd.textContent = "+"
-  commentGutter.appendChild(lineAdd)
+  if (ctx.canComment !== false) {
+    const lineAdd = document.createElement("span")
+    lineAdd.className = "line-add"
+    lineAdd.textContent = "+"
+    commentGutter.appendChild(lineAdd)
+  }
 
   gutter.appendChild(lineNum)
   gutter.appendChild(commentGutter)
-  gutter.addEventListener("mousedown", (e) => handleGutterMouseDown(e, ctx))
+  if (ctx.canComment !== false) {
+    gutter.addEventListener("mousedown", (e) => handleGutterMouseDown(e, ctx))
+  }
 
   // Content
   const content = document.createElement("div")
@@ -2525,8 +2533,11 @@ function createCommentElement(comment, ctx) {
     card.appendChild(renderReplyList(comment, ctx))
   }
 
-  // Inline reply input (GitHub-style: compact, expands on focus)
-  card.appendChild(createReplyInput(comment.id, ctx))
+  // Inline reply input (GitHub-style: compact, expands on focus).
+  // A reply is a new comment, so respect comment policy.
+  if (ctx.canComment !== false) {
+    card.appendChild(createReplyInput(comment.id, ctx))
+  }
 
   wrapper.appendChild(card)
   return wrapper
@@ -3096,8 +3107,10 @@ function createResolvedElement(comment, ctx) {
     card.appendChild(renderReplyList(comment, ctx))
   }
 
-  // Reply input
-  card.appendChild(createReplyInput(comment.id, ctx))
+  // Reply input — gated on comment policy (a reply is a new comment).
+  if (ctx.canComment !== false) {
+    card.appendChild(createReplyInput(comment.id, ctx))
+  }
 
   wrapper.appendChild(card)
   return wrapper
@@ -3842,6 +3855,16 @@ function renderReviewConversation(ctx) {
   const reviewForm = ctx.activeForms.find(f => f.scope === 'review')
   const reviewComments = ctx.comments.filter(c => c.scope === 'review')
 
+  // When commenting is disallowed AND there are no existing review-level
+  // comments, the section has nothing to read and no affordance to offer —
+  // hide it entirely instead of rendering an empty header. If a comment
+  // exists, keep the section visible (users can still read/resolve threads;
+  // the "Add comment" button stays gated by canComment below).
+  if (ctx.canComment === false && reviewComments.length === 0 && !reviewForm) {
+    section.hidden = true
+    return
+  }
+
   const collapsed = isReviewConversationCollapsed() && !reviewForm
   section.classList.toggle('collapsed', collapsed)
 
@@ -3898,9 +3921,13 @@ function renderReviewConversation(ctx) {
   }
 
   // Footer: compose form (when active) or ghost "Add comment" button.
+  // Gate on canComment so the affordance physically isn't created when the
+  // policy disallows new comments — the click handler triggers a re-render
+  // that visibly removes the button (jankiness). CSS .crit-no-comments
+  // hiding is defense in depth; skipping creation is the source of truth.
   if (reviewForm && !reviewForm.editingId) {
     body.appendChild(renderCommentFormUI(ctx, reviewForm))
-  } else {
+  } else if (ctx.canComment !== false) {
     const addMore = document.createElement('button')
     addMore.className = 'review-conversation-add-more'
     if (reviewComments.length === 0) addMore.classList.add('review-conversation-empty')
@@ -3938,10 +3965,13 @@ function createReviewConversationCard(ctx, comment) {
   }
   // Render existing replies + a reply input — review-level threads support replies
   // exactly like line-anchored ones (parity with crit local).
+  // Reply input gated on comment policy (a reply is a new comment).
   if (comment.replies && comment.replies.length > 0) {
     card.appendChild(renderReplyList(comment, ctx))
   }
-  card.appendChild(createReplyInput(comment.id, ctx))
+  if (ctx.canComment !== false) {
+    card.appendChild(createReplyInput(comment.id, ctx))
+  }
   return wrapper
 }
 
@@ -4558,9 +4588,26 @@ export const DocumentRenderer = {
     // Show loading until server sends init
     ctx.el.innerHTML = '<div class="crit-loading">Loading comments…</div>'
 
-    ctx.handleEvent("init", ({ comments, display_name, files }) => {
+    // Comment-affordance class (`.crit-no-comments`) is server-rendered on
+    // the `.crit-page` wrapper (see review_live.html.heex), so the visual
+    // suppression is always in sync with @can_comment? — no JS toggle, no
+    // reliance on push_event delivery. The hook still receives policy_changed
+    // so it can drop any open new-comment composers and re-render the document
+    // (closing forms that CSS alone can't unwind for an actively-typing user).
+    ctx.handleEvent("policy_changed", ({ can_comment }) => {
+      const next = can_comment !== false
+      const changed = ctx.canComment !== next
+      ctx.canComment = next
+      if (changed && ctx.md) {
+        ctx.activeForms = ctx.activeForms.filter((f) => f.editingId)
+        render(ctx)
+      }
+    })
+
+    ctx.handleEvent("init", ({ comments, display_name, files, can_comment }) => {
       ctx.displayName = display_name || null
       ctx.comments = comments
+      ctx.canComment = can_comment !== false
 
       if (files && files.length > 1) {
         ctx.multiFile = true
