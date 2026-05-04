@@ -1590,11 +1590,13 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
     commentGutter.dataset.startLine = block.startLine
     commentGutter.dataset.endLine = block.endLine
     commentGutter.dataset.filePath = file.path
-    const lineAdd = document.createElement('span')
-    lineAdd.className = 'line-add'
-    lineAdd.textContent = '+'
-    commentGutter.appendChild(lineAdd)
-    commentGutter.addEventListener('mousedown', (e) => handleGutterMouseDown(e, ctx))
+    if (ctx.canComment !== false) {
+      const lineAdd = document.createElement('span')
+      lineAdd.className = 'line-add'
+      lineAdd.textContent = '+'
+      commentGutter.appendChild(lineAdd)
+      commentGutter.addEventListener('mousedown', (e) => handleGutterMouseDown(e, ctx))
+    }
     lineBlockEl.appendChild(commentGutter)
   } else {
     const roGutter = document.createElement('div')
@@ -2160,14 +2162,18 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
 
   const commentGutter = document.createElement("div")
   commentGutter.className = "line-comment-gutter"
-  const lineAdd = document.createElement("span")
-  lineAdd.className = "line-add"
-  lineAdd.textContent = "+"
-  commentGutter.appendChild(lineAdd)
+  if (ctx.canComment !== false) {
+    const lineAdd = document.createElement("span")
+    lineAdd.className = "line-add"
+    lineAdd.textContent = "+"
+    commentGutter.appendChild(lineAdd)
+  }
 
   gutter.appendChild(lineNum)
   gutter.appendChild(commentGutter)
-  gutter.addEventListener("mousedown", (e) => handleGutterMouseDown(e, ctx))
+  if (ctx.canComment !== false) {
+    gutter.addEventListener("mousedown", (e) => handleGutterMouseDown(e, ctx))
+  }
 
   // Content
   const content = document.createElement("div")
@@ -4563,8 +4569,18 @@ export const DocumentRenderer = {
     }
 
     ctx.handleEvent("policy_changed", ({ can_comment }) => {
-      ctx.canComment = can_comment !== false
+      const next = can_comment !== false
+      const changed = ctx.canComment !== next
+      ctx.canComment = next
       refreshCommentAffordances()
+      // Re-render so gutter "+" affordances and any open new-comment forms are
+      // rebuilt under the new policy. CSS alone (html.crit-no-comments) can't
+      // cover the case where the user is actively hovering a gutter or has a
+      // composer open — only a fresh render guarantees the DOM matches state.
+      if (changed && ctx.md) {
+        ctx.activeForms = ctx.activeForms.filter((f) => f.editingId)
+        render(ctx)
+      }
     })
 
     ctx.handleEvent("init", ({ comments, display_name, files, can_comment }) => {
