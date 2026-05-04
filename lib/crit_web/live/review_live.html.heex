@@ -446,6 +446,53 @@
                 <.icon name="hero-eye-slash" class="size-3" /> Unlisted
               </span>
           <% end %>
+          <%= cond do %>
+            <% @owner? -> %>
+              <CritWeb.Components.PopoverMenu.popover_menu
+                id="comment-policy-menu"
+                test_prefix="comment-policy"
+                panel_label="Comment policy"
+              >
+                <:trigger>
+                  <.icon name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)} class="size-3" />
+                  <span>{CritWeb.ReviewLive.comment_policy_label(@comment_policy)}</span>
+                  <.icon name="hero-chevron-down" class="size-3" />
+                </:trigger>
+                <%= for option <- [:open, :logged_in_only, :disallowed] do %>
+                  <button
+                    type="button"
+                    phx-click="update_comment_policy"
+                    phx-value-policy={option}
+                    data-test={"comment-policy-set-#{option}"}
+                    class="crit-comment-policy-option"
+                    aria-current={@comment_policy == option}
+                  >
+                    <div class="crit-comment-policy-option-icon">
+                      <.icon name={CritWeb.ReviewLive.comment_policy_icon(option)} class="size-3" />
+                    </div>
+                    <div class="crit-comment-policy-option-text">
+                      <span class="crit-comment-policy-option-title">
+                        {CritWeb.ReviewLive.comment_policy_label(option)}
+                      </span>
+                      <span class="crit-comment-policy-option-desc">
+                        {CritWeb.ReviewLive.comment_policy_description(option)}
+                      </span>
+                    </div>
+                  </button>
+                <% end %>
+              </CritWeb.Components.PopoverMenu.popover_menu>
+            <% @comment_policy != :open -> %>
+              <span
+                class="crit-comment-policy-badge"
+                data-test="comment-policy-badge"
+                title={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
+                aria-label={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
+              >
+                <.icon name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)} class="size-3" />
+                {CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
+              </span>
+            <% true -> %>
+          <% end %>
           <%= if owner? do %>
             <button
               phx-click="delete_review"
