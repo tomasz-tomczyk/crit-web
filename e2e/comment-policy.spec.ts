@@ -14,7 +14,7 @@ const BASE_URL = `http://localhost:${process.env.CRIT_WEB_TEST_PORT || "4003"}`;
  * PUT with that bearer to set the policy.
  */
 async function seedUserAndToken(request) {
-  const res = await request.post(`${BASE_URL}/api/seed-user`, {
+  const res = await request.post(`${BASE_URL}/api/test/seed-user`, {
     data: { name: "CP Owner" },
   });
   expect(res.status()).toBe(200);
@@ -105,13 +105,13 @@ test.describe("comment policy", () => {
   });
 
   test("open — no banner, no badge for anon viewer", async ({ request, page }) => {
-    const { token: deleteToken, ...rest } = await createReview(request);
-    await loadReview(page, rest.token);
+    const { token, deleteToken } = await createReview(request);
+    await loadReview(page, token);
 
     await expect(page.locator('[data-test="signin-banner"]')).toBeHidden();
     await expect(page.locator('[data-test="comment-policy-badge"]')).toHaveCount(0);
     await expect(page.locator("html.crit-no-comments")).toHaveCount(0);
 
-    await deleteReview(request, rest.deleteToken);
+    await deleteReview(request, deleteToken);
   });
 });
