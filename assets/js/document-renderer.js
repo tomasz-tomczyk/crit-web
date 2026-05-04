@@ -4558,9 +4558,20 @@ export const DocumentRenderer = {
     // Show loading until server sends init
     ctx.el.innerHTML = '<div class="crit-loading">Loading comments…</div>'
 
-    ctx.handleEvent("init", ({ comments, display_name, files }) => {
+    function refreshCommentAffordances() {
+      document.documentElement.classList.toggle("crit-no-comments", ctx.canComment === false)
+    }
+
+    ctx.handleEvent("policy_changed", ({ can_comment }) => {
+      ctx.canComment = can_comment !== false
+      refreshCommentAffordances()
+    })
+
+    ctx.handleEvent("init", ({ comments, display_name, files, can_comment }) => {
       ctx.displayName = display_name || null
       ctx.comments = comments
+      ctx.canComment = can_comment !== false
+      refreshCommentAffordances()
 
       if (files && files.length > 1) {
         ctx.multiFile = true

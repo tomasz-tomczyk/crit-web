@@ -53,7 +53,8 @@ defmodule CritWeb.ReviewLive do
             push_event(socket, "init", %{
               comments: serialize_comments(comments),
               display_name: display_name,
-              files: files_data
+              files: files_data,
+              can_comment: can_comment?(scope, review)
             })
           else
             socket

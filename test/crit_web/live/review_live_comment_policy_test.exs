@@ -150,6 +150,48 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
       refute rendered =~ "turned off for this review"
     end
 
+    test "add_comment is rejected when comment_policy is :disallowed", %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+      conn = log_in(conn, owner)
+      {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> render_hook("add_comment", %{
+        "body" => "nope",
+        "start_line" => 1,
+        "end_line" => 1,
+        "scope" => "line"
+      })
+
+      assert Reviews.list_comments(review.id) == []
+    end
+
+    test "add_reply is rejected when comment_policy is :logged_in_only and viewer is anonymous",
+         %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+      {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+      parent =
+        Crit.Repo.insert!(%Crit.Comment{
+          review_id: review.id,
+          start_line: 1,
+          end_line: 1,
+          body: "p",
+          scope: "line"
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view
+      |> render_hook("add_reply", %{"comment_id" => parent.id, "body" => "no"})
+
+      assert [seen] = Reviews.list_comments(review.id)
+      assert seen.id == parent.id
+    end
+
     test "no-op update (same policy) does not push a stale render or flash", %{conn: conn} do
       owner = owner_fixture()
       review = review_fixture(user_id: owner.id)

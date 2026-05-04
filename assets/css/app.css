@@ -1325,6 +1325,16 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   text-decoration: underline;
 }
 
+/* Hide all comment-creation affordances when policy disallows new comments. */
+/* Existing comments + their resolve/edit/delete controls render unchanged.  */
+html.crit-no-comments .line-add,
+html.crit-no-comments .comment-form-wrapper,
+html.crit-no-comments .comment-form,
+html.crit-no-comments .reply-form,
+html.crit-no-comments .file-comment-form {
+  display: none !important;
+}
+
 .crit-diff-mode-toggle {
   display: inline-flex;
   background: var(--crit-editor-bg-elevated);
