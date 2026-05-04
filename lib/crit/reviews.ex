@@ -900,34 +900,47 @@ defmodule Crit.Reviews do
   Same attribution rules as `create_comment/4`.
   """
   def create_reply(%Scope{} = scope, comment_id, attrs, review_id) do
+    query =
+      from c in Comment,
+        where: c.id == ^comment_id and c.review_id == ^review_id,
+        join: r in Review,
+        on: r.id == c.review_id,
+        select: {c, r}
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :not_found}
+
+      {%Comment{parent_id: parent}, _r} when parent != nil ->
+        {:error, :not_found}
+
+      {parent, review} ->
+        with :ok <- check_comment_policy(scope, review) do
+          do_create_reply(scope, parent, attrs)
+        end
+    end
+  end
+
+  defp do_create_reply(%Scope{} = scope, %Comment{} = parent, attrs) do
     user_id = Scope.user_id(scope)
     identity = scope.identity
     display_name = scope.display_name
 
-    case Repo.get_by(Comment, id: comment_id, review_id: review_id) do
-      nil ->
-        {:error, :not_found}
+    %Comment{}
+    |> Comment.reply_changeset(attrs)
+    |> Ecto.Changeset.put_change(:parent_id, parent.id)
+    |> Ecto.Changeset.put_change(:review_id, parent.review_id)
+    |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
+    |> Ecto.Changeset.put_change(:user_id, user_id)
+    |> Ecto.Changeset.put_change(:author_display_name, display_name)
+    |> Repo.insert()
+    |> case do
+      {:ok, reply} ->
+        Statistics.increment_comment()
+        {:ok, Repo.preload(reply, :user)}
 
-      %Comment{parent_id: parent} when parent != nil ->
-        {:error, :not_found}
-
-      parent ->
-        %Comment{}
-        |> Comment.reply_changeset(attrs)
-        |> Ecto.Changeset.put_change(:parent_id, comment_id)
-        |> Ecto.Changeset.put_change(:review_id, parent.review_id)
-        |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
-        |> Ecto.Changeset.put_change(:user_id, user_id)
-        |> Ecto.Changeset.put_change(:author_display_name, display_name)
-        |> Repo.insert()
-        |> case do
-          {:ok, reply} ->
-            Statistics.increment_comment()
-            {:ok, Repo.preload(reply, :user)}
-
-          other ->
-            other
-        end
+      other ->
+        other
     end
   end
 

@@ -197,4 +197,64 @@ defmodule Crit.ReviewsCommentPolicyTest do
       assert {:error, :comments_disallowed} = Reviews.create_comment(Scope.for_user(u), r, a)
     end
   end
+
+  describe "create_reply/4 — comment_policy gate" do
+    setup do
+      user = owner_user_fixture()
+      open_r = create_review_for(user)
+      login_r = create_review_for(user)
+      closed_r = create_review_for(user)
+      {:ok, _} = Reviews.update_review(Scope.for_user(user), login_r.id, %{comment_policy: :logged_in_only})
+      {:ok, _} = Reviews.update_review(Scope.for_user(user), closed_r.id, %{comment_policy: :disallowed})
+      login_r = Reviews.get_by_token(login_r.token)
+      closed_r = Reviews.get_by_token(closed_r.token)
+      anon = Scope.for_visitor("anon", "Anon")
+
+      open_parent = insert_top_level_comment!(open_r)
+      login_parent = insert_top_level_comment!(login_r)
+      closed_parent = insert_top_level_comment!(closed_r)
+
+      %{
+        user: user,
+        anon: anon,
+        open: {open_r, open_parent},
+        login: {login_r, login_parent},
+        closed: {closed_r, closed_parent}
+      }
+    end
+
+    test "open: anonymous allowed", %{anon: anon, open: {r, p}} do
+      assert {:ok, _} = Reviews.create_reply(anon, p.id, %{"body" => "r"}, r.id)
+    end
+
+    test "logged_in_only: anonymous rejected", %{anon: anon, login: {r, p}} do
+      assert {:error, :comments_require_login} =
+               Reviews.create_reply(anon, p.id, %{"body" => "r"}, r.id)
+    end
+
+    test "logged_in_only: authenticated allowed", %{user: u, login: {r, p}} do
+      assert {:ok, _} =
+               Reviews.create_reply(Scope.for_user(u), p.id, %{"body" => "r"}, r.id)
+    end
+
+    test "disallowed: anonymous rejected", %{anon: anon, closed: {r, p}} do
+      assert {:error, :comments_disallowed} =
+               Reviews.create_reply(anon, p.id, %{"body" => "r"}, r.id)
+    end
+
+    test "disallowed: authenticated rejected", %{user: u, closed: {r, p}} do
+      assert {:error, :comments_disallowed} =
+               Reviews.create_reply(Scope.for_user(u), p.id, %{"body" => "r"}, r.id)
+    end
+  end
+
+  defp insert_top_level_comment!(%Crit.Review{} = review) do
+    Crit.Repo.insert!(%Crit.Comment{
+      review_id: review.id,
+      start_line: 1,
+      end_line: 1,
+      body: "seed",
+      scope: "line"
+    })
+  end
 end
