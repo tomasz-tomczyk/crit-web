@@ -174,6 +174,11 @@ defmodule Crit.Reviews do
   Owner-scoped update of arbitrary whitelisted attrs. The whitelist is the
   `cast` list in `Review.update_changeset/2` — unknown keys are silently dropped.
 
+  Intentionally generic: this is the forward seam for owner-writable review
+  fields. Adding a new writable column means extending `Review.update_changeset/2`'s
+  cast list — no new context function required. Callers (LiveView events, API
+  controllers) pass an attrs map straight through.
+
   Returns `{:ok, review}`, `{:error, :not_found}`, `{:error, :unauthorized}`,
   or `{:error, %Ecto.Changeset{}}`.
   """
@@ -192,13 +197,16 @@ defmodule Crit.Reviews do
 
   # Broadcast cross-tab policy changes only when the value actually changed.
   # Same topic ("review:#{token}") that ReviewLive subscribes to in mount/3.
+  # Uses broadcast_from(self(), ...) so the originating LV (which already
+  # applied the change in handle_event) doesn't run a redundant handle_info.
   defp maybe_broadcast_policy_changed(%Review{comment_policy: old}, %Review{comment_policy: new})
        when old == new,
        do: :ok
 
   defp maybe_broadcast_policy_changed(_old, %Review{} = updated) do
-    Phoenix.PubSub.broadcast(
+    Phoenix.PubSub.broadcast_from(
       Crit.PubSub,
+      self(),
       "review:#{updated.token}",
       {:policy_changed, updated.id, %{comment_policy: updated.comment_policy}}
     )

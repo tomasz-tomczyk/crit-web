@@ -27,6 +27,32 @@ defmodule Crit.ReviewsCommentPolicyTest do
     review
   end
 
+  # Subscribe to the review topic from a separate process and forward all
+  # messages back to the test pid. Needed because Reviews.update_review/3
+  # uses broadcast_from(self(), ...) and would skip a same-process subscriber.
+  defp subscribe_from_other_process(token) do
+    test_pid = self()
+
+    {:ok, _pid} =
+      Task.start_link(fn ->
+        Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{token}")
+        forward_loop(test_pid)
+      end)
+
+    # Give the Task a tick to register the subscription before the caller
+    # triggers the broadcast.
+    Process.sleep(20)
+    :ok
+  end
+
+  defp forward_loop(test_pid) do
+    receive do
+      msg ->
+        send(test_pid, msg)
+        forward_loop(test_pid)
+    end
+  end
+
   describe "update_review/3 — comment_policy" do
     test "owner can change comment_policy through every value" do
       user = owner_user_fixture()
@@ -145,7 +171,11 @@ defmodule Crit.ReviewsCommentPolicyTest do
       review = create_review_for(user)
       assert review.comment_policy == :open
 
-      Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review.token}")
+      # Subscribe from a separate process so broadcast_from(self(), ...) in
+      # update_review (which excludes the *caller* of update_review) still
+      # delivers to this subscriber. Mirrors the production topology where
+      # the originating LV calls update_review and other-tab LVs subscribe.
+      subscribe_from_other_process(review.token)
 
       assert {:ok, _updated} =
                Reviews.update_review(scope, review.id, %{comment_policy: :disallowed})
@@ -160,7 +190,7 @@ defmodule Crit.ReviewsCommentPolicyTest do
       review = create_review_for(user)
       assert review.comment_policy == :open
 
-      Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{review.token}")
+      subscribe_from_other_process(review.token)
 
       assert {:ok, _updated} =
                Reviews.update_review(scope, review.id, %{comment_policy: :open})

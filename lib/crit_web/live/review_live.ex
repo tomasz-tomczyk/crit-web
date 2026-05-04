@@ -470,6 +470,9 @@ defmodule CritWeb.ReviewLive do
   end
 
   @impl true
+  # Cross-tab observer path: no flash and no :owner? recompute — the actor lives
+  # in another tab/session, so this socket is just mirroring state, not reacting
+  # to its own user's action. Don't mirror the handle_event flash here.
   def handle_info({:policy_changed, review_id, %{comment_policy: new_policy}}, socket) do
     review = socket.assigns.review
 
