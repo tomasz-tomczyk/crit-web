@@ -53,6 +53,7 @@ if Mix.env() in [:dev, :test] do
           review_round: attrs[:review_round] || 0,
           cli_args: attrs[:cli_args] || [],
           user_id: user.id,
+          visibility: attrs[:visibility] || :unlisted,
           last_activity_at: attrs[:last_activity_at] || now,
           inserted_at: attrs[:inserted_at] || now,
           updated_at: attrs[:updated_at] || now
@@ -971,6 +972,32 @@ if Mix.env() in [:dev, :test] do
     ]
   })
 
+  # ════════════════════════════════════════════════════════════════════════
+  # 8. PUBLIC REVIEW — visibility: :public, indexable + listed in sitemap
+  # ════════════════════════════════════════════════════════════════════════
+
+  seed_review.("seed-public-review01", %{
+    visibility: :public,
+    last_activity_at: now,
+    inserted_at: now,
+    cli_args: ["public-demo.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "public-demo.md",
+        content: """
+        # Public review demo
+
+        This review has `visibility: :public` — it's indexable by search
+        engines and appears in `/sitemap.xml`. Use it to preview the
+        public-state UI: the green "Public" badge, no "Make public" button,
+        and a `<link rel="canonical">` in the head.
+        """,
+        position: 0
+      }
+    ]
+  })
+
   # ── Summary ────────────────────────────────────────────────────────────
 
   reviews = [
@@ -980,7 +1007,8 @@ if Mix.env() in [:dev, :test] do
     {"seed-multi-round-001", "Multi-round", "2 revisions with diff, outdated comments"},
     {"seed-markdown-comm01", "Markdown comments", "tables, code blocks, blockquotes"},
     {"seed-all-resolved-01", "All resolved", "every comment marked resolved"},
-    {"seed-no-comments-01", "No comments", "clean file view, empty state"}
+    {"seed-no-comments-01", "No comments", "clean file view, empty state"},
+    {"seed-public-review01", "Public review", "visibility: :public — indexable, in sitemap"}
   ]
 
   IO.puts("\n  Seeded #{length(reviews)} reviews for #{user.name}:\n")

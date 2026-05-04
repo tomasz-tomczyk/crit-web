@@ -134,6 +134,63 @@ defmodule Crit.Reviews do
     end
   end
 
+  @doc """
+  Promote a review from :unlisted to :public. Only the authenticated owner
+  (`scope.user.id == review.user_id`) may promote.
+
+  Visibility is one-way: there is no `make_unlisted/2`. Per the gist model,
+  the URL is the review's public identity — to "unpublish", delete and recreate.
+
+  Returns `{:ok, review}`, `{:error, :not_found}`, `{:error, :unauthorized}`,
+  `{:error, :already_public}`, or `{:error, %Ecto.Changeset{}}`.
+  """
+  def make_public(%Scope{} = scope, review_id) do
+    with {:ok, review} <- fetch_review_for_owner(scope, review_id),
+         :ok <- ensure_unlisted(review) do
+      review
+      |> Review.visibility_changeset(%{visibility: :public})
+      |> Repo.update()
+    end
+  end
+
+  defp ensure_unlisted(%Review{visibility: :unlisted}), do: :ok
+  defp ensure_unlisted(%Review{visibility: :public}), do: {:error, :already_public}
+
+  defp fetch_review_for_owner(%Scope{} = scope, review_id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(review_id),
+         %Review{} = review <- Repo.get(Review, uuid),
+         true <- scope_can_modify_review?(scope, review) do
+      {:ok, review}
+    else
+      false -> {:error, :unauthorized}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  # Owner-only mutation gate. Anonymous-owned reviews (`user_id: nil`) are
+  # never modifiable through scope-authed paths — they're administered via
+  # their `delete_token` (see `delete_by_delete_token/1`). When admin scopes
+  # land, this is the seam to extend.
+  defp scope_can_modify_review?(%Scope{}, %Review{user_id: nil}), do: false
+
+  defp scope_can_modify_review?(%Scope{} = scope, %Review{user_id: owner_id}) do
+    case Scope.user_id(scope) do
+      nil -> false
+      ^owner_id -> true
+      _ -> false
+    end
+  end
+
+  @doc "Returns tokens of every review with `visibility: :public`, ordered by recency."
+  def list_public_review_tokens do
+    Repo.all(
+      from r in Review,
+        where: r.visibility == :public,
+        order_by: [desc: r.last_activity_at],
+        select: r.token
+    )
+  end
+
   defp comment_owned_by?(%Scope{} = scope, %Comment{user_id: nil, author_identity: ai}) do
     not is_nil(ai) and ai == scope.identity
   end
@@ -695,21 +752,19 @@ defmodule Crit.Reviews do
   Returns `:ok`, `{:error, :not_found}`, `{:error, :unauthorized}`, or
   `{:error, :delete_failed}`.
   """
-  def delete_review(%Scope{user: nil}, _id), do: {:error, :unauthorized}
-
-  def delete_review(%Scope{user: %User{id: owner_id}}, id) do
+  def delete_review(%Scope{} = scope, id) do
     case Repo.get(Review, id) do
       nil ->
         {:error, :not_found}
 
       review ->
-        if review.user_id != owner_id do
-          {:error, :unauthorized}
-        else
+        if scope_can_modify_review?(scope, review) do
           case Repo.delete(review) do
             {:ok, _} -> :ok
             {:error, _} -> {:error, :delete_failed}
           end
+        else
+          {:error, :unauthorized}
         end
     end
   end

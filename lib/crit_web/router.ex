@@ -57,6 +57,8 @@ defmodule CritWeb.Router do
     get "/getting-started", PageController, :getting_started
     get "/self-hosting", PageController, :self_hosting
     get "/changelog", PageController, :changelog
+    get "/sitemap.xml", PageController, :sitemap_xml
+    get "/robots.txt", PageController, :robots_txt
 
     post "/set-name", ReviewController, :set_name
     # POST /auth/login = legacy admin password login (selfhosted instances).
@@ -80,16 +82,21 @@ defmodule CritWeb.Router do
     get "/auth/cli/success", DeviceController, :success
   end
 
-  # Review pages and dashboard — noindex (review page also gets no-referrer
-  # via :put_noindex)
+  # Review page — visibility-driven noindex/referrer is set in the layout via
+  # assigns from ReviewLive.mount/3
   scope "/", CritWeb do
-    pipe_through [:browser, :noindex]
+    pipe_through :browser
 
     live_session :review,
       on_mount: [{CritWeb.UserAuth, :require_review_scope}],
       session: {CritWeb.ReviewLive, :session_opts, []} do
       live "/r/:token", ReviewLive, :show
     end
+  end
+
+  # Dashboard / settings / admin — always noindex
+  scope "/", CritWeb do
+    pipe_through [:browser, :noindex]
 
     live_session :user,
       on_mount: [{CritWeb.UserAuth, :require_authenticated_user}],

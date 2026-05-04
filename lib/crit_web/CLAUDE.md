@@ -2,6 +2,22 @@
 
 Targeted rules for code under `lib/crit_web/`. The repo-level guide lives in `../../CLAUDE.md`; this file documents conventions specific to the web layer.
 
+## SEO surface (sitemap + robots)
+
+`/sitemap.xml` and `/robots.txt` are served dynamically by
+`PageController` (`sitemap_xml/2`, `robots_txt/2`). The static
+list of marketing URLs lives in the `@sitemap_paths` module
+attribute on `PageController`.
+
+**When you add, rename, or remove a public URL** (a new feature
+page, integration page, marketing route), update `@sitemap_paths`
+in the same change. URLs that aren't in the sitemap won't be
+crawled, and stale entries cause 404s in Google Search Console.
+
+`Disallow: /r/` is intentionally **not** in `robots.txt` — review
+indexability is gated per-review by `<meta name="robots">` driven
+from `Review.visibility` in `ReviewLive.mount/3`.
+
 ## Scope pattern
 
 Auth and visitor identity flow through `Crit.Accounts.Scope` (Phoenix 1.8 scope pattern). Callers pass a single `%Scope{}` instead of raw `user_id` / `identity` / `display_name` triples.

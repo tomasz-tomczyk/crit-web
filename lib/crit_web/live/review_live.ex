@@ -29,6 +29,12 @@ defmodule CritWeb.ReviewLive do
         display_name = scope.display_name
         user_id = Scope.user_id(scope)
 
+        public? = review.visibility == :public
+        owner? = user_id != nil and user_id == review.user_id
+
+        canonical_url =
+          if public?, do: CritWeb.Endpoint.url() <> "/r/#{review.token}", else: nil
+
         files_data =
           Enum.map(review.files, fn f ->
             %{path: f.file_path, content: f.content, position: f.position, status: f.status}
@@ -103,10 +109,37 @@ defmodule CritWeb.ReviewLive do
            :meta_description,
            "Shared review of #{display_filename(review)} on Crit. View inline comments and add your own feedback."
          )
-         |> assign(:noindex, true)
+         |> assign(:noindex, not public?)
          |> assign(:og_type, "article")
-         |> assign(:canonical_url, CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"),
-         layout: {CritWeb.Layouts, :review}}
+         |> assign(:canonical_url, canonical_url)
+         |> assign(:owner?, owner?), layout: {CritWeb.Layouts, :review}}
+    end
+  end
+
+  def handle_event("make_public", _params, socket) do
+    scope = socket.assigns.current_scope
+    review = socket.assigns.review
+
+    case Reviews.make_public(scope, review.id) do
+      {:ok, updated} ->
+        canonical_url = CritWeb.Endpoint.url() <> "/r/#{updated.token}"
+        merged = Map.merge(review, Map.take(updated, [:visibility]))
+
+        {:noreply,
+         socket
+         |> assign(:review, merged)
+         |> assign(:noindex, false)
+         |> assign(:canonical_url, canonical_url)
+         |> put_flash(:info, "Review is now public. Search engines may index it.")}
+
+      {:error, :already_public} ->
+        {:noreply, put_flash(socket, :info, "Review is already public.")}
+
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, "Not allowed.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not make the review public.")}
     end
   end
 
