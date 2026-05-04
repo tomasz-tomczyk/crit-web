@@ -1327,11 +1327,13 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 
 /* Hide all comment-creation affordances when policy disallows new comments. */
 /* Existing comments + their resolve/edit/delete controls render unchanged.  */
-html.crit-no-comments .line-add,
-html.crit-no-comments .comment-form-wrapper,
-html.crit-no-comments .comment-form,
-html.crit-no-comments .reply-form,
-html.crit-no-comments .file-comment-form {
+/* Class is server-rendered on .crit-page (review_live.html.heex) so it's    */
+/* always in sync with @can_comment? — no reliance on JS push_event delivery.*/
+.crit-no-comments .line-add,
+.crit-no-comments .comment-form-wrapper,
+.crit-no-comments .comment-form,
+.crit-no-comments .reply-form,
+.crit-no-comments .file-comment-form {
   display: none !important;
 }
 

@@ -4564,19 +4564,16 @@ export const DocumentRenderer = {
     // Show loading until server sends init
     ctx.el.innerHTML = '<div class="crit-loading">Loading comments…</div>'
 
-    function refreshCommentAffordances() {
-      document.documentElement.classList.toggle("crit-no-comments", ctx.canComment === false)
-    }
-
+    // Comment-affordance class (`.crit-no-comments`) is server-rendered on
+    // the `.crit-page` wrapper (see review_live.html.heex), so the visual
+    // suppression is always in sync with @can_comment? — no JS toggle, no
+    // reliance on push_event delivery. The hook still receives policy_changed
+    // so it can drop any open new-comment composers and re-render the document
+    // (closing forms that CSS alone can't unwind for an actively-typing user).
     ctx.handleEvent("policy_changed", ({ can_comment }) => {
       const next = can_comment !== false
       const changed = ctx.canComment !== next
       ctx.canComment = next
-      refreshCommentAffordances()
-      // Re-render so gutter "+" affordances and any open new-comment forms are
-      // rebuilt under the new policy. CSS alone (html.crit-no-comments) can't
-      // cover the case where the user is actively hovering a gutter or has a
-      // composer open — only a fresh render guarantees the DOM matches state.
       if (changed && ctx.md) {
         ctx.activeForms = ctx.activeForms.filter((f) => f.editingId)
         render(ctx)
@@ -4587,7 +4584,6 @@ export const DocumentRenderer = {
       ctx.displayName = display_name || null
       ctx.comments = comments
       ctx.canComment = can_comment !== false
-      refreshCommentAffordances()
 
       if (files && files.length > 1) {
         ctx.multiFile = true

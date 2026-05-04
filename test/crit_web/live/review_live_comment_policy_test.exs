@@ -301,4 +301,84 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
       assert length(Reviews.list_comments(review.id)) == 2
     end
   end
+
+  # The CSS class `.crit-no-comments` on `.crit-page` hides the gutter "+" and
+  # any new-comment composers (CSS in app.css). It MUST be rendered server-side
+  # from @can_comment? — earlier iterations toggled it from JS in response to a
+  # `policy_changed` push_event, which raced with morphdom and left a stale "+"
+  # visible on the gutter when an owner flipped policy to :disallowed. The
+  # class is the only thing keeping a viewer from clicking "+" on a disallowed
+  # review (the create gates in Reviews still reject the write, but the UI
+  # would visually invite the action).
+  describe "server-rendered .crit-no-comments class" do
+    test ":open viewer (anonymous) does NOT get crit-no-comments", %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      refute has_element?(view, ".crit-page.crit-no-comments")
+    end
+
+    test ":disallowed viewer (anonymous) gets crit-no-comments", %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      assert has_element?(view, ".crit-page.crit-no-comments")
+    end
+
+    test ":disallowed owner gets crit-no-comments (creation gated for everyone)",
+         %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
+      conn = log_in(conn, owner)
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      assert has_element?(view, ".crit-page.crit-no-comments")
+    end
+
+    test ":logged_in_only anonymous viewer gets crit-no-comments", %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      assert has_element?(view, ".crit-page.crit-no-comments")
+    end
+
+    test ":logged_in_only authed viewer does NOT get crit-no-comments", %{conn: conn} do
+      owner = owner_fixture()
+      other = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+      conn = log_in(conn, other)
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      refute has_element?(view, ".crit-page.crit-no-comments")
+    end
+
+    test "owner flipping :open → :disallowed adds the class without a reload",
+         %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+      conn = log_in(conn, owner)
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      refute has_element?(view, ".crit-page.crit-no-comments")
+
+      view |> element("[data-test=comment-policy-set-disallowed]") |> render_click()
+
+      assert has_element?(view, ".crit-page.crit-no-comments")
+    end
+  end
 end
