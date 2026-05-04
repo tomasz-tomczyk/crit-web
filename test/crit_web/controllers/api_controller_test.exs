@@ -180,7 +180,7 @@ defmodule CritWeb.ApiControllerTest do
       review = create_review()
       conn = get(conn, ~p"/api/export/#{review.token}/review")
       body = response(conn, 200)
-      assert body =~ ~r/\A<!-- crit-visibility: unlisted -->/
+      assert body =~ ~r/<!-- crit-visibility: unlisted -->/
       assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
     end
 
@@ -203,7 +203,7 @@ defmodule CritWeb.ApiControllerTest do
       {:ok, _} = Reviews.make_public(Scope.for_user(user), review.id)
 
       conn = get(conn, ~p"/api/export/#{review.token}/review")
-      assert response(conn, 200) =~ ~r/\A<!-- crit-visibility: public -->/
+      assert response(conn, 200) =~ ~r/<!-- crit-visibility: public -->/
     end
 
     test "returns 404 for unknown token", %{conn: conn} do
@@ -709,6 +709,128 @@ defmodule CritWeb.ApiControllerTest do
         })
 
       assert conn.status == 404
+    end
+  end
+
+  describe "comment_policy via API" do
+    defp owner_with_token do
+      {:ok, user} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "api-cp-#{System.unique_integer([:positive])}",
+          "email" => "api-cp-#{System.unique_integer([:positive])}@example.com",
+          "name" => "API CP"
+        })
+
+      {:ok, {plaintext, _record}} = Crit.Accounts.create_token(user, "test")
+      {user, plaintext}
+    end
+
+    test "document endpoint echoes comment_policy (defaults to open)", %{conn: conn} do
+      review = create_review()
+      conn = get(conn, ~p"/api/reviews/#{review.token}/document")
+      assert json_response(conn, 200)["comment_policy"] == "open"
+    end
+
+    test "document endpoint reflects updated comment_policy", %{conn: conn} do
+      {user, _token} = owner_with_token()
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          0,
+          []
+        )
+
+      {:ok, _} = Reviews.update_review(Scope.for_user(user), review.id, %{comment_policy: :disallowed})
+
+      conn = get(conn, ~p"/api/reviews/#{review.token}/document")
+      assert json_response(conn, 200)["comment_policy"] == "disallowed"
+    end
+
+    test "export endpoint prefixes the markdown with a comment-policy marker", %{conn: conn} do
+      review = create_review()
+      conn = get(conn, ~p"/api/export/#{review.token}/review")
+      body = response(conn, 200)
+      assert body =~ ~r/<!-- crit-comment-policy: open -->/
+    end
+
+    test "owner can set comment_policy when updating a review via PUT", %{conn: conn} do
+      {user, plaintext} = owner_with_token()
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          1,
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "p.md", content: "y"}],
+          comments: [],
+          review_round: 1,
+          comment_policy: "logged_in_only"
+        })
+
+      assert json_response(conn, 200)["comment_policy"] == "logged_in_only"
+      assert Reviews.get_by_token(review.token).comment_policy == :logged_in_only
+    end
+
+    test "non-owner cannot set comment_policy via PUT (field silently ignored)", %{conn: conn} do
+      review = create_review()
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "test.md", content: "y"}],
+          comments: [],
+          review_round: 0,
+          comment_policy: "disallowed"
+        })
+
+      assert conn.status == 200
+      assert Reviews.get_by_token(review.token).comment_policy == :open
+    end
+
+    test "owner can set comment_policy on POST /api/reviews", %{conn: conn} do
+      {_user, plaintext} = owner_with_token()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          comments: [],
+          comment_policy: "logged_in_only"
+        })
+
+      body = json_response(conn, 201)
+      assert body["comment_policy"] == "logged_in_only"
+
+      token = body["url"] |> String.split("/r/") |> List.last()
+      assert Reviews.get_by_token(token).comment_policy == :logged_in_only
+    end
+
+    test "anonymous POST /api/reviews silently ignores comment_policy", %{conn: conn} do
+      conn =
+        post(conn, ~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          comments: [],
+          comment_policy: "disallowed"
+        })
+
+      body = json_response(conn, 201)
+      assert body["comment_policy"] == "open"
+      token = body["url"] |> String.split("/r/") |> List.last()
+      assert Reviews.get_by_token(token).comment_policy == :open
     end
   end
 

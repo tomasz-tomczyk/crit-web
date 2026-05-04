@@ -29,8 +29,16 @@ defmodule CritWeb.ApiController do
                cli_args: cli_args
              ) do
           {:ok, review} ->
+            review = maybe_update_comment_policy(scope, review, params)
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
-            conn |> put_status(201) |> json(%{url: url, delete_token: review.delete_token})
+
+            conn
+            |> put_status(201)
+            |> json(%{
+              url: url,
+              delete_token: review.delete_token,
+              comment_policy: review.comment_policy
+            })
 
           {:error, :total_size_exceeded} ->
             conn |> put_status(422) |> json(%{error: "Total file size exceeds 10 MB limit"})
@@ -70,8 +78,16 @@ defmodule CritWeb.ApiController do
                cli_args: cli_args
              ) do
           {:ok, review} ->
+            review = maybe_update_comment_policy(scope, review, params)
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
-            conn |> put_status(201) |> json(%{url: url, delete_token: review.delete_token})
+
+            conn
+            |> put_status(201)
+            |> json(%{
+              url: url,
+              delete_token: review.delete_token,
+              comment_policy: review.comment_policy
+            })
 
           {:error, :total_size_exceeded} ->
             conn |> put_status(422) |> json(%{error: "Total file size exceeds 10 MB limit"})
@@ -98,7 +114,11 @@ defmodule CritWeb.ApiController do
             %{path: f.file_path, content: f.content, status: f.status}
           end)
 
-        json(conn, %{files: files, visibility: review.visibility})
+        json(conn, %{
+          files: files,
+          visibility: review.visibility,
+          comment_policy: review.comment_policy
+        })
     end
   end
 
@@ -121,7 +141,8 @@ defmodule CritWeb.ApiController do
         # greppable for callers piping the export into automation. Signals
         # whether the source review is `:unlisted` (URL-only) or `:public`.
         md =
-          "<!-- crit-visibility: #{review.visibility} -->\n" <>
+          "<!-- crit-comment-policy: #{review.comment_policy} -->\n" <>
+            "<!-- crit-visibility: #{review.visibility} -->\n" <>
             Output.generate_multi_file_review_md(files, comments)
 
         conn
@@ -178,12 +199,26 @@ defmodule CritWeb.ApiController do
 
     case Reviews.upsert_review(scope, token, delete_token, payload) do
       {:ok, :updated, review} ->
+        review = maybe_update_comment_policy(scope, review, params)
         url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
-        json(conn, %{url: url, review_round: review.review_round, changed: true})
+
+        json(conn, %{
+          url: url,
+          review_round: review.review_round,
+          changed: true,
+          comment_policy: review.comment_policy
+        })
 
       {:ok, :no_changes, review} ->
+        review = maybe_update_comment_policy(scope, review, params)
         url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
-        json(conn, %{url: url, review_round: review.review_round, changed: false})
+
+        json(conn, %{
+          url: url,
+          review_round: review.review_round,
+          changed: false,
+          comment_policy: review.comment_policy
+        })
 
       {:error, :not_found} ->
         not_found(conn)
@@ -192,6 +227,22 @@ defmodule CritWeb.ApiController do
         conn |> put_status(401) |> json(%{error: "unauthorized"})
     end
   end
+
+  defp maybe_update_comment_policy(scope, review, %{"comment_policy" => raw}) when is_binary(raw) do
+    with {:ok, policy} <- parse_comment_policy(raw),
+         {:ok, updated} <- Reviews.update_review(scope, review.id, %{comment_policy: policy}) do
+      updated
+    else
+      _ -> review
+    end
+  end
+
+  defp maybe_update_comment_policy(_scope, review, _params), do: review
+
+  defp parse_comment_policy("open"), do: {:ok, :open}
+  defp parse_comment_policy("logged_in_only"), do: {:ok, :logged_in_only}
+  defp parse_comment_policy("disallowed"), do: {:ok, :disallowed}
+  defp parse_comment_policy(_), do: :error
 
   def delete_review(conn, %{"delete_token" => delete_token})
       when is_binary(delete_token) and delete_token != "" do
