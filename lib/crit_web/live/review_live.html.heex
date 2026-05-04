@@ -528,7 +528,17 @@
       </a>
     </div>
   <% end %>
-  <div id="crit-main-layout" class="crit-main-layout">
+  <%!--
+    `phx-update="ignore"` on the main layout: every child node here
+    (review-conversation cards, file-tree contents, the JS-appended
+    comments panel) is rendered and mutated by document-renderer.js.
+    Without ignore, any LV diff (e.g. updating @comment_policy) would
+    morphdom-patch this subtree back to its empty template, wiping the
+    existing review-level comments, file tree, and comments panel.
+    The only dynamic Elixir lives inside `#document-renderer`, which is
+    itself phx-update="ignore" and reads its own data-* attrs via the hook.
+  --%>
+  <div id="crit-main-layout" class="crit-main-layout" phx-update="ignore">
     <div id="fileTreePanel" class="tree-panel" style="display:none">
       <div id="treeConversationSection" class="tree-section--conversation"></div>
       <div class="tree-header">

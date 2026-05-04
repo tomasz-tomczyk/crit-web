@@ -228,4 +228,77 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
       assert render(view) == before
     end
   end
+
+  # The review-conversation, file tree, and comments panel are all populated by
+  # document-renderer.js (a phx-hook) inside `#crit-main-layout`. Only
+  # `#document-renderer` reads dynamic Elixir attrs and is itself
+  # phx-update="ignore" — the rest of the subtree must also be marked ignored,
+  # otherwise any LV diff (e.g. flipping comment_policy) would morphdom-patch
+  # the JS-rendered children back to the empty template and existing comments
+  # would visually disappear. Regression for the bug where switching policy
+  # wiped the review-level comments section.
+  describe "JS-rendered comment surfaces survive LV patches" do
+    test "main layout is phx-update=\"ignore\" so renderer-managed children persist",
+         %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      assert has_element?(view, "#crit-main-layout[phx-update=\"ignore\"]")
+      assert has_element?(view, "#reviewConversation")
+      assert has_element?(view, "#document-renderer[phx-update=\"ignore\"]")
+    end
+
+    test "owner flipping policy to :disallowed does not remove existing comments", %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+      _review_comment = comment_fixture(review, %{"scope" => "review", "body" => "review-level"})
+      _line_comment = comment_fixture(review, %{"scope" => "line", "body" => "line-level"})
+
+      conn = log_in(conn, owner)
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      view |> element("[data-test=comment-policy-set-disallowed]") |> render_click()
+
+      # JS-rendered comment surfaces stay structurally present.
+      assert has_element?(view, "#crit-main-layout[phx-update=\"ignore\"]")
+      assert has_element?(view, "#reviewConversation")
+
+      # Existing comments are not destroyed by a policy flip.
+      assert length(Reviews.list_comments(review.id)) == 2
+    end
+
+    test "anonymous viewer of :logged_in_only review still sees existing comments",
+         %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+      _review_comment = comment_fixture(review, %{"scope" => "review", "body" => "review-level"})
+      _line_comment = comment_fixture(review, %{"scope" => "line", "body" => "line-level"})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      assert has_element?(view, "#crit-main-layout[phx-update=\"ignore\"]")
+      assert has_element?(view, "#reviewConversation")
+      assert length(Reviews.list_comments(review.id)) == 2
+    end
+
+    test "anonymous viewer of :disallowed review still sees existing comments", %{conn: conn} do
+      owner = owner_fixture()
+      review = review_fixture(user_id: owner.id)
+      _review_comment = comment_fixture(review, %{"scope" => "review", "body" => "review-level"})
+      _line_comment = comment_fixture(review, %{"scope" => "line", "body" => "line-level"})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      assert has_element?(view, "#crit-main-layout[phx-update=\"ignore\"]")
+      assert has_element?(view, "#reviewConversation")
+      assert length(Reviews.list_comments(review.id)) == 2
+    end
+  end
 end
