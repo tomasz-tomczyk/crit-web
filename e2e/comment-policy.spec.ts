@@ -72,8 +72,8 @@ test.describe("comment policy", () => {
     await expect(page.locator('[data-test="signin-banner"]')).toBeVisible();
     await expect(page.locator('[data-test="signin-banner"]')).toContainText("Sign-in required");
 
-    // Hidden via crit-no-comments root class.
-    await expect(page.locator("html.crit-no-comments")).toHaveCount(1);
+    // Hidden via server-rendered .crit-page.crit-no-comments class.
+    await expect(page.locator(".crit-page.crit-no-comments")).toHaveCount(1);
 
     await deleteReview(request, deleteToken);
   });
@@ -99,7 +99,7 @@ test.describe("comment policy", () => {
 
     await expect(page.locator('[data-test="signin-banner"]')).toBeHidden();
     await expect(page.locator('[data-test="comment-policy-badge"]')).toContainText("Disabled");
-    await expect(page.locator("html.crit-no-comments")).toHaveCount(1);
+    await expect(page.locator(".crit-page.crit-no-comments")).toHaveCount(1);
 
     await deleteReview(request, deleteToken);
   });
@@ -110,7 +110,7 @@ test.describe("comment policy", () => {
 
     await expect(page.locator('[data-test="signin-banner"]')).toBeHidden();
     await expect(page.locator('[data-test="comment-policy-badge"]')).toHaveCount(0);
-    await expect(page.locator("html.crit-no-comments")).toHaveCount(0);
+    await expect(page.locator(".crit-page.crit-no-comments")).toHaveCount(0);
 
     await deleteReview(request, deleteToken);
   });
