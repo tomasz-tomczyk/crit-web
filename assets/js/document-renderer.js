@@ -3123,7 +3123,8 @@ function buildToc(tocEl, toggleBtn, items) {
   const listEl = tocEl.querySelector(".crit-toc-list")
   listEl.innerHTML = ""
 
-  if (items.length === 0) {
+  // A single-heading TOC has nothing to navigate to — hide it.
+  if (items.length < 2) {
     toggleBtn.style.display = "none"
     tocEl.classList.add("crit-toc-hidden")
     return
@@ -4410,18 +4411,26 @@ export const DocumentRenderer = {
     ctx.md = md
     ctx.lineBlocks = buildLineBlocks(md, rawContent)
 
-    // Build table of contents
+    // Build table of contents. Content arrives via the "init" event, so on
+    // mount the list is empty; rebuildToc() is called again from init to
+    // populate items, run auto-open, and feed scroll spy.
     const tocEl = document.getElementById("crit-toc")
     const tocToggleBtn = document.getElementById("crit-toc-toggle")
-    const tocItems = extractTocItems(md, rawContent)
-    if (tocEl && tocToggleBtn) {
-      buildToc(tocEl, tocToggleBtn, tocItems)
-      if (tocItems.length > 0) {
+    ctx.tocItems = []
+    ctx.rebuildToc = (rawContentForToc) => {
+      if (!tocEl || !tocToggleBtn) return
+      const items = extractTocItems(md, rawContentForToc)
+      ctx.tocItems = items
+      buildToc(tocEl, tocToggleBtn, items)
+      if (items.length >= 2) {
         const saved = localStorage.getItem("crit-toc")
         if (saved === "open" || (saved === null && window.innerWidth > 1200)) {
           tocEl.classList.remove("crit-toc-hidden")
         }
       }
+    }
+    ctx.rebuildToc(rawContent)
+    if (tocEl && tocToggleBtn) {
       tocToggleBtn.addEventListener("click", () => {
         const isHidden = tocEl.classList.contains("crit-toc-hidden")
         tocEl.classList.toggle("crit-toc-hidden", !isHidden)
@@ -4439,7 +4448,7 @@ export const DocumentRenderer = {
       if (scrollSpyFrame) return
       scrollSpyFrame = requestAnimationFrame(() => {
         scrollSpyFrame = null
-        updateTocActive(tocItems)
+        updateTocActive(ctx.tocItems)
       })
     }
     window.addEventListener("scroll", ctx._scrollHandler, { passive: true })
@@ -4580,12 +4589,10 @@ export const DocumentRenderer = {
         ctx.lineBlocks = isCodeFile(f.path)
           ? buildCodeLineBlocks(f.content, f.path)
           : buildLineBlocks(md, f.content)
-        // Rebuild TOC with actual content (mount ran before content arrived)
-        const tocEl = document.getElementById("crit-toc")
-        const tocToggleBtn = document.getElementById("crit-toc-toggle")
-        if (tocEl && tocToggleBtn) {
-          buildToc(tocEl, tocToggleBtn, extractTocItems(md, f.content))
-        }
+        // Rebuild TOC with actual content (mount ran before content arrived).
+        // ctx.rebuildToc updates the items used by scroll spy and re-runs
+        // the auto-open heuristic now that we know there are headings.
+        ctx.rebuildToc(f.content)
       }
 
       render(ctx)
