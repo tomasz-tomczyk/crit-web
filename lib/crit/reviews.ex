@@ -74,7 +74,13 @@ defmodule Crit.Reviews do
   Opts:
     * `:file_path` — file path the comment is anchored to
   """
-  def create_comment(%Scope{} = scope, %Review{id: review_id}, attrs, opts \\ []) do
+  def create_comment(%Scope{} = scope, %Review{} = review, attrs, opts \\ []) do
+    with :ok <- check_comment_policy(scope, review) do
+      do_create_comment(scope, review, attrs, opts)
+    end
+  end
+
+  defp do_create_comment(%Scope{} = scope, %Review{id: review_id}, attrs, opts) do
     user_id = Scope.user_id(scope)
     identity = scope.identity
     display_name = scope.display_name
@@ -95,6 +101,14 @@ defmodule Crit.Reviews do
       _ -> :ok
     end)
   end
+
+  defp check_comment_policy(_scope, %Review{comment_policy: :disallowed}),
+    do: {:error, :comments_disallowed}
+
+  defp check_comment_policy(%Scope{user: nil}, %Review{comment_policy: :logged_in_only}),
+    do: {:error, :comments_require_login}
+
+  defp check_comment_policy(_scope, _review), do: :ok
 
   @doc """
   Update a comment's body if the caller's scope owns it.

@@ -155,4 +155,46 @@ defmodule Crit.ReviewsCommentPolicyTest do
       refute_receive {:policy_changed, _, _}, 100
     end
   end
+
+  describe "create_comment/4 — comment_policy gate" do
+    setup do
+      user = owner_user_fixture()
+      open_r = create_review_for(user)
+      login_r = create_review_for(user)
+      closed_r = create_review_for(user)
+      {:ok, _} = Reviews.update_review(Scope.for_user(user), login_r.id, %{comment_policy: :logged_in_only})
+      {:ok, _} = Reviews.update_review(Scope.for_user(user), closed_r.id, %{comment_policy: :disallowed})
+      login_r = Reviews.get_by_token(login_r.token)
+      closed_r = Reviews.get_by_token(closed_r.token)
+      attrs = %{"start_line" => 1, "end_line" => 1, "body" => "hi"}
+      %{user: user, open_r: open_r, login_r: login_r, closed_r: closed_r, attrs: attrs}
+    end
+
+    test "open: anonymous allowed", %{open_r: r, attrs: a} do
+      scope = Scope.for_visitor("anon", "Anon")
+      assert {:ok, _} = Reviews.create_comment(scope, r, a)
+    end
+
+    test "open: authenticated allowed", %{user: u, open_r: r, attrs: a} do
+      assert {:ok, _} = Reviews.create_comment(Scope.for_user(u), r, a)
+    end
+
+    test "logged_in_only: anonymous rejected", %{login_r: r, attrs: a} do
+      scope = Scope.for_visitor("anon", "Anon")
+      assert {:error, :comments_require_login} = Reviews.create_comment(scope, r, a)
+    end
+
+    test "logged_in_only: authenticated allowed", %{user: u, login_r: r, attrs: a} do
+      assert {:ok, _} = Reviews.create_comment(Scope.for_user(u), r, a)
+    end
+
+    test "disallowed: anonymous rejected", %{closed_r: r, attrs: a} do
+      scope = Scope.for_visitor("anon", "Anon")
+      assert {:error, :comments_disallowed} = Reviews.create_comment(scope, r, a)
+    end
+
+    test "disallowed: authenticated rejected", %{user: u, closed_r: r, attrs: a} do
+      assert {:error, :comments_disallowed} = Reviews.create_comment(Scope.for_user(u), r, a)
+    end
+  end
 end
