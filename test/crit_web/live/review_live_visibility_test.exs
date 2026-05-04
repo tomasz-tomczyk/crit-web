@@ -29,8 +29,8 @@ defmodule CritWeb.ReviewLiveVisibilityTest do
     {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
     assert html =~ "Unlisted"
     assert has_element?(view, "[data-test=visibility-menu]")
-    assert has_element?(view, "#visibility-popover[role=dialog]")
-    assert has_element?(view, "#visibility-trigger[aria-controls=visibility-popover]")
+    assert has_element?(view, "#visibility-menu-panel[role=dialog]")
+    assert has_element?(view, "#visibility-menu-trigger[aria-controls=visibility-menu-panel]")
     assert has_element?(view, "[data-test=make-public][data-confirm]")
     # Copy-pin: a future "soften" of this warning should be a deliberate decision.
     assert html =~ "can&#39;t be undone"

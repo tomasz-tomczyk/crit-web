@@ -375,81 +375,49 @@
         <:actions>
           <%= cond do %>
             <% owner? and @review.visibility == :unlisted -> %>
-              <div
-                class="crit-vis"
-                id="visibility-control"
-                data-test="visibility-menu"
-                phx-click-away={
-                  Phoenix.LiveView.JS.set_attribute({"hidden", "hidden"},
-                    to: "#visibility-popover"
-                  )
-                  |> Phoenix.LiveView.JS.set_attribute({"aria-expanded", "false"},
-                    to: "#visibility-trigger"
-                  )
-                }
+              <CritWeb.Components.PopoverMenu.popover_menu
+                id="visibility-menu"
+                test_prefix="visibility"
+                panel_label="Visibility settings"
               >
-                <button
-                  type="button"
-                  id="visibility-trigger"
-                  class="crit-vis-trigger"
-                  aria-haspopup="dialog"
-                  aria-expanded="false"
-                  aria-controls="visibility-popover"
-                  title="Unlisted — only people with the URL can see this review."
-                  phx-click={
-                    Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"},
-                      to: "#visibility-popover"
-                    )
-                    |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"},
-                      to: "#visibility-trigger"
-                    )
-                  }
-                >
+                <:trigger>
                   <.icon name="hero-eye-slash" class="size-3" />
                   <span>Unlisted</span>
-                </button>
-                <div
-                  id="visibility-popover"
-                  class="crit-vis-popover"
-                  role="dialog"
-                  aria-label="Visibility settings"
-                  hidden
-                >
-                  <div class="crit-vis-current">
-                    <div class="crit-vis-current-icon">
-                      <.icon name="hero-eye-slash" class="size-3" />
-                    </div>
-                    <div class="crit-vis-current-text">
-                      <span class="crit-vis-current-label">Unlisted</span>
-                      <span class="crit-vis-current-desc">
-                        Only people with the URL can see this
-                      </span>
-                    </div>
+                </:trigger>
+                <div class="crit-vis-current">
+                  <div class="crit-vis-current-icon">
+                    <.icon name="hero-eye-slash" class="size-3" />
                   </div>
-                  <div class="crit-vis-divider"></div>
-                  <button
-                    type="button"
-                    phx-click="make_public"
-                    data-test="make-public"
-                    data-confirm="Make this review public? Search engines will be able to index and cache it. You can delete the review later, but you can't un-expose a URL that's already been crawled."
-                    class="crit-vis-promote"
-                  >
-                    <div class="crit-vis-promote-icon">
-                      <.icon name="hero-globe-alt" class="size-3" />
-                    </div>
-                    <div class="crit-vis-promote-text">
-                      <span class="crit-vis-promote-title">Make public</span>
-                      <span class="crit-vis-promote-desc">
-                        Anyone can find and view it. Indexed by search engines.
-                      </span>
-                    </div>
-                  </button>
-                  <div class="crit-vis-notice">
-                    <.icon name="hero-information-circle" class="size-3" />
-                    Making a review public can't be undone.
+                  <div class="crit-vis-current-text">
+                    <span class="crit-vis-current-label">Unlisted</span>
+                    <span class="crit-vis-current-desc">
+                      Only people with the URL can see this
+                    </span>
                   </div>
                 </div>
-              </div>
+                <div class="crit-vis-divider"></div>
+                <button
+                  type="button"
+                  phx-click="make_public"
+                  data-test="make-public"
+                  data-confirm="Make this review public? Search engines will be able to index and cache it. You can delete the review later, but you can't un-expose a URL that's already been crawled."
+                  class="crit-vis-promote"
+                >
+                  <div class="crit-vis-promote-icon">
+                    <.icon name="hero-globe-alt" class="size-3" />
+                  </div>
+                  <div class="crit-vis-promote-text">
+                    <span class="crit-vis-promote-title">Make public</span>
+                    <span class="crit-vis-promote-desc">
+                      Anyone can find and view it. Indexed by search engines.
+                    </span>
+                  </div>
+                </button>
+                <div class="crit-vis-notice">
+                  <.icon name="hero-information-circle" class="size-3" />
+                  Making a review public can't be undone.
+                </div>
+              </CritWeb.Components.PopoverMenu.popover_menu>
             <% @review.visibility == :public and owner? -> %>
               <span
                 class="crit-vis-status"

@@ -1107,8 +1107,11 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 
 .crit-vis { position: relative; display: inline-flex; align-items: center; }
 
-/* Trigger (Owner + Unlisted): muted, lights up on hover/open */
-.crit-vis-trigger {
+/* Generic popover-menu shell — used by visibility, comment_policy, etc. */
+.crit-popover-menu { position: relative; display: inline-flex; align-items: center; }
+
+/* Trigger (ghost button, lights up on hover/open) */
+.crit-popover-menu-trigger {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1124,19 +1127,19 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   white-space: nowrap;
   transition: background-color 0.12s, color 0.12s;
 }
-.crit-vis-trigger:hover,
-.crit-vis-trigger[aria-expanded="true"] {
+.crit-popover-menu-trigger:hover,
+.crit-popover-menu-trigger[aria-expanded="true"] {
   background: var(--crit-editor-bg-elevated);
   color: var(--crit-fg-primary);
 }
-.crit-vis-trigger > [class*="hero-"] {
+.crit-popover-menu-trigger > [class*="hero-"] {
   width: 12px; height: 12px; opacity: 0.7;
 }
-.crit-vis-trigger:hover > [class*="hero-"],
-.crit-vis-trigger[aria-expanded="true"] > [class*="hero-"] { opacity: 1; }
+.crit-popover-menu-trigger:hover > [class*="hero-"],
+.crit-popover-menu-trigger[aria-expanded="true"] > [class*="hero-"] { opacity: 1; }
 
-/* Popover */
-.crit-vis-popover {
+/* Panel — closed by default; open via data-open="true" */
+.crit-popover-menu-panel {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
@@ -1147,11 +1150,12 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16);
   overflow: hidden;
+  display: none;
 }
-[data-theme="light"] .crit-vis-popover {
+.crit-popover-menu-panel[data-open="true"] { display: block; }
+[data-theme="light"] .crit-popover-menu-panel {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
-.crit-vis-popover[hidden] { display: none; }
 
 /* Current state row — informational */
 .crit-vis-current {
