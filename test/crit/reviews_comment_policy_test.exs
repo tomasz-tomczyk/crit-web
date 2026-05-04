@@ -248,6 +248,33 @@ defmodule Crit.ReviewsCommentPolicyTest do
     end
   end
 
+  describe "upsert_review/4 with restrictive comment_policy" do
+    test "bulk replace path still works regardless of policy" do
+      owner = owner_user_fixture()
+      review = create_review_for(owner)
+      scope = Scope.for_user(owner)
+      {:ok, _} = Reviews.update_review(scope, review.id, %{comment_policy: :disallowed})
+
+      payload = %{
+        "files" => [%{"path" => "a.md", "content" => "hello"}],
+        "comments" => [
+          %{
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "from cli upload",
+            "scope" => "line",
+            "external_id" => "cli_1"
+          }
+        ]
+      }
+
+      assert {:ok, _outcome, _updated} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, payload)
+
+      assert [%{body: "from cli upload"}] = Reviews.list_comments(review.id)
+    end
+  end
+
   defp insert_top_level_comment!(%Crit.Review{} = review) do
     Crit.Repo.insert!(%Crit.Comment{
       review_id: review.id,
