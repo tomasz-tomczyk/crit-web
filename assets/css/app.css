@@ -1333,7 +1333,9 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .crit-no-comments .comment-form-wrapper,
 .crit-no-comments .comment-form,
 .crit-no-comments .reply-form,
-.crit-no-comments .file-comment-form {
+.crit-no-comments .file-comment-form,
+.crit-no-comments .file-comment-btn,
+.crit-no-comments .review-conversation-add-more {
   display: none !important;
 }
 

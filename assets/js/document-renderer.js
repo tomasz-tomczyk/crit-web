@@ -1812,8 +1812,10 @@ function renderFileSection(ctx, file) {
     '<span class="file-header-name"><span class="dir">' + escapeHtml(dirPath) + '</span>' + escapeHtml(fileName) + '</span>' +
     (file.orphaned ? '<span class="file-header-badge removed">Removed</span>' : '')
 
-  // File comment button — not for orphaned files (no point adding comments to removed files)
-  if (!file.orphaned) {
+  // File comment button — not for orphaned files (no point adding comments to removed files).
+  // Also gated on canComment: when policy disallows new comments, don't create the
+  // affordance or its click handler.
+  if (!file.orphaned && ctx.canComment !== false) {
     const fileCommentBtn = document.createElement('button')
     fileCommentBtn.className = 'file-comment-btn'
     fileCommentBtn.title = 'Add file comment'
@@ -2531,8 +2533,11 @@ function createCommentElement(comment, ctx) {
     card.appendChild(renderReplyList(comment, ctx))
   }
 
-  // Inline reply input (GitHub-style: compact, expands on focus)
-  card.appendChild(createReplyInput(comment.id, ctx))
+  // Inline reply input (GitHub-style: compact, expands on focus).
+  // A reply is a new comment, so respect comment policy.
+  if (ctx.canComment !== false) {
+    card.appendChild(createReplyInput(comment.id, ctx))
+  }
 
   wrapper.appendChild(card)
   return wrapper
@@ -3102,8 +3107,10 @@ function createResolvedElement(comment, ctx) {
     card.appendChild(renderReplyList(comment, ctx))
   }
 
-  // Reply input
-  card.appendChild(createReplyInput(comment.id, ctx))
+  // Reply input — gated on comment policy (a reply is a new comment).
+  if (ctx.canComment !== false) {
+    card.appendChild(createReplyInput(comment.id, ctx))
+  }
 
   wrapper.appendChild(card)
   return wrapper
@@ -3904,9 +3911,13 @@ function renderReviewConversation(ctx) {
   }
 
   // Footer: compose form (when active) or ghost "Add comment" button.
+  // Gate on canComment so the affordance physically isn't created when the
+  // policy disallows new comments — the click handler triggers a re-render
+  // that visibly removes the button (jankiness). CSS .crit-no-comments
+  // hiding is defense in depth; skipping creation is the source of truth.
   if (reviewForm && !reviewForm.editingId) {
     body.appendChild(renderCommentFormUI(ctx, reviewForm))
-  } else {
+  } else if (ctx.canComment !== false) {
     const addMore = document.createElement('button')
     addMore.className = 'review-conversation-add-more'
     if (reviewComments.length === 0) addMore.classList.add('review-conversation-empty')
@@ -3944,10 +3955,13 @@ function createReviewConversationCard(ctx, comment) {
   }
   // Render existing replies + a reply input — review-level threads support replies
   // exactly like line-anchored ones (parity with crit local).
+  // Reply input gated on comment policy (a reply is a new comment).
   if (comment.replies && comment.replies.length > 0) {
     card.appendChild(renderReplyList(comment, ctx))
   }
-  card.appendChild(createReplyInput(comment.id, ctx))
+  if (ctx.canComment !== false) {
+    card.appendChild(createReplyInput(comment.id, ctx))
+  }
   return wrapper
 }
 

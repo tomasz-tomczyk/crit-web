@@ -381,4 +381,47 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
       assert has_element?(view, ".crit-page.crit-no-comments")
     end
   end
+
+  # The original .crit-no-comments rule covered .line-add (gutter "+") and the
+  # comment-form selectors but missed two affordances that physically remain
+  # in the DOM and reroute through the JS render on click:
+  #
+  #   - .review-conversation-add-more (review-level "Add comment" button)
+  #   - .file-comment-btn             (per-file "Add file comment" header icon)
+  #
+  # When a viewer clicked either on a :disallowed review, the click handler
+  # fired and the renderer rebuilt the surface, making the button disappear
+  # — visually janky and an invitation to perform an action the server will
+  # reject. JS now skips creating these when ctx.canComment === false; the
+  # CSS rule below is defense in depth so the affordance is hidden even if
+  # the JS gate ever regresses.
+  describe ".crit-no-comments CSS covers all add-comment affordances" do
+    @app_css_path "assets/css/app.css"
+
+    setup do
+      {:ok, css: File.read!(@app_css_path)}
+    end
+
+    test "rule hides the line gutter +", %{css: css} do
+      assert css =~ ".crit-no-comments .line-add"
+    end
+
+    test "rule hides the review-level Add comment button", %{css: css} do
+      assert css =~ ".crit-no-comments .review-conversation-add-more"
+    end
+
+    test "rule hides the per-file Add file comment button", %{css: css} do
+      assert css =~ ".crit-no-comments .file-comment-btn"
+    end
+
+    test "rule hides reply-form (a reply is a new comment)", %{css: css} do
+      assert css =~ ".crit-no-comments .reply-form"
+    end
+
+    test "rule hides the line/file/review composer wrappers", %{css: css} do
+      assert css =~ ".crit-no-comments .comment-form-wrapper"
+      assert css =~ ".crit-no-comments .comment-form"
+      assert css =~ ".crit-no-comments .file-comment-form"
+    end
+  end
 end
