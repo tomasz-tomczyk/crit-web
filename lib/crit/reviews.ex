@@ -156,6 +156,40 @@ defmodule Crit.Reviews do
   defp ensure_unlisted(%Review{visibility: :unlisted}), do: :ok
   defp ensure_unlisted(%Review{visibility: :public}), do: {:error, :already_public}
 
+  @doc """
+  Owner-scoped update of arbitrary whitelisted attrs. The whitelist is the
+  `cast` list in `Review.update_changeset/2` — unknown keys are silently dropped.
+
+  Returns `{:ok, review}`, `{:error, :not_found}`, `{:error, :unauthorized}`,
+  or `{:error, %Ecto.Changeset{}}`.
+  """
+  def update_review(%Scope{} = scope, review_id, attrs) when is_map(attrs) do
+    with {:ok, review} <- fetch_review_for_owner(scope, review_id),
+         {:ok, updated} <-
+           review
+           |> Review.update_changeset(attrs)
+           |> Repo.update() do
+      maybe_broadcast_policy_changed(review, updated)
+      {:ok, updated}
+    end
+  end
+
+  def update_review(_scope, _id, _attrs), do: {:error, :unauthorized}
+
+  # Broadcast cross-tab policy changes only when the value actually changed.
+  # Same topic ("review:#{token}") that ReviewLive subscribes to in mount/3.
+  defp maybe_broadcast_policy_changed(%Review{comment_policy: old}, %Review{comment_policy: new})
+       when old == new,
+       do: :ok
+
+  defp maybe_broadcast_policy_changed(_old, %Review{} = updated) do
+    Phoenix.PubSub.broadcast(
+      Crit.PubSub,
+      "review:#{updated.token}",
+      {:policy_changed, updated.id, %{comment_policy: updated.comment_policy}}
+    )
+  end
+
   defp fetch_review_for_owner(%Scope{} = scope, review_id) do
     with {:ok, uuid} <- Ecto.UUID.cast(review_id),
          %Review{} = review <- Repo.get(Review, uuid),
