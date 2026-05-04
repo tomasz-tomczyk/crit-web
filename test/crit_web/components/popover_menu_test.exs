@@ -40,6 +40,17 @@ defmodule CritWeb.Components.PopoverMenuTest do
     refute html =~ ~s(data-open="true")
   end
 
+  test "close_js/1 returns a JS chain that closes the panel and resets aria-expanded" do
+    js = CritWeb.Components.PopoverMenu.close_js("comment-policy-menu")
+    encoded = Phoenix.HTML.Safe.to_iodata(js) |> IO.iodata_to_binary()
+
+    assert encoded =~ "set_attr"
+    assert encoded =~ "comment-policy-menu-panel"
+    assert encoded =~ "data-open"
+    assert encoded =~ "comment-policy-menu-trigger"
+    assert encoded =~ "aria-expanded"
+  end
+
   test "test_prefix namespaces the data-test attributes" do
     assigns = %{}
 

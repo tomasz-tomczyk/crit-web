@@ -398,7 +398,10 @@
                 <div class="crit-vis-divider"></div>
                 <button
                   type="button"
-                  phx-click="make_public"
+                  phx-click={
+                    CritWeb.Components.PopoverMenu.close_js("visibility-menu")
+                    |> Phoenix.LiveView.JS.push("make_public")
+                  }
                   data-test="make-public"
                   data-confirm="Make this review public? Search engines will be able to index and cache it. You can delete the review later, but you can't un-expose a URL that's already been crawled."
                   class="crit-vis-promote"
@@ -454,17 +457,17 @@
                 panel_label="Comment policy"
               >
                 <:trigger>
-                  <.icon
-                    name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)}
-                    class="size-3"
-                  />
+                  <.icon name="hero-chat-bubble-left-right" class="size-3" />
                   <span>{CritWeb.ReviewLive.comment_policy_label(@comment_policy)}</span>
                   <.icon name="hero-chevron-down" class="size-3" />
                 </:trigger>
                 <%= for option <- [:open, :logged_in_only, :disallowed] do %>
                   <button
                     type="button"
-                    phx-click="update_comment_policy"
+                    phx-click={
+                      CritWeb.Components.PopoverMenu.close_js("comment-policy-menu")
+                      |> Phoenix.LiveView.JS.push("update_comment_policy")
+                    }
                     phx-value-policy={option}
                     data-test={"comment-policy-set-#{option}"}
                     class="crit-comment-policy-option"

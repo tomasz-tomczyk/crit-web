@@ -37,6 +37,38 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
     assert html =~ "Open"
   end
 
+  test "trigger icon is a chat bubble regardless of selected policy", %{conn: conn} do
+    user = owner_fixture()
+    review = review_fixture(user_id: user.id)
+
+    {:ok, _} =
+      Reviews.update_review(Scope.for_user(user), review.id, %{comment_policy: :disallowed})
+
+    conn = log_in(conn, user)
+    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+    trigger_html =
+      view |> element("#comment-policy-menu-trigger") |> render()
+
+    assert trigger_html =~ "hero-chat-bubble-left-right"
+    refute trigger_html =~ "hero-no-symbol"
+  end
+
+  test "selecting a policy option chains a close action onto the click", %{conn: conn} do
+    user = owner_fixture()
+    review = review_fixture(user_id: user.id)
+    conn = log_in(conn, user)
+
+    {:ok, _view, html} = live(conn, ~p"/r/#{review.token}")
+
+    assert html =~ "comment-policy-menu-panel"
+    assert html =~ "data-open"
+    # The option button's phx-click is a JS chain that includes a set_attribute
+    # closing the panel. Asserting the encoded JS contains the panel id is
+    # enough to verify the close-on-select wiring.
+    assert html =~ ~r/phx-click="\[\[.*comment-policy-menu-panel/s
+  end
+
   test "owner can switch to :logged_in_only and the page re-renders without losing preloads",
        %{conn: conn} do
     user = owner_fixture()

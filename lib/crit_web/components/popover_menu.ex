@@ -13,6 +13,23 @@ defmodule CritWeb.Components.PopoverMenu do
   use Phoenix.Component
   alias Phoenix.LiveView.JS
 
+  @doc """
+  Returns a `JS` chain that closes the popover panel with the given `id`.
+
+  Chain this onto an option button's `phx-click` so selecting an option
+  both fires the server event and dismisses the menu:
+
+      phx-click={
+        PopoverMenu.close_js("comment-policy-menu")
+        |> JS.push("update_comment_policy", value: %{policy: "open"})
+      }
+  """
+  def close_js(id, %JS{} = js \\ %JS{}) when is_binary(id) do
+    js
+    |> JS.set_attribute({"data-open", "false"}, to: "##{id}-panel")
+    |> JS.set_attribute({"aria-expanded", "false"}, to: "##{id}-trigger")
+  end
+
   attr :id, :string, required: true
   attr :open?, :boolean, default: false
   attr :placement, :atom, default: :below, values: [:below]
