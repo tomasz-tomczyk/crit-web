@@ -79,6 +79,43 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
     refute has_element?(view, "[data-test=comment-policy-menu]")
   end
 
+  test "anonymous viewer in :logged_in_only mode sees the sign-in banner", %{conn: conn} do
+    owner = owner_fixture()
+    review = review_fixture(user_id: owner.id)
+    {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    assert has_element?(view, ".crit-signin-banner")
+    assert has_element?(view, ".crit-signin-banner a", "Sign in")
+  end
+
+  test "authenticated viewer in :logged_in_only mode does NOT see the banner", %{conn: conn} do
+    owner = owner_fixture()
+    review = review_fixture(user_id: owner.id)
+    {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+    conn = log_in(conn, owner_fixture())
+
+    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    refute has_element?(view, ".crit-signin-banner")
+  end
+
+  test ":disallowed does NOT show a body banner (header pill carries the signal)",
+       %{conn: conn} do
+    owner = owner_fixture()
+    review = review_fixture(user_id: owner.id)
+    {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
+    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    refute has_element?(view, ".crit-signin-banner")
+  end
+
+  test ":open never shows the banner", %{conn: conn} do
+    owner = owner_fixture()
+    review = review_fixture(user_id: owner.id)
+    {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+    refute has_element?(view, ".crit-signin-banner")
+  end
+
   describe "cross-tab :policy_changed broadcast" do
     test "anonymous viewer's open tab updates when owner flips policy elsewhere", %{conn: conn} do
       owner = owner_fixture()

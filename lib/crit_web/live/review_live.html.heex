@@ -508,6 +508,20 @@
       </CritWeb.Components.ReviewListingHeader.review_listing_header>
     </div>
   </div>
+  <%= if @comment_policy == :logged_in_only and not @can_comment? do %>
+    <div class="crit-signin-banner" role="status" aria-live="polite" data-test="signin-banner">
+      <div class="crit-signin-pill">
+        <.icon name="hero-user" class="size-3" />
+        <span>Sign-in required</span>
+      </div>
+      <span class="crit-signin-banner-text">
+        Only signed-in users can comment on this review.
+      </span>
+      <a href={~p"/auth/login?return_to=#{@current_path}"} class="crit-signin-banner-link">
+        Sign in
+      </a>
+    </div>
+  <% end %>
   <div id="crit-main-layout" class="crit-main-layout">
     <div id="fileTreePanel" class="tree-panel" style="display:none">
       <div id="treeConversationSection" class="tree-section--conversation"></div>

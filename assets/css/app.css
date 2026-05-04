@@ -1287,6 +1287,44 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 }
 .crit-comment-policy-badge > [class*="hero-"] { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.7; }
 
+/* ── Sign-in banner (logged_in_only + anonymous viewers) ─────────────── */
+
+.crit-signin-banner {
+  position: sticky;
+  top: var(--crit-header-height, 0px);
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  background: var(--crit-bg-card);
+  border-bottom: 1px solid var(--crit-border);
+}
+.crit-signin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 7px;
+  background: var(--crit-brand-bg);
+  border: 1px solid var(--crit-border);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--crit-brand);
+  flex-shrink: 0;
+}
+.crit-signin-banner-text {
+  font-size: 13px;
+  color: var(--crit-fg-primary);
+}
+.crit-signin-banner-link {
+  margin-left: auto;
+  font-size: 0.875rem;
+  color: var(--crit-brand);
+  text-decoration: underline;
+}
+
 .crit-diff-mode-toggle {
   display: inline-flex;
   background: var(--crit-editor-bg-elevated);
