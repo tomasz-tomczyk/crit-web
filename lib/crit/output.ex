@@ -113,6 +113,7 @@ defmodule Crit.Output do
     %{
       review_round: review.review_round,
       visibility: review.visibility,
+      comment_policy: review.comment_policy,
       share_url: base_url <> "/r/#{review.token}",
       delete_token: review.delete_token,
       updated_at: DateTime.to_iso8601(review.updated_at),

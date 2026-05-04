@@ -238,10 +238,17 @@ defmodule Crit.OutputTest do
       %{
         review_round: 1,
         visibility: :unlisted,
+        comment_policy: :open,
         token: "test-token",
         delete_token: "del-token",
         updated_at: ~U[2026-01-01 00:00:00Z]
       }
+    end
+
+    test "includes comment_policy" do
+      review = %{fake_review() | comment_policy: :logged_in_only}
+      result = Output.multi_file_comments_json(review, [], [], @base_url)
+      assert result.comment_policy == :logged_in_only
     end
 
     test "groups comments by file path" do
