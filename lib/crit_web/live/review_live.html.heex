@@ -454,7 +454,10 @@
                 panel_label="Comment policy"
               >
                 <:trigger>
-                  <.icon name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)} class="size-3" />
+                  <.icon
+                    name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)}
+                    class="size-3"
+                  />
                   <span>{CritWeb.ReviewLive.comment_policy_label(@comment_policy)}</span>
                   <.icon name="hero-chevron-down" class="size-3" />
                 </:trigger>
@@ -488,7 +491,10 @@
                 title={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
                 aria-label={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
               >
-                <.icon name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)} class="size-3" />
+                <.icon
+                  name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)}
+                  class="size-3"
+                />
                 {CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
               </span>
             <% true -> %>

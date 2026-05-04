@@ -742,7 +742,8 @@ defmodule CritWeb.ApiControllerTest do
           []
         )
 
-      {:ok, _} = Reviews.update_review(Scope.for_user(user), review.id, %{comment_policy: :disallowed})
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(user), review.id, %{comment_policy: :disallowed})
 
       conn = get(conn, ~p"/api/reviews/#{review.token}/document")
       assert json_response(conn, 200)["comment_policy"] == "disallowed"

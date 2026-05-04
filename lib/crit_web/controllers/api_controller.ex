@@ -228,7 +228,8 @@ defmodule CritWeb.ApiController do
     end
   end
 
-  defp maybe_update_comment_policy(scope, review, %{"comment_policy" => raw}) when is_binary(raw) do
+  defp maybe_update_comment_policy(scope, review, %{"comment_policy" => raw})
+       when is_binary(raw) do
     with {:ok, policy} <- parse_comment_policy(raw),
          {:ok, updated} <- Reviews.update_review(scope, review.id, %{comment_policy: policy}) do
       updated

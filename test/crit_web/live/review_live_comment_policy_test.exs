@@ -27,7 +27,12 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
     {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
     assert has_element?(view, "[data-test=comment-policy-menu]")
     assert has_element?(view, "#comment-policy-menu-panel[role=dialog]")
-    assert has_element?(view, "#comment-policy-menu-trigger[aria-controls=comment-policy-menu-panel]")
+
+    assert has_element?(
+             view,
+             "#comment-policy-menu-trigger[aria-controls=comment-policy-menu-panel]"
+           )
+
     assert has_element?(view, "[data-test=comment-policy-set-disallowed]")
     assert html =~ "Open"
   end
@@ -62,7 +67,10 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
     owner = owner_fixture()
     other = owner_fixture()
     review = review_fixture(user_id: owner.id)
-    {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
+    {:ok, _} =
+      Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
     conn = log_in(conn, other)
 
     {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
@@ -82,7 +90,9 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
   test "anonymous viewer in :logged_in_only mode sees the sign-in banner", %{conn: conn} do
     owner = owner_fixture()
     review = review_fixture(user_id: owner.id)
-    {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+    {:ok, _} =
+      Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
 
     {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
     assert has_element?(view, ".crit-signin-banner")
@@ -92,7 +102,10 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
   test "authenticated viewer in :logged_in_only mode does NOT see the banner", %{conn: conn} do
     owner = owner_fixture()
     review = review_fixture(user_id: owner.id)
-    {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+    {:ok, _} =
+      Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
     conn = log_in(conn, owner_fixture())
 
     {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
@@ -103,7 +116,9 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
        %{conn: conn} do
     owner = owner_fixture()
     review = review_fixture(user_id: owner.id)
-    {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
+    {:ok, _} =
+      Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
 
     {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
     refute has_element?(view, ".crit-signin-banner")
@@ -124,12 +139,15 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
       {:ok, view, html} = live(conn, ~p"/r/#{review.token}")
       refute html =~ "Sign in to comment"
 
-      {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
 
       _ = render(view)
       rendered = render(view)
 
-      assert rendered =~ "Login required" or has_element?(view, "[data-test=comment-policy-badge]")
+      assert rendered =~ "Login required" or
+               has_element?(view, "[data-test=comment-policy-badge]")
+
       refute rendered =~ "Only signed-in users can comment now."
     end
 
@@ -141,7 +159,8 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
 
       {:ok, view_b, _html} = live(conn, ~p"/r/#{review.token}")
 
-      {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
 
       _ = render(view_b)
       rendered = render(view_b)
@@ -154,7 +173,10 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
       owner = owner_fixture()
       review = review_fixture(user_id: owner.id)
       conn = log_in(conn, owner)
-      {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :disallowed})
+
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
 
       view
@@ -172,7 +194,9 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
          %{conn: conn} do
       owner = owner_fixture()
       review = review_fixture(user_id: owner.id)
-      {:ok, _} = Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(owner), review.id, %{comment_policy: :logged_in_only})
 
       parent =
         Crit.Repo.insert!(%Crit.Comment{

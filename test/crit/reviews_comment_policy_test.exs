@@ -45,7 +45,9 @@ defmodule Crit.ReviewsCommentPolicyTest do
       review = create_review_for(owner)
 
       assert {:error, :unauthorized} =
-               Reviews.update_review(Scope.for_user(other), review.id, %{comment_policy: :disallowed})
+               Reviews.update_review(Scope.for_user(other), review.id, %{
+                 comment_policy: :disallowed
+               })
     end
 
     test "anonymous scope cannot change comment_policy" do
@@ -53,7 +55,9 @@ defmodule Crit.ReviewsCommentPolicyTest do
       review = create_review_for(owner)
 
       assert {:error, :unauthorized} =
-               Reviews.update_review(Scope.for_visitor("ident"), review.id, %{comment_policy: :disallowed})
+               Reviews.update_review(Scope.for_visitor("ident"), review.id, %{
+                 comment_policy: :disallowed
+               })
     end
 
     test "anonymous-owned review cannot have comment_policy changed by an authed visitor" do
@@ -70,21 +74,27 @@ defmodule Crit.ReviewsCommentPolicyTest do
       assert review.user_id == nil
 
       assert {:error, :unauthorized} =
-               Reviews.update_review(Scope.for_user(other), review.id, %{comment_policy: :disallowed})
+               Reviews.update_review(Scope.for_user(other), review.id, %{
+                 comment_policy: :disallowed
+               })
     end
 
     test "missing review returns :not_found" do
       user = owner_user_fixture()
 
       assert {:error, :not_found} =
-               Reviews.update_review(Scope.for_user(user), Ecto.UUID.generate(), %{comment_policy: :disallowed})
+               Reviews.update_review(Scope.for_user(user), Ecto.UUID.generate(), %{
+                 comment_policy: :disallowed
+               })
     end
 
     test "non-UUID review_id returns :not_found instead of raising" do
       user = owner_user_fixture()
 
       assert {:error, :not_found} =
-               Reviews.update_review(Scope.for_user(user), "not-a-uuid", %{comment_policy: :disallowed})
+               Reviews.update_review(Scope.for_user(user), "not-a-uuid", %{
+                 comment_policy: :disallowed
+               })
     end
 
     test "invalid policy atom returns a changeset error" do
@@ -100,7 +110,10 @@ defmodule Crit.ReviewsCommentPolicyTest do
       review = create_review_for(user)
 
       assert {:ok, updated} =
-               Reviews.update_review(Scope.for_user(user), review.id, %{comment_policy: :disallowed, evil: 1})
+               Reviews.update_review(Scope.for_user(user), review.id, %{
+                 comment_policy: :disallowed,
+                 evil: 1
+               })
 
       assert updated.comment_policy == :disallowed
     end
@@ -162,8 +175,13 @@ defmodule Crit.ReviewsCommentPolicyTest do
       open_r = create_review_for(user)
       login_r = create_review_for(user)
       closed_r = create_review_for(user)
-      {:ok, _} = Reviews.update_review(Scope.for_user(user), login_r.id, %{comment_policy: :logged_in_only})
-      {:ok, _} = Reviews.update_review(Scope.for_user(user), closed_r.id, %{comment_policy: :disallowed})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(user), login_r.id, %{comment_policy: :logged_in_only})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(user), closed_r.id, %{comment_policy: :disallowed})
+
       login_r = Reviews.get_by_token(login_r.token)
       closed_r = Reviews.get_by_token(closed_r.token)
       attrs = %{"start_line" => 1, "end_line" => 1, "body" => "hi"}
@@ -204,8 +222,13 @@ defmodule Crit.ReviewsCommentPolicyTest do
       open_r = create_review_for(user)
       login_r = create_review_for(user)
       closed_r = create_review_for(user)
-      {:ok, _} = Reviews.update_review(Scope.for_user(user), login_r.id, %{comment_policy: :logged_in_only})
-      {:ok, _} = Reviews.update_review(Scope.for_user(user), closed_r.id, %{comment_policy: :disallowed})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(user), login_r.id, %{comment_policy: :logged_in_only})
+
+      {:ok, _} =
+        Reviews.update_review(Scope.for_user(user), closed_r.id, %{comment_policy: :disallowed})
+
       login_r = Reviews.get_by_token(login_r.token)
       closed_r = Reviews.get_by_token(closed_r.token)
       anon = Scope.for_visitor("anon", "Anon")
