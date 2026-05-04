@@ -100,6 +100,37 @@ defmodule CritWeb.ApiControllerTest do
       assert "b.go" in paths
     end
 
+    test "echoes visibility (defaults to unlisted)", %{conn: conn} do
+      review = create_review()
+      conn = get(conn, ~p"/api/reviews/#{review.token}/document")
+      assert json_response(conn, 200)["visibility"] == "unlisted"
+      # API responses must always carry x-robots-tag (router pipeline) so
+      # callers piping to public artifacts have a header signal.
+      assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
+    end
+
+    test "reflects :public visibility once promoted", %{conn: conn} do
+      {:ok, user} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "doc-vis-#{System.unique_integer([:positive])}",
+          "email" => "doc-vis-#{System.unique_integer([:positive])}@example.com",
+          "name" => "Doc Vis"
+        })
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          0,
+          []
+        )
+
+      {:ok, _} = Reviews.make_public(Scope.for_user(user), review.id)
+
+      conn = get(conn, ~p"/api/reviews/#{review.token}/document")
+      assert json_response(conn, 200)["visibility"] == "public"
+    end
+
     test "returns 404 for unknown token", %{conn: conn} do
       conn = get(conn, ~p"/api/reviews/nonexistent_token/document")
       assert json_response(conn, 404)
@@ -145,6 +176,36 @@ defmodule CritWeb.ApiControllerTest do
       assert body =~ "## y.go"
     end
 
+    test "prefixes the markdown body with a visibility comment", %{conn: conn} do
+      review = create_review()
+      conn = get(conn, ~p"/api/export/#{review.token}/review")
+      body = response(conn, 200)
+      assert body =~ ~r/\A<!-- crit-visibility: unlisted -->/
+      assert get_resp_header(conn, "x-robots-tag") == ["noindex"]
+    end
+
+    test "marks public reviews as such in the prefix", %{conn: conn} do
+      {:ok, user} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "exp-vis-#{System.unique_integer([:positive])}",
+          "email" => "exp-vis-#{System.unique_integer([:positive])}@example.com",
+          "name" => "Exp Vis"
+        })
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          0,
+          []
+        )
+
+      {:ok, _} = Reviews.make_public(Scope.for_user(user), review.id)
+
+      conn = get(conn, ~p"/api/export/#{review.token}/review")
+      assert response(conn, 200) =~ ~r/\A<!-- crit-visibility: public -->/
+    end
+
     test "returns 404 for unknown token", %{conn: conn} do
       conn = get(conn, ~p"/api/export/nonexistent_token/review")
       assert json_response(conn, 404)
@@ -175,6 +236,7 @@ defmodule CritWeb.ApiControllerTest do
 
       # Top-level review file fields
       assert body["review_round"] == 1
+      assert body["visibility"] == "unlisted"
       assert body["share_url"] =~ review.token
       assert body["delete_token"] == review.delete_token
       assert body["updated_at"]

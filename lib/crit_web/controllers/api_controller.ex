@@ -98,7 +98,7 @@ defmodule CritWeb.ApiController do
             %{path: f.file_path, content: f.content, status: f.status}
           end)
 
-        json(conn, %{files: files})
+        json(conn, %{files: files, visibility: review.visibility})
     end
   end
 
@@ -117,7 +117,12 @@ defmodule CritWeb.ApiController do
       review ->
         comments = visible_comments(review)
         files = Enum.map(review.files, fn f -> %{path: f.file_path, content: f.content} end)
-        md = Output.generate_multi_file_review_md(files, comments)
+        # Visibility prefix is a markdown HTML comment — invisible to renderers,
+        # greppable for callers piping the export into automation. Signals
+        # whether the source review is `:unlisted` (URL-only) or `:public`.
+        md =
+          "<!-- crit-visibility: #{review.visibility} -->\n" <>
+            Output.generate_multi_file_review_md(files, comments)
 
         conn
         |> put_resp_content_type("text/markdown")

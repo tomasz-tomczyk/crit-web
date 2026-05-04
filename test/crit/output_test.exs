@@ -237,6 +237,7 @@ defmodule Crit.OutputTest do
     defp fake_review do
       %{
         review_round: 1,
+        visibility: :unlisted,
         token: "test-token",
         delete_token: "del-token",
         updated_at: ~U[2026-01-01 00:00:00Z]
