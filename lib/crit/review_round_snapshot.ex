@@ -8,7 +8,7 @@ defmodule Crit.ReviewRoundSnapshot do
     field :position, :integer, default: 0
 
     field :status, Ecto.Enum,
-      values: [:added, :modified, :deleted, :renamed, :removed],
+      values: [:modified, :removed],
       default: :modified
 
     belongs_to :review, Crit.Review

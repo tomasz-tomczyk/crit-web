@@ -66,7 +66,7 @@ if Mix.env() in [:dev, :test] do
           file_path: snap.file_path,
           content: snap.content,
           position: snap[:position] || 0,
-          status: snap[:status] || :added,
+          status: snap[:status] || :modified,
           inserted_at: attrs[:inserted_at_naive] || now_naive
         })
       end
@@ -561,7 +561,7 @@ if Mix.env() in [:dev, :test] do
                   return list(self.data.keys())
           """),
         position: 0,
-        status: :added
+        status: :modified
       },
       # Round 1 — revised with dataclass, error handling, strict mode
       %{
