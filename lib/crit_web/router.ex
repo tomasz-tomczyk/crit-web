@@ -80,6 +80,8 @@ defmodule CritWeb.Router do
     post "/auth/cli/authorize", DeviceController, :confirm_authorize
     post "/auth/cli/cancel", DeviceController, :cancel
     get "/auth/cli/success", DeviceController, :success
+
+    get "/r/:token/raw/*file_path", RawController, :show
   end
 
   # Review page — visibility-driven noindex/referrer is set in the layout via
