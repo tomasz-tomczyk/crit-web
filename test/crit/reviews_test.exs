@@ -776,6 +776,29 @@ defmodule Crit.ReviewsTest do
 
       assert updated.resolved == false
     end
+
+    test "stamps resolved_round with the review's current round on resolve", ctx do
+      scope = Scope.for_user(ctx.owner)
+      {:ok, _} = Crit.Repo.update(Ecto.Changeset.change(ctx.review, review_round: 3))
+
+      assert {:ok, updated} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, true, ctx.review.id)
+
+      assert updated.resolved == true
+      assert updated.resolved_round == 3
+    end
+
+    test "clears resolved_round on unresolve", ctx do
+      scope = Scope.for_user(ctx.owner)
+      {:ok, _} = Crit.Repo.update(Ecto.Changeset.change(ctx.review, review_round: 2))
+      {:ok, _} = Reviews.resolve_comment(scope, ctx.anon_comment.id, true, ctx.review.id)
+
+      assert {:ok, updated} =
+               Reviews.resolve_comment(scope, ctx.anon_comment.id, false, ctx.review.id)
+
+      assert updated.resolved == false
+      assert updated.resolved_round == nil
+    end
   end
 
   describe "reply CRUD (scope)" do
