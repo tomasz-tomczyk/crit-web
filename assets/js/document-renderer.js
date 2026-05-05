@@ -4581,6 +4581,7 @@ export const DocumentRenderer = {
       // Already created in this hook instance — nothing to do.
     } else {
     const commentsPanel = document.createElement('div')
+    commentsPanel.id = 'commentsPanel'
     commentsPanel.className = 'comments-panel'
     commentsPanel.innerHTML = `
       <div class="comments-panel-header">
