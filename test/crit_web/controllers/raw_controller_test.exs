@@ -69,5 +69,13 @@ defmodule CritWeb.RawControllerTest do
 
       assert response(conn, 200) == "old"
     end
+
+    test "404s when filename contains non-ASCII characters", %{conn: conn} do
+      review = review_fixture(%{files: [file("héllo.txt", "x")]})
+
+      conn = get(conn, "/r/" <> review.token <> "/raw/" <> "héllo.txt")
+
+      assert response(conn, 404)
+    end
   end
 end
