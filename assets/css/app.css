@@ -2784,6 +2784,44 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 }
 
 
+/* ===== Sidebar Resize Handles ===== */
+/* Thin draggable strip on the inner edge of each sidebar. Default transparent;
+   the brand-color line on hover/drag is the only visual affordance. Sticky so
+   it tracks the viewport vertically while pages scroll. */
+.sidebar-resize-handle {
+  flex: 0 0 4px;
+  align-self: stretch;
+  cursor: col-resize;
+  position: sticky;
+  top: var(--crit-header-height, 53px);
+  height: calc(100vh - var(--crit-header-height, 53px));
+  z-index: 86;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:focus-visible,
+.sidebar-resize-handle.dragging {
+  background: var(--crit-brand);
+  outline: none;
+}
+/* Hide the comments-panel resizer when its panel is hidden. */
+.crit-main-layout:has(#commentsPanel.comments-panel-hidden) #commentsPanelResizer,
+.crit-main-layout:has(.comments-panel:not(.comments-panel-open)) #commentsPanelResizer {
+  display: none;
+}
+/* Hide the file-tree resizer when the panel is hidden (single-file mode). */
+.crit-main-layout:has(#fileTreePanel[style*="display:none"]) #fileTreeResizer,
+.crit-main-layout:has(#fileTreePanel[style*="display: none"]) #fileTreeResizer {
+  display: none;
+}
+/* Suppress text selection and force resize cursor while dragging. */
+body.sidebar-resizing,
+body.sidebar-resizing * {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   #document-renderer { padding-left: 8px; padding-right: 8px; }
@@ -2796,6 +2834,7 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   .line-content.code-line { white-space: pre-wrap; overflow-wrap: anywhere; }
   .crit-toc, #crit-toc-toggle { display: none !important; }
   .tree-panel { display: none !important; }
+  .sidebar-resize-handle { display: none !important; }
 
   /* Two-row header on mobile */
   .crit-header {

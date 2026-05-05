@@ -2754,6 +2754,88 @@ function cancelComment(formObj, ctx) {
   render(ctx)
 }
 
+// ===== Sidebar Resize =====
+// File-tree and comments-panel widths are user-resizable via drag handles.
+// Persisted in localStorage (crit-web is served from a stable origin, unlike
+// the local CLI which uses a random port). Only a minimum is enforced —
+// no upper bound; ultrawide users may legitimately want very wide sidebars.
+const SIDEBAR_RESIZE = [
+  { handleId: 'fileTreeResizer',     targetId: 'fileTreePanel',  storageKey: 'crit-file-tree-width',     min: 180, edge: 'right', step: 16 },
+  { handleId: 'commentsPanelResizer', targetId: 'commentsPanel', storageKey: 'crit-comments-panel-width', min: 300, edge: 'left',  step: 16 },
+]
+
+function initSidebarWidths() {
+  SIDEBAR_RESIZE.forEach(function(cfg) {
+    const target = document.getElementById(cfg.targetId)
+    if (!target) return
+    const raw = localStorage.getItem(cfg.storageKey)
+    const saved = raw == null ? NaN : parseInt(raw, 10)
+    if (Number.isFinite(saved) && saved >= cfg.min) {
+      target.style.width = saved + 'px'
+    }
+    const handle = document.getElementById(cfg.handleId)
+    if (handle && !handle.dataset.resizeWired) {
+      attachSidebarResizeHandle(handle, target, cfg)
+      handle.dataset.resizeWired = '1'
+    }
+  })
+}
+
+function attachSidebarResizeHandle(handle, target, cfg) {
+  // Pointer events + setPointerCapture: the handle keeps receiving move/up
+  // events even if the pointer leaves the window, devtools opens, or the
+  // user alt-tabs. Avoids the "stuck dragging" leak that document-level
+  // mousemove listeners suffer from.
+  handle.addEventListener('pointerdown', function(e) {
+    if (e.button !== 0) return
+    e.preventDefault()
+    handle.setPointerCapture(e.pointerId)
+    const startX = e.clientX
+    const startWidth = target.getBoundingClientRect().width
+    // For a left-edge handle (comments panel), dragging right shrinks the panel.
+    const dir = cfg.edge === 'left' ? -1 : 1
+    handle.classList.add('dragging')
+    document.body.classList.add('sidebar-resizing')
+    let lastWidth = startWidth
+
+    function onMove(ev) {
+      const delta = (ev.clientX - startX) * dir
+      const w = Math.max(cfg.min, startWidth + delta)
+      target.style.width = w + 'px'
+      lastWidth = w
+    }
+    function onEnd() {
+      handle.removeEventListener('pointermove', onMove)
+      handle.removeEventListener('pointerup', onEnd)
+      handle.removeEventListener('pointercancel', onEnd)
+      handle.classList.remove('dragging')
+      document.body.classList.remove('sidebar-resizing')
+      try {
+        localStorage.setItem(cfg.storageKey, String(Math.round(lastWidth)))
+      } catch { /* storage unavailable; ignore */ }
+    }
+    handle.addEventListener('pointermove', onMove)
+    handle.addEventListener('pointerup', onEnd)
+    handle.addEventListener('pointercancel', onEnd)
+  })
+
+  // Keyboard resize for a11y: ArrowLeft / ArrowRight nudges by `step` px.
+  // For left-edge handles the direction flips so ArrowRight always shrinks
+  // the controlled panel — matching pointer drag semantics.
+  handle.addEventListener('keydown', function(e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    e.preventDefault()
+    const dir = cfg.edge === 'left' ? -1 : 1
+    const sign = e.key === 'ArrowRight' ? 1 : -1
+    const current = target.getBoundingClientRect().width
+    const w = Math.max(cfg.min, current + sign * dir * cfg.step)
+    target.style.width = w + 'px'
+    try {
+      localStorage.setItem(cfg.storageKey, String(Math.round(w)))
+    } catch { /* storage unavailable; ignore */ }
+  })
+}
+
 function insertSuggestion(textarea, formObj, ctx) {
   let lines
   if (formObj.quote) {
@@ -4576,8 +4658,20 @@ export const DocumentRenderer = {
       toggleExpandAllComments(ctx)
     })
     const mainLayout = document.getElementById('crit-main-layout')
+    // Inject the comments-panel resize handle as a sibling immediately before
+    // the panel — drag the handle to widen/narrow the panel.
+    const commentsResizer = document.createElement('div')
+    commentsResizer.id = 'commentsPanelResizer'
+    commentsResizer.className = 'sidebar-resize-handle'
+    commentsResizer.setAttribute('role', 'separator')
+    commentsResizer.setAttribute('tabindex', '0')
+    commentsResizer.setAttribute('aria-orientation', 'vertical')
+    commentsResizer.setAttribute('aria-label', 'Resize comments panel')
+    mainLayout.appendChild(commentsResizer)
     mainLayout.appendChild(commentsPanel)
     ctx._commentsPanel = commentsPanel
+    ctx._commentsPanelResizer = commentsResizer
+    initSidebarWidths()
     }
 
     // Wire comment count as panel toggle. The button uses phx-click with
@@ -5037,6 +5131,10 @@ export const DocumentRenderer = {
     if (this._commentsPanel) {
       this._commentsPanel.remove()
       this._commentsPanel = null
+    }
+    if (this._commentsPanelResizer) {
+      this._commentsPanelResizer.remove()
+      this._commentsPanelResizer = null
     }
   },
 }
