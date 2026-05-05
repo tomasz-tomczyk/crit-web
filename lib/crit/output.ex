@@ -138,6 +138,7 @@ defmodule Crit.Output do
       author: c.author_display_name,
       review_round: c.review_round,
       resolved: c.resolved,
+      resolved_round: c.resolved_round,
       external_id: c.external_id,
       created_at: DateTime.to_iso8601(c.inserted_at),
       updated_at: DateTime.to_iso8601(c.updated_at),

@@ -560,6 +560,7 @@ defmodule CritWeb.ReviewLiveTest do
           :review_round,
           :file_path,
           :resolved,
+          :resolved_round,
           :external_id,
           :created_at,
           :updated_at,

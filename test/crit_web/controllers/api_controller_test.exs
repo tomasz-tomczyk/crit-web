@@ -276,6 +276,7 @@ defmodule CritWeb.ApiControllerTest do
             "author_display_name" => "Alice",
             "author_identity" => "alice-123",
             "resolved" => true,
+            "resolved_round" => 2,
             "replies" => [
               %{
                 "body" => "done, added MIT license",
@@ -320,6 +321,7 @@ defmodule CritWeb.ApiControllerTest do
       # First comment: resolved with replies and author (export uses "author" key)
       resolved_comment = Enum.find(comments, &(&1["body"] == "add copyright header"))
       assert resolved_comment["resolved"] == true
+      assert resolved_comment["resolved_round"] == 2
       assert resolved_comment["author"] == "Alice"
       assert resolved_comment["start_line"] == 1
       assert resolved_comment["end_line"] == 1
@@ -338,6 +340,7 @@ defmodule CritWeb.ApiControllerTest do
       # Second comment: unresolved, no replies
       unresolved_comment = Enum.find(comments, &(&1["body"] == "needs error handling"))
       assert unresolved_comment["resolved"] == false
+      assert unresolved_comment["resolved_round"] == nil
       assert unresolved_comment["author"] == "Alice"
       assert unresolved_comment["replies"] == []
     end

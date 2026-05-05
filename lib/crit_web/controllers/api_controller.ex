@@ -313,6 +313,29 @@ defmodule CritWeb.ApiController do
       json(conn, %{user_id: user.id, name: user.name, email: user.email, token: plaintext})
     end
 
+    def seed_resolve(conn, %{"token" => token, "comment_id" => comment_id} = params) do
+      case Reviews.get_by_token(token) do
+        nil ->
+          not_found(conn)
+
+        review ->
+          # Authorize as the review owner if there is one; otherwise use a
+          # visitor scope matching the seed-comment author so resolution is
+          # permitted under the comment-author rule.
+          scope =
+            if review.user_id do
+              Scope.for_user(Crit.Repo.get!(Crit.User, review.user_id))
+            else
+              Scope.for_visitor("integration-test", params["author"] || "WebReviewer")
+            end
+
+          resolved = Map.get(params, "resolved", true)
+
+          {:ok, comment} = Reviews.resolve_comment(scope, comment_id, resolved, review.id)
+          json(conn, Reviews.serialize_comment(comment))
+      end
+    end
+
     def seed_reply(conn, %{"token" => token, "comment_id" => comment_id} = params) do
       case Reviews.get_by_token(token) do
         nil ->

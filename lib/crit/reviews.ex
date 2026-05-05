@@ -481,6 +481,7 @@ defmodule Crit.Reviews do
         "author_display_name" => resolved_display_name,
         "review_round" => attrs["review_round"] || 1,
         "resolved" => attrs["resolved"] || false,
+        "resolved_round" => attrs["resolved_round"],
         "scope" => scope,
         "external_id" => external_id
       })
@@ -875,12 +876,24 @@ defmodule Crit.Reviews do
            Repo.get_by(Comment, id: comment_id, review_id: review_id) || {:error, :not_found},
          %Review{} = review <- Repo.get(Review, review_id) || {:error, :not_found},
          :ok <- can_resolve_comment?(scope, comment, review) do
-      comment |> Ecto.Changeset.change(resolved: resolved) |> Repo.update()
+      changes = resolve_comment_changes(comment, resolved, review.review_round)
+      comment |> Ecto.Changeset.change(changes) |> Repo.update()
     else
       %Comment{parent_id: parent} when parent != nil -> {:error, :not_found}
       {:error, _} = error -> error
     end
   end
+
+  # Stamp resolved_round on false -> true transition; clear on true -> false.
+  # No-op when already in the target state (preserves prior resolved_round).
+  defp resolve_comment_changes(%Comment{resolved: false}, true, review_round),
+    do: [resolved: true, resolved_round: review_round]
+
+  defp resolve_comment_changes(%Comment{resolved: true}, false, _review_round),
+    do: [resolved: false, resolved_round: nil]
+
+  defp resolve_comment_changes(_comment, resolved, _review_round),
+    do: [resolved: resolved]
 
   defp can_resolve_comment?(%Scope{} = scope, %Comment{} = comment, %Review{} = review) do
     scope_uid = Scope.user_id(scope)
@@ -1017,6 +1030,7 @@ defmodule Crit.Reviews do
       review_round: c.review_round,
       file_path: c.file_path,
       resolved: c.resolved,
+      resolved_round: c.resolved_round,
       external_id: c.external_id,
       created_at: DateTime.to_iso8601(c.inserted_at),
       updated_at: DateTime.to_iso8601(c.updated_at),

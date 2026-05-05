@@ -13,6 +13,7 @@ defmodule Crit.Comment do
 
     field :scope, :string, default: "line"
     field :resolved, :boolean, default: false
+    field :resolved_round, :integer
     field :external_id, :string
     belongs_to :review, Crit.Review
     belongs_to :parent, Crit.Comment
@@ -36,6 +37,7 @@ defmodule Crit.Comment do
       :file_path,
       :quote,
       :resolved,
+      :resolved_round,
       :scope,
       :external_id
     ])
