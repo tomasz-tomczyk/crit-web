@@ -199,7 +199,8 @@ Use `:req` (`Req`) for HTTP requests. **Avoid** `:httpoison`, `:tesla`, `:httpc`
 - `phx-hook="MyHook"` requires a unique `id` and `phx-update="ignore"` if the hook manages its own DOM
 - Use `push_event/3` server→client, `this.pushEvent` client→server
 - For UI toggles (popovers, dropdowns, mobile drawers, tabs), prefer `Phoenix.LiveView.JS` commands declaratively in the template — `JS.toggle_attribute({"hidden", "hidden"}, to: "#el")`, `JS.toggle_attribute({"aria-expanded", "true", "false"})`, `JS.toggle/1`. Pipe them together for multi-step toggles
-- For behaviors `JS` can't express (click-outside, Escape close, focus traps), use a colocated hook scoped to the element. Hooks have lifecycle (`mounted`/`destroyed`) so listeners clean up on unmount
+- For click-outside-to-close, use `phx-click-away={JS.hide(to: "#id")}` on the inner content element. LiveView only fires the binding when the element is visible, so there's no race with the open click — no hook needed
+- For behaviors `JS` still can't express (Escape close, focus traps, document-level dismiss for popovers anchored to a separate trigger), use a colocated hook scoped to the element. Hooks have lifecycle (`mounted`/`destroyed`) so listeners clean up on unmount
 
 ### LiveView tests
 

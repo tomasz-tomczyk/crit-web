@@ -303,7 +303,7 @@
   </div>
 
   <div id="crit-prompt-panel" class="crit-prompt-overlay" style="display:none">
-    <div class="crit-prompt-dialog">
+    <div class="crit-prompt-dialog" phx-click-away={JS.hide(to: "#crit-prompt-panel")}>
       <%= if @prompt_mode == "full_export" do %>
         <h3 class="crit-prompt-title">Full plan + comments</h3>
         <p class="crit-prompt-description">
