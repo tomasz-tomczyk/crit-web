@@ -2806,7 +2806,6 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   outline: none;
 }
 /* Hide the comments-panel resizer when its panel is hidden. */
-.crit-main-layout:has(#commentsPanel.comments-panel-hidden) #commentsPanelResizer,
 .crit-main-layout:has(.comments-panel:not(.comments-panel-open)) #commentsPanelResizer {
   display: none;
 }
