@@ -108,6 +108,10 @@ CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, El
 - `/dashboard`, `/settings` — `live_session :user`, requires authenticated user
 - `/overview` — `live_session :admin`, selfhost admin only
 
+**Browser controllers (noindex):**
+
+- `GET /r/:token/raw/*file_path` — raw file content (text/plain, noindex)
+
 **API (`/api`, all noindex):**
 
 - `POST /reviews` — create review (from CLI share)
