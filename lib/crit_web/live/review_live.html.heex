@@ -133,7 +133,7 @@
         <%= if length(@review.files) == 1 do %>
           <% [only_file | _] = @review.files %>
           <a
-            class="crit-header-raw"
+            class="crit-round-diff-btn"
             href={"/r/" <> @review.token <> "/raw/" <> (only_file.file_path |> String.split("/") |> Enum.map_join("/", &URI.encode/1))}
             target="_blank"
             rel="noopener"

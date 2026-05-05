@@ -1788,7 +1788,7 @@ function renderFileSection(ctx, file) {
       e.preventDefault()
       return
     }
-    if (e.target.closest('.file-header-raw')) {
+    if (e.target.closest('.crit-round-diff-btn')) {
       // Allow the link to navigate; never call e.preventDefault() here.
       return
     }
@@ -1818,7 +1818,7 @@ function renderFileSection(ctx, file) {
     '<svg class="file-header-icon" viewBox="0 0 16 16" fill="var(--crit-editor-fg-muted)"><path fill-rule="evenodd" d="M3.75 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75zm5.75.56v2.19c0 .138.112.25.25.25h2.19L9.5 2.06zM2 1.75C2 .784 2.784 0 3.75 0h5.086c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25V1.75z"/></svg>' +
     '<span class="file-header-name"><span class="dir">' + escapeHtml(dirPath) + '</span>' + escapeHtml(fileName) + '</span>' +
     (file.orphaned ? '<span class="file-header-badge removed">Removed</span>' : '') +
-    '<a class="file-header-raw" href="' + rawHref + '" target="_blank" rel="noopener" title="View raw">Raw</a>'
+    '<a class="crit-round-diff-btn" href="' + rawHref + '" target="_blank" rel="noopener" title="View raw">Raw</a>'
 
   // File comment button — not for orphaned files (no point adding comments to removed files).
   // Also gated on canComment: when policy disallows new comments, don't create the
