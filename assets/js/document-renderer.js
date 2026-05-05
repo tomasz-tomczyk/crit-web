@@ -4668,6 +4668,9 @@ export const DocumentRenderer = {
     commentsResizer.setAttribute('tabindex', '0')
     commentsResizer.setAttribute('aria-orientation', 'vertical')
     commentsResizer.setAttribute('aria-label', 'Resize comments panel')
+    commentsResizer.setAttribute('aria-valuenow', '50')
+    commentsResizer.setAttribute('aria-valuemin', '0')
+    commentsResizer.setAttribute('aria-valuemax', '100')
     mainLayout.appendChild(commentsResizer)
     mainLayout.appendChild(commentsPanel)
     ctx._commentsPanel = commentsPanel
