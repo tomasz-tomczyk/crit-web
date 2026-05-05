@@ -2541,6 +2541,25 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   border: 1px solid var(--crit-badge-removed-border);
 }
 
+.file-header-raw,
+.crit-header-raw {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--crit-editor-fg-muted);
+  text-decoration: none;
+  border: 1px solid var(--crit-border);
+  border-radius: 0.25rem;
+  background: var(--crit-bg-elevated);
+}
+
+.file-header-raw:hover,
+.crit-header-raw:hover {
+  color: var(--crit-fg-primary);
+  background: var(--crit-row-hover);
+}
+
 /* Viewed checkbox in file header */
 .file-header-viewed {
   display: flex;

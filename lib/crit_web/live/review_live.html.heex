@@ -130,6 +130,18 @@
             <% end %>
           </div>
         <% end %>
+        <%= if length(@review.files) == 1 do %>
+          <% [only_file | _] = @review.files %>
+          <a
+            class="crit-header-raw"
+            href={"/r/" <> @review.token <> "/raw/" <> (only_file.file_path |> String.split("/") |> Enum.map_join("/", &URI.encode/1))}
+            target="_blank"
+            rel="noopener"
+            title="View raw"
+          >
+            Raw
+          </a>
+        <% end %>
       </div>
       <div class="crit-header-actions-right">
         <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>
