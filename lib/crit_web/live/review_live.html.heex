@@ -303,9 +303,21 @@
   </div>
 
   <div id="crit-prompt-panel" class="crit-prompt-overlay" style="display:none">
-    <div class="crit-prompt-dialog" phx-click-away={JS.hide(to: "#crit-prompt-panel")}>
+    <%!-- Focus trap is out of scope; Escape and click-away are wired here.
+         phx-window-keydown fires regardless of element visibility, but
+         JS.hide on an already-hidden panel is a no-op, so leaving the
+         binding always-on is safe. --%>
+    <div
+      class="crit-prompt-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="crit-prompt-title"
+      phx-click-away={JS.hide(to: "#crit-prompt-panel")}
+      phx-window-keydown={JS.hide(to: "#crit-prompt-panel")}
+      phx-key="escape"
+    >
       <%= if @prompt_mode == "full_export" do %>
-        <h3 class="crit-prompt-title">Full plan + comments</h3>
+        <h3 id="crit-prompt-title" class="crit-prompt-title">Full plan + comments</h3>
         <p class="crit-prompt-description">
           Paste this prompt into your agent to implement the full plan with comments.
         </p>
@@ -320,7 +332,7 @@
           </button>
         </div>
       <% else %>
-        <h3 class="crit-prompt-title">Act on comments</h3>
+        <h3 id="crit-prompt-title" class="crit-prompt-title">Act on comments</h3>
         <p class="crit-prompt-description">
           Paste this prompt into your agent to address the review comments.
         </p>
@@ -569,9 +581,6 @@
       tabindex="0"
       aria-orientation="vertical"
       aria-label="Resize file tree"
-      aria-valuenow="50"
-      aria-valuemin="0"
-      aria-valuemax="100"
     >
     </div>
 

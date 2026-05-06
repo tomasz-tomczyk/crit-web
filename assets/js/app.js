@@ -274,14 +274,16 @@ if (ytFacade) {
   ytFacade.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate() }})
 }
 
-// Home page: testimonials scroll-triggered reveal
+// Home page: testimonials scroll-triggered reveal.
+// Cards start at opacity-0/translate-y-4 (Tailwind) and the data-revealed
+// attribute swaps in opacity-100/translate-y-0 via Tailwind data-[revealed]:* variants.
 const testimonialsGrid = document.getElementById("testimonials-grid")
 if (testimonialsGrid) {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        testimonialsGrid.querySelectorAll(".feature-card").forEach((card, i) => {
-          setTimeout(() => card.classList.add("revealed"), i * 150)
+        testimonialsGrid.querySelectorAll("[data-reveal]").forEach((card, i) => {
+          setTimeout(() => card.setAttribute("data-revealed", ""), i * 150)
         })
         observer.unobserve(entry.target)
       }
@@ -318,21 +320,12 @@ if (platformStats) {
   const statsObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        // Staggered reveal
-        platformStats.querySelectorAll(".stat-item, .stat-divider").forEach((el, i) => {
-          setTimeout(() => el.classList.add("revealed"), i * 100)
+        platformStats.querySelectorAll("[data-count-to]").forEach(el => {
+          countUp(el, parseInt(el.dataset.countTo, 10), formatWithCommas)
         })
-
-        // Count-up after first item reveals
-        setTimeout(() => {
-          platformStats.querySelectorAll("[data-count-to]").forEach(el => {
-            countUp(el, parseInt(el.dataset.countTo, 10), formatWithCommas)
-          })
-          platformStats.querySelectorAll("[data-count-bytes]").forEach(el => {
-            countUp(el, parseInt(el.dataset.countBytes, 10), formatBytes)
-          })
-        }, 150)
-
+        platformStats.querySelectorAll("[data-count-bytes]").forEach(el => {
+          countUp(el, parseInt(el.dataset.countBytes, 10), formatBytes)
+        })
         statsObserver.unobserve(entry.target)
       }
     })
