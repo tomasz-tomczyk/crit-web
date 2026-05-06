@@ -349,7 +349,8 @@
     <div class="grid grid-cols-2 gap-8 max-sm:grid-cols-1 max-sm:gap-6" id="testimonials-grid">
       <div
         :for={testimonial <- @testimonials}
-        class="feature-card"
+        data-reveal
+        class="opacity-0 translate-y-4 transition-[opacity,transform] duration-500 ease-out data-[revealed]:opacity-100 data-[revealed]:translate-y-0"
       >
         <p class="text-lg font-semibold leading-snug text-(--crit-fg-primary) mb-4">
           {testimonial.highlight}

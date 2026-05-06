@@ -70,6 +70,8 @@ defmodule CritWeb.Components.PopoverMenu do
         aria-label={@panel_label}
         data-open={to_string(@open?)}
         data-test={"#{@test_prefix}-panel"}
+        phx-window-keydown={close_js(@id)}
+        phx-key="escape"
       >
         {render_slot(@inner_block)}
       </div>

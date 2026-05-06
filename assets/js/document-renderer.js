@@ -1354,7 +1354,12 @@ function renderMultiFile(ctx) {
     }
   }
   updateHeaderHeight()
-  // Store reference so destroyed() can clean it up
+  // renderMultiFile runs on every render(ctx) — remove any prior handler
+  // before re-binding so listeners don't accumulate across re-renders.
+  // destroyed() removes the latest one stored on ctx._resizeHandler.
+  if (ctx._resizeHandler) {
+    window.removeEventListener('resize', ctx._resizeHandler)
+  }
   ctx._resizeHandler = updateHeaderHeight
   window.addEventListener('resize', updateHeaderHeight)
 
@@ -4664,9 +4669,6 @@ export const DocumentRenderer = {
     commentsResizer.setAttribute('tabindex', '0')
     commentsResizer.setAttribute('aria-orientation', 'vertical')
     commentsResizer.setAttribute('aria-label', 'Resize comments panel')
-    commentsResizer.setAttribute('aria-valuenow', '50')
-    commentsResizer.setAttribute('aria-valuemin', '0')
-    commentsResizer.setAttribute('aria-valuemax', '100')
     mainLayout.appendChild(commentsResizer)
     mainLayout.appendChild(commentsPanel)
     ctx._commentsPanel = commentsPanel
