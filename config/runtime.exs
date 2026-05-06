@@ -66,10 +66,6 @@ if frontend_dsn = System.get_env("SENTRY_FRONTEND_DSN") do
   }
 end
 
-if admin_password = System.get_env("ADMIN_PASSWORD") do
-  config :crit, :admin_password, admin_password
-end
-
 # OAuth provider — configure exactly one provider per deployment.
 #
 # Hosted (GitHub):

@@ -24,10 +24,10 @@ mix phx.server  # Start dev server on :4000
 To develop features that are self-hosted-only (like the admin dashboard), start the server with:
 
 ```bash
-SELFHOSTED=true ADMIN_PASSWORD=dev mix phx.server
+SELFHOSTED=true mix phx.server
 ```
 
-This enables the `/dashboard` route and other self-hosted features. Visit `http://localhost:4000/dashboard` and log in with the password you set.
+This enables the `/dashboard` and `/overview` routes and other self-hosted features. Create the first account at `http://localhost:4000/users/register`, or seed one from the shell with `mix crit.create_user EMAIL PASSWORD`.
 
 ## Running tests
 

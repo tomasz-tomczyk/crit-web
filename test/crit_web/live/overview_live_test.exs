@@ -9,24 +9,7 @@ defmodule CritWeb.OverviewLiveTest do
 
     on_exit(fn ->
       Application.delete_env(:crit, :selfhosted)
-      Application.delete_env(:crit, :admin_password)
     end)
-  end
-
-  defp login_user(conn) do
-    {conn, _user} = login_user_with_record(conn)
-    conn
-  end
-
-  defp login_user_with_record(conn) do
-    {:ok, user} =
-      Crit.Accounts.find_or_create_from_oauth("github", %{
-        "sub" => "test_uid_#{System.unique_integer()}",
-        "email" => "test@example.com",
-        "name" => "Test User"
-      })
-
-    {init_test_session(conn, %{user_id: user.id}), user}
   end
 
   defp without_oauth(ctx) do
@@ -69,45 +52,6 @@ defmodule CritWeb.OverviewLiveTest do
 
       assert html =~ "All Reviews"
       assert html =~ hd(review.files).file_path
-    end
-  end
-
-  describe "with admin password" do
-    setup do
-      Application.put_env(:crit, :admin_password, "secret123")
-    end
-
-    test "shows login prompt when not authenticated", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/overview")
-
-      assert html =~ "Sign in to view and manage reviews"
-      refute html =~ "All Reviews"
-    end
-
-    test "shows OAuth button when OAuth configured", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/overview")
-
-      assert html =~ "Sign in with OAuth"
-      refute html =~ "login-form"
-    end
-
-    test "shows review list when authenticated via OAuth", %{conn: conn} do
-      review = review_fixture()
-      conn = login_user(conn)
-
-      {:ok, _view, html} = live(conn, ~p"/overview")
-
-      assert html =~ "All Reviews"
-      assert html =~ hd(review.files).file_path
-    end
-
-    test "shows stats even when not authenticated", %{conn: conn} do
-      _review = review_fixture()
-
-      {:ok, _view, html} = live(conn, ~p"/overview")
-
-      assert html =~ "Reviews"
-      assert html =~ "Comments"
     end
   end
 

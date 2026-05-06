@@ -8,28 +8,26 @@ defmodule CritWeb.Live.SessionHelper do
 
   @doc """
   Session callback for the :user live_session (dashboard + settings).
-  Passes user_id, identity, display_name, admin_authenticated, and request_path.
+  Passes user_id, identity, display_name, and request_path.
   """
   def user_session_opts(conn) do
     %{
       "user_id" => get_session(conn, "user_id"),
       "identity" => get_session(conn, "identity"),
       "display_name" => get_session(conn, "display_name"),
-      "admin_authenticated" => get_session(conn, "admin_authenticated"),
       "request_path" => conn.request_path
     }
   end
 
   @doc """
   Session callback for the :admin live_session.
-  Passes user_id, identity, display_name, and admin_authenticated.
+  Passes user_id, identity, and display_name.
   """
   def admin_session_opts(conn) do
     %{
       "user_id" => get_session(conn, "user_id"),
       "identity" => get_session(conn, "identity"),
-      "display_name" => get_session(conn, "display_name"),
-      "admin_authenticated" => get_session(conn, "admin_authenticated")
+      "display_name" => get_session(conn, "display_name")
     }
   end
 end

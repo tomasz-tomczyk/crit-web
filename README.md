@@ -31,7 +31,6 @@ docker run -d \
   -e DATABASE_URL=ecto://user:pass@your-db-host/crit_prod \
   -e SECRET_KEY_BASE=$(openssl rand -base64 64 | tr -d '\n') \
   -e SELFHOSTED=true \
-  -e ADMIN_PASSWORD=your-secure-password \
   -e PHX_HOST=localhost \
   -e PHX_SERVER=true \
   -p 4000:4000 \
@@ -78,7 +77,12 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `DB_SSL_CA_CERT` | No | — | Path to a CA certificate file. When set alongside `DB_SSL=true`, enables full `verify_peer` verification (requires volume mount in Docker) |
 | `SECRET_KEY_BASE` | Yes | — | Session signing key. Generate with `openssl rand -base64 64` |
 | `SELFHOSTED` | Yes | — | Set to `true` to enable self-hosted mode (dashboard, no marketing pages) |
-| `ADMIN_PASSWORD` | No | — | Password for the `/dashboard` admin panel. If unset and no OAuth is configured, the dashboard is open |
+| `LOCAL_REGISTRATION_ENABLED` | No | `true` | Set to `false` to close `/users/register` after creating the accounts you trust |
+| `SMTP_HOST` | No | — | SMTP relay hostname. When set, password-reset and email-change confirmations are sent via SMTP; when unset, those emails go to the local Swoosh adapter |
+| `SMTP_PORT` | No | `587` | SMTP port. `465` uses implicit TLS; other ports use STARTTLS |
+| `SMTP_USERNAME` | No | — | SMTP auth username |
+| `SMTP_PASSWORD` | No | — | SMTP auth password |
+| `SMTP_FROM` | No | `no-reply@localhost` | From address used on outgoing email |
 | `GITHUB_CLIENT_ID` | No | — | GitHub OAuth App client ID. Set with `GITHUB_CLIENT_SECRET` to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews |
 | `GITHUB_CLIENT_SECRET` | No | — | GitHub OAuth App client secret |
 | `OAUTH_CLIENT_ID` | No | — | Generic OIDC/OAuth2 client ID for Google, GitLab, Okta, etc. Use with `OAUTH_CLIENT_SECRET` and `OAUTH_BASE_URL`. Mutually exclusive with `GITHUB_CLIENT_ID` |

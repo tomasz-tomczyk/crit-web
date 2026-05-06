@@ -37,7 +37,6 @@ services:
       DATABASE_URL: ecto://postgres:postgres@db/crit_prod
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       SELFHOSTED: "true"
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       PHX_HOST: ${PHX_HOST:-localhost}
       PORT: ${PORT:-4000}
       PHX_SERVER: "true"

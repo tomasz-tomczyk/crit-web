@@ -29,7 +29,6 @@ services:
       DATABASE_URL: postgres://crit:changeme@db:5432/crit
       SECRET_KEY_BASE: "generate-a-secret-see-readme"
       SELFHOSTED: "true"
-      ADMIN_PASSWORD: "changeme"
       PHX_HOST: localhost
       PHX_SERVER: "true"
       PORT: "4000"
