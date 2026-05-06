@@ -24,6 +24,21 @@ defmodule CritWeb.UserSessionController do
     end
   end
 
+  def register(conn, %{"user" => user_params}) do
+    case Accounts.register_user(user_params) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "Welcome to crit!")
+        |> UserAuth.log_in_user(user, %{})
+        |> redirect(to: "/dashboard")
+
+      {:error, _changeset} ->
+        conn
+        |> put_flash(:error, "Registration failed. Please check the form and try again.")
+        |> redirect(to: "/users/register")
+    end
+  end
+
   def delete(conn, _params) do
     conn
     |> put_flash(:info, "Logged out")
