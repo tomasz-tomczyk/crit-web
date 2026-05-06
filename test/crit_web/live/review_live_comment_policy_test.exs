@@ -109,6 +109,10 @@ defmodule CritWeb.ReviewLiveCommentPolicyTest do
     refute has_element?(view, "[data-test=comment-policy-menu]")
     assert has_element?(view, "[data-test=comment-policy-badge]")
     assert html =~ "Disabled"
+
+    badge_html = view |> element("[data-test=comment-policy-badge]") |> render()
+    assert badge_html =~ "hero-chat-bubble-left-right"
+    refute badge_html =~ "hero-no-symbol"
   end
 
   test "anonymous viewer sees no menu", %{conn: conn} do

@@ -506,10 +506,7 @@
                 title={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
                 aria-label={"Comments: " <> CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
               >
-                <.icon
-                  name={CritWeb.ReviewLive.comment_policy_icon(@comment_policy)}
-                  class="size-3"
-                />
+                <.icon name="hero-chat-bubble-left-right" class="size-3" />
                 {CritWeb.ReviewLive.comment_policy_label(@comment_policy)}
               </span>
             <% true -> %>
