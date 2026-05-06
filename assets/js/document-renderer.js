@@ -299,53 +299,41 @@ function findFormForEdit(ctx, commentId) {
 
 function getLineRangeFromSelection(selection) {
   if (!selection || selection.isCollapsed || !selection.toString().trim()) return null
+  if (selection.rangeCount === 0) return null
+  const range = selection.getRangeAt(0)
 
-  const anchorNode = selection.anchorNode
-  const focusNode = selection.focusNode
-  if (!anchorNode || !focusNode) return null
+  // Walk every commentable element and keep those the range intersects.
+  // Direction-agnostic: avoids relying on anchorNode/focusNode, which can
+  // snap to non-commentable parent containers when a selection crosses a
+  // blank-line boundary (especially in backward drags).
+  const candidates = []
+  document.querySelectorAll('.line-block[data-file-path]').forEach(function(el) {
+    if (el.closest('.comment-form-wrapper') || el.closest('.comment-card')) return
+    if (!range.intersectsNode(el)) return
+    candidates.push({
+      filePath: el.dataset.filePath,
+      startLine: parseInt(el.dataset.startLine),
+      endLine: parseInt(el.dataset.endLine),
+      blockIndex: el.dataset.blockIndex != null ? parseInt(el.dataset.blockIndex) : null,
+    })
+  })
 
-  // Walk up from a node to find the nearest commentable element.
-  function findLineInfo(node) {
-    const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node
-    if (!el) return null
+  if (candidates.length === 0) return null
 
-    // Check if inside a comment — don't trigger on existing comment text
-    if (el.closest('.comment-form-wrapper') || el.closest('.comment-card')) return null
-
-    // Check if inside non-commentable UI (header, file tree, buttons)
-    if (el.closest('.header') || el.closest('.file-tree') || el.closest('.toc-panel')) return null
-
-    // Try markdown line-block
-    const lineBlock = el.closest('.line-block[data-file-path]')
-    if (lineBlock) {
-      return {
-        filePath: lineBlock.dataset.filePath,
-        startLine: parseInt(lineBlock.dataset.startLine),
-        endLine: parseInt(lineBlock.dataset.endLine),
-        blockIndex: lineBlock.dataset.blockIndex != null ? parseInt(lineBlock.dataset.blockIndex) : null,
-      }
-    }
-
-    return null
+  const filePath = candidates[0].filePath
+  for (let i = 1; i < candidates.length; i++) {
+    if (candidates[i].filePath !== filePath) return null
   }
 
-  const anchorInfo = findLineInfo(anchorNode)
-  const focusInfo = findLineInfo(focusNode)
-
-  if (!anchorInfo || !focusInfo) return null
-
-  // Both ends must be in the same file
-  if (anchorInfo.filePath !== focusInfo.filePath) return null
-
-  // Compute union range
-  const startLine = Math.min(anchorInfo.startLine, focusInfo.startLine)
-  const endLine = Math.max(anchorInfo.endLine, focusInfo.endLine)
-  const filePath = anchorInfo.filePath
-
-  // Determine afterBlockIndex: use the larger blockIndex (form appears after last block in range)
+  let startLine = Infinity
+  let endLine = -Infinity
   let afterBlockIndex = null
-  if (anchorInfo.blockIndex != null && focusInfo.blockIndex != null) {
-    afterBlockIndex = Math.max(anchorInfo.blockIndex, focusInfo.blockIndex)
+  for (const c of candidates) {
+    if (c.startLine < startLine) startLine = c.startLine
+    if (c.endLine > endLine) endLine = c.endLine
+    if (c.blockIndex != null && (afterBlockIndex == null || c.blockIndex > afterBlockIndex)) {
+      afterBlockIndex = c.blockIndex
+    }
   }
 
   return { filePath, startLine, endLine, afterBlockIndex }
