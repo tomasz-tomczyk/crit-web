@@ -1,21 +1,105 @@
-<Layouts.app flash={@flash}>
-  <div class="mx-auto max-w-sm">
-    <.header>Register</.header>
+<Layouts.flash_group flash={@flash} />
 
-    <.form
-      for={@form}
-      id="registration_form"
-      action={~p"/users/register"}
-      method="post"
-      phx-submit="save"
-      phx-change="validate"
-      phx-trigger-action={@trigger_submit}
-    >
-      <.input field={@form[:email]} type="email" label="Email" required />
-      <.input field={@form[:password]} type="password" label="Password" required />
-      <.button phx-disable-with="Creating account..." class="w-full mt-4">
-        Create account
-      </.button>
-    </.form>
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header current_scope={@current_scope} />
+
+  <div class="max-w-md mx-auto w-full px-6 my-16 max-sm:px-4 max-sm:my-10">
+    <h1 class="text-2xl font-semibold text-(--crit-fg-primary) mb-2">Register</h1>
+    <p class="text-sm text-(--crit-fg-muted) mb-8">
+      Create your account with email and password.
+    </p>
+
+    <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-6">
+      <.form
+        for={@form}
+        id="registration_form"
+        action={~p"/users/register"}
+        method="post"
+        phx-submit="save"
+        phx-change="validate"
+        phx-trigger-action={@trigger_submit}
+        class="flex flex-col gap-4"
+      >
+        <div>
+          <label
+            for={@form[:email].id}
+            class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+          >
+            Email
+          </label>
+          <input
+            type="email"
+            id={@form[:email].id}
+            name={@form[:email].name}
+            value={Phoenix.HTML.Form.normalize_value("email", @form[:email].value)}
+            required
+            autocomplete="email"
+            class={[
+              "w-full bg-(--crit-bg-page) border rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none transition-colors",
+              if(Phoenix.Component.used_input?(@form[:email]) and @form[:email].errors != [],
+                do: "border-(--crit-red) focus:border-(--crit-red)",
+                else: "border-(--crit-border) focus:border-(--crit-brand)"
+              )
+            ]}
+          />
+          <p
+            :for={err <- @form[:email].errors}
+            :if={Phoenix.Component.used_input?(@form[:email])}
+            class="mt-1.5 text-xs text-(--crit-red)"
+          >
+            {CritWeb.CoreComponents.translate_error(err)}
+          </p>
+        </div>
+
+        <div>
+          <label
+            for={@form[:password].id}
+            class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+          >
+            Password
+          </label>
+          <input
+            type="password"
+            id={@form[:password].id}
+            name={@form[:password].name}
+            required
+            autocomplete="new-password"
+            class={[
+              "w-full bg-(--crit-bg-page) border rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none transition-colors",
+              if(
+                Phoenix.Component.used_input?(@form[:password]) and @form[:password].errors != [],
+                do: "border-(--crit-red) focus:border-(--crit-red)",
+                else: "border-(--crit-border) focus:border-(--crit-brand)"
+              )
+            ]}
+          />
+          <p
+            :for={err <- @form[:password].errors}
+            :if={Phoenix.Component.used_input?(@form[:password])}
+            class="mt-1.5 text-xs text-(--crit-red)"
+          >
+            {CritWeb.CoreComponents.translate_error(err)}
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          phx-disable-with="Creating account..."
+          class="w-full mt-2 px-4 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-colors cursor-pointer"
+        >
+          Create account
+        </button>
+      </.form>
+    </div>
+
+    <p class="mt-6 text-center text-sm text-(--crit-fg-muted)">
+      Already have an account?
+      <.link
+        navigate={~p"/users/log_in"}
+        class="font-medium text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
+      >
+        Sign in
+      </.link>
+    </p>
   </div>
-</Layouts.app>
+</div>
