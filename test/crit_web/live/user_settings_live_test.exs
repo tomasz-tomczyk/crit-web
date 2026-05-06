@@ -16,7 +16,10 @@ defmodule CritWeb.UserSettingsLiveTest do
   end
 
   describe "change email" do
-    test "sends confirmation email and does not change email immediately", %{conn: conn, user: user} do
+    test "sends confirmation email and does not change email immediately", %{
+      conn: conn,
+      user: user
+    } do
       {:ok, lv, _} = live(conn, ~p"/users/settings")
 
       lv
@@ -63,7 +66,10 @@ defmodule CritWeb.UserSettingsLiveTest do
       )
       |> render_submit()
 
-      assert Crit.User.valid_password?(Accounts.get_user_by_email(user.email), "brand-new-pwd-1234")
+      assert Crit.User.valid_password?(
+               Accounts.get_user_by_email(user.email),
+               "brand-new-pwd-1234"
+             )
     end
   end
 
@@ -94,6 +100,16 @@ defmodule CritWeb.UserSettingsLiveTest do
       conn = get(conn, ~p"/users/settings/confirm_email/garbage-token")
       assert redirected_to(conn) == "/users/settings"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "invalid or expired"
+    end
+
+    test "redirects unauthenticated visitors to login (no 500)" do
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Test.init_test_session(%{})
+        |> get(~p"/users/settings/confirm_email/anything")
+
+      assert redirected_to(conn) == ~p"/users/log_in"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Please sign in"
     end
   end
 end

@@ -37,18 +37,27 @@ defmodule CritWeb.UserSessionController do
   end
 
   def confirm_email(conn, %{"token" => token}) do
-    user = conn.assigns.current_scope.user
-
-    case Accounts.update_user_email(user, token) do
-      {:ok, _} ->
+    case conn.assigns.current_scope.user do
+      nil ->
+        # Link opened in a different browser / expired session.
+        # `Accounts.update_user_email/2` pattern-matches on `%User{}` and
+        # would raise FunctionClauseError → 500 if we passed nil through.
         conn
-        |> put_flash(:info, "Email updated")
-        |> redirect(to: ~p"/users/settings")
+        |> put_flash(:error, "Please sign in to confirm your email change.")
+        |> redirect(to: ~p"/users/log_in")
 
-      _ ->
-        conn
-        |> put_flash(:error, "Email change link is invalid or expired")
-        |> redirect(to: ~p"/users/settings")
+      user ->
+        case Accounts.update_user_email(user, token) do
+          {:ok, _} ->
+            conn
+            |> put_flash(:info, "Email updated")
+            |> redirect(to: ~p"/users/settings")
+
+          _ ->
+            conn
+            |> put_flash(:error, "Email change link is invalid or expired")
+            |> redirect(to: ~p"/users/settings")
+        end
     end
   end
 
