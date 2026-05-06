@@ -4,12 +4,9 @@ defmodule Crit.Repo.Migrations.AddLocalAuth do
   def up do
     alter table(:users) do
       add :hashed_password, :string
+      modify :provider, :string, null: true, from: {:string, null: false}
+      modify :provider_uid, :string, null: true, from: {:string, null: false}
     end
-
-    # users.provider and users.provider_uid were never NOT NULL at the DB
-    # level — only User.changeset/2 enforced presence. The schema split in
-    # Task 3 makes the changeset enforcement OAuth-specific, no DB change
-    # needed here.
 
     repo = repo()
 
@@ -60,6 +57,8 @@ defmodule Crit.Repo.Migrations.AddLocalAuth do
 
     alter table(:users) do
       remove :hashed_password
+      modify :provider, :string, null: false, from: {:string, null: true}
+      modify :provider_uid, :string, null: false, from: {:string, null: true}
     end
   end
 end
