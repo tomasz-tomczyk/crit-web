@@ -9,6 +9,7 @@ defmodule Crit.Accounts do
   import Ecto.Query
 
   alias Crit.{Repo, User, UserApiToken}
+  alias Crit.Accounts.{UserToken, UserNotifier}
 
   @doc """
   Registers a user with email + password.
@@ -208,6 +209,42 @@ defmodule Crit.Accounts do
           {:ok, _} -> :ok
           {:error, _} -> {:error, :delete_failed}
         end
+    end
+  end
+
+  @doc """
+  Generates a reset token and emails it. `url_fun` is a 1-arity function from
+  plaintext token → URL string (the LiveView/controller knows how to build
+  the URL from the endpoint).
+  """
+  def deliver_user_reset_password_instructions(%User{} = user, url_fun) when is_function(url_fun, 1) do
+    {plaintext, struct} = UserToken.build_hashed_token(user, "reset_password", user.email)
+    Repo.insert!(struct)
+    UserNotifier.deliver_reset_password_instructions(user, url_fun.(plaintext))
+  end
+
+  @doc "Looks up a user by reset token. Returns user or nil."
+  def get_user_by_reset_password_token(token) do
+    with {:ok, query} <- UserToken.verify_token_query(token, "reset_password"),
+         %User{} = user <- Repo.one(query) do
+      user
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Resets the user's password and deletes all of their reset / remember-me
+  tokens. Returns `{:ok, user}` or `{:error, changeset}`.
+  """
+  def reset_user_password(%User{} = user, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["reset_password", "remember_me"]))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
 end
