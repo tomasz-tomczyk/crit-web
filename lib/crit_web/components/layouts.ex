@@ -734,30 +734,73 @@ defmodule CritWeb.Layouts do
   end
 
   @doc """
+  Resolves where the "Sign in" link should go for an unauthenticated visitor,
+  based on the 4-combo of `:local_registration_enabled` and OAuth presence:
+
+      registration | oauth      | target
+      ------------ | ---------- | --------------
+      true         | *          | /users/log_in
+      false        | configured | /auth/login
+      false        | none       | :hidden
+  """
+  @spec sign_in_target() :: {:link, String.t()} | :hidden
+  def sign_in_target do
+    registration = Application.get_env(:crit, :local_registration_enabled, true)
+    oauth = Crit.Config.oauth_configured?()
+
+    cond do
+      registration -> {:link, ~p"/users/log_in"}
+      oauth -> {:link, ~p"/auth/login"}
+      true -> :hidden
+    end
+  end
+
+  @doc """
   Renders the primary "Sign in" CTA button. Shows a GitHub icon when the
   configured OAuth strategy is GitHub.
+
+  Honors `sign_in_target/0`: when no auth path is enabled the button is
+  not rendered at all.
   """
   attr :return_to, :string, default: "/dashboard"
   attr :class, :string, default: ""
 
   def sign_in_button(assigns) do
-    assigns = assign(assigns, :github_oauth?, github_oauth?())
+    assigns =
+      assigns
+      |> assign(:github_oauth?, github_oauth?())
+      |> assign(:sign_in_target, sign_in_target())
 
     ~H"""
-    <a
-      href={~p"/auth/login?return_to=#{@return_to}"}
-      class={[
-        "inline-flex items-center gap-1.5 h-[30px] px-3 rounded-md text-sm font-medium tracking-tight no-underline bg-(--crit-brand-cta) text-white hover:bg-(--crit-brand-cta-hover) transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]",
-        @class
-      ]}
-    >
-      <%= if @github_oauth? do %>
-        <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-        </svg>
-      <% end %>
-      Sign in
-    </a>
+    <%= case @sign_in_target do %>
+      <% {:link, "/auth/login"} -> %>
+        <a
+          href={~p"/auth/login?return_to=#{@return_to}"}
+          class={[
+            "inline-flex items-center gap-1.5 h-[30px] px-3 rounded-md text-sm font-medium tracking-tight no-underline bg-(--crit-brand-cta) text-white hover:bg-(--crit-brand-cta-hover) transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]",
+            @class
+          ]}
+        >
+          <%= if @github_oauth? do %>
+            <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+          <% end %>
+          Sign in
+        </a>
+      <% {:link, href} -> %>
+        <.link
+          navigate={href}
+          class={[
+            "inline-flex items-center gap-1.5 h-[30px] px-3 rounded-md text-sm font-medium tracking-tight no-underline bg-(--crit-brand-cta) text-white hover:bg-(--crit-brand-cta-hover) transition-colors focus:outline-none focus-visible:shadow-[0_0_0_2px_var(--crit-bg-page),0_0_0_4px_var(--crit-focus-ring)]",
+            @class
+          ]}
+        >
+          Sign in
+        </.link>
+      <% :hidden -> %>
+        <%!-- no sign-in target configured --%>
+    <% end %>
     """
   end
 
