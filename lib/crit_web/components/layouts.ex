@@ -824,7 +824,7 @@ defmodule CritWeb.Layouts do
       role="radiogroup"
       aria-label="Theme"
     >
-      <div class="absolute w-1/3 h-full rounded-full border border-(--crit-border-strong) bg-(--crit-bg-card) left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
+      <div class="absolute w-1/3 h-full rounded-full border border-(--crit-border-strong) bg-(--crit-bg-card) left-0 [[data-theme-preference=light]_&]:left-1/3 [[data-theme-preference=dark]_&]:left-2/3 transition-[left]" />
 
       <button
         class="flex p-2 cursor-pointer w-1/3"

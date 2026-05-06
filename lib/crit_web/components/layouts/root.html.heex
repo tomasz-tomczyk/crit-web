@@ -75,10 +75,12 @@
     </script>
     <script>
       (() => {
-        const t = localStorage.getItem("phx:theme");
-        if (t && t !== "system") {
-          document.documentElement.setAttribute("data-theme", t);
-        }
+        const stored = localStorage.getItem("phx:theme") || "system";
+        const resolved = stored === "system"
+          ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+          : stored;
+        document.documentElement.setAttribute("data-theme", resolved);
+        document.documentElement.setAttribute("data-theme-preference", stored);
       })();
     </script>
   </head>

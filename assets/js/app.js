@@ -135,22 +135,44 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
-// Theme switching
-function setTheme(theme) {
-  if (theme === "system") {
-    localStorage.removeItem("phx:theme");
-    document.documentElement.removeAttribute("data-theme");
-  } else {
-    localStorage.setItem("phx:theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
+// Theme switching.
+//
+// Two attributes are maintained on <html>:
+//   data-theme            — resolved value ("light" | "dark"), drives
+//                           Tailwind `dark:` variant and `--crit-*` tokens.
+//   data-theme-preference — original user choice ("system" | "light" | "dark"),
+//                           drives the theme pill's active-state styling so
+//                           "System" stays visually selected even though we
+//                           resolve it down to a concrete value.
+function resolveTheme(pref) {
+  if (pref === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
+  return pref;
+}
+
+function setTheme(pref) {
+  if (pref === "system") {
+    localStorage.removeItem("phx:theme");
+  } else {
+    localStorage.setItem("phx:theme", pref);
+  }
+  document.documentElement.setAttribute("data-theme", resolveTheme(pref));
+  document.documentElement.setAttribute("data-theme-preference", pref);
   document.querySelectorAll("[data-phx-theme]").forEach(btn => {
-    btn.setAttribute("aria-checked", btn.dataset.phxTheme === theme ? "true" : "false");
+    btn.setAttribute("aria-checked", btn.dataset.phxTheme === pref ? "true" : "false");
   });
 }
 
 window.addEventListener("phx:set-theme", e => setTheme(e.target.dataset.phxTheme));
 window.addEventListener("storage", e => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+
+// When user picks "system", track OS-level changes live.
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if ((localStorage.getItem("phx:theme") || "system") === "system") {
+    document.documentElement.setAttribute("data-theme", resolveTheme("system"));
+  }
+});
 
 // Site header identity popover: close on outside-click / Escape.
 // Marketing pages are dead views (controller-rendered), so phx-hook

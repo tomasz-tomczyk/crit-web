@@ -1,33 +1,37 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-slate-50 flex flex-col">
-  <header class="border-b border-slate-200 bg-white">
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+  <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <.link navigate={~p"/"} class="text-lg font-semibold text-slate-900 no-underline">
+      <.link
+        navigate={~p"/"}
+        class="text-lg font-semibold text-slate-900 dark:text-slate-100 no-underline"
+      >
         crit
       </.link>
+      <Layouts.theme_toggle />
     </div>
   </header>
 
   <main class="flex-1 flex items-start justify-center py-16 px-4">
     <div class="w-full max-w-md">
-      <h1 class="text-2xl font-bold text-slate-900 mb-2">Sign in to crit</h1>
-      <p class="text-sm text-slate-600 mb-6">
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Sign in to crit</h1>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
         Welcome back.
       </p>
 
-      <div class="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm p-6">
         <%= if @oauth_provider_label do %>
           <.link
             navigate="/auth/login"
-            class="flex items-center justify-center w-full bg-slate-900 hover:bg-slate-800 text-white rounded-md px-4 py-2 text-sm font-medium transition no-underline"
+            class="flex items-center justify-center w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-md px-4 py-2 text-sm font-medium transition no-underline"
           >
             {@oauth_provider_label}
           </.link>
-          <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-slate-500">
-            <span class="flex-1 h-px bg-slate-200"></span>
+          <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-500">
+            <span class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></span>
             <span>or</span>
-            <span class="flex-1 h-px bg-slate-200"></span>
+            <span class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></span>
           </div>
         <% end %>
 
@@ -42,7 +46,7 @@
           <div>
             <label
               for={@form[:email].id}
-              class="block text-sm font-medium text-slate-900 mb-1.5"
+              class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1.5"
             >
               Email
             </label>
@@ -53,14 +57,14 @@
               value={Phoenix.HTML.Form.normalize_value("email", @form[:email].value)}
               required
               autocomplete="email"
-              class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             />
           </div>
 
           <div>
             <label
               for={@form[:password].id}
-              class="block text-sm font-medium text-slate-900 mb-1.5"
+              class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1.5"
             >
               Password
             </label>
@@ -70,37 +74,37 @@
               name={@form[:password].name}
               required
               autocomplete="current-password"
-              class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             />
           </div>
 
-          <label class="inline-flex items-center gap-2 text-sm text-slate-900 cursor-pointer">
+          <label class="inline-flex items-center gap-2 text-sm text-slate-900 dark:text-slate-100 cursor-pointer">
             <input type="hidden" name={@form[:remember_me].name} value="false" />
             <input
               type="checkbox"
               id={@form[:remember_me].id}
               name={@form[:remember_me].name}
               value="true"
-              class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              class="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500"
             /> Keep me logged in
           </label>
 
           <button
             type="submit"
-            class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium transition cursor-pointer"
+            class="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-md px-4 py-2 text-sm font-medium transition cursor-pointer"
           >
             Sign in
           </button>
         </.form>
       </div>
 
-      <div class="mt-4 flex flex-col items-center gap-2 text-sm text-slate-600">
+      <div class="mt-4 flex flex-col items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
         <%= if Application.get_env(:crit, :local_registration_enabled, true) do %>
           <p>
             Don't have an account?
             <.link
               navigate={~p"/users/register"}
-              class="font-medium text-blue-600 hover:text-blue-700 underline"
+              class="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
             >
               Create an account
             </.link>
@@ -111,7 +115,7 @@
           <p>
             <.link
               navigate={~p"/users/reset_password"}
-              class="font-medium text-blue-600 hover:text-blue-700 underline"
+              class="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
             >
               Forgot your password?
             </.link>
