@@ -1,0 +1,43 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-lg space-y-12">
+    <div>
+      <.header>Change email</.header>
+      <.form for={@email_form} id="email_form" phx-submit="update_email" phx-change="validate_email">
+        <.input field={@email_form[:email]} type="email" label="New email" required />
+        <div class="mt-4">
+          <.button phx-disable-with="Sending...">Send confirmation</.button>
+        </div>
+      </.form>
+    </div>
+
+    <div>
+      <.header>{if @has_password, do: "Change password", else: "Set a password"}</.header>
+      <.form
+        for={@password_form}
+        id="password_form"
+        phx-submit="update_password"
+        phx-change="validate_password"
+      >
+        <%= if @has_password do %>
+          <.input
+            field={@password_form[:current_password]}
+            type="password"
+            label="Current password"
+            required
+          />
+        <% end %>
+        <.input field={@password_form[:password]} type="password" label="New password" required />
+        <.input
+          field={@password_form[:password_confirmation]}
+          type="password"
+          label="Confirm new password"
+        />
+        <div class="mt-4">
+          <.button phx-disable-with="Saving...">
+            {if @has_password, do: "Update password", else: "Set password"}
+          </.button>
+        </div>
+      </.form>
+    </div>
+  </div>
+</Layouts.app>

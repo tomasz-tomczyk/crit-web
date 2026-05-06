@@ -39,6 +39,22 @@ defmodule CritWeb.UserSessionController do
     end
   end
 
+  def confirm_email(conn, %{"token" => token}) do
+    user = conn.assigns.current_scope.user
+
+    case Accounts.update_user_email(user, token) do
+      {:ok, _} ->
+        conn
+        |> put_flash(:info, "Email updated")
+        |> redirect(to: "/users/settings")
+
+      _ ->
+        conn
+        |> put_flash(:error, "Email change link is invalid or expired")
+        |> redirect(to: "/users/settings")
+    end
+  end
+
   def delete(conn, _params) do
     conn
     |> put_flash(:info, "Logged out")
