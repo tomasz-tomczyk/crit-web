@@ -247,4 +247,72 @@ defmodule Crit.Accounts do
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+  @doc "Changeset for change-email form."
+  def change_user_email(%User{} = user, attrs \\ %{}) do
+    User.email_changeset(user, attrs)
+  end
+
+  @doc "Changeset for change-password form (validates current_password)."
+  def change_user_password(%User{} = user, attrs \\ %{}) do
+    User.password_changeset(user, attrs, hash_password: false)
+  end
+
+  @doc """
+  Validates current password and applies the change-password update. Deletes
+  all `remember_me` tokens for the user (forces re-login on other devices).
+  """
+  def update_user_password(%User{} = user, current_password, attrs) do
+    changeset =
+      user
+      |> User.password_changeset(attrs)
+      |> User.validate_current_password(current_password)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["remember_me"]))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: u}} -> {:ok, u}
+      {:error, :user, cs, _} -> {:error, cs}
+    end
+  end
+
+  @doc "Sends a change-email confirmation link to the proposed new address."
+  def deliver_update_email_instructions(%User{} = user, new_email, url_fun) when is_function(url_fun, 1) do
+    {plaintext, struct} = UserToken.build_hashed_token(user, "change_email", new_email)
+    Repo.insert!(struct)
+    UserNotifier.deliver_update_email_instructions(%{user | email: new_email}, url_fun.(plaintext))
+  end
+
+  @doc """
+  Applies a previously-issued change-email token. Looks up the token row
+  directly (we need both `user_id` and `sent_to` — `verify_token_query/2`
+  returns only the user). Validates that the token's user matches the
+  caller's user, then swaps email and burns all `change_email` tokens for
+  this user.
+  """
+  def update_user_email(%User{} = user, token) do
+    with {:ok, decoded} <- Base.url_decode64(token, padding: false),
+         hashed = :crypto.hash(:sha256, decoded),
+         %UserToken{user_id: uid, sent_to: new_email} <-
+           Repo.one(
+             from t in UserToken,
+               where:
+                 t.token == ^hashed and t.context == "change_email" and
+                   t.inserted_at > ago(7, "day")
+           ),
+         true <- uid == user.id do
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:user, User.email_changeset(user, %{email: new_email}))
+      |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["change_email"]))
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{user: u}} -> {:ok, u}
+        {:error, :user, cs, _} -> {:error, cs}
+      end
+    else
+      _ -> :error
+    end
+  end
 end

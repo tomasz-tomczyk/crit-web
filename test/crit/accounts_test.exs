@@ -2,6 +2,7 @@ defmodule Crit.AccountsTest do
   use Crit.DataCase, async: true
 
   alias Crit.Accounts
+  alias Crit.User
 
   # Matches the normalized user map assent returns for GitHub and OIDC providers.
   # "sub" is the provider's unique user ID.
@@ -263,6 +264,64 @@ defmodule Crit.AccountsTest do
       user = AccountsFixtures.user_fixture()
       {:error, changeset} = Accounts.reset_user_password(user, %{password: "short", password_confirmation: "short"})
       assert "should be at least 12 character(s)" in errors_on(changeset).password
+    end
+  end
+
+  describe "update_user_password/3" do
+    alias Crit.AccountsFixtures
+
+    test "updates with correct current password" do
+      user = AccountsFixtures.user_fixture()
+
+      {:ok, updated} =
+        Accounts.update_user_password(
+          user,
+          AccountsFixtures.valid_user_password(),
+          %{password: "another-strong-pw-1234", password_confirmation: "another-strong-pw-1234"}
+        )
+
+      assert User.valid_password?(updated, "another-strong-pw-1234")
+    end
+
+    test "rejects wrong current password" do
+      user = AccountsFixtures.user_fixture()
+
+      {:error, changeset} =
+        Accounts.update_user_password(user, "wrong", %{
+          password: "another-strong-pw-1234",
+          password_confirmation: "another-strong-pw-1234"
+        })
+
+      assert "is not valid" in errors_on(changeset).current_password
+    end
+  end
+
+  describe "deliver_update_email_instructions / update_user_email" do
+    alias Crit.AccountsFixtures
+    import Swoosh.TestAssertions
+
+    test "round-trips: sends email, applies new email on token use" do
+      user = AccountsFixtures.user_fixture()
+      new_email = "new-#{System.unique_integer([:positive])}@example.com"
+
+      parent = self()
+
+      {:ok, _} =
+        Accounts.deliver_update_email_instructions(user, new_email, fn plaintext ->
+          send(parent, {:token, plaintext})
+          "https://t.test/c/#{plaintext}"
+        end)
+
+      assert_receive {:token, plaintext}
+      assert_email_sent()
+
+      {:ok, updated} = Accounts.update_user_email(user, plaintext)
+      assert updated.email == new_email
+    end
+
+    test "rejects stale or wrong token" do
+      user = AccountsFixtures.user_fixture()
+      assert :error = Accounts.update_user_email(user, "totally-not-a-token")
     end
   end
 end
