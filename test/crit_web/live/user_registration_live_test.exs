@@ -41,6 +41,20 @@ defmodule CritWeb.UserRegistrationLiveTest do
     assert Crit.Accounts.get_user_by_email(email)
   end
 
+  test "happy path: registration creates user and authenticates session", %{conn: conn} do
+    email = AccountsFixtures.unique_user_email()
+    pw = AccountsFixtures.valid_user_password()
+
+    conn =
+      conn
+      |> Plug.Test.init_test_session(%{})
+      |> post(~p"/users/register", %{"user" => %{"email" => email, "password" => pw}})
+
+    assert redirected_to(conn) == ~p"/dashboard"
+    assert get_session(conn, "user_id")
+    assert Crit.Accounts.get_user_by_email(email)
+  end
+
   test "404 when registration disabled", %{conn: conn} do
     Application.put_env(:crit, :local_registration_enabled, false)
     on_exit(fn -> Application.put_env(:crit, :local_registration_enabled, true) end)

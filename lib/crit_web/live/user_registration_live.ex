@@ -26,20 +26,22 @@ defmodule CritWeb.UserRegistrationLive do
   end
 
   def handle_event("save", %{"user" => params}, socket) do
-    case Accounts.register_user(params) do
-      {:ok, _user} ->
-        # Hand off to the controller via phx-trigger-action — the form
-        # POSTs to /users/register which calls UserAuth.log_in_user/3.
-        # We re-render with the same params so the controller receives them.
-        changeset = Accounts.change_user_registration(%User{}, params)
+    # Validate only here — the controller's `register/2` owns the single
+    # insert. If we also call `register_user/1` in the LiveView, the
+    # subsequent form POST hits the unique-email constraint and the user
+    # is never logged in.
+    changeset =
+      %User{}
+      |> Accounts.change_user_registration(params)
+      |> Map.put(:action, :validate)
 
-        {:noreply,
-         socket
-         |> assign(:trigger_submit, true)
-         |> assign(:form, to_form(changeset, as: "user"))}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :form, to_form(changeset, as: "user"))}
+    if changeset.valid? do
+      {:noreply,
+       socket
+       |> assign(:trigger_submit, true)
+       |> assign(:form, to_form(changeset, as: "user"))}
+    else
+      {:noreply, assign(socket, :form, to_form(changeset, as: "user"))}
     end
   end
 end
