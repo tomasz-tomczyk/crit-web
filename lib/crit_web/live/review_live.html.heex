@@ -90,12 +90,7 @@
             </form>
           </div>
           <%= if @oauth_configured do %>
-            <a
-              href={~p"/auth/login?#{%{return_to: ~p"/r/#{@review.token}"}}"}
-              class="crit-signin-btn"
-            >
-              Sign in
-            </a>
+            <Layouts.sign_in_button return_to={~p"/r/#{@review.token}"} />
           <% end %>
         <% end %>
       </div>
@@ -526,16 +521,16 @@
   </div>
   <%= if @comment_policy == :logged_in_only and not @can_comment? do %>
     <div class="crit-signin-banner" role="status" aria-live="polite" data-test="signin-banner">
-      <div class="crit-signin-pill">
-        <.icon name="hero-user" class="size-3" />
-        <span>Sign-in required</span>
+      <div class="crit-signin-banner-inner">
+        <div class="crit-signin-pill">
+          <.icon name="hero-user" class="size-3" />
+          <span>Sign-in required</span>
+        </div>
+        <span class="crit-signin-banner-text">
+          Only signed-in users can comment on this review.
+        </span>
+        <Layouts.sign_in_button return_to={@current_path} class="ml-auto" />
       </div>
-      <span class="crit-signin-banner-text">
-        Only signed-in users can comment on this review.
-      </span>
-      <a href={~p"/auth/login?return_to=#{@current_path}"} class="crit-signin-banner-link">
-        Sign in
-      </a>
     </div>
   <% end %>
   <%!--

@@ -1264,12 +1264,16 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   position: sticky;
   top: var(--crit-header-height, 0px);
   z-index: 99;
+  background: var(--crit-bg-card);
+  border-bottom: 1px solid var(--crit-border);
+}
+.crit-signin-banner-inner {
+  max-width: var(--crit-content-width);
+  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 24px;
-  background: var(--crit-bg-card);
-  border-bottom: 1px solid var(--crit-border);
 }
 .crit-signin-pill {
   display: inline-flex;
@@ -1288,12 +1292,6 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .crit-signin-banner-text {
   font-size: 13px;
   color: var(--crit-fg-primary);
-}
-.crit-signin-banner-link {
-  margin-left: auto;
-  font-size: 0.875rem;
-  color: var(--crit-brand);
-  text-decoration: underline;
 }
 
 /* Hide all comment-creation affordances when policy disallows new comments. */
@@ -1497,19 +1495,6 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   font-size: 15px;
   color: var(--crit-editor-fg-muted);
 }
-.crit-signin-btn {
-  background: var(--crit-brand-cta);
-  color: var(--crit-fg-on-brand);
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-}
-.crit-signin-btn:hover {
-  background: var(--crit-brand-cta-hover);
-}
-
 /* ===== Name Pill ===== */
 .crit-name-pill {
   display: inline-flex;
