@@ -1,115 +1,123 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.dashboard_header current_scope={@current_scope} />
-
-  <div class="max-w-md mx-auto w-full px-6 my-16 max-sm:px-4 max-sm:my-10">
-    <h1 class="text-2xl font-semibold text-(--crit-fg-primary) mb-2">Sign in</h1>
-    <p class="text-sm text-(--crit-fg-muted) mb-8">
-      Welcome back. Sign in to continue.
-    </p>
-
-    <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-6">
-      <%= if @oauth_provider_label do %>
-        <.link
-          navigate="/auth/login"
-          class="flex items-center justify-center w-full px-4 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-colors no-underline"
-        >
-          {@oauth_provider_label}
-        </.link>
-        <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-(--crit-fg-muted)">
-          <span class="flex-1 h-px bg-(--crit-border)"></span>
-          <span>or</span>
-          <span class="flex-1 h-px bg-(--crit-border)"></span>
-        </div>
-      <% end %>
-
-      <.form
-        for={@form}
-        id="login_form"
-        action={~p"/users/log_in"}
-        method="post"
-        phx-update="ignore"
-        class="flex flex-col gap-4"
-      >
-        <div>
-          <label
-            for={@form[:email].id}
-            class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
-          >
-            Email
-          </label>
-          <input
-            type="email"
-            id={@form[:email].id}
-            name={@form[:email].name}
-            value={Phoenix.HTML.Form.normalize_value("email", @form[:email].value)}
-            required
-            autocomplete="email"
-            class="w-full bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand) transition-colors"
-          />
-        </div>
-
-        <div>
-          <label
-            for={@form[:password].id}
-            class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
-          >
-            Password
-          </label>
-          <input
-            type="password"
-            id={@form[:password].id}
-            name={@form[:password].name}
-            required
-            autocomplete="current-password"
-            class="w-full bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand) transition-colors"
-          />
-        </div>
-
-        <label class="inline-flex items-center gap-2 text-sm text-(--crit-fg-primary) cursor-pointer">
-          <input type="hidden" name={@form[:remember_me].name} value="false" />
-          <input
-            type="checkbox"
-            id={@form[:remember_me].id}
-            name={@form[:remember_me].name}
-            value="true"
-            class="h-4 w-4 rounded border-(--crit-border) bg-(--crit-bg-page) accent-(--crit-brand)"
-          /> Keep me logged in
-        </label>
-
-        <button
-          type="submit"
-          class="w-full mt-2 px-4 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-colors cursor-pointer"
-        >
-          Sign in
-        </button>
-      </.form>
+<div class="min-h-screen bg-slate-50 flex flex-col">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <.link navigate={~p"/"} class="text-lg font-semibold text-slate-900 no-underline">
+        crit
+      </.link>
     </div>
+  </header>
 
-    <div class="mt-6 flex flex-col items-center gap-2 text-sm">
-      <%= if Application.get_env(:crit, :local_registration_enabled, true) do %>
-        <p class="text-(--crit-fg-muted)">
-          Don't have an account?
-          <.link
-            navigate={~p"/users/register"}
-            class="font-medium text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
-          >
-            Create an account
-          </.link>
-        </p>
-      <% end %>
+  <main class="flex-1 flex items-start justify-center py-16 px-4">
+    <div class="w-full max-w-md">
+      <h1 class="text-2xl font-bold text-slate-900 mb-2">Sign in to crit</h1>
+      <p class="text-sm text-slate-600 mb-6">
+        Welcome back.
+      </p>
 
-      <%= if Crit.Mailer.configured?() do %>
-        <p>
+      <div class="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+        <%= if @oauth_provider_label do %>
           <.link
-            navigate={~p"/users/reset_password"}
-            class="font-medium text-(--crit-fg-muted) hover:text-(--crit-fg-primary) no-underline"
+            navigate="/auth/login"
+            class="flex items-center justify-center w-full bg-slate-900 hover:bg-slate-800 text-white rounded-md px-4 py-2 text-sm font-medium transition no-underline"
           >
-            Forgot your password?
+            {@oauth_provider_label}
           </.link>
-        </p>
-      <% end %>
+          <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-slate-500">
+            <span class="flex-1 h-px bg-slate-200"></span>
+            <span>or</span>
+            <span class="flex-1 h-px bg-slate-200"></span>
+          </div>
+        <% end %>
+
+        <.form
+          for={@form}
+          id="login_form"
+          action={~p"/users/log_in"}
+          method="post"
+          phx-update="ignore"
+          class="flex flex-col gap-4"
+        >
+          <div>
+            <label
+              for={@form[:email].id}
+              class="block text-sm font-medium text-slate-900 mb-1.5"
+            >
+              Email
+            </label>
+            <input
+              type="email"
+              id={@form[:email].id}
+              name={@form[:email].name}
+              value={Phoenix.HTML.Form.normalize_value("email", @form[:email].value)}
+              required
+              autocomplete="email"
+              class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+          </div>
+
+          <div>
+            <label
+              for={@form[:password].id}
+              class="block text-sm font-medium text-slate-900 mb-1.5"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id={@form[:password].id}
+              name={@form[:password].name}
+              required
+              autocomplete="current-password"
+              class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+          </div>
+
+          <label class="inline-flex items-center gap-2 text-sm text-slate-900 cursor-pointer">
+            <input type="hidden" name={@form[:remember_me].name} value="false" />
+            <input
+              type="checkbox"
+              id={@form[:remember_me].id}
+              name={@form[:remember_me].name}
+              value="true"
+              class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            /> Keep me logged in
+          </label>
+
+          <button
+            type="submit"
+            class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium transition cursor-pointer"
+          >
+            Sign in
+          </button>
+        </.form>
+      </div>
+
+      <div class="mt-4 flex flex-col items-center gap-2 text-sm text-slate-600">
+        <%= if Application.get_env(:crit, :local_registration_enabled, true) do %>
+          <p>
+            Don't have an account?
+            <.link
+              navigate={~p"/users/register"}
+              class="font-medium text-blue-600 hover:text-blue-700 underline"
+            >
+              Create an account
+            </.link>
+          </p>
+        <% end %>
+
+        <%= if Crit.Mailer.configured?() do %>
+          <p>
+            <.link
+              navigate={~p"/users/reset_password"}
+              class="font-medium text-blue-600 hover:text-blue-700 underline"
+            >
+              Forgot your password?
+            </.link>
+          </p>
+        <% end %>
+      </div>
     </div>
-  </div>
+  </main>
 </div>

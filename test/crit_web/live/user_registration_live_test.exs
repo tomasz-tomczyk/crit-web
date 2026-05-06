@@ -18,7 +18,7 @@ defmodule CritWeb.UserRegistrationLiveTest do
 
   test "renders registration page", %{conn: conn} do
     {:ok, _lv, html} = live(conn, ~p"/users/register")
-    assert html =~ "Register"
+    assert html =~ "Create your account"
   end
 
   test "rejects invalid email", %{conn: conn} do
