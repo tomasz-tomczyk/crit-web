@@ -1,0 +1,47 @@
+<Layouts.app flash={@flash}>
+  <div class="mx-auto max-w-sm">
+    <.header>Sign in</.header>
+
+    <%= if @oauth_provider_label do %>
+      <div class="mt-4">
+        <.link
+          navigate="/auth/login"
+          class="block w-full rounded-md bg-zinc-900 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-zinc-700"
+        >
+          {@oauth_provider_label}
+        </.link>
+      </div>
+      <div class="my-4 text-center text-sm text-zinc-500">or</div>
+    <% end %>
+
+    <.form
+      for={@form}
+      id="login_form"
+      action="/users/log_in"
+      method="post"
+      phx-update="ignore"
+    >
+      <.input field={@form[:email]} type="email" label="Email" required />
+      <.input field={@form[:password]} type="password" label="Password" required />
+      <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
+      <.button class="w-full mt-4">Sign in</.button>
+    </.form>
+
+    <%= if Application.get_env(:crit, :local_registration_enabled, true) do %>
+      <p class="mt-4 text-center text-sm">
+        Don't have an account?
+        <.link navigate="/users/register" class="font-semibold underline">
+          Create an account
+        </.link>
+      </p>
+    <% end %>
+
+    <%= if Crit.Mailer.configured?() do %>
+      <p class="mt-2 text-center text-sm">
+        <.link navigate="/users/reset_password" class="font-semibold underline">
+          Forgot your password?
+        </.link>
+      </p>
+    <% end %>
+  </div>
+</Layouts.app>
