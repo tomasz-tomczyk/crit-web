@@ -51,6 +51,11 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Swoosh API client — we only use SMTP / Test / Local adapters (no HTTP API
+# adapters like Mailgun/SendGrid), so disable the default Hackney client to
+# avoid pulling in :hackney as a dependency.
+config :swoosh, :api_client, false
+
 # Sentry — disabled by default; enabled at runtime when SENTRY_DSN is set.
 # Self-hosted deployments without a DSN incur no network calls.
 config :sentry,
