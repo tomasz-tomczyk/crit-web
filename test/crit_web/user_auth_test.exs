@@ -4,6 +4,7 @@ defmodule CritWeb.UserAuthTest do
   use CritWeb.ConnCase, async: false
 
   alias Crit.Accounts.Scope
+  alias Crit.AccountsFixtures
   alias CritWeb.UserAuth
 
   describe "fetch_current_scope_for_user/2" do
@@ -107,6 +108,44 @@ defmodule CritWeb.UserAuthTest do
                UserAuth.on_mount(:require_authenticated_user, %{}, session, socket)
 
       assert id == user.id
+    end
+  end
+
+  describe "log_in_user/3" do
+    test "writes user_id to the session", %{conn: conn} do
+      user = AccountsFixtures.user_fixture()
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{})
+        |> UserAuth.log_in_user(user, %{})
+
+      assert get_session(conn, "user_id") == user.id
+    end
+
+    test "writes a remember_me cookie when requested", %{conn: conn} do
+      user = AccountsFixtures.user_fixture()
+
+      conn =
+        %{conn | secret_key_base: CritWeb.Endpoint.config(:secret_key_base)}
+        |> Plug.Test.init_test_session(%{})
+        |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+
+      assert conn.resp_cookies["_crit_web_user_remember_me"]
+      assert Crit.Repo.aggregate(Crit.Accounts.UserToken, :count) == 1
+    end
+  end
+
+  describe "log_out_user/1" do
+    test "clears session and remember-me cookie", %{conn: conn} do
+      user = AccountsFixtures.user_fixture()
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{"user_id" => user.id})
+        |> UserAuth.log_out_user()
+
+      refute get_session(conn, "user_id")
     end
   end
 

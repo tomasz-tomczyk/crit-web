@@ -398,7 +398,6 @@ defmodule CritWeb.Layouts do
   and at the bottom of the mobile drawer.
   """
   attr :authenticated, :boolean, default: true
-  attr :password_required, :boolean, default: false
   attr :current_scope, :any, default: nil
   attr :show_overview_link, :boolean, default: false
   attr :current_page, :atom, default: nil
@@ -603,15 +602,6 @@ defmodule CritWeb.Layouts do
                 </.link>
               </div>
             </div>
-          <% else %>
-            <%= if @password_required and not @authenticated do %>
-              <a
-                href="#login"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) transition-colors max-sm:hidden"
-              >
-                Sign in
-              </a>
-            <% end %>
           <% end %>
 
           <.theme_toggle />
@@ -683,17 +673,6 @@ defmodule CritWeb.Layouts do
               <.icon name="hero-arrow-right-on-rectangle-mini" class="size-4" />
               <span>Sign out</span>
             </.link>
-          <% else %>
-            <%= if @password_required and @authenticated do %>
-              <.form for={%{}} action={~p"/auth/logout"} method="post" id="logout-form-mobile">
-                <button
-                  type="submit"
-                  class="text-sm text-(--crit-red) hover:opacity-80 transition-opacity cursor-pointer py-2 px-2"
-                >
-                  Sign out
-                </button>
-              </.form>
-            <% end %>
           <% end %>
         </div>
       </div>

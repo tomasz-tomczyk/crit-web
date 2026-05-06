@@ -84,15 +84,6 @@ defmodule CritWeb.OverviewLiveTest do
       refute html =~ "All Reviews"
     end
 
-    test "shows password form when no OAuth configured", %{conn: conn} do
-      without_oauth(%{})
-
-      {:ok, _view, html} = live(conn, ~p"/overview")
-
-      assert html =~ "password"
-      refute html =~ "Sign in with OAuth"
-    end
-
     test "shows OAuth button when OAuth configured", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/overview")
 
@@ -128,32 +119,6 @@ defmodule CritWeb.OverviewLiveTest do
 
       assert html =~ ~r/All Reviews[^<]*<[^>]*>0</
       assert html =~ "No reviews yet"
-    end
-  end
-
-  describe "with admin password and no OAuth" do
-    setup do
-      Application.put_env(:crit, :admin_password, "secret123")
-    end
-
-    test "authenticated via password session shows reviews", %{conn: conn} do
-      without_oauth(%{})
-      review = review_fixture()
-
-      conn = init_test_session(conn, %{admin_authenticated: true})
-      {:ok, _view, html} = live(conn, ~p"/overview")
-
-      assert html =~ "All Reviews"
-      assert html =~ hd(review.files).file_path
-    end
-
-    test "unauthenticated password session shows login form", %{conn: conn} do
-      without_oauth(%{})
-
-      {:ok, _view, html} = live(conn, ~p"/overview")
-
-      assert html =~ "password"
-      refute html =~ "All Reviews"
     end
   end
 

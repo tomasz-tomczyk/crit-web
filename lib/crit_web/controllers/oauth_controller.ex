@@ -2,6 +2,7 @@ defmodule CritWeb.OAuthController do
   use CritWeb, :controller
 
   alias Crit.Accounts
+  alias CritWeb.UserAuth
 
   @doc "Initiates OAuth: redirects to the configured provider's authorization URL."
   def request(conn, params) do
@@ -42,8 +43,7 @@ defmodule CritWeb.OAuthController do
               conn
               |> delete_session(:oauth_session_params)
               |> delete_session(:oauth_return_to)
-              |> configure_session(renew: true)
-              |> put_session("user_id", user.id)
+              |> UserAuth.log_in_user(user, %{})
 
             if device_code_id do
               # Keep device_code_id in session; redirect to consent screen
@@ -70,7 +70,7 @@ defmodule CritWeb.OAuthController do
   @doc "Logs out: drops the session and redirects to the homepage."
   def delete(conn, _params) do
     conn
-    |> configure_session(drop: true)
+    |> UserAuth.log_out_user()
     |> redirect(to: ~p"/")
   end
 

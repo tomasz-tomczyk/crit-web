@@ -12,6 +12,63 @@ defmodule CritWeb.UserAuth do
   alias Crit.Accounts
   alias Crit.Accounts.Scope
 
+  @remember_me_cookie "_crit_web_user_remember_me"
+  @remember_me_options [sign: true, max_age: 60 * 60 * 24 * 60, same_site: "Lax"]
+
+  # ---------------------------------------------------------------------------
+  # Session login / logout
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Logs the user in via session, optionally setting a remember-me cookie.
+
+  `params` may include `"remember_me" => "true"`.
+  """
+  def log_in_user(conn, user, params \\ %{}) do
+    conn
+    |> renew_session()
+    |> put_session("user_id", user.id)
+    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(user.id)}")
+    |> maybe_write_remember_me(user, params)
+  end
+
+  defp renew_session(conn) do
+    conn
+    |> configure_session(renew: true)
+    |> clear_session()
+  end
+
+  defp maybe_write_remember_me(conn, user, %{"remember_me" => "true"}) do
+    {plaintext, struct} =
+      Crit.Accounts.UserToken.build_hashed_token(user, "remember_me", user.email)
+
+    Crit.Repo.insert!(struct)
+    put_resp_cookie(conn, @remember_me_cookie, plaintext, @remember_me_options)
+  end
+
+  defp maybe_write_remember_me(conn, _user, _), do: conn
+
+  @doc "Clears session + remember-me cookie. Deletes the remember-me token if present."
+  def log_out_user(conn) do
+    user_id = get_session(conn, "user_id")
+
+    if user_id do
+      case Accounts.get_user(user_id) do
+        {:ok, user} ->
+          Crit.Repo.delete_all(
+            Crit.Accounts.UserToken.by_user_and_contexts_query(user, ["remember_me"])
+          )
+
+        _ ->
+          :ok
+      end
+    end
+
+    conn
+    |> renew_session()
+    |> delete_resp_cookie(@remember_me_cookie)
+  end
+
   # ---------------------------------------------------------------------------
   # Plug
   # ---------------------------------------------------------------------------
@@ -118,20 +175,11 @@ defmodule CritWeb.UserAuth do
   def on_mount(:require_selfhosted_auth, _params, session, socket) do
     if Application.get_env(:crit, :selfhosted) do
       socket = assign_scope(socket, session)
-      password_required = Application.get_env(:crit, :admin_password) != nil
-      admin_authenticated = Map.get(session, "admin_authenticated", false) == true
       oauth_configured = Crit.Config.oauth_configured?()
-
-      authenticated =
-        cond do
-          oauth_configured -> socket.assigns.current_scope.user != nil
-          password_required -> admin_authenticated
-          true -> true
-        end
+      authenticated = if oauth_configured, do: socket.assigns.current_scope.user != nil, else: true
 
       {:cont,
        socket
-       |> Phoenix.Component.assign(:password_required, password_required)
        |> Phoenix.Component.assign(:authenticated, authenticated)
        |> Phoenix.Component.assign(:oauth_configured, oauth_configured)}
     else
