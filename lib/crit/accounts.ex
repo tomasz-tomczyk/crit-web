@@ -70,20 +70,18 @@ defmodule Crit.Accounts do
       avatar_url: oauth_params["picture"]
     }
 
-    if is_nil(provider_uid) do
-      %User{} |> User.oauth_changeset(attrs) |> Repo.insert()
-    else
-      case Repo.get_by(User, provider: provider, provider_uid: provider_uid) do
-        nil ->
-          %User{}
-          |> User.oauth_changeset(attrs)
-          |> Repo.insert()
+    cond do
+      is_nil(provider_uid) ->
+        %User{} |> User.oauth_changeset(attrs) |> Repo.insert()
 
-        existing ->
-          existing
-          |> User.oauth_changeset(attrs)
-          |> Repo.update()
-      end
+      existing = Repo.get_by(User, provider: provider, provider_uid: provider_uid) ->
+        existing |> User.oauth_changeset(attrs) |> Repo.update()
+
+      (existing = attrs.email && get_user_by_email(attrs.email)) ->
+        existing |> User.oauth_changeset(attrs) |> Repo.update()
+
+      true ->
+        %User{} |> User.oauth_changeset(attrs) |> Repo.insert()
     end
   end
 

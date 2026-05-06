@@ -296,6 +296,40 @@ defmodule Crit.AccountsTest do
     end
   end
 
+  describe "find_or_create_from_oauth/2 — email linking" do
+    alias Crit.AccountsFixtures
+
+    test "links to an existing local-only user with matching email" do
+      local = AccountsFixtures.user_fixture(email: "shared@example.com")
+
+      {:ok, linked} =
+        Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "uid-123",
+          "email" => "shared@example.com",
+          "name" => "OAuth"
+        })
+
+      assert linked.id == local.id
+      assert linked.provider == "github"
+      assert linked.provider_uid == "uid-123"
+      assert is_binary(linked.hashed_password)
+    end
+
+    test "still creates a new row when emails don't match" do
+      _local = AccountsFixtures.user_fixture(email: "alice@example.com")
+
+      {:ok, new_user} =
+        Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "uid-999",
+          "email" => "bob@example.com",
+          "name" => "Bob"
+        })
+
+      refute new_user.hashed_password
+      assert new_user.email == "bob@example.com"
+    end
+  end
+
   describe "deliver_update_email_instructions / update_user_email" do
     alias Crit.AccountsFixtures
     import Swoosh.TestAssertions
