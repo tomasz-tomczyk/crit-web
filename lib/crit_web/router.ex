@@ -133,7 +133,12 @@ defmodule CritWeb.Router do
 
   # Local-auth registration — gated by both selfhosted and local-registration flags.
   scope "/", CritWeb do
-    pipe_through [:browser, :noindex, CritWeb.Plugs.SelfhostedOnly, CritWeb.Plugs.RegistrationEnabled]
+    pipe_through [
+      :browser,
+      :noindex,
+      CritWeb.Plugs.SelfhostedOnly,
+      CritWeb.Plugs.RegistrationEnabled
+    ]
 
     post "/users/register", UserSessionController, :register
 

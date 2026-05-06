@@ -33,6 +33,7 @@ defmodule CritWeb.UserPasswordResetTest do
       user = AccountsFixtures.user_fixture()
 
       parent = self()
+
       {:ok, _} =
         Crit.Accounts.deliver_user_reset_password_instructions(user, fn token ->
           send(parent, {:token, token})
@@ -44,15 +45,25 @@ defmodule CritWeb.UserPasswordResetTest do
       {:ok, lv, _} = live(conn, ~p"/users/reset_password/#{plaintext}")
 
       lv
-      |> form("#reset_form", user: %{password: "new-password-1234", password_confirmation: "new-password-1234"})
+      |> form("#reset_form",
+        user: %{password: "new-password-1234", password_confirmation: "new-password-1234"}
+      )
       |> render_submit()
 
-      refute Crit.User.valid_password?(Crit.Accounts.get_user_by_email(user.email), AccountsFixtures.valid_user_password())
-      assert Crit.User.valid_password?(Crit.Accounts.get_user_by_email(user.email), "new-password-1234")
+      refute Crit.User.valid_password?(
+               Crit.Accounts.get_user_by_email(user.email),
+               AccountsFixtures.valid_user_password()
+             )
+
+      assert Crit.User.valid_password?(
+               Crit.Accounts.get_user_by_email(user.email),
+               "new-password-1234"
+             )
     end
 
     test "invalid token redirects to login with error", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/users/log_in"}}} = live(conn, ~p"/users/reset_password/garbage")
+      assert {:error, {:redirect, %{to: "/users/log_in"}}} =
+               live(conn, ~p"/users/reset_password/garbage")
     end
   end
 end

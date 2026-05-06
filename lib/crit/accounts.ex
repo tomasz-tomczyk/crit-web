@@ -77,7 +77,7 @@ defmodule Crit.Accounts do
       existing = Repo.get_by(User, provider: provider, provider_uid: provider_uid) ->
         existing |> User.oauth_changeset(attrs) |> Repo.update()
 
-      (existing = attrs.email && get_user_by_email(attrs.email)) ->
+      existing = attrs.email && get_user_by_email(attrs.email) ->
         existing |> User.oauth_changeset(attrs) |> Repo.update()
 
       true ->
@@ -215,7 +215,8 @@ defmodule Crit.Accounts do
   plaintext token → URL string (the LiveView/controller knows how to build
   the URL from the endpoint).
   """
-  def deliver_user_reset_password_instructions(%User{} = user, url_fun) when is_function(url_fun, 1) do
+  def deliver_user_reset_password_instructions(%User{} = user, url_fun)
+      when is_function(url_fun, 1) do
     {plaintext, struct} = UserToken.build_hashed_token(user, "reset_password", user.email)
     Repo.insert!(struct)
     UserNotifier.deliver_reset_password_instructions(user, url_fun.(plaintext))
@@ -238,7 +239,10 @@ defmodule Crit.Accounts do
   def reset_user_password(%User{} = user, attrs) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
-    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["reset_password", "remember_me"]))
+    |> Ecto.Multi.delete_all(
+      :tokens,
+      UserToken.by_user_and_contexts_query(user, ["reset_password", "remember_me"])
+    )
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
@@ -277,10 +281,15 @@ defmodule Crit.Accounts do
   end
 
   @doc "Sends a change-email confirmation link to the proposed new address."
-  def deliver_update_email_instructions(%User{} = user, new_email, url_fun) when is_function(url_fun, 1) do
+  def deliver_update_email_instructions(%User{} = user, new_email, url_fun)
+      when is_function(url_fun, 1) do
     {plaintext, struct} = UserToken.build_hashed_token(user, "change_email", new_email)
     Repo.insert!(struct)
-    UserNotifier.deliver_update_email_instructions(%{user | email: new_email}, url_fun.(plaintext))
+
+    UserNotifier.deliver_update_email_instructions(
+      %{user | email: new_email},
+      url_fun.(plaintext)
+    )
   end
 
   @doc """
@@ -303,7 +312,10 @@ defmodule Crit.Accounts do
          true <- uid == user.id do
       Ecto.Multi.new()
       |> Ecto.Multi.update(:user, User.email_changeset(user, %{email: new_email}))
-      |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["change_email"]))
+      |> Ecto.Multi.delete_all(
+        :tokens,
+        UserToken.by_user_and_contexts_query(user, ["change_email"])
+      )
       |> Repo.transaction()
       |> case do
         {:ok, %{user: u}} -> {:ok, u}

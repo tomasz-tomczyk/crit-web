@@ -238,7 +238,9 @@ defmodule Crit.AccountsTest do
 
     test "inserts a token and sends an email" do
       user = AccountsFixtures.user_fixture()
-      {:ok, _} = Accounts.deliver_user_reset_password_instructions(user, &"https://t.test/r/#{&1}")
+
+      {:ok, _} =
+        Accounts.deliver_user_reset_password_instructions(user, &"https://t.test/r/#{&1}")
 
       assert_email_sent(fn email -> assert email.text_body =~ "https://t.test/r/" end)
       assert Crit.Repo.aggregate(Crit.Accounts.UserToken, :count) == 1
@@ -253,7 +255,10 @@ defmodule Crit.AccountsTest do
       {:ok, _} = Accounts.deliver_user_reset_password_instructions(user, &"x/#{&1}")
 
       {:ok, updated} =
-        Accounts.reset_user_password(user, %{password: "brand-new-pw-1234", password_confirmation: "brand-new-pw-1234"})
+        Accounts.reset_user_password(user, %{
+          password: "brand-new-pw-1234",
+          password_confirmation: "brand-new-pw-1234"
+        })
 
       refute Crit.User.valid_password?(updated, AccountsFixtures.valid_user_password())
       assert Crit.User.valid_password?(updated, "brand-new-pw-1234")
@@ -262,7 +267,10 @@ defmodule Crit.AccountsTest do
 
     test "rejects too-short password" do
       user = AccountsFixtures.user_fixture()
-      {:error, changeset} = Accounts.reset_user_password(user, %{password: "short", password_confirmation: "short"})
+
+      {:error, changeset} =
+        Accounts.reset_user_password(user, %{password: "short", password_confirmation: "short"})
+
       assert "should be at least 12 character(s)" in errors_on(changeset).password
     end
   end

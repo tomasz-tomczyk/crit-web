@@ -92,7 +92,9 @@ defmodule Crit.UserTest do
     test "requires provider and provider_uid" do
       changeset = User.oauth_changeset(%User{}, %{})
       refute changeset.valid?
-      assert %{provider: ["can't be blank"], provider_uid: ["can't be blank"]} = errors_on(changeset)
+
+      assert %{provider: ["can't be blank"], provider_uid: ["can't be blank"]} =
+               errors_on(changeset)
     end
 
     test "invalid without provider" do

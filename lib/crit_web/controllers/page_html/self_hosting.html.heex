@@ -197,12 +197,17 @@
             <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker compose exec crit-web \</span>
           </div>
           <div class="pl-4">
-            <span class="text-(--crit-fg-primary)">/app/bin/crit eval 'Mix.Tasks.Crit.CreateUser.run(["you@example.com", "secret-password"])'</span>
+            <span class="text-(--crit-fg-primary)">
+              /app/bin/crit eval 'Mix.Tasks.Crit.CreateUser.run(["you@example.com", "secret-password"])'
+            </span>
           </div>
         </div>
       </div>
 
-      <p phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-4 max-w-[640px]">
+      <p
+        phx-no-format
+        class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-4 max-w-[640px]"
+      >
         In a development checkout the same task runs as <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">mix crit.create_user EMAIL PASSWORD</code>.
       </p>
     </section>
@@ -353,7 +358,9 @@
           </div>
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
-              <code class="text-sm font-mono text-(--crit-fg-primary)">LOCAL_REGISTRATION_ENABLED</code>
+              <code class="text-sm font-mono text-(--crit-fg-primary)">
+                LOCAL_REGISTRATION_ENABLED
+              </code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">true</span>
             </div>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
@@ -460,7 +467,9 @@
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">SMTP_FROM</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">no-reply@localhost</span>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">
+                no-reply@localhost
+              </span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">From address used on outgoing email.</p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
