@@ -350,20 +350,6 @@
     </div>
   </div>
 
-  <div id="crit-toc" class="crit-toc crit-toc-hidden">
-    <div class="crit-toc-header">
-      <span>Contents</span>
-      <button
-        class="crit-toc-close"
-        title="Close table of contents"
-        aria-label="Close table of contents"
-      >
-        &#x2715;
-      </button>
-    </div>
-    <ul class="crit-toc-list"></ul>
-  </div>
-
   <% owner? = !!(@current_scope.user && @review.user_id == @current_scope.user.id) %>
   <% author = @review.user %>
   <% comment_count =
@@ -565,6 +551,21 @@
     The only dynamic Elixir lives inside `#document-renderer`, which is
     itself phx-update="ignore" and reads its own data-* attrs via the hook.
   --%>
+  <div class="crit-toc-anchor">
+    <div id="crit-toc" class="crit-toc crit-toc-hidden">
+      <div class="crit-toc-header">
+        <span>Contents</span>
+        <button
+          class="crit-toc-close"
+          title="Close table of contents"
+          aria-label="Close table of contents"
+        >
+          &#x2715;
+        </button>
+      </div>
+      <ul class="crit-toc-list"></ul>
+    </div>
+  </div>
   <div id="crit-main-layout" class="crit-main-layout" phx-update="ignore">
     <div id="fileTreePanel" class="tree-panel" style="display:none">
       <div id="treeConversationSection" class="tree-section--conversation"></div>

@@ -2837,14 +2837,28 @@ body.sidebar-resizing * {
 }
 
 /* ===== Table of Contents ===== */
+/*
+  Anchor is a zero-height sticky element placed where the document
+  body begins (below the page header + review meta). The TOC is
+  absolutely positioned inside it, so at scroll=0 it appears inline
+  with the document. As the page scrolls past, the anchor sticks
+  just under the sticky page header so the TOC never overlaps it.
+*/
+.crit-toc-anchor {
+  position: sticky;
+  top: 56px;
+  height: 0;
+  z-index: 90;
+  pointer-events: none;
+}
 .crit-toc {
-  position: fixed;
-  top: 72px;
+  position: absolute;
+  top: 0;
   right: 16px;
   width: 210px;
-  max-height: calc(100vh - 88px);
+  max-height: calc(100vh - 72px);
   overflow-y: auto;
-  z-index: 90;
+  pointer-events: auto;
   background: var(--crit-editor-bg-card);
   border: 1px solid var(--crit-border);
   border-radius: 8px;
