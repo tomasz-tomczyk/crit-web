@@ -1,5 +1,5 @@
 defmodule CritWeb.RawControllerTest do
-  use CritWeb.ConnCase, async: true
+  use CritWeb.ConnCase, async: false
 
   import Crit.ReviewsFixtures
 
@@ -76,6 +76,88 @@ defmodule CritWeb.RawControllerTest do
       conn = get(conn, "/r/" <> review.token <> "/raw/" <> "héllo.txt")
 
       assert response(conn, 404)
+    end
+  end
+
+  describe "auth gate for selfhosted with OAuth" do
+    setup do
+      original_selfhosted = Application.get_env(:crit, :selfhosted)
+      original_oauth = Application.get_env(:crit, :oauth_provider)
+
+      Application.put_env(:crit, :selfhosted, true)
+      Application.put_env(:crit, :oauth_provider, :github)
+
+      on_exit(fn ->
+        if is_nil(original_selfhosted),
+          do: Application.delete_env(:crit, :selfhosted),
+          else: Application.put_env(:crit, :selfhosted, original_selfhosted)
+
+        if is_nil(original_oauth),
+          do: Application.delete_env(:crit, :oauth_provider),
+          else: Application.put_env(:crit, :oauth_provider, original_oauth)
+      end)
+
+      :ok
+    end
+
+    test "redirects unauthenticated visitor to /auth/login with return_to", %{conn: conn} do
+      review = review_fixture(%{files: [file("lib/foo.ex", "secret")]})
+
+      conn = get(conn, ~p"/r/#{review.token}/raw/lib/foo.ex")
+
+      assert redirected_to(conn) =~ "/auth/login"
+      assert redirected_to(conn) =~ "return_to="
+      assert redirected_to(conn) =~ URI.encode_www_form("/r/#{review.token}/raw/lib/foo.ex")
+      # Body must not include the file content.
+      refute response(conn, 302) =~ "secret"
+    end
+
+    test "serves file content when an authenticated user is in the session", %{conn: conn} do
+      review = review_fixture(%{files: [file("lib/foo.ex", "defmodule Foo, do: :ok\n")]})
+
+      {:ok, user} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "raw_uid_#{System.unique_integer()}",
+          "email" => "raw@example.com",
+          "name" => "Raw User"
+        })
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{user_id: user.id})
+        |> get(~p"/r/#{review.token}/raw/lib/foo.ex")
+
+      assert response(conn, 200) == "defmodule Foo, do: :ok\n"
+    end
+  end
+
+  describe "without selfhosted+OAuth (public/hosted mode)" do
+    setup do
+      original_selfhosted = Application.get_env(:crit, :selfhosted)
+      original_oauth = Application.get_env(:crit, :oauth_provider)
+
+      Application.put_env(:crit, :selfhosted, false)
+      Application.delete_env(:crit, :oauth_provider)
+
+      on_exit(fn ->
+        if is_nil(original_selfhosted),
+          do: Application.delete_env(:crit, :selfhosted),
+          else: Application.put_env(:crit, :selfhosted, original_selfhosted)
+
+        if is_nil(original_oauth),
+          do: Application.delete_env(:crit, :oauth_provider),
+          else: Application.put_env(:crit, :oauth_provider, original_oauth)
+      end)
+
+      :ok
+    end
+
+    test "raw URL is reachable without auth", %{conn: conn} do
+      review = review_fixture(%{files: [file("lib/foo.ex", "defmodule Foo, do: :ok\n")]})
+
+      conn = get(conn, ~p"/r/#{review.token}/raw/lib/foo.ex")
+
+      assert response(conn, 200) == "defmodule Foo, do: :ok\n"
     end
   end
 end
