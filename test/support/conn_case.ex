@@ -35,4 +35,15 @@ defmodule CritWeb.ConnCase do
     Crit.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Logs the given `user` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_user(conn, user) do
+    conn
+    |> Plug.Test.init_test_session(%{})
+    |> CritWeb.UserAuth.log_in_user(user, %{})
+  end
 end
