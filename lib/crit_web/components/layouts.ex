@@ -554,6 +554,8 @@ defmodule CritWeb.Layouts do
                 </.link>
               </div>
             </div>
+          <% else %>
+            <.sign_in_button class="mr-1.5" />
           <% end %>
 
           <.theme_toggle />
@@ -625,6 +627,10 @@ defmodule CritWeb.Layouts do
               <.icon name="hero-arrow-right-on-rectangle-mini" class="size-4" />
               <span>Sign out</span>
             </.link>
+          <% else %>
+            <div class="px-2 py-2.5">
+              <.sign_in_button />
+            </div>
           <% end %>
         </div>
       </div>

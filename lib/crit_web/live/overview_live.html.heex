@@ -101,36 +101,7 @@
           <.icon name="hero-lock-closed" class="size-4 inline-block mr-1 -mt-0.5" />
           Sign in to view and manage reviews
         </div>
-        <%= if @oauth_configured do %>
-          <a
-            href={~p"/auth/login"}
-            class="inline-flex items-center gap-2 rounded-lg bg-(--crit-brand-cta) hover:bg-(--crit-brand-cta-hover) px-4 py-2 text-sm font-bold text-(--crit-fg-on-brand) transition-colors"
-          >
-            Sign in with OAuth
-          </a>
-        <% end %>
-        <%= if not @oauth_configured do %>
-          <.form
-            for={%{}}
-            action={~p"/auth/login"}
-            method="post"
-            class="flex items-center justify-center gap-3 max-w-sm mx-auto"
-            id="login-form"
-          >
-            <input
-              type="password"
-              name="password"
-              placeholder="Admin password"
-              class="flex-1 bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand)"
-            />
-            <button
-              type="submit"
-              class="px-5 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-all cursor-pointer"
-            >
-              Sign in
-            </button>
-          </.form>
-        <% end %>
+        <Layouts.sign_in_button return_to="/overview" />
       </div>
     <% else %>
       <div class="mt-10 pt-6 border-t border-(--crit-border)">

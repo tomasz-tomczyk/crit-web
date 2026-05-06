@@ -96,6 +96,32 @@ defmodule CritWeb.LayoutsTest do
     end
   end
 
+  describe "/overview header (selfhost)" do
+    test "renders sign-in link when unauthenticated in selfhost+local-auth mode",
+         %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      Application.put_env(:crit, :local_registration_enabled, true)
+      Application.delete_env(:crit, :oauth_provider)
+
+      html = conn |> get(~p"/overview") |> html_response(200)
+
+      assert html =~ "Sign in"
+      assert html =~ ~s|href="/users/log_in"|
+    end
+
+    test "hides sign-in link when neither registration nor oauth configured",
+         %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      Application.put_env(:crit, :local_registration_enabled, false)
+      Application.delete_env(:crit, :oauth_provider)
+
+      html = conn |> get(~p"/overview") |> html_response(200)
+
+      refute html =~ ~s|href="/users/log_in"|
+      refute html =~ ~s|href="/auth/login|
+    end
+  end
+
   describe "authenticated header" do
     test "renders Settings + Log out (DELETE) in selfhost mode", %{conn: conn} do
       configure(true, false)

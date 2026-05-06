@@ -2,14 +2,20 @@ defmodule CritWeb.OverviewLiveTest do
   use CritWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
+  import Crit.AccountsFixtures
   import Crit.ReviewsFixtures
 
-  setup do
+  setup %{conn: conn} do
     Application.put_env(:crit, :selfhosted, true)
 
     on_exit(fn ->
       Application.delete_env(:crit, :selfhosted)
     end)
+
+    # /overview only renders the review list for authenticated users in
+    # selfhost+local-auth mode. Sign in for tests that exercise that surface.
+    user = user_fixture()
+    {:ok, conn: log_in_user(conn, user), user: user}
   end
 
   defp without_oauth(ctx) do

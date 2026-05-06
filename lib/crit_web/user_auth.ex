@@ -180,10 +180,8 @@ defmodule CritWeb.UserAuth do
   def on_mount(:require_selfhosted_auth, _params, session, socket) do
     if Application.get_env(:crit, :selfhosted) do
       socket = assign_scope(socket, session)
+      authenticated = socket.assigns.current_scope.user != nil
       oauth_configured = Crit.Config.oauth_configured?()
-
-      authenticated =
-        if oauth_configured, do: socket.assigns.current_scope.user != nil, else: true
 
       {:cont,
        socket
