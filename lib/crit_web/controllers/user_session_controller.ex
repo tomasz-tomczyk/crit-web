@@ -4,9 +4,6 @@ defmodule CritWeb.UserSessionController do
   alias Crit.Accounts
   alias CritWeb.UserAuth
 
-  # NOTE: plain string redirect targets used here pending Task 16, which wires
-  # /users/log_in, /users/log_out, and /dashboard into the router and switches
-  # these to ~p sigils.
   def create(conn, %{"user" => user_params}) do
     %{"email" => email, "password" => password} = user_params
 
@@ -14,13 +11,13 @@ defmodule CritWeb.UserSessionController do
       nil ->
         conn
         |> put_flash(:error, "Invalid email or password")
-        |> redirect(to: "/users/log_in")
+        |> redirect(to: ~p"/users/log_in")
 
       user ->
         conn
         |> put_flash(:info, "Welcome back!")
         |> UserAuth.log_in_user(user, user_params)
-        |> redirect(to: "/dashboard")
+        |> redirect(to: ~p"/dashboard")
     end
   end
 
@@ -30,12 +27,12 @@ defmodule CritWeb.UserSessionController do
         conn
         |> put_flash(:info, "Welcome to crit!")
         |> UserAuth.log_in_user(user, %{})
-        |> redirect(to: "/dashboard")
+        |> redirect(to: ~p"/dashboard")
 
       {:error, _changeset} ->
         conn
         |> put_flash(:error, "Registration failed. Please check the form and try again.")
-        |> redirect(to: "/users/register")
+        |> redirect(to: ~p"/users/register")
     end
   end
 
@@ -46,12 +43,12 @@ defmodule CritWeb.UserSessionController do
       {:ok, _} ->
         conn
         |> put_flash(:info, "Email updated")
-        |> redirect(to: "/users/settings")
+        |> redirect(to: ~p"/users/settings")
 
       _ ->
         conn
         |> put_flash(:error, "Email change link is invalid or expired")
-        |> redirect(to: "/users/settings")
+        |> redirect(to: ~p"/users/settings")
     end
   end
 
@@ -59,6 +56,6 @@ defmodule CritWeb.UserSessionController do
     conn
     |> put_flash(:info, "Logged out")
     |> UserAuth.log_out_user()
-    |> redirect(to: "/")
+    |> redirect(to: ~p"/")
   end
 end

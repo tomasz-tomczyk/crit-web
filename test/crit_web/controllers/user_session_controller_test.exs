@@ -1,6 +1,5 @@
 defmodule CritWeb.UserSessionControllerTest do
-  use CritWeb.ConnCase, async: true
-  @moduletag :skip
+  use CritWeb.ConnCase, async: false
 
   alias Crit.AccountsFixtures
 

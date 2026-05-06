@@ -9,7 +9,7 @@ defmodule CritWeb.UserResetPasswordLive do
         {:ok,
          socket
          |> put_flash(:error, "Reset link is invalid or has expired.")
-         |> redirect(to: "/users/log_in")}
+         |> redirect(to: ~p"/users/log_in")}
 
       user ->
         changeset = Accounts.change_user_password(user)
@@ -23,7 +23,7 @@ defmodule CritWeb.UserResetPasswordLive do
         {:noreply,
          socket
          |> put_flash(:info, "Password reset. Sign in with your new password.")
-         |> redirect(to: "/users/log_in")}
+         |> redirect(to: ~p"/users/log_in")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset, as: "user"))}

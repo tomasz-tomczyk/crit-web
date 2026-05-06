@@ -17,7 +17,7 @@
     <.form
       for={@form}
       id="login_form"
-      action="/users/log_in"
+      action={~p"/users/log_in"}
       method="post"
       phx-update="ignore"
     >
@@ -30,7 +30,7 @@
     <%= if Application.get_env(:crit, :local_registration_enabled, true) do %>
       <p class="mt-4 text-center text-sm">
         Don't have an account?
-        <.link navigate="/users/register" class="font-semibold underline">
+        <.link navigate={~p"/users/register"} class="font-semibold underline">
           Create an account
         </.link>
       </p>
@@ -38,7 +38,7 @@
 
     <%= if Crit.Mailer.configured?() do %>
       <p class="mt-2 text-center text-sm">
-        <.link navigate="/users/reset_password" class="font-semibold underline">
+        <.link navigate={~p"/users/reset_password"} class="font-semibold underline">
           Forgot your password?
         </.link>
       </p>

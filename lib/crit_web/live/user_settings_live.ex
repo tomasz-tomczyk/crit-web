@@ -34,7 +34,7 @@ defmodule CritWeb.UserSettingsLive do
           user,
           applied_user.email,
           fn token ->
-            unverified_url(socket, "/users/settings/confirm_email/#{token}")
+            url(~p"/users/settings/confirm_email/#{token}")
           end
         )
 

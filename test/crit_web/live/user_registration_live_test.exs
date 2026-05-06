@@ -1,7 +1,5 @@
 defmodule CritWeb.UserRegistrationLiveTest do
-  use CritWeb.ConnCase, async: true
-
-  @moduletag :skip
+  use CritWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   alias Crit.AccountsFixtures

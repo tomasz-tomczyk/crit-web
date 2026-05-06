@@ -1,6 +1,5 @@
 defmodule CritWeb.UserPasswordResetTest do
   use CritWeb.ConnCase, async: false
-  @moduletag :skip
 
   import Phoenix.LiveViewTest
   import Swoosh.TestAssertions

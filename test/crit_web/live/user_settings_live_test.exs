@@ -1,6 +1,5 @@
 defmodule CritWeb.UserSettingsLiveTest do
   use CritWeb.ConnCase, async: false
-  @moduletag :skip
 
   import Phoenix.LiveViewTest
   import Swoosh.TestAssertions
@@ -69,7 +68,7 @@ defmodule CritWeb.UserSettingsLiveTest do
   end
 
   describe "OAuth-only user (no hashed_password)" do
-    test "sets password without current-password field; UI shows 'Set a password'", %{conn: conn} do
+    test "sets password without current-password field; UI shows 'Set a password'", %{conn: _conn} do
       oauth_user = AccountsFixtures.oauth_user_fixture()
       conn = log_in_user(Phoenix.ConnTest.build_conn(), oauth_user)
 

@@ -61,11 +61,7 @@ defmodule CritWeb.Router do
     get "/robots.txt", PageController, :robots_txt
 
     post "/set-name", ReviewController, :set_name
-    # POST /auth/login = legacy admin password login (selfhosted instances).
-    # GET  /auth/login = OAuth provider redirect (initiates the OAuth flow).
-    post "/auth/login", AuthController, :login
-    post "/auth/logout", AuthController, :logout
-
+    # GET /auth/login = OAuth provider redirect (initiates the OAuth flow).
     get "/auth/login", OAuthController, :request
     get "/auth/login/callback", OAuthController, :callback
     delete "/auth/logout", OAuthController, :delete
@@ -111,6 +107,39 @@ defmodule CritWeb.Router do
       on_mount: [{CritWeb.UserAuth, :require_selfhosted_auth}],
       session: {CritWeb.Live.SessionHelper, :admin_session_opts, []} do
       live "/overview", OverviewLive, :index
+    end
+  end
+
+  # Local-auth routes — only mounted on selfhosted instances.
+  scope "/", CritWeb do
+    pipe_through [:browser, :noindex, CritWeb.Plugs.SelfhostedOnly]
+
+    post "/users/log_in", UserSessionController, :create
+    delete "/users/log_out", UserSessionController, :delete
+    get "/users/settings/confirm_email/:token", UserSessionController, :confirm_email
+
+    live_session :current_user,
+      on_mount: [{CritWeb.UserAuth, :mount_current_scope_for_user}] do
+      live "/users/log_in", UserLoginLive, :new
+      live "/users/reset_password", UserForgotPasswordLive, :new
+      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+    end
+
+    live_session :authenticated_user,
+      on_mount: [{CritWeb.UserAuth, :require_authenticated_user}] do
+      live "/users/settings", UserSettingsLive, :edit
+    end
+  end
+
+  # Local-auth registration — gated by both selfhosted and local-registration flags.
+  scope "/", CritWeb do
+    pipe_through [:browser, :noindex, CritWeb.Plugs.SelfhostedOnly, CritWeb.Plugs.RegistrationEnabled]
+
+    post "/users/register", UserSessionController, :register
+
+    live_session :registration,
+      on_mount: [{CritWeb.UserAuth, :mount_current_scope_for_user}] do
+      live "/users/register", UserRegistrationLive, :new
     end
   end
 

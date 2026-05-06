@@ -1,18 +1,22 @@
 defmodule CritWeb.UserLoginLiveTest do
   use CritWeb.ConnCase, async: false
 
-  @moduletag :skip
-
   import Phoenix.LiveViewTest
 
   setup do
+    prev_oauth = Application.get_env(:crit, :oauth_provider)
     Application.put_env(:crit, :selfhosted, true)
     Application.put_env(:crit, :local_registration_enabled, true)
 
     on_exit(fn ->
       Application.put_env(:crit, :selfhosted, false)
       Application.put_env(:crit, :local_registration_enabled, true)
-      Application.delete_env(:crit, :oauth_provider)
+
+      if prev_oauth do
+        Application.put_env(:crit, :oauth_provider, prev_oauth)
+      else
+        Application.delete_env(:crit, :oauth_provider)
+      end
     end)
 
     :ok
