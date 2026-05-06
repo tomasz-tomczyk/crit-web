@@ -138,6 +138,70 @@ defmodule Crit.AccountsTest do
     end
   end
 
+  describe "register_user/1" do
+    alias Crit.AccountsFixtures
+
+    test "creates a user with valid attributes" do
+      attrs = AccountsFixtures.valid_user_attributes()
+      assert {:ok, user} = Accounts.register_user(attrs)
+      assert user.email == attrs.email
+      assert is_binary(user.hashed_password)
+      assert is_nil(user.password)
+    end
+
+    test "rejects duplicate email case-insensitively" do
+      attrs = AccountsFixtures.valid_user_attributes(email: "Dup@Example.com")
+      assert {:ok, _user} = Accounts.register_user(attrs)
+
+      dup_attrs =
+        AccountsFixtures.valid_user_attributes(email: "dup@EXAMPLE.com")
+
+      assert {:error, changeset} = Accounts.register_user(dup_attrs)
+      assert %{email: [_ | _]} = errors_on(changeset)
+    end
+  end
+
+  describe "get_user_by_email/1" do
+    alias Crit.AccountsFixtures
+
+    test "looks up a user case-insensitively" do
+      user = AccountsFixtures.user_fixture(email: "Mixed@Case.com")
+      assert found = Accounts.get_user_by_email("mixed@case.com")
+      assert found.id == user.id
+      assert found2 = Accounts.get_user_by_email("MIXED@CASE.COM")
+      assert found2.id == user.id
+    end
+
+    test "returns nil for unknown email" do
+      assert is_nil(Accounts.get_user_by_email("nobody@example.com"))
+    end
+  end
+
+  describe "get_user_by_email_and_password/2" do
+    alias Crit.AccountsFixtures
+
+    test "returns the user when the password is correct" do
+      password = AccountsFixtures.valid_user_password()
+      user = AccountsFixtures.user_fixture(%{password: password})
+      assert found = Accounts.get_user_by_email_and_password(user.email, password)
+      assert found.id == user.id
+    end
+
+    test "returns nil when the password is wrong" do
+      user = AccountsFixtures.user_fixture()
+      assert is_nil(Accounts.get_user_by_email_and_password(user.email, "wrong password"))
+    end
+
+    test "returns nil when the email is unknown" do
+      assert is_nil(
+               Accounts.get_user_by_email_and_password(
+                 "nobody@example.com",
+                 AccountsFixtures.valid_user_password()
+               )
+             )
+    end
+  end
+
   describe "list_tokens/1" do
     test "returns tokens for the user ordered by inserted_at desc" do
       {:ok, user} = Accounts.find_or_create_from_oauth("github", @oauth_params)

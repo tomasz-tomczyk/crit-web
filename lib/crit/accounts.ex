@@ -1,7 +1,55 @@
 defmodule Crit.Accounts do
+  @moduledoc """
+  Accounts context.
+
+  Note: the admin-role plan will later add a call to `apply_role_for_email/1`
+  inside `register_user/1` to assign roles based on email at registration time.
+  """
+
   import Ecto.Query
 
   alias Crit.{Repo, User, UserApiToken}
+
+  @doc """
+  Registers a user with email + password.
+
+  Returns `{:ok, user}` or `{:error, changeset}`.
+  """
+  def register_user(attrs) do
+    %User{}
+    |> User.registration_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Returns a changeset for tracking user registration changes (e.g. for LiveView forms).
+
+  The password is not hashed here.
+  """
+  def change_user_registration(%User{} = user, attrs \\ %{}) do
+    User.registration_changeset(user, attrs, hash_password: false)
+  end
+
+  @doc """
+  Gets a user by email (case-insensitive). Returns the user or nil.
+  """
+  def get_user_by_email(email) when is_binary(email) do
+    Repo.one(from u in User, where: fragment("lower(?)", u.email) == ^String.downcase(email))
+  end
+
+  @doc """
+  Gets a user by email and password.
+
+  Returns the user if the password is valid, otherwise nil.
+
+  Calls `User.valid_password?/2` even when no user is found, to keep timing
+  approximately constant against email-enumeration attacks.
+  """
+  def get_user_by_email_and_password(email, password)
+      when is_binary(email) and is_binary(password) do
+    user = get_user_by_email(email)
+    if User.valid_password?(user || %User{}, password), do: user
+  end
 
   @doc """
   Finds an existing user by provider + provider_uid, or creates one.
