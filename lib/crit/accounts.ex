@@ -22,17 +22,17 @@ defmodule Crit.Accounts do
     }
 
     if is_nil(provider_uid) do
-      %User{} |> User.changeset(attrs) |> Repo.insert()
+      %User{} |> User.oauth_changeset(attrs) |> Repo.insert()
     else
       case Repo.get_by(User, provider: provider, provider_uid: provider_uid) do
         nil ->
           %User{}
-          |> User.changeset(attrs)
+          |> User.oauth_changeset(attrs)
           |> Repo.insert()
 
         existing ->
           existing
-          |> User.changeset(attrs)
+          |> User.oauth_changeset(attrs)
           |> Repo.update()
       end
     end

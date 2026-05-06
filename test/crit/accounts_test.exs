@@ -40,7 +40,9 @@ defmodule Crit.AccountsTest do
 
     test "treats same uid from different providers as different users" do
       {:ok, github_user} = Accounts.find_or_create_from_oauth("github", @oauth_params)
-      {:ok, custom_user} = Accounts.find_or_create_from_oauth("custom", @oauth_params)
+
+      custom_params = Map.put(@oauth_params, "email", "ada+custom@example.com")
+      {:ok, custom_user} = Accounts.find_or_create_from_oauth("custom", custom_params)
       refute github_user.id == custom_user.id
     end
 
@@ -105,7 +107,11 @@ defmodule Crit.AccountsTest do
     test "returns error when token does not belong to user" do
       {:ok, user1} = Accounts.find_or_create_from_oauth("github", @oauth_params)
 
-      other_params = Map.put(@oauth_params, "sub", "other_uid")
+      other_params =
+        @oauth_params
+        |> Map.put("sub", "other_uid")
+        |> Map.put("email", "other@example.com")
+
       {:ok, user2} = Accounts.find_or_create_from_oauth("github", other_params)
       {:ok, {_plaintext, token}} = Accounts.create_token(user2, "User2 token")
 
@@ -149,7 +155,11 @@ defmodule Crit.AccountsTest do
     test "does not return tokens for other users" do
       {:ok, user1} = Accounts.find_or_create_from_oauth("github", @oauth_params)
 
-      other_params = Map.put(@oauth_params, "sub", "other_uid2")
+      other_params =
+        @oauth_params
+        |> Map.put("sub", "other_uid2")
+        |> Map.put("email", "other2@example.com")
+
       {:ok, user2} = Accounts.find_or_create_from_oauth("github", other_params)
       {:ok, {_, _t}} = Accounts.create_token(user2, "User2 token")
 

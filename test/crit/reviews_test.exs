@@ -15,7 +15,7 @@ defmodule Crit.ReviewsTest do
     }
 
     %Crit.User{}
-    |> Crit.User.changeset(Map.merge(base, attrs))
+    |> Crit.User.oauth_changeset(Map.merge(base, attrs))
     |> Repo.insert!()
   end
 

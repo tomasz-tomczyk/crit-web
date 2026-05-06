@@ -119,7 +119,7 @@ defmodule CritWeb.UserAuthTest do
     }
 
     %Crit.User{}
-    |> Crit.User.changeset(Map.merge(base, Map.new(attrs)))
+    |> Crit.User.oauth_changeset(Map.merge(base, Map.new(attrs)))
     |> Crit.Repo.insert!()
   end
 end
