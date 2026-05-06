@@ -163,11 +163,16 @@ defmodule CritWeb.UserAuth do
     if socket.assigns.current_scope.user do
       {:cont, socket}
     else
-      if Crit.Config.oauth_configured?() do
-        request_path = Map.get(session, "request_path", "/dashboard")
-        {:halt, redirect(socket, to: "/auth/login?return_to=#{request_path}")}
-      else
-        {:halt, redirect(socket, to: "/")}
+      cond do
+        Crit.Config.oauth_configured?() ->
+          request_path = Map.get(session, "request_path", "/dashboard")
+          {:halt, redirect(socket, to: "/auth/login?return_to=#{request_path}")}
+
+        Application.get_env(:crit, :selfhosted) ->
+          {:halt, redirect(socket, to: "/users/log_in")}
+
+        true ->
+          {:halt, redirect(socket, to: "/")}
       end
     end
   end
@@ -176,7 +181,9 @@ defmodule CritWeb.UserAuth do
     if Application.get_env(:crit, :selfhosted) do
       socket = assign_scope(socket, session)
       oauth_configured = Crit.Config.oauth_configured?()
-      authenticated = if oauth_configured, do: socket.assigns.current_scope.user != nil, else: true
+
+      authenticated =
+        if oauth_configured, do: socket.assigns.current_scope.user != nil, else: true
 
       {:cont,
        socket

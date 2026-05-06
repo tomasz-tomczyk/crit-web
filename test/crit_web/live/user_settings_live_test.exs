@@ -112,4 +112,17 @@ defmodule CritWeb.UserSettingsLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Please sign in"
     end
   end
+
+  describe "require_authenticated_user redirect target" do
+    test "selfhost without OAuth redirects unauthenticated visitor to /users/log_in" do
+      # selfhosted is set in this module's setup; clear OAuth for this test.
+      prev_oauth = Application.get_env(:crit, :oauth_provider)
+      Application.delete_env(:crit, :oauth_provider)
+      on_exit(fn -> Application.put_env(:crit, :oauth_provider, prev_oauth) end)
+
+      conn = Phoenix.ConnTest.build_conn() |> Plug.Test.init_test_session(%{})
+
+      assert {:error, {:redirect, %{to: "/users/log_in"}}} = live(conn, ~p"/users/settings")
+    end
+  end
 end
