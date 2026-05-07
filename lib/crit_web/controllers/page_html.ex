@@ -79,11 +79,11 @@ defmodule CritWeb.PageHTML do
       class="install-panel border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
       <div class="flex items-center bg-(--crit-code-bg)">
-        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>brew install tomasz-tomczyk/tap/crit</pre>
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>brew install crit</pre>
         <button
           class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
-          data-copy="brew install tomasz-tomczyk/tap/crit"
+          data-copy="brew install crit"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
