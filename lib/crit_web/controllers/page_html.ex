@@ -66,6 +66,12 @@ defmodule CritWeb.PageHTML do
       >
         Nix
       </button>
+      <button
+        class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
+        data-target="tab-windows"
+      >
+        Windows
+      </button>
     </div>
 
     <div
@@ -73,11 +79,11 @@ defmodule CritWeb.PageHTML do
       class="install-panel border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
       <div class="flex items-center bg-(--crit-code-bg)">
-        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>brew install tomasz-tomczyk/tap/crit</pre>
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>brew install crit</pre>
         <button
           class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
           aria-label="Copy to clipboard"
-          data-copy="brew install tomasz-tomczyk/tap/crit"
+          data-copy="brew install crit"
         >
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
@@ -117,6 +123,29 @@ defmodule CritWeb.PageHTML do
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
         </button>
       </div>
+    </div>
+
+    <div
+      id="tab-windows"
+      class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
+    >
+      <div class="flex items-center bg-(--crit-code-bg)">
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">PS&gt; </span>iwr https://github.com/tomasz-tomczyk/crit/releases/latest/download/crit-windows-amd64.exe -OutFile crit.exe</pre>
+        <button
+          class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+          aria-label="Copy to clipboard"
+          data-copy="iwr https://github.com/tomasz-tomczyk/crit/releases/latest/download/crit-windows-amd64.exe -OutFile crit.exe"
+        >
+          <.icon name="hero-clipboard" class="size-4 icon-default" />
+          <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+        </button>
+      </div>
+      <p class="text-xs text-(--crit-fg-muted) px-5 py-2.5 border-t border-(--crit-border)">
+        Then move <code class="font-mono">crit.exe</code>
+        somewhere on your <code class="font-mono">PATH</code>. ARM64 users: swap
+        <code class="font-mono">amd64</code>
+        for <code class="font-mono">arm64</code>. WSL users: use the Linux binary instead.
+      </p>
     </div>
 
     <div class="mt-3 flex items-center gap-4">
