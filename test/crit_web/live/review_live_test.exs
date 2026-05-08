@@ -59,6 +59,26 @@ defmodule CritWeb.ReviewLiveTest do
       {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
       assert page_title(view) =~ "main.go"
     end
+
+    test "init push_event includes generated flag for each file", %{conn: conn} do
+      {:ok, review} =
+        Reviews.create_review(
+          anon_scope(),
+          [
+            %{"path" => "schema.pb.go", "content" => "auto", "generated" => true},
+            %{"path" => "main.go", "content" => "pkg main"}
+          ],
+          0,
+          []
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      assert_push_event view, "init", %{files: files}
+
+      by_path = Map.new(files, &{&1.path, &1})
+      assert by_path["schema.pb.go"].generated == true
+      assert by_path["main.go"].generated == false
+    end
   end
 
   describe "add_comment with file_path" do

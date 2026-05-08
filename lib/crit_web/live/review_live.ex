@@ -38,7 +38,13 @@ defmodule CritWeb.ReviewLive do
 
         files_data =
           Enum.map(review.files, fn f ->
-            %{path: f.file_path, content: f.content, position: f.position, status: f.status}
+            %{
+              path: f.file_path,
+              content: f.content,
+              position: f.position,
+              status: f.status,
+              generated: f.generated
+            }
           end)
 
         socket =

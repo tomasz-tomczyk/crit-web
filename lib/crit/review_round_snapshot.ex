@@ -11,13 +11,15 @@ defmodule Crit.ReviewRoundSnapshot do
       values: [:modified, :removed],
       default: :modified
 
+    field :generated, :boolean, default: false
+
     belongs_to :review, Crit.Review
     timestamps(updated_at: false)
   end
 
   def changeset(snapshot, attrs) do
     snapshot
-    |> cast(attrs, [:round_number, :file_path, :content, :position, :status])
+    |> cast(attrs, [:round_number, :file_path, :content, :position, :status, :generated])
     |> validate_required([:round_number, :file_path])
     |> then(fn cs ->
       if Ecto.Changeset.get_field(cs, :status) == :removed do

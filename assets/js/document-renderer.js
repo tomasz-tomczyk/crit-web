@@ -4709,6 +4709,7 @@ export const DocumentRenderer = {
         ctx.multiFile = true
         ctx.files = files.map(f => {
           const orphaned = f.status === 'removed'
+          const generated = f.generated === true
           return {
             path: f.path,
             content: f.content,
@@ -4718,8 +4719,9 @@ export const DocumentRenderer = {
               ? buildCodeLineBlocks(f.content, f.path)
               : buildLineBlocks(md, f.content)),
             comments: comments.filter(c => c.file_path === f.path),
-            collapsed: orphaned,
+            collapsed: orphaned || generated,
             viewed: false,
+            generated,
             status: f.status || 'modified',
             orphaned,
           }

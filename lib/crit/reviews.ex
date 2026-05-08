@@ -428,11 +428,15 @@ defmodule Crit.Reviews do
   defp content_changed?(review, new_files) do
     current =
       get_current_files(review)
-      |> Map.new(fn f -> {f.file_path, :crypto.hash(:sha256, f.content)} end)
+      |> Map.new(fn f ->
+        {f.file_path, {:crypto.hash(:sha256, f.content), f.generated == true}}
+      end)
 
     incoming =
       new_files
-      |> Map.new(fn f -> {f["path"], :crypto.hash(:sha256, f["content"] || "")} end)
+      |> Map.new(fn f ->
+        {f["path"], {:crypto.hash(:sha256, f["content"] || ""), f["generated"] == true}}
+      end)
 
     current != incoming
   end
@@ -568,7 +572,8 @@ defmodule Crit.Reviews do
           "content" => file_attrs["content"] || "",
           "round_number" => round_number,
           "position" => idx,
-          "status" => status
+          "status" => status,
+          "generated" => file_attrs["generated"] == true
         })
         |> Ecto.Changeset.put_change(:review_id, review.id)
         |> Repo.insert()

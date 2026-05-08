@@ -939,6 +939,62 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "generated flag on round snapshots" do
+    test "persists generated: true through create_review" do
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(
+          scope,
+          [
+            %{"path" => "gen.md", "content" => "auto", "generated" => true},
+            %{"path" => "src.md", "content" => "human"}
+          ],
+          1,
+          [],
+          []
+        )
+
+      reloaded = Reviews.get_by_token(review.token)
+      by_path = Map.new(reloaded.files, &{&1.file_path, &1})
+      assert by_path["gen.md"].generated == true
+      assert by_path["src.md"].generated == false
+    end
+
+    test "missing generated key defaults to false" do
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      reloaded = Reviews.get_by_token(review.token)
+      assert hd(reloaded.files).generated == false
+    end
+
+    test "upsert_review treats a generated-flag flip as a content change" do
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(
+          scope,
+          [%{"path" => "f.md", "content" => "same", "generated" => false}],
+          1,
+          [],
+          []
+        )
+
+      {:ok, :updated, updated} =
+        Reviews.upsert_review(scope, review.token, review.delete_token, %{
+          "files" => [%{"path" => "f.md", "content" => "same", "generated" => true}],
+          "comments" => []
+        })
+
+      assert updated.review_round == review.review_round + 1
+      reloaded = Reviews.get_by_token(review.token)
+      assert hd(reloaded.files).generated == true
+    end
+  end
+
   describe "review_round_snapshot" do
     test "create_round_snapshot/4 stores file content for a round" do
       scope = anon_scope()
