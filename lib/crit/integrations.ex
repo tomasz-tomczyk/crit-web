@@ -96,6 +96,51 @@ defmodule Crit.Integrations do
       components: [:crit_command, :crit_cli_skill]
     },
     %{
+      id: "gemini",
+      name: "Gemini CLI",
+      tagline: "Crit as a Gemini CLI skill",
+      logo: %{
+        light: "/images/integrations/gemini-light.svg",
+        dark: "/images/integrations/gemini-dark.svg"
+      },
+      page_title: "Crit + Gemini CLI — review AI plans inline",
+      meta:
+        "Install crit's Gemini CLI integration. Drops a /crit slash command, the crit-cli skill, and merges an exit_plan_mode hook into .gemini/settings.json so Gemini routes every plan through Crit for inline review.",
+      intro:
+        "Gemini CLI auto-loads commands and skills from .gemini/ (project) and ~/.gemini/ (global). crit installs the /crit command, the crit-cli skill, and an exit_plan_mode hook that hands every plan to Crit before any code is written.",
+      command: "crit install gemini",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
+      id: "qwen",
+      name: "Qwen Code",
+      tagline: "Crit as a Qwen Code skill",
+      logo: %{
+        light: "/images/integrations/qwen-light.svg",
+        dark: "/images/integrations/qwen-dark.svg"
+      },
+      page_title: "Crit + Qwen Code — review AI plans inline",
+      meta:
+        "Install crit's Qwen Code skill. Drops .qwen/skills/crit/ and .qwen/skills/crit-cli/ so Qwen Code auto-loads the review workflow.",
+      intro:
+        "Qwen Code auto-discovers skills from .qwen/skills/ (project) and ~/.qwen/skills/ (global). The crit skill activates whenever Qwen plans or reviews code.",
+      command: "crit install qwen",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
+      id: "hermes",
+      name: "Hermes",
+      tagline: "Crit as a Hermes skill",
+      logo: nil,
+      page_title: "Crit + Hermes — review AI plans inline",
+      meta:
+        "Install crit's Hermes integration. A global install (`cd ~ && crit install hermes`) drops skills into ~/.hermes/skills/ where Hermes auto-discovers them across every project.",
+      intro:
+        "Hermes auto-discovers skills from ~/.hermes/skills/. Run `crit install hermes` from your home directory for the recommended global setup, or install per-project and add `.hermes/skills` to `external_dirs` under the `skills` section of ~/.hermes/config.yaml.",
+      command: "crit install hermes",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
       id: "windsurf",
       name: "Windsurf",
       tagline: "A Windsurf rule for Crit",

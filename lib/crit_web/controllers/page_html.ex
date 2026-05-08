@@ -216,15 +216,6 @@ defmodule CritWeb.PageHTML do
       ]
     },
     %{
-      id: "windsurf",
-      name: "Windsurf",
-      copy: "crit install windsurf",
-      lines: [
-        %{type: :cmd, prompt: "$ ", text: "crit install windsurf"},
-        %{type: :output, text: "Installed: .windsurf/rules/crit.md"}
-      ]
-    },
-    %{
       id: "opencode",
       name: "OpenCode",
       copy: "crit install opencode",
@@ -232,6 +223,46 @@ defmodule CritWeb.PageHTML do
         %{type: :cmd, prompt: "$ ", text: "crit install opencode"},
         %{type: :output, text: "Installed: .opencode/commands/crit.md"},
         %{type: :output, text: "Installed: .opencode/skills/crit/SKILL.md"}
+      ]
+    },
+    %{
+      id: "gemini",
+      name: "Gemini",
+      copy: "crit install gemini",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install gemini"},
+        %{type: :output, text: "Installed: .gemini/commands/crit.toml"},
+        %{type: :output, text: "Installed: .gemini/skills/crit-cli/SKILL.md"},
+        %{type: :output, text: "Updated:   .gemini/settings.json (exit_plan_mode hook)"}
+      ]
+    },
+    %{
+      id: "qwen",
+      name: "Qwen",
+      copy: "crit install qwen",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install qwen"},
+        %{type: :output, text: "Installed: .qwen/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .qwen/skills/crit-cli/SKILL.md"}
+      ]
+    },
+    %{
+      id: "hermes",
+      name: "Hermes",
+      copy: "crit install hermes",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "cd ~ && crit install hermes"},
+        %{type: :output, text: "Installed: ~/.hermes/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: ~/.hermes/skills/crit-cli/SKILL.md"}
+      ]
+    },
+    %{
+      id: "windsurf",
+      name: "Windsurf",
+      copy: "crit install windsurf",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install windsurf"},
+        %{type: :output, text: "Installed: .windsurf/rules/crit.md"}
       ]
     },
     %{
