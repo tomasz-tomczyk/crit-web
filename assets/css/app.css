@@ -999,6 +999,7 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .comment-body code { background: var(--crit-editor-bg-elevated); padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
 .comment-body pre { background: var(--crit-editor-bg-elevated); padding: 8px 10px; border-radius: 4px; overflow-x: auto; margin: 0.5em 0; }
 .comment-body pre code { background: none; padding: 0; }
+.comment-body img { max-width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--crit-border); margin: 4px 0; display: block; }
 
 /* Suggestion diff inside comments */
 .suggestion-diff {
