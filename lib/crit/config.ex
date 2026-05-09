@@ -27,4 +27,16 @@ defmodule Crit.Config do
   def oauth_configured? do
     Application.get_env(:crit, :oauth_provider) != nil
   end
+
+  @doc """
+  Returns true when any auth backend is wired up: an OAuth provider OR an
+  admin password. When neither is set the deployment cannot authenticate
+  anyone, so authenticated-only routes (`/dashboard`, `/settings`) render
+  anonymously instead of redirecting — see issue #50 for the proxy-loop this
+  prevents.
+  """
+  @spec auth_configured?() :: boolean()
+  def auth_configured? do
+    oauth_configured?() || Application.get_env(:crit, :admin_password) != nil
+  end
 end

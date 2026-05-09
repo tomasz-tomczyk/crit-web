@@ -10,16 +10,23 @@ defmodule CritWeb.SettingsLive do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.user
 
+    {tokens, keep_reviews} =
+      case user do
+        nil -> {[], false}
+        u -> {Accounts.list_tokens(u.id), u.keep_reviews}
+      end
+
     socket =
       socket
       |> assign(:page_title, "Settings - Crit")
       |> assign(:noindex, true)
-      |> assign(:tokens, Accounts.list_tokens(user.id))
+      |> assign(:tokens, tokens)
       |> assign(:new_token_plaintext, nil)
       |> assign(:new_token_name, "")
       |> assign(:delete_confirmation, "")
-      |> assign(:keep_reviews, user.keep_reviews)
+      |> assign(:keep_reviews, keep_reviews)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
+      |> assign(:auth_configured, Crit.Config.auth_configured?())
 
     {:ok, socket, layout: false}
   end

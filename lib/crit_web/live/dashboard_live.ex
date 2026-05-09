@@ -8,7 +8,12 @@ defmodule CritWeb.DashboardLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    reviews = Reviews.list_user_reviews_with_counts(socket.assigns.current_scope)
+    has_user? = socket.assigns.current_scope.user != nil
+
+    reviews =
+      if has_user?,
+        do: Reviews.list_user_reviews_with_counts(socket.assigns.current_scope),
+        else: []
 
     socket =
       socket
@@ -16,6 +21,7 @@ defmodule CritWeb.DashboardLive do
       |> assign(:noindex, true)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
       |> assign(:instance_url, CritWeb.Endpoint.url())
+      |> assign(:auth_configured, Crit.Config.auth_configured?())
       |> stream(:reviews, reviews)
       |> assign(:review_count, length(reviews))
 

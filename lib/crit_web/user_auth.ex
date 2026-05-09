@@ -103,15 +103,22 @@ defmodule CritWeb.UserAuth do
   def on_mount(:require_authenticated_user, _params, session, socket) do
     socket = assign_scope(socket, session)
 
-    if socket.assigns.current_scope.user do
-      {:cont, socket}
-    else
-      if Crit.Config.oauth_configured?() do
+    cond do
+      socket.assigns.current_scope.user ->
+        {:cont, socket}
+
+      Crit.Config.oauth_configured?() ->
         request_path = Map.get(session, "request_path", "/dashboard")
         {:halt, redirect(socket, to: "/auth/login?return_to=#{request_path}")}
-      else
+
+      not Crit.Config.auth_configured?() ->
+        # No OAuth, no admin password — nobody can sign in. Render the page
+        # anonymously rather than redirecting, which would otherwise loop
+        # through transformative proxies (see issue #50).
+        {:cont, socket}
+
+      true ->
         {:halt, redirect(socket, to: "/")}
-      end
     end
   end
 

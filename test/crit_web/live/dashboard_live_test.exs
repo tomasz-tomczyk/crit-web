@@ -26,17 +26,45 @@ defmodule CritWeb.DashboardLiveTest do
                live(conn, ~p"/dashboard")
     end
 
-    test "redirects to / when no OAuth configured", %{conn: conn} do
-      original = Application.get_env(:crit, :oauth_provider)
+    test "redirects to / when no OAuth configured but admin_password is set", %{conn: conn} do
+      original_oauth = Application.get_env(:crit, :oauth_provider)
+      original_pw = Application.get_env(:crit, :admin_password)
       Application.delete_env(:crit, :oauth_provider)
+      Application.put_env(:crit, :admin_password, "shh")
 
       on_exit(fn ->
-        if original,
-          do: Application.put_env(:crit, :oauth_provider, original),
+        if original_oauth,
+          do: Application.put_env(:crit, :oauth_provider, original_oauth),
           else: Application.delete_env(:crit, :oauth_provider)
+
+        if original_pw,
+          do: Application.put_env(:crit, :admin_password, original_pw),
+          else: Application.delete_env(:crit, :admin_password)
       end)
 
       assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/dashboard")
+    end
+
+    test "renders anonymous gate (no redirect) when no auth backend is configured", %{conn: conn} do
+      original_oauth = Application.get_env(:crit, :oauth_provider)
+      original_pw = Application.get_env(:crit, :admin_password)
+      Application.delete_env(:crit, :oauth_provider)
+      Application.delete_env(:crit, :admin_password)
+
+      on_exit(fn ->
+        if original_oauth,
+          do: Application.put_env(:crit, :oauth_provider, original_oauth),
+          else: Application.delete_env(:crit, :oauth_provider)
+
+        if original_pw,
+          do: Application.put_env(:crit, :admin_password, original_pw),
+          else: Application.delete_env(:crit, :admin_password)
+      end)
+
+      {:ok, _view, html} = live(conn, ~p"/dashboard")
+
+      assert html =~ "Sign in to see your reviews"
+      assert html =~ "no authentication backend"
     end
   end
 

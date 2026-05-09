@@ -108,6 +108,28 @@ defmodule CritWeb.UserAuthTest do
 
       assert id == user.id
     end
+
+    test "continues with nil user when no auth backend is configured" do
+      original_oauth = Application.get_env(:crit, :oauth_provider)
+      original_pw = Application.get_env(:crit, :admin_password)
+      Application.delete_env(:crit, :oauth_provider)
+      Application.delete_env(:crit, :admin_password)
+
+      on_exit(fn ->
+        if original_oauth,
+          do: Application.put_env(:crit, :oauth_provider, original_oauth),
+          else: Application.delete_env(:crit, :oauth_provider)
+
+        if original_pw,
+          do: Application.put_env(:crit, :admin_password, original_pw),
+          else: Application.delete_env(:crit, :admin_password)
+      end)
+
+      socket = %Phoenix.LiveView.Socket{assigns: %{__changed__: %{}, flash: %{}}}
+
+      assert {:cont, %{assigns: %{current_scope: %Scope{user: nil}}}} =
+               UserAuth.on_mount(:require_authenticated_user, %{}, %{}, socket)
+    end
   end
 
   defp create_user!(attrs \\ []) do
