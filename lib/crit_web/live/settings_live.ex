@@ -13,38 +13,22 @@ defmodule CritWeb.SettingsLive do
     local_registration_enabled =
       Application.get_env(:crit, :local_registration_enabled, true) == true
 
-    {tokens, keep_reviews} =
-      case user do
-        nil -> {[], false}
-        u -> {Accounts.list_tokens(u.id), u.keep_reviews}
-      end
-
     socket =
       socket
       |> assign(:page_title, "Settings - Crit")
       |> assign(:noindex, true)
-      |> assign(:tokens, tokens)
+      |> assign(:tokens, Accounts.list_tokens(user.id))
       |> assign(:new_token_plaintext, nil)
       |> assign(:new_token_name, "")
       |> assign(:delete_confirmation, "")
-      |> assign(:keep_reviews, keep_reviews)
-      |> assign(:marketing_opted_in, if(user, do: Accounts.marketing_opted_in?(user), else: false))
+      |> assign(:keep_reviews, user.keep_reviews)
+      |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
-      |> assign(:auth_configured, Crit.Config.auth_configured?())
       |> assign(:local_registration_enabled, local_registration_enabled)
-      |> assign(:has_password, if(user, do: is_binary(user.hashed_password), else: false))
-      |> assign(
-        :can_edit_email,
-        if(user, do: is_nil(user.provider) and local_registration_enabled, else: false)
-      )
-      |> assign(
-        :profile_form,
-        if(user, do: to_form(Accounts.change_user_profile(user), as: "user"), else: nil)
-      )
-      |> assign(
-        :password_form,
-        if(user, do: to_form(Accounts.change_user_password(user), as: "user"), else: nil)
-      )
+      |> assign(:has_password, is_binary(user.hashed_password))
+      |> assign(:can_edit_email, is_nil(user.provider) and local_registration_enabled)
+      |> assign(:profile_form, to_form(Accounts.change_user_profile(user), as: "user"))
+      |> assign(:password_form, to_form(Accounts.change_user_password(user), as: "user"))
 
     {:ok, socket, layout: false}
   end

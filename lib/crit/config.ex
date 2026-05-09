@@ -29,15 +29,24 @@ defmodule Crit.Config do
   end
 
   @doc """
-  Returns true when any auth backend is wired up: an OAuth provider OR an
-  admin password. When neither is set the deployment cannot authenticate
-  anyone, so authenticated-only routes (`/dashboard`, `/settings`) render
-  anonymously instead of redirecting — see issue #50 for the proxy-loop this
-  prevents.
+  Returns true when any auth backend is wired up: OAuth provider, admin
+  password, or trusted-proxy user header. With three available backends a
+  real selfhost deploy will configure at least one; this predicate exists for
+  the rare case where none are set.
   """
   @spec auth_configured?() :: boolean()
   def auth_configured? do
-    oauth_configured?() || Application.get_env(:crit, :admin_password) != nil
+    oauth_configured?() ||
+      Application.get_env(:crit, :admin_password) != nil ||
+      trusted_proxy_header_configured?()
+  end
+
+  defp trusted_proxy_header_configured? do
+    case Application.get_env(:crit, :trusted_proxy_user_header) do
+      nil -> false
+      "" -> false
+      _ -> true
+    end
   end
 
   # ---------------------------------------------------------------------------
