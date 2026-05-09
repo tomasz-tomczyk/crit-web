@@ -44,7 +44,7 @@ defmodule Crit.Comment do
     |> validate_required([:body])
     |> validate_inclusion(:scope, ["line", "file", "review"])
     |> validate_line_numbers()
-    |> validate_length(:body, max: 51_200, message: "must be at most 50 KB")
+    |> validate_body_length()
     |> validate_length(:author_display_name, max: 40)
     |> validate_length(:file_path, max: 500)
   end
@@ -71,7 +71,7 @@ defmodule Crit.Comment do
     comment
     |> cast(attrs, [:body])
     |> validate_required([:body])
-    |> validate_length(:body, max: 51_200, message: "must be at most 50 KB")
+    |> validate_body_length()
   end
 
   @doc "Changeset for creating a reply (comment with parent_id)."
@@ -79,7 +79,16 @@ defmodule Crit.Comment do
     comment
     |> cast(attrs, [:body, :author_identity, :author_display_name])
     |> validate_required([:body])
-    |> validate_length(:body, max: 51_200, message: "must be at most 50 KB")
+    |> validate_body_length()
     |> validate_length(:author_display_name, max: 40)
+  end
+
+  # Reads the configured `max_comment_body_bytes` from the singleton settings
+  # row on each call. Single-row Postgres lookup is sub-ms; caching is a
+  # future optimisation.
+  defp validate_body_length(changeset) do
+    max = Crit.Settings.get().max_comment_body_bytes
+    kb = div(max, 1024)
+    validate_length(changeset, :body, max: max, message: "must be at most #{kb} KB")
   end
 end

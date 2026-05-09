@@ -4,11 +4,10 @@ defmodule CritWeb.ApiController do
   alias Crit.Accounts.Scope
   alias Crit.Reviews
   alias Crit.Output
+  alias Crit.Settings
 
   # 30 write requests per minute per IP
   plug :rate_limit_write when action in [:create, :update]
-
-  @max_comments 500
 
   def create(conn, %{"files" => files} = params) when is_list(files) and files != [] do
     review_round = params["review_round"]
@@ -16,10 +15,11 @@ defmodule CritWeb.ApiController do
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
     scope = api_scope(conn)
+    max_comments = Settings.get().max_comments_per_review
 
     cond do
-      length(comments) + length(review_comments) > @max_comments ->
-        conn |> put_status(422) |> json(%{error: "Too many comments (max #{@max_comments})"})
+      length(comments) + length(review_comments) > max_comments ->
+        conn |> put_status(422) |> json(%{error: "Too many comments (max #{max_comments})"})
 
       length(files) > 200 ->
         conn |> put_status(422) |> json(%{error: "Too many files (max 200)"})
@@ -61,12 +61,13 @@ defmodule CritWeb.ApiController do
     file_path = filename || "document"
     files = [%{"path" => file_path, "content" => content}]
     comments_with_file = Enum.map(comments, &Map.put_new(&1, "file", file_path))
+    max_comments = Settings.get().max_comments_per_review
 
     cond do
-      length(comments) + length(review_comments) > @max_comments ->
+      length(comments) + length(review_comments) > max_comments ->
         conn
         |> put_status(422)
-        |> json(%{error: "Too many comments (max #{@max_comments})"})
+        |> json(%{error: "Too many comments (max #{max_comments})"})
 
       true ->
         case Reviews.create_review(
