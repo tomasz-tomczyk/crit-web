@@ -10,6 +10,9 @@ defmodule CritWeb.SettingsLive do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.user
 
+    local_registration_enabled =
+      Application.get_env(:crit, :local_registration_enabled, true) == true
+
     socket =
       socket
       |> assign(:page_title, "Settings - Crit")
@@ -20,8 +23,93 @@ defmodule CritWeb.SettingsLive do
       |> assign(:delete_confirmation, "")
       |> assign(:keep_reviews, user.keep_reviews)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
+      |> assign(:local_registration_enabled, local_registration_enabled)
+      |> assign(:has_password, is_binary(user.hashed_password))
+      |> assign(:can_edit_email, is_nil(user.provider) and local_registration_enabled)
+      |> assign(:profile_form, to_form(Accounts.change_user_profile(user), as: "user"))
+      |> assign(:password_form, to_form(Accounts.change_user_password(user), as: "user"))
 
     {:ok, socket, layout: false}
+  end
+
+  @impl true
+  def handle_event("validate_profile", %{"user" => params}, socket) do
+    user = socket.assigns.current_scope.user
+    params = filter_profile_params(params, socket.assigns.can_edit_email)
+
+    changeset =
+      user
+      |> Accounts.change_user_profile(params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, :profile_form, to_form(changeset, as: "user"))}
+  end
+
+  @impl true
+  def handle_event("update_profile", %{"user" => params}, socket) do
+    user = socket.assigns.current_scope.user
+    params = filter_profile_params(params, socket.assigns.can_edit_email)
+
+    case Accounts.update_user_profile(user, params) do
+      {:ok, updated} ->
+        scope = Scope.put_user(socket.assigns.current_scope, updated)
+
+        {:noreply,
+         socket
+         |> assign(:current_scope, scope)
+         |> put_flash(:info, "Profile updated.")
+         |> assign(:profile_form, to_form(Accounts.change_user_profile(updated), as: "user"))}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :profile_form, to_form(changeset, as: "user"))}
+    end
+  end
+
+  @impl true
+  def handle_event("validate_password", %{"user" => params}, socket) do
+    user = socket.assigns.current_scope.user
+
+    changeset =
+      user
+      |> Accounts.change_user_password(params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, :password_form, to_form(changeset, as: "user"))}
+  end
+
+  @impl true
+  def handle_event("update_password", %{"user" => params}, socket) do
+    user = socket.assigns.current_scope.user
+
+    result =
+      if socket.assigns.has_password do
+        Accounts.update_user_password(user, params["current_password"] || "", params)
+      else
+        # First-time set: skip current_password check, hash via password_changeset.
+        user
+        |> Crit.User.password_changeset(params)
+        |> Crit.Repo.update()
+      end
+
+    case result do
+      {:ok, _updated} ->
+        # Invalidate any "remember me" cookies issued to other devices so a
+        # password change actually rotates persistent auth.
+        Crit.Repo.delete_all(
+          Crit.Accounts.UserToken.by_user_and_contexts_query(user, ["remember_me"])
+        )
+
+        msg = if socket.assigns.has_password, do: "Password updated.", else: "Password set."
+
+        {:noreply,
+         socket
+         |> put_flash(:info, msg)
+         |> assign(:has_password, true)
+         |> assign(:password_form, to_form(Accounts.change_user_password(user), as: "user"))}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :password_form, to_form(changeset, as: "user"))}
+    end
   end
 
   @impl true
@@ -108,4 +196,9 @@ defmodule CritWeb.SettingsLive do
   defp delete_confirmation_text(user) do
     user.email || user.name || "delete my account"
   end
+
+  # Drop the email key entirely when the user can't edit it, so a stray submitted
+  # value (e.g. via devtools) cannot bypass the visibility gate.
+  defp filter_profile_params(params, true), do: params
+  defp filter_profile_params(params, false), do: Map.delete(params, "email")
 end

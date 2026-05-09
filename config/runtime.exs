@@ -93,6 +93,12 @@ cond do
     :ok
 end
 
+# Local registration (email + password). Off by default — operators who want
+# basic accounts opt in explicitly. Combine with OAuth or use standalone.
+config :crit,
+       :local_registration_enabled,
+       System.get_env("LOCAL_REGISTRATION_ENABLED") in ~w(true 1)
+
 if System.get_env("PHX_SERVER") do
   config :crit, CritWeb.Endpoint, server: true
 end
@@ -100,31 +106,6 @@ end
 config :crit, CritWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
-  if smtp_host = System.get_env("SMTP_HOST") do
-    smtp_port = String.to_integer(System.get_env("SMTP_PORT") || "587")
-
-    # Port 465 uses implicit TLS (SMTPS); 587 (and others) use STARTTLS.
-    {smtp_ssl, smtp_tls} =
-      case smtp_port do
-        465 -> {true, :never}
-        _ -> {false, :always}
-      end
-
-    config :crit, Crit.Mailer,
-      adapter: Swoosh.Adapters.SMTP,
-      relay: smtp_host,
-      port: smtp_port,
-      username: System.get_env("SMTP_USERNAME"),
-      password: System.get_env("SMTP_PASSWORD"),
-      ssl: smtp_ssl,
-      tls: smtp_tls,
-      auth: :always
-  else
-    config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Local
-  end
-
-  config :crit, :smtp_from, System.get_env("SMTP_FROM") || "no-reply@localhost"
-
   database_url =
     System.get_env("DATABASE_URL") ||
       case {

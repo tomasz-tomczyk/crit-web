@@ -86,7 +86,7 @@ defmodule CritWeb.UserAuth do
     {user, conn} =
       case user_id do
         nil ->
-          {nil, conn}
+          fetch_user_from_remember_me_cookie(conn)
 
         id ->
           case Accounts.get_user(id) do
@@ -109,6 +109,34 @@ defmodule CritWeb.UserAuth do
       end
 
     Plug.Conn.assign(conn, :current_scope, scope)
+  end
+
+  # Looks up a user from the signed remember-me cookie when the session has no
+  # user_id. On hit, refreshes the session (puts user_id, renews session id).
+  # On miss with a cookie present, deletes the cookie so subsequent requests
+  # don't keep retrying.
+  defp fetch_user_from_remember_me_cookie(conn) do
+    conn = fetch_cookies(conn, signed: [@remember_me_cookie])
+
+    case conn.cookies[@remember_me_cookie] do
+      plaintext when is_binary(plaintext) ->
+        case Accounts.get_user_by_remember_me_token(plaintext) do
+          {:ok, user} ->
+            conn =
+              conn
+              |> renew_session()
+              |> put_session("user_id", user.id)
+              |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(user.id)}")
+
+            {user, conn}
+
+          {:error, :not_found} ->
+            {nil, delete_resp_cookie(conn, @remember_me_cookie)}
+        end
+
+      _ ->
+        {nil, conn}
+    end
   end
 
   defp ensure_session_identity(conn) do
@@ -163,13 +191,17 @@ defmodule CritWeb.UserAuth do
     if socket.assigns.current_scope.user do
       {:cont, socket}
     else
-      cond do
-        Crit.Config.oauth_configured?() ->
-          request_path = Map.get(session, "request_path", "/dashboard")
-          {:halt, redirect(socket, to: "/auth/login?return_to=#{request_path}")}
+      request_path = Map.get(session, "request_path", "/dashboard")
+      encoded = URI.encode_www_form(request_path)
 
+      cond do
         Application.get_env(:crit, :selfhosted) ->
-          {:halt, redirect(socket, to: "/users/log_in")}
+          # Selfhosted always lands on /users/log_in. The login page renders
+          # the OAuth button when `oauth_configured?` so the user can pick.
+          {:halt, redirect(socket, to: "/users/log_in?return_to=#{encoded}")}
+
+        Crit.Config.oauth_configured?() ->
+          {:halt, redirect(socket, to: "/auth/login?return_to=#{encoded}")}
 
         true ->
           {:halt, redirect(socket, to: "/")}

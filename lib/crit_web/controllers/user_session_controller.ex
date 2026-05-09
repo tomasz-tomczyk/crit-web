@@ -4,60 +4,38 @@ defmodule CritWeb.UserSessionController do
   alias Crit.Accounts
   alias CritWeb.UserAuth
 
-  def create(conn, %{"user" => user_params}) do
+  def create(conn, %{"user" => user_params} = params) do
     %{"email" => email, "password" => password} = user_params
+    return_to = sanitize_return_to(params["return_to"])
 
     case Accounts.get_user_by_email_and_password(email, password) do
       nil ->
         conn
         |> put_flash(:error, "Invalid email or password")
-        |> redirect(to: ~p"/users/log_in")
+        |> redirect(to: login_path(return_to))
 
       user ->
         conn
         |> put_flash(:info, "Welcome back!")
         |> UserAuth.log_in_user(user, user_params)
-        |> redirect(to: ~p"/dashboard")
+        |> redirect(to: return_to || ~p"/dashboard")
     end
   end
 
-  def register(conn, %{"user" => user_params}) do
+  def register(conn, %{"user" => user_params} = params) do
+    return_to = sanitize_return_to(params["return_to"])
+
     case Accounts.register_user(user_params) do
       {:ok, user} ->
         conn
         |> put_flash(:info, "Welcome to crit!")
         |> UserAuth.log_in_user(user, %{})
-        |> redirect(to: ~p"/dashboard")
+        |> redirect(to: return_to || ~p"/dashboard")
 
-      {:error, _changeset} ->
+      {:error, changeset} ->
         conn
-        |> put_flash(:error, "Registration failed. Please check the form and try again.")
+        |> put_flash(:error, registration_error_message(changeset))
         |> redirect(to: ~p"/users/register")
-    end
-  end
-
-  def confirm_email(conn, %{"token" => token}) do
-    case conn.assigns.current_scope.user do
-      nil ->
-        # Link opened in a different browser / expired session.
-        # `Accounts.update_user_email/2` pattern-matches on `%User{}` and
-        # would raise FunctionClauseError → 500 if we passed nil through.
-        conn
-        |> put_flash(:error, "Please sign in to confirm your email change.")
-        |> redirect(to: ~p"/users/log_in")
-
-      user ->
-        case Accounts.update_user_email(user, token) do
-          {:ok, _} ->
-            conn
-            |> put_flash(:info, "Email updated")
-            |> redirect(to: ~p"/users/settings")
-
-          _ ->
-            conn
-            |> put_flash(:error, "Email change link is invalid or expired")
-            |> redirect(to: ~p"/users/settings")
-        end
     end
   end
 
@@ -66,5 +44,30 @@ defmodule CritWeb.UserSessionController do
     |> put_flash(:info, "Logged out")
     |> UserAuth.log_out_user()
     |> redirect(to: ~p"/")
+  end
+
+  # Only allow same-origin path redirects to prevent open-redirect via return_to.
+  defp sanitize_return_to(nil), do: nil
+  defp sanitize_return_to("/" <> _ = path), do: path
+  defp sanitize_return_to(_), do: nil
+
+  defp login_path(nil), do: ~p"/users/log_in"
+  defp login_path(return_to), do: "/users/log_in?return_to=#{URI.encode_www_form(return_to)}"
+
+  defp registration_error_message(changeset) do
+    cond do
+      email_taken?(changeset) ->
+        "An account with that email already exists. Try signing in instead."
+
+      true ->
+        "Registration failed. Please check the form and try again."
+    end
+  end
+
+  defp email_taken?(changeset) do
+    case Keyword.get(changeset.errors, :email) do
+      {msg, _} when is_binary(msg) -> msg =~ "taken" or msg =~ "already"
+      _ -> false
+    end
   end
 end

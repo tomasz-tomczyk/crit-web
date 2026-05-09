@@ -15,10 +15,10 @@ defmodule Crit.Accounts.UserTokenTest do
 
   test "build_hashed_token returns plaintext + struct, hash matches", %{user: user} do
     {plaintext, %UserToken{} = struct} =
-      UserToken.build_hashed_token(user, "reset_password", user.email)
+      UserToken.build_hashed_token(user, "remember_me", user.email)
 
     assert is_binary(plaintext)
-    assert struct.context == "reset_password"
+    assert struct.context == "remember_me"
     assert struct.sent_to == user.email
     assert struct.user_id == user.id
 
@@ -27,18 +27,10 @@ defmodule Crit.Accounts.UserTokenTest do
   end
 
   test "verify_token_query finds the user for a valid token", %{user: user} do
-    {plaintext, struct} = UserToken.build_hashed_token(user, "reset_password", user.email)
+    {plaintext, struct} = UserToken.build_hashed_token(user, "remember_me", user.email)
     Repo.insert!(struct)
 
-    {:ok, query} = UserToken.verify_token_query(plaintext, "reset_password")
+    {:ok, query} = UserToken.verify_token_query(plaintext, "remember_me")
     assert Repo.one(query).id == user.id
-  end
-
-  test "verify_token_query returns no row for unknown context", %{user: user} do
-    {plaintext, struct} = UserToken.build_hashed_token(user, "reset_password", user.email)
-    Repo.insert!(struct)
-
-    {:ok, query} = UserToken.verify_token_query(plaintext, "change_email")
-    refute Repo.one(query)
   end
 end

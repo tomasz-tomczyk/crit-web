@@ -57,8 +57,8 @@
           <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
             Account
           </h2>
-          <div class="flex flex-col gap-4">
-            <div class="flex items-start gap-4">
+          <div class="flex flex-col gap-8">
+            <div :if={@current_scope.user.provider} class="flex items-start gap-4">
               <%= if @current_scope.user.avatar_url do %>
                 <img
                   src={@current_scope.user.avatar_url}
@@ -70,13 +70,251 @@
                 <div class="text-base font-medium text-(--crit-fg-primary)">
                   {@current_scope.user.name || "—"}
                 </div>
-                <div class="text-sm text-(--crit-fg-muted) mt-0.5">
+                <div :if={!@can_edit_email} class="text-sm text-(--crit-fg-muted) mt-0.5">
                   {@current_scope.user.email || "No email"}
                 </div>
                 <div class="text-xs text-(--crit-fg-muted) mt-1">
                   Signed in via <span class="capitalize">{@current_scope.user.provider}</span>
                 </div>
               </div>
+            </div>
+
+            <div class={[@current_scope.user.provider && "pt-6 border-t border-(--crit-border)"]}>
+              <h3 class="text-base font-medium text-(--crit-fg-primary) mb-4">
+                Profile
+              </h3>
+              <.form
+                for={@profile_form}
+                id="profile_form"
+                phx-change="validate_profile"
+                phx-submit="update_profile"
+                class="flex flex-col gap-3 max-w-sm"
+              >
+                <div>
+                  <label
+                    for={@profile_form[:name].id}
+                    class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+                  >
+                    Display name
+                  </label>
+                  <input
+                    type="text"
+                    id={@profile_form[:name].id}
+                    name={@profile_form[:name].name}
+                    value={Phoenix.HTML.Form.normalize_value("text", @profile_form[:name].value)}
+                    autocomplete="nickname"
+                    maxlength="80"
+                    class={[
+                      "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
+                      if(
+                        Phoenix.Component.used_input?(@profile_form[:name]) and
+                          @profile_form[:name].errors != [],
+                        do: "border-red-500",
+                        else: "border-(--crit-border)"
+                      )
+                    ]}
+                  />
+                  <p class="mt-1.5 text-xs text-(--crit-fg-muted)">
+                    Optional — shown on your comments.
+                  </p>
+                  <p
+                    :for={err <- @profile_form[:name].errors}
+                    :if={Phoenix.Component.used_input?(@profile_form[:name])}
+                    class="mt-1.5 text-xs text-red-500"
+                  >
+                    {CritWeb.CoreComponents.translate_error(err)}
+                  </p>
+                </div>
+
+                <div :if={@can_edit_email}>
+                  <label
+                    for={@profile_form[:email].id}
+                    class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+                  >
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id={@profile_form[:email].id}
+                    name={@profile_form[:email].name}
+                    value={
+                      Phoenix.HTML.Form.normalize_value("email", @profile_form[:email].value)
+                    }
+                    required
+                    autocomplete="email"
+                    class={[
+                      "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
+                      if(
+                        Phoenix.Component.used_input?(@profile_form[:email]) and
+                          @profile_form[:email].errors != [],
+                        do: "border-red-500",
+                        else: "border-(--crit-border)"
+                      )
+                    ]}
+                  />
+                  <p
+                    :for={err <- @profile_form[:email].errors}
+                    :if={Phoenix.Component.used_input?(@profile_form[:email])}
+                    class="mt-1.5 text-xs text-red-500"
+                  >
+                    {CritWeb.CoreComponents.translate_error(err)}
+                  </p>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    phx-disable-with="Saving..."
+                    class="bg-(--crit-brand-cta) text-(--crit-fg-on-brand) hover:bg-(--crit-brand-cta-hover) rounded-lg px-4 py-2 text-sm font-bold cursor-pointer transition-all"
+                  >
+                    Save
+                  </button>
+                </div>
+              </.form>
+            </div>
+
+            <div
+              :if={
+                @has_password or
+                  (is_nil(@current_scope.user.provider) and @local_registration_enabled)
+              }
+              class="pt-6 border-t border-(--crit-border)"
+            >
+              <h3 class="text-base font-medium text-(--crit-fg-primary) mb-4">
+                {if @has_password, do: "Change password", else: "Set a password"}
+              </h3>
+              <.form
+                for={@password_form}
+                id="password_form"
+                phx-change="validate_password"
+                phx-submit="update_password"
+                class="flex flex-col gap-3 max-w-sm"
+              >
+                <%= if @has_password do %>
+                  <div>
+                    <label
+                      for={@password_form[:current_password].id}
+                      class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+                    >
+                      Current password
+                    </label>
+                    <input
+                      type="password"
+                      id={@password_form[:current_password].id}
+                      name={@password_form[:current_password].name}
+                      value={
+                        Phoenix.HTML.Form.normalize_value(
+                          "password",
+                          @password_form[:current_password].value
+                        )
+                      }
+                      required
+                      autocomplete="current-password"
+                      class={[
+                        "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
+                        if(
+                          Phoenix.Component.used_input?(@password_form[:current_password]) and
+                            @password_form[:current_password].errors != [],
+                          do: "border-red-500",
+                          else: "border-(--crit-border)"
+                        )
+                      ]}
+                    />
+                    <p
+                      :for={err <- @password_form[:current_password].errors}
+                      :if={Phoenix.Component.used_input?(@password_form[:current_password])}
+                      class="mt-1.5 text-xs text-red-500"
+                    >
+                      {CritWeb.CoreComponents.translate_error(err)}
+                    </p>
+                  </div>
+                <% end %>
+
+                <div>
+                  <label
+                    for={@password_form[:password].id}
+                    class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+                  >
+                    New password
+                  </label>
+                  <input
+                    type="password"
+                    id={@password_form[:password].id}
+                    name={@password_form[:password].name}
+                    value={
+                      Phoenix.HTML.Form.normalize_value(
+                        "password",
+                        @password_form[:password].value
+                      )
+                    }
+                    required
+                    autocomplete="new-password"
+                    class={[
+                      "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
+                      if(
+                        Phoenix.Component.used_input?(@password_form[:password]) and
+                          @password_form[:password].errors != [],
+                        do: "border-red-500",
+                        else: "border-(--crit-border)"
+                      )
+                    ]}
+                  />
+                  <p
+                    :for={err <- @password_form[:password].errors}
+                    :if={Phoenix.Component.used_input?(@password_form[:password])}
+                    class="mt-1.5 text-xs text-red-500"
+                  >
+                    {CritWeb.CoreComponents.translate_error(err)}
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    for={@password_form[:password_confirmation].id}
+                    class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+                  >
+                    Confirm new password
+                  </label>
+                  <input
+                    type="password"
+                    id={@password_form[:password_confirmation].id}
+                    name={@password_form[:password_confirmation].name}
+                    value={
+                      Phoenix.HTML.Form.normalize_value(
+                        "password",
+                        @password_form[:password_confirmation].value
+                      )
+                    }
+                    autocomplete="new-password"
+                    class={[
+                      "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
+                      if(
+                        Phoenix.Component.used_input?(@password_form[:password_confirmation]) and
+                          @password_form[:password_confirmation].errors != [],
+                        do: "border-red-500",
+                        else: "border-(--crit-border)"
+                      )
+                    ]}
+                  />
+                  <p
+                    :for={err <- @password_form[:password_confirmation].errors}
+                    :if={Phoenix.Component.used_input?(@password_form[:password_confirmation])}
+                    class="mt-1.5 text-xs text-red-500"
+                  >
+                    {CritWeb.CoreComponents.translate_error(err)}
+                  </p>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    phx-disable-with="Saving..."
+                    class="bg-(--crit-brand-cta) text-(--crit-fg-on-brand) hover:bg-(--crit-brand-cta-hover) rounded-lg px-4 py-2 text-sm font-bold cursor-pointer transition-all"
+                  >
+                    {if @has_password, do: "Update password", else: "Set password"}
+                  </button>
+                </div>
+              </.form>
             </div>
           </div>
         </section>

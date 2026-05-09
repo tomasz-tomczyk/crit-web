@@ -18,7 +18,7 @@ defmodule CritWeb.SettingsLiveTest do
 
   describe "mount requires user" do
     test "redirects to /auth/login when not authenticated", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/auth/login?return_to=/settings"}}} =
+      assert {:error, {:redirect, %{to: "/auth/login?return_to=%2Fsettings"}}} =
                live(conn, ~p"/settings")
     end
 
@@ -280,6 +280,138 @@ defmodule CritWeb.SettingsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/settings")
 
       assert page_title(view) =~ "Settings - Crit"
+    end
+  end
+
+  describe "profile form (OAuth user, no email field)" do
+    test "updates name only and refreshes scope", %{conn: conn} do
+      {conn, user} = login_user(conn)
+
+      {:ok, view, html} = live(conn, ~p"/settings")
+
+      # OAuth user — email input must not be rendered.
+      refute html =~ ~s(name="user[email]")
+
+      view
+      |> form("#profile_form", user: %{name: "Renamed Person"})
+      |> render_submit()
+
+      assert render(view) =~ "Profile updated."
+
+      {:ok, reloaded} = Crit.Accounts.get_user(user.id)
+      assert reloaded.name == "Renamed Person"
+      # Email unchanged (still the original).
+      assert reloaded.email == user.email
+    end
+  end
+
+  describe "profile form (local user, email field present)" do
+    setup do
+      Application.put_env(:crit, :local_registration_enabled, true)
+      on_exit(fn -> Application.put_env(:crit, :local_registration_enabled, true) end)
+
+      user = Crit.AccountsFixtures.user_fixture()
+      %{user: user}
+    end
+
+    test "updates name and email together and refreshes scope", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, lv, html} = live(conn, ~p"/settings")
+
+      assert html =~ ~s(name="user[email]")
+
+      new_email = "newaddr-#{System.unique_integer([:positive])}@example.com"
+
+      lv
+      |> form("#profile_form", user: %{name: "Local Renamed", email: new_email})
+      |> render_submit()
+
+      assert render(lv) =~ "Profile updated."
+
+      reloaded = Crit.Accounts.get_user_by_email(new_email)
+      assert reloaded.id == user.id
+      assert reloaded.name == "Local Renamed"
+    end
+
+    test "renders email validation errors", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, lv, _} = live(conn, ~p"/settings")
+
+      html =
+        lv
+        |> form("#profile_form", user: %{name: "Whatever", email: "not-an-email"})
+        |> render_submit()
+
+      assert html =~ "must have the @ sign"
+    end
+  end
+
+  describe "selfhosted local-auth: change password" do
+    setup do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.put_env(:crit, :selfhosted, false) end)
+
+      user = Crit.AccountsFixtures.user_fixture()
+      %{user: user}
+    end
+
+    test "rejects invalid current password", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, lv, _} = live(conn, ~p"/settings")
+
+      html =
+        lv
+        |> form("#password_form",
+          user: %{
+            current_password: "wrong-password",
+            password: "new-secret-1234",
+            password_confirmation: "new-secret-1234"
+          }
+        )
+        |> render_submit()
+
+      assert html =~ "is not valid"
+
+      refute Crit.User.valid_password?(
+               Crit.Accounts.get_user_by_email(user.email),
+               "new-secret-1234"
+             )
+    end
+
+    test "happy path with valid current password", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, lv, _} = live(conn, ~p"/settings")
+
+      lv
+      |> form("#password_form",
+        user: %{
+          current_password: Crit.AccountsFixtures.valid_user_password(),
+          password: "brand-new-pwd-1234",
+          password_confirmation: "brand-new-pwd-1234"
+        }
+      )
+      |> render_submit()
+
+      assert Crit.User.valid_password?(
+               Crit.Accounts.get_user_by_email(user.email),
+               "brand-new-pwd-1234"
+             )
+    end
+  end
+
+  describe "selfhosted require_authenticated_user redirect target" do
+    test "selfhost without OAuth redirects unauthenticated visitor to /users/log_in" do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.put_env(:crit, :selfhosted, false) end)
+
+      prev_oauth = Application.get_env(:crit, :oauth_provider)
+      Application.delete_env(:crit, :oauth_provider)
+      on_exit(fn -> Application.put_env(:crit, :oauth_provider, prev_oauth) end)
+
+      conn = Phoenix.ConnTest.build_conn() |> Plug.Test.init_test_session(%{})
+
+      assert {:error, {:redirect, %{to: "/users/log_in?return_to=%2Fsettings"}}} =
+               live(conn, ~p"/settings")
     end
   end
 end

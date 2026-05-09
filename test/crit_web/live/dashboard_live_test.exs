@@ -22,7 +22,7 @@ defmodule CritWeb.DashboardLiveTest do
 
   describe "mount requires user" do
     test "redirects to /auth/login when not authenticated", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/auth/login?return_to=/dashboard"}}} =
+      assert {:error, {:redirect, %{to: "/auth/login?return_to=%2Fdashboard"}}} =
                live(conn, ~p"/dashboard")
     end
 

@@ -112,22 +112,19 @@ defmodule CritWeb.Router do
 
   # Local-auth routes — only mounted on selfhosted instances.
   scope "/", CritWeb do
-    pipe_through [:browser, :noindex, CritWeb.Plugs.SelfhostedOnly]
+    pipe_through [
+      :browser,
+      :noindex,
+      CritWeb.Plugs.SelfhostedOnly,
+      CritWeb.Plugs.AuthRateLimit
+    ]
 
     post "/users/log_in", UserSessionController, :create
     delete "/users/log_out", UserSessionController, :delete
-    get "/users/settings/confirm_email/:token", UserSessionController, :confirm_email
 
     live_session :current_user,
       on_mount: [{CritWeb.UserAuth, :mount_current_scope_for_user}] do
       live "/users/log_in", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
-    end
-
-    live_session :authenticated_user,
-      on_mount: [{CritWeb.UserAuth, :require_authenticated_user}] do
-      live "/users/settings", UserSettingsLive, :edit
     end
   end
 
@@ -137,7 +134,8 @@ defmodule CritWeb.Router do
       :browser,
       :noindex,
       CritWeb.Plugs.SelfhostedOnly,
-      CritWeb.Plugs.RegistrationEnabled
+      CritWeb.Plugs.RegistrationEnabled,
+      CritWeb.Plugs.AuthRateLimit
     ]
 
     post "/users/register", UserSessionController, :register

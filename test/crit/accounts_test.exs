@@ -29,14 +29,32 @@ defmodule Crit.AccountsTest do
       assert user1.id == user2.id
     end
 
-    test "updates profile on subsequent login" do
+    test "updates email and avatar but preserves name on subsequent login" do
       {:ok, _} = Accounts.find_or_create_from_oauth("github", @oauth_params)
 
-      updated = Map.merge(@oauth_params, %{"name" => "Ada Byron", "email" => "ada2@example.com"})
+      updated =
+        Map.merge(@oauth_params, %{
+          "name" => "Ada Byron",
+          "email" => "ada2@example.com",
+          "picture" => "https://example.com/new-avatar.png"
+        })
+
       {:ok, user} = Accounts.find_or_create_from_oauth("github", updated)
 
-      assert user.name == "Ada Byron"
+      # Name from OAuth profile must NOT clobber the stored value.
+      assert user.name == "Ada Lovelace"
       assert user.email == "ada2@example.com"
+      assert user.avatar_url == "https://example.com/new-avatar.png"
+    end
+
+    test "preserves a user-edited name across re-login" do
+      {:ok, user} = Accounts.find_or_create_from_oauth("github", @oauth_params)
+      {:ok, _} = Accounts.update_user_profile(user, %{"name" => "Custom"})
+
+      changed = Map.put(@oauth_params, "name", "Different From OAuth")
+      {:ok, reloaded} = Accounts.find_or_create_from_oauth("github", changed)
+
+      assert reloaded.name == "Custom"
     end
 
     test "treats same uid from different providers as different users" do
@@ -232,49 +250,6 @@ defmodule Crit.AccountsTest do
     end
   end
 
-  describe "deliver_user_reset_password_instructions/2" do
-    alias Crit.AccountsFixtures
-    import Swoosh.TestAssertions
-
-    test "inserts a token and sends an email" do
-      user = AccountsFixtures.user_fixture()
-
-      {:ok, _} =
-        Accounts.deliver_user_reset_password_instructions(user, &"https://t.test/r/#{&1}")
-
-      assert_email_sent(fn email -> assert email.text_body =~ "https://t.test/r/" end)
-      assert Crit.Repo.aggregate(Crit.Accounts.UserToken, :count) == 1
-    end
-  end
-
-  describe "reset_user_password/2" do
-    alias Crit.AccountsFixtures
-
-    test "resets password and clears tokens" do
-      user = AccountsFixtures.user_fixture()
-      {:ok, _} = Accounts.deliver_user_reset_password_instructions(user, &"x/#{&1}")
-
-      {:ok, updated} =
-        Accounts.reset_user_password(user, %{
-          password: "brand-new-pw-1234",
-          password_confirmation: "brand-new-pw-1234"
-        })
-
-      refute Crit.User.valid_password?(updated, AccountsFixtures.valid_user_password())
-      assert Crit.User.valid_password?(updated, "brand-new-pw-1234")
-      assert Crit.Repo.aggregate(Crit.Accounts.UserToken, :count) == 0
-    end
-
-    test "rejects too-short password" do
-      user = AccountsFixtures.user_fixture()
-
-      {:error, changeset} =
-        Accounts.reset_user_password(user, %{password: "short", password_confirmation: "short"})
-
-      assert "should be at least 12 character(s)" in errors_on(changeset).password
-    end
-  end
-
   describe "update_user_password/3" do
     alias Crit.AccountsFixtures
 
@@ -338,32 +313,55 @@ defmodule Crit.AccountsTest do
     end
   end
 
-  describe "deliver_update_email_instructions / update_user_email" do
+  describe "update_user_profile/2" do
     alias Crit.AccountsFixtures
-    import Swoosh.TestAssertions
 
-    test "round-trips: sends email, applies new email on token use" do
+    test "updates name only when email key is absent" do
       user = AccountsFixtures.user_fixture()
-      new_email = "new-#{System.unique_integer([:positive])}@example.com"
+      original_email = user.email
 
-      parent = self()
+      {:ok, updated} = Accounts.update_user_profile(user, %{"name" => "Just A Name"})
+      assert updated.name == "Just A Name"
+      assert updated.email == original_email
+    end
 
-      {:ok, _} =
-        Accounts.deliver_update_email_instructions(user, new_email, fn plaintext ->
-          send(parent, {:token, plaintext})
-          "https://t.test/c/#{plaintext}"
-        end)
+    test "updates name and email atomically when both present" do
+      user = AccountsFixtures.user_fixture()
+      new_email = "combined-#{System.unique_integer([:positive])}@example.com"
 
-      assert_receive {:token, plaintext}
-      assert_email_sent()
+      {:ok, updated} =
+        Accounts.update_user_profile(user, %{"name" => "Both", "email" => new_email})
 
-      {:ok, updated} = Accounts.update_user_email(user, plaintext)
+      assert updated.name == "Both"
       assert updated.email == new_email
     end
 
-    test "rejects stale or wrong token" do
+    test "returns error changeset on invalid email" do
       user = AccountsFixtures.user_fixture()
-      assert :error = Accounts.update_user_email(user, "totally-not-a-token")
+
+      assert {:error, %Ecto.Changeset{} = cs} =
+               Accounts.update_user_profile(user, %{"name" => "x", "email" => "bogus"})
+
+      assert "must have the @ sign and no spaces" in errors_on(cs).email
+    end
+
+    test "rejects empty email when key is present (treated as required)" do
+      user = AccountsFixtures.user_fixture()
+
+      assert {:error, %Ecto.Changeset{} = cs} =
+               Accounts.update_user_profile(user, %{"name" => "x", "email" => ""})
+
+      assert "can't be blank" in errors_on(cs).email
+    end
+
+    test "accepts oversize-bordering name (80 chars) and rejects 81" do
+      user = AccountsFixtures.user_fixture()
+
+      assert {:ok, _} =
+               Accounts.update_user_profile(user, %{"name" => String.duplicate("a", 80)})
+
+      assert {:error, _} =
+               Accounts.update_user_profile(user, %{"name" => String.duplicate("a", 81)})
     end
   end
 end

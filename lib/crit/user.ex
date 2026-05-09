@@ -15,23 +15,62 @@ defmodule Crit.User do
     timestamps(type: :utc_datetime)
   end
 
-  @doc "Changeset for users created or updated via OAuth (`provider` + `provider_uid` required)."
+  @doc "Changeset for users created via OAuth (`provider` + `provider_uid` required). Includes `:name` for first-insert."
   def oauth_changeset(user, attrs) do
     user
     |> cast(attrs, [:provider, :provider_uid, :email, :name, :avatar_url])
+    |> validate_required([:provider, :provider_uid])
+    |> validate_length(:name, max: 80)
+    |> downcase_email()
+    |> unique_constraint([:provider, :provider_uid])
+    |> unique_constraint(:email, name: :users_email_lower_idx)
+  end
+
+  @doc """
+  Changeset for users updated via OAuth on subsequent logins.
+
+  Excludes `:name` so a user-edited display name is not clobbered by the
+  OAuth profile on every login.
+  """
+  def oauth_update_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:provider, :provider_uid, :email, :avatar_url])
     |> validate_required([:provider, :provider_uid])
     |> downcase_email()
     |> unique_constraint([:provider, :provider_uid])
     |> unique_constraint(:email, name: :users_email_lower_idx)
   end
 
-  @doc "Changeset for local-auth registration (email + password)."
+  @doc "Changeset for local-auth registration (email + password, optional display name)."
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :name])
     |> validate_email()
     |> validate_password(opts)
+    |> validate_length(:name, max: 80)
     |> unique_constraint(:email, name: :users_email_lower_idx)
+  end
+
+  @doc """
+  Changeset for the combined Profile form (display name + email).
+
+  - `:name` — optional, max 80 chars.
+  - `:email` — only validated when present in `attrs` (so a name-only form
+    submission is allowed when the email field is hidden, e.g. for OAuth users).
+  """
+  def profile_changeset(user, attrs) do
+    changeset =
+      user
+      |> cast(attrs, [:name, :email])
+      |> validate_length(:name, max: 80)
+
+    if Map.has_key?(attrs, "email") or Map.has_key?(attrs, :email) do
+      changeset
+      |> validate_email()
+      |> unique_constraint(:email, name: :users_email_lower_idx)
+    else
+      changeset
+    end
   end
 
   @doc "Changeset for changing a user's password."
@@ -40,20 +79,6 @@ defmodule Crit.User do
     |> cast(attrs, [:password])
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_password(opts)
-  end
-
-  @doc "Changeset for requesting an email change. Validates and downcases the new email."
-  def email_changeset(user, attrs) do
-    changeset =
-      user
-      |> cast(attrs, [:email])
-      |> validate_email()
-      |> unique_constraint(:email, name: :users_email_lower_idx)
-
-    case get_change(changeset, :email) do
-      nil -> add_error(changeset, :email, "did not change")
-      _ -> changeset
-    end
   end
 
   @doc "Changeset for user-controlled settings (e.g. `keep_reviews`)."
@@ -101,7 +126,7 @@ defmodule Crit.User do
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password])
-    |> validate_length(:password, min: 12)
+    |> validate_length(:password, min: 8, max: 72, count: :bytes)
     |> maybe_hash_password(opts)
   end
 
@@ -111,7 +136,6 @@ defmodule Crit.User do
 
     if hash? && password && changeset.valid? do
       changeset
-      |> validate_length(:password, max: 72, count: :bytes)
       |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
       |> delete_change(:password)
     else

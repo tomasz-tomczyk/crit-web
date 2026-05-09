@@ -81,8 +81,6 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
-config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Local
-
 config :crit, :demo_review_token, "seedreview12345678901"
 
 # IDs of comments + replies seeded onto the demo review. The export filter

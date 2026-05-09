@@ -40,17 +40,8 @@ defmodule CritWeb.UserLoginLiveTest do
     assert html =~ "Continue with GitHub"
   end
 
-  test "hides forgot-password when mailer unconfigured", %{conn: conn} do
-    prev = Application.get_env(:crit, Crit.Mailer, [])
-    Application.put_env(:crit, Crit.Mailer, Keyword.put(prev, :adapter, Swoosh.Adapters.Local))
-    on_exit(fn -> Application.put_env(:crit, Crit.Mailer, prev) end)
-
+  test "does not render forgot-password link", %{conn: conn} do
     {:ok, _lv, html} = live(conn, ~p"/users/log_in")
     refute html =~ "Forgot your password?"
-  end
-
-  test "shows forgot-password when mailer configured", %{conn: conn} do
-    {:ok, _lv, html} = live(conn, ~p"/users/log_in")
-    assert html =~ "Forgot your password?"
   end
 end

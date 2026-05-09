@@ -13,6 +13,7 @@ defmodule CritWeb.UserRegistrationLive do
     {:ok,
      socket
      |> assign(:trigger_submit, false)
+     |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
      |> assign(:form, to_form(changeset, as: "user"))}
   end
 

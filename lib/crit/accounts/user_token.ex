@@ -8,8 +8,6 @@ defmodule Crit.Accounts.UserToken do
   @hash_algorithm :sha256
   @rand_size 32
 
-  @reset_password_validity_in_days 1
-  @change_email_validity_in_days 7
   @remember_me_validity_in_days 60
 
   schema "users_tokens" do
@@ -22,9 +20,9 @@ defmodule Crit.Accounts.UserToken do
     timestamps(type: :utc_datetime, updated_at: false)
   end
 
-  @doc "Builds a hashed token used for password-reset / change-email / remember-me."
+  @doc "Builds a hashed token used for remember-me."
   def build_hashed_token(user, context, sent_to)
-      when context in ["reset_password", "change_email", "remember_me"] do
+      when context in ["remember_me"] do
     token = :crypto.strong_rand_bytes(@rand_size)
     hashed_token = :crypto.hash(@hash_algorithm, token)
 
@@ -72,7 +70,5 @@ defmodule Crit.Accounts.UserToken do
     from t in UserToken, where: t.user_id == ^user.id and t.context in ^contexts
   end
 
-  defp days_for_context("reset_password"), do: @reset_password_validity_in_days
-  defp days_for_context("change_email"), do: @change_email_validity_in_days
   defp days_for_context("remember_me"), do: @remember_me_validity_in_days
 end

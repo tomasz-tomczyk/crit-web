@@ -19,7 +19,7 @@ defmodule Crit.UserTest do
 
     test "validates minimum password length" do
       changeset = User.registration_changeset(%User{}, %{email: "a@b.com", password: "short"})
-      assert "should be at least 12 character(s)" in errors_on(changeset).password
+      assert "should be at least 8 byte(s)" in errors_on(changeset).password
     end
 
     test "downcases email" do
@@ -71,20 +71,6 @@ defmodule Crit.UserTest do
 
       assert get_change(changeset, :hashed_password)
       refute get_change(changeset, :password)
-    end
-  end
-
-  describe "email_changeset/2" do
-    test "rejects no-op email submission" do
-      user = %User{email: "same@example.com"}
-      changeset = User.email_changeset(user, %{email: "same@example.com"})
-      assert "did not change" in errors_on(changeset).email
-    end
-
-    test "accepts changed email" do
-      user = %User{email: "old@example.com"}
-      changeset = User.email_changeset(user, %{email: "new@example.com"})
-      assert get_change(changeset, :email) == "new@example.com"
     end
   end
 

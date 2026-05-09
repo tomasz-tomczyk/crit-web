@@ -1,28 +1,18 @@
 <Layouts.flash_group flash={@flash} />
 
-<div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-  <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <.link
-        navigate={~p"/"}
-        class="text-lg font-semibold text-slate-900 dark:text-slate-100 no-underline"
-      >
-        crit
-      </.link>
-      <Layouts.theme_toggle />
-    </div>
-  </header>
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header current_scope={@current_scope} show_overview_link={@selfhosted} />
 
   <main class="flex-1 flex items-start justify-center py-16 px-4">
     <div class="w-full max-w-md">
-      <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+      <h1 class="text-2xl font-bold text-(--crit-fg-primary) mb-2">
         Create your account
       </h1>
-      <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
+      <p class="text-sm text-(--crit-fg-muted) mb-6">
         Sign up with your email and a password.
       </p>
 
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm p-6">
+      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg shadow-sm p-6">
         <.form
           for={@form}
           id="registration_form"
@@ -35,8 +25,42 @@
         >
           <div>
             <label
+              for={@form[:name].id}
+              class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+            >
+              Display name
+            </label>
+            <input
+              type="text"
+              id={@form[:name].id}
+              name={@form[:name].name}
+              value={Phoenix.HTML.Form.normalize_value("text", @form[:name].value)}
+              autocomplete="nickname"
+              maxlength="80"
+              class={[
+                "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
+                if(Phoenix.Component.used_input?(@form[:name]) and @form[:name].errors != [],
+                  do: "border-red-500",
+                  else: "border-(--crit-border)"
+                )
+              ]}
+            />
+            <p class="mt-1.5 text-xs text-(--crit-fg-muted)">
+              Optional — shown on your comments. You can change this later.
+            </p>
+            <p
+              :for={err <- @form[:name].errors}
+              :if={Phoenix.Component.used_input?(@form[:name])}
+              class="mt-1.5 text-xs text-red-500"
+            >
+              {CritWeb.CoreComponents.translate_error(err)}
+            </p>
+          </div>
+
+          <div>
+            <label
               for={@form[:email].id}
-              class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1.5"
+              class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
             >
               Email
             </label>
@@ -48,17 +72,17 @@
               required
               autocomplete="email"
               class={[
-                "w-full bg-white dark:bg-slate-950 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition",
+                "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
                 if(Phoenix.Component.used_input?(@form[:email]) and @form[:email].errors != [],
-                  do: "border-red-300 dark:border-red-800",
-                  else: "border-slate-300 dark:border-slate-700"
+                  do: "border-red-500",
+                  else: "border-(--crit-border)"
                 )
               ]}
             />
             <p
               :for={err <- @form[:email].errors}
               :if={Phoenix.Component.used_input?(@form[:email])}
-              class="mt-1.5 text-xs text-red-700 dark:text-red-400"
+              class="mt-1.5 text-xs text-red-500"
             >
               {CritWeb.CoreComponents.translate_error(err)}
             </p>
@@ -67,7 +91,7 @@
           <div>
             <label
               for={@form[:password].id}
-              class="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-1.5"
+              class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
             >
               Password
             </label>
@@ -78,19 +102,19 @@
               required
               autocomplete="new-password"
               class={[
-                "w-full bg-white dark:bg-slate-950 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition",
+                "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border focus:outline-none focus:border-(--crit-brand)",
                 if(
                   Phoenix.Component.used_input?(@form[:password]) and
                     @form[:password].errors != [],
-                  do: "border-red-300 dark:border-red-800",
-                  else: "border-slate-300 dark:border-slate-700"
+                  do: "border-red-500",
+                  else: "border-(--crit-border)"
                 )
               ]}
             />
             <p
               :for={err <- @form[:password].errors}
               :if={Phoenix.Component.used_input?(@form[:password])}
-              class="mt-1.5 text-xs text-red-700 dark:text-red-400"
+              class="mt-1.5 text-xs text-red-500"
             >
               {CritWeb.CoreComponents.translate_error(err)}
             </p>
@@ -99,18 +123,18 @@
           <button
             type="submit"
             phx-disable-with="Creating account..."
-            class="w-full mt-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white rounded-md px-4 py-2 text-sm font-medium transition cursor-pointer"
+            class="w-full mt-2 px-4 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-all cursor-pointer"
           >
             Create account
           </button>
         </.form>
       </div>
 
-      <p class="mt-4 text-sm text-slate-600 dark:text-slate-400 text-center">
+      <p class="mt-4 text-sm text-(--crit-fg-muted) text-center">
         Already have an account?
         <.link
           navigate={~p"/users/log_in"}
-          class="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+          class="font-medium text-(--crit-brand) hover:text-(--crit-brand-hover) underline"
         >
           Sign in
         </.link>

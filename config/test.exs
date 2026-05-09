@@ -53,5 +53,4 @@ config :crit, :oauth_provider,
   client_id: "test_github_client_id",
   client_secret: "test_github_client_secret"
 
-config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Test
 config :bcrypt_elixir, :log_rounds, 4

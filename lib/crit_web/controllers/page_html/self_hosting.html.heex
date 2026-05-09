@@ -169,49 +169,6 @@
       </div>
     </section>
 
-    <%!-- Creating accounts --%>
-    <section class="mb-16 max-sm:mb-12">
-      <div class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
-        <h2 class="text-2xl font-extrabold tracking-tight mb-2">Creating accounts</h2>
-        <p phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-          Visit <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">/users/register</code> on your instance to create the first account — no environment variables required.
-          Once you've signed up the people you trust, set <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">LOCAL_REGISTRATION_ENABLED=false</code> to close the registration page.
-          Existing users can still sign in; new ones can't.
-        </p>
-        <p phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3">
-          Prefer the CLI? Bootstrap an account from a shell on the running container:
-        </p>
-      </div>
-
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
-          <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-          </div>
-          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
-        </div>
-        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
-          <div>
-            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">docker compose exec crit-web \</span>
-          </div>
-          <div class="pl-4">
-            <span class="text-(--crit-fg-primary)">
-              /app/bin/crit eval 'Mix.Tasks.Crit.CreateUser.run(["you@example.com", "secret-password"])'
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <p
-        phx-no-format
-        class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-4 max-w-[640px]"
-      >
-        In a development checkout the same task runs as <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">mix crit.create_user EMAIL PASSWORD</code>.
-      </p>
-    </section>
-
     <%!-- Environment variables --%>
     <section class="mb-16 max-sm:mb-12">
       <div phx-no-format class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
@@ -356,42 +313,43 @@
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <div>
-              <code class="text-sm font-mono text-(--crit-fg-primary)">
-                LOCAL_REGISTRATION_ENABLED
-              </code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">true</span>
-            </div>
-            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
-              Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">false</code> to close <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/users/register</code> after you've created the accounts you trust. Existing users keep working; new sign-ups are rejected.
-            </p>
-            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
-          </div>
         </div>
       </div>
 
-      <%!-- OAuth group --%>
+      <%!-- Authentication group --%>
+      <div
+        phx-no-format
+        class="max-w-[640px] mt-8 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3"
+      >
+        <h3 class="text-base font-semibold tracking-tight text-(--crit-fg-primary)">Authentication</h3>
+        <p>Pick one of three ways for your team to sign in:</p>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>
+            <strong class="text-(--crit-fg-primary)">GitHub OAuth</strong> — set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_SECRET</code>.
+          </li>
+          <li>
+            <strong class="text-(--crit-fg-primary)">Bring your own OAuth / OIDC</strong> — set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_ID</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_SECRET</code>, and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code> for Google, GitLab, Keycloak, Okta, or any other OIDC provider.
+          </li>
+          <li>
+            <strong class="text-(--crit-fg-primary)">Basic accounts</strong> — email + password managed by crit-web. No OAuth setup. Set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">LOCAL_REGISTRATION_ENABLED=true</code>, then sign up at <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/users/register</code> and flip it back to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">false</code> once your team is in.
+          </li>
+        </ul>
+        <p>
+          The two OAuth options are mutually exclusive. Basic accounts are off by default and can run on their own or alongside either OAuth provider — useful for service accounts or users without an SSO identity.
+        </p>
+      </div>
+
       <div class="border border-(--crit-border) rounded-lg overflow-hidden mb-3">
         <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
-            OAuth
+            Authentication
           </span>
-        </div>
-        <div class="px-4 py-2.5 bg-(--crit-bg-card) border-b border-(--crit-border) flex items-center gap-2">
-          <span class="text-(--crit-brand) text-sm leading-none select-none">&#9432;</span>
-          <p class="text-sm text-(--crit-fg-secondary)">
-            Use <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_*</code>
-            or <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_*</code>
-            — not both.
-            When either is set, OAuth login is required to access the dashboard and view reviews.
-          </p>
         </div>
         <div class="divide-y divide-(--crit-border)">
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">GITHUB_CLIENT_ID</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
-              GitHub OAuth App client ID. Set alongside <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_SECRET</code> to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews.
+              GitHub OAuth App client ID. Set alongside <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_SECRET</code> to enable GitHub login.
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
@@ -403,7 +361,7 @@
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_CLIENT_ID</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
-              Generic OIDC/OAuth2 client ID. Use with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_SECRET</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code> for providers like Google, GitLab, or Okta. Mutually exclusive with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code>.
+              Generic OIDC/OAuth2 client ID. Use with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_SECRET</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code>. Mutually exclusive with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code>.
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
@@ -419,59 +377,16 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-        </div>
-      </div>
-
-      <%!-- Email (SMTP) group --%>
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden mt-3">
-        <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
-          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
-            Email (SMTP)
-          </span>
-        </div>
-        <div class="px-4 py-2.5 bg-(--crit-bg-card) border-b border-(--crit-border) flex items-center gap-2">
-          <span class="text-(--crit-brand) text-sm leading-none select-none">&#9432;</span>
-          <p class="text-sm text-(--crit-fg-secondary)">
-            Optional. Configure SMTP to enable password-reset and email-change confirmations.
-            Without it, those emails are written to the local Swoosh adapter and never delivered.
-          </p>
-        </div>
-        <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <code class="text-sm font-mono text-(--crit-fg-primary)">SMTP_HOST</code>
-            <p class="text-sm text-(--crit-fg-secondary)">
-              SMTP relay hostname. When set, crit-web sends real email; when unset, all other SMTP vars are ignored.
-            </p>
-            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
-          </div>
           <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
-              <code class="text-sm font-mono text-(--crit-fg-primary)">SMTP_PORT</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">587</span>
+              <code class="text-sm font-mono text-(--crit-fg-primary)">
+                LOCAL_REGISTRATION_ENABLED
+              </code>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">false</span>
             </div>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
-              SMTP port. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">465</code> uses implicit TLS; other ports use STARTTLS.
+              Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code> to open <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/users/register</code> for email + password sign-ups. Flip back to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">false</code> once your team is in.
             </p>
-            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
-          </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <code class="text-sm font-mono text-(--crit-fg-primary)">SMTP_USERNAME</code>
-            <p class="text-sm text-(--crit-fg-secondary)">SMTP auth username.</p>
-            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
-          </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <code class="text-sm font-mono text-(--crit-fg-primary)">SMTP_PASSWORD</code>
-            <p class="text-sm text-(--crit-fg-secondary)">SMTP auth password.</p>
-            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
-          </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <div>
-              <code class="text-sm font-mono text-(--crit-fg-primary)">SMTP_FROM</code>
-              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">
-                no-reply@localhost
-              </span>
-            </div>
-            <p class="text-sm text-(--crit-fg-secondary)">From address used on outgoing email.</p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
         </div>
