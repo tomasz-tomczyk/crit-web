@@ -15,6 +15,11 @@ defmodule CritWeb.UserSessionController do
         |> redirect(to: login_path(return_to))
 
       user ->
+        # Re-assert role from ADMIN_EMAILS on every login. If the operator
+        # added/removed this email from ADMIN_EMAILS since their last login,
+        # the role is updated here without waiting for the next app boot.
+        {:ok, user} = Accounts.apply_role_for_email(user)
+
         conn
         |> put_flash(:info, "Welcome back!")
         |> UserAuth.log_in_user(user, user_params)

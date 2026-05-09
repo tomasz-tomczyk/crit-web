@@ -1,9 +1,6 @@
 defmodule Crit.Accounts do
   @moduledoc """
   Accounts context.
-
-  Note: the admin-role plan will later add a call to `apply_role_for_email/1`
-  inside `register_user/1` to assign roles based on email at registration time.
   """
 
   import Ecto.Query
@@ -20,6 +17,48 @@ defmodule Crit.Accounts do
     %User{}
     |> User.registration_changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, user} -> apply_role_for_email(user)
+      other -> other
+    end
+  end
+
+  @doc """
+  Re-asserts the user's role from `ADMIN_EMAILS`. Promotes if the user's
+  email is in the list, demotes otherwise.
+
+  Called on every login, registration, and the boot reconciliation pass in
+  `Crit.Release.migrate/0` — `ADMIN_EMAILS` is the single source of truth
+  for admin status; this function keeps `users.role` in sync with it.
+
+  Returns `{:ok, user}` (always — a no-op update is still a success) or
+  `{:error, changeset}` on DB failure.
+  """
+  def apply_role_for_email(%User{} = user) do
+    desired = desired_role_for_email(user.email)
+
+    if user.role == desired do
+      {:ok, user}
+    else
+      user
+      |> User.role_changeset(%{role: desired})
+      |> Repo.update()
+    end
+  end
+
+  defp desired_role_for_email(email) when is_binary(email) do
+    if String.downcase(email) in admin_emails(), do: :admin, else: :user
+  end
+
+  defp desired_role_for_email(_), do: :user
+
+  defp admin_emails do
+    Application.get_env(:crit, :admin_emails, [])
+  end
+
+  @doc "Returns all users, ordered by inserted_at desc."
+  def list_users do
+    Repo.all(from u in User, order_by: [desc: u.inserted_at])
   end
 
   @doc """
@@ -77,18 +116,24 @@ defmodule Crit.Accounts do
 
     update_attrs = Map.delete(insert_attrs, :name)
 
-    cond do
-      is_nil(provider_uid) ->
-        %User{} |> User.oauth_changeset(insert_attrs) |> Repo.insert()
+    result =
+      cond do
+        is_nil(provider_uid) ->
+          %User{} |> User.oauth_changeset(insert_attrs) |> Repo.insert()
 
-      existing = Repo.get_by(User, provider: provider, provider_uid: provider_uid) ->
-        existing |> User.oauth_update_changeset(update_attrs) |> Repo.update()
+        existing = Repo.get_by(User, provider: provider, provider_uid: provider_uid) ->
+          existing |> User.oauth_update_changeset(update_attrs) |> Repo.update()
 
-      existing = insert_attrs.email && get_user_by_email(insert_attrs.email) ->
-        existing |> User.oauth_update_changeset(update_attrs) |> Repo.update()
+        existing = insert_attrs.email && get_user_by_email(insert_attrs.email) ->
+          existing |> User.oauth_update_changeset(update_attrs) |> Repo.update()
 
-      true ->
-        %User{} |> User.oauth_changeset(insert_attrs) |> Repo.insert()
+        true ->
+          %User{} |> User.oauth_changeset(insert_attrs) |> Repo.insert()
+      end
+
+    case result do
+      {:ok, user} -> apply_role_for_email(user)
+      other -> other
     end
   end
 
@@ -207,24 +252,19 @@ defmodule Crit.Accounts do
   end
 
   @doc """
-  Updates the keep_reviews setting for a user.
-  Returns `{:ok, user}` or `{:error, changeset}`.
-  """
-  def update_keep_reviews(%User{} = user, keep_reviews) when is_boolean(keep_reviews) do
-    user
-    |> User.settings_changeset(%{keep_reviews: keep_reviews})
-    |> Repo.update()
-  end
+  Hard-deletes a user. PostgreSQL `on_delete: :delete_all` cascades:
+  - API tokens
+  - Device codes
+  - `users_tokens` (remember_me etc.)
+  - Reviews (and via reviews → review_files, comments, snapshots)
+  - Comments authored by the user (top-level)
 
-  @doc """
-  Deletes a user account. PostgreSQL cascade handles:
-  - API tokens (deleted)
-  - Device codes (deleted)
-  - Reviews (user_id set to nil, reviews preserved)
+  Used by both self-delete and admin-delete; the only difference between
+  the two is the auth check at the call site.
 
-  Returns `:ok` or `{:error, :not_found}`.
+  Returns `:ok` or `{:error, :not_found}` or `{:error, :delete_failed}`.
   """
-  def delete_account(%User{id: id}) do
+  def delete_user(%User{id: id}) do
     case Repo.get(User, id) do
       nil ->
         {:error, :not_found}

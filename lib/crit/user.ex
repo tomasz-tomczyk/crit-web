@@ -7,7 +7,7 @@ defmodule Crit.User do
     field :email, :string
     field :name, :string
     field :avatar_url, :string
-    field :keep_reviews, :boolean, default: false
+    field :role, Ecto.Enum, values: [:admin, :user], default: :user
     field :hashed_password, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :current_password, :string, virtual: true, redact: true
@@ -81,9 +81,12 @@ defmodule Crit.User do
     |> validate_password(opts)
   end
 
-  @doc "Changeset for user-controlled settings (e.g. `keep_reviews`)."
-  def settings_changeset(user, attrs) do
-    user |> cast(attrs, [:keep_reviews])
+  @doc """
+  Programmatic role-assignment changeset. Used only by
+  `Crit.Accounts.apply_role_for_email/1` — `:role` is never user-supplied.
+  """
+  def role_changeset(user, attrs) do
+    user |> cast(attrs, [:role])
   end
 
   @doc "Verifies a plaintext password against the stored hash."

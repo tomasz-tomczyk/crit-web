@@ -21,7 +21,6 @@ defmodule CritWeb.SettingsLive do
       |> assign(:new_token_plaintext, nil)
       |> assign(:new_token_name, "")
       |> assign(:delete_confirmation, "")
-      |> assign(:keep_reviews, user.keep_reviews)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
       |> assign(:local_registration_enabled, local_registration_enabled)
       |> assign(:has_password, is_binary(user.hashed_password))
@@ -113,24 +112,6 @@ defmodule CritWeb.SettingsLive do
   end
 
   @impl true
-  def handle_event("toggle_keep_reviews", _params, socket) do
-    %{current_scope: scope} = socket.assigns
-    user = scope.user
-    new_value = !socket.assigns.keep_reviews
-
-    case Accounts.update_keep_reviews(user, new_value) do
-      {:ok, updated_user} ->
-        {:noreply,
-         socket
-         |> assign(:keep_reviews, new_value)
-         |> assign(:current_scope, Scope.put_user(scope, updated_user))}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to update setting.")}
-    end
-  end
-
-  @impl true
   def handle_event("create_token", %{"name" => name}, socket) do
     user = socket.assigns.current_scope.user
 
@@ -178,7 +159,7 @@ defmodule CritWeb.SettingsLive do
     user = socket.assigns.current_scope.user
 
     if socket.assigns.delete_confirmation == delete_confirmation_text(user) do
-      case Accounts.delete_account(user) do
+      case Accounts.delete_user(user) do
         :ok ->
           {:noreply,
            socket

@@ -11,6 +11,28 @@ defmodule Crit.Release do
     for repo <- repos() do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
+
+    # Reconcile ADMIN_EMAILS → users.role on every boot, not just when
+    # migrations are pending. The operator's normal "edit env, restart
+    # container" loop should apply the new admin set without anyone having
+    # to log in.
+    reconcile_admin_emails()
+  end
+
+  @doc """
+  Reconciles `users.role` against the parsed `ADMIN_EMAILS` list. Promotes
+  users whose email is now listed; demotes users whose email is no longer
+  listed. Idempotent.
+  """
+  def reconcile_admin_emails do
+    {:ok, _, _} =
+      Ecto.Migrator.with_repo(Crit.Repo, fn _repo ->
+        for user <- Crit.Accounts.list_users() do
+          Crit.Accounts.apply_role_for_email(user)
+        end
+      end)
+
+    :ok
   end
 
   def rollback(repo, version) do

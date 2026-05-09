@@ -90,27 +90,11 @@ defmodule Crit.ReviewsInactiveTest do
       assert is_nil(Repo.get(Review, other.id))
     end
 
-    test "does not delete reviews owned by users with keep_reviews enabled" do
+    test "deletes stale reviews regardless of owner" do
       {:ok, user} =
         Accounts.find_or_create_from_oauth("github", %{
-          "sub" => "keep_#{System.unique_integer()}",
-          "name" => "Keeper"
-        })
-
-      {:ok, user} = Accounts.update_keep_reviews(user, true)
-
-      review = review_fixture(%{user_id: user.id})
-      set_last_activity(review, 31)
-
-      assert {:ok, 0} = Reviews.delete_inactive(30)
-      assert Repo.get(Review, review.id)
-    end
-
-    test "deletes stale reviews from users without keep_reviews" do
-      {:ok, user} =
-        Accounts.find_or_create_from_oauth("github", %{
-          "sub" => "nokeep_#{System.unique_integer()}",
-          "name" => "No Keep"
+          "sub" => "owned_#{System.unique_integer()}",
+          "name" => "Owner"
         })
 
       review = review_fixture(%{user_id: user.id})
@@ -118,22 +102,6 @@ defmodule Crit.ReviewsInactiveTest do
 
       assert {:ok, 1} = Reviews.delete_inactive(30)
       assert is_nil(Repo.get(Review, review.id))
-    end
-
-    test "deletes anonymous stale reviews even when keep_reviews users exist" do
-      {:ok, user} =
-        Accounts.find_or_create_from_oauth("github", %{
-          "sub" => "keeper2_#{System.unique_integer()}",
-          "name" => "Keeper"
-        })
-
-      {:ok, _user} = Accounts.update_keep_reviews(user, true)
-
-      anon_review = review_fixture()
-      set_last_activity(anon_review, 31)
-
-      assert {:ok, 1} = Reviews.delete_inactive(30)
-      assert is_nil(Repo.get(Review, anon_review.id))
     end
   end
 end

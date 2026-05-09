@@ -2,10 +2,8 @@ defmodule Crit.Reviews do
   @moduledoc "Context for reviews and comments."
 
   import Ecto.Query
-  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Statistics, User}
+  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Settings, Statistics, User}
   alias Crit.Accounts.Scope
-
-  @max_total_size 10_485_760
 
   @doc "Fetch a review by its token, preloading comments sorted by start_line."
   def get_by_token(token) do
@@ -283,7 +281,9 @@ defmodule Crit.Reviews do
     user_id = Scope.user_id(scope)
     cli_args = Keyword.get(opts, :cli_args) || []
 
-    if total_bytes > @max_total_size do
+    max_total_size = Settings.get().max_document_bytes
+
+    if total_bytes > max_total_size do
       {:error, :total_size_exceeded}
     else
       review_changeset =
@@ -702,17 +702,13 @@ defmodule Crit.Reviews do
 
     ids_query =
       from r in Review,
-        left_join: u in User,
-        on: u.id == r.user_id,
-        where:
-          r.last_activity_at < ^cutoff and
-            (is_nil(u.id) or u.keep_reviews == false),
+        where: r.last_activity_at < ^cutoff,
         select: r.id
 
     ids_query =
       case Application.get_env(:crit, :demo_review_token) do
         nil -> ids_query
-        demo_token -> from [r, _u] in ids_query, where: r.token != ^demo_token
+        demo_token -> from r in ids_query, where: r.token != ^demo_token
       end
 
     {count, _} =
