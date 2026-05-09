@@ -82,6 +82,7 @@
   --crit-red:    #f7768e;
   --crit-orange: #ff9e64;
   --crit-yellow: #e0af68;
+  --crit-visual-accent: #e0af68;
 
   /* ---- Borders ---- */
   --crit-border:         #232632;
@@ -206,6 +207,7 @@
   --crit-red:    #f7768e;
   --crit-orange: #ff9e64;
   --crit-yellow: #e0af68;
+  --crit-visual-accent: #e0af68;
 
   /* ---- Borders ---- */
   --crit-border:         #232632;
@@ -325,6 +327,7 @@
   --crit-red:    #cf222e;
   --crit-orange: #bc4c00;
   --crit-yellow: #7a5800;
+  --crit-visual-accent: #b8860b;
 
   /* ---- Borders ---- */
   --crit-border:         #d8dee4;
@@ -446,7 +449,8 @@
     --crit-red:    #cf222e;
     --crit-orange: #bc4c00;
     --crit-yellow: #7a5800;
-  
+    --crit-visual-accent: #b8860b;
+
     /* ---- Borders ---- */
     --crit-border:         #d8dee4;
     --crit-border-strong:  #bac3cf;
@@ -821,9 +825,11 @@
 
 /* Visual line mode: recolor the focused block's left accent so it's clearly
    distinct from the default j/k cursor, signalling that j/k now extends the
-   selection instead of moving focus. Mirrors crit/frontend/style.css. */
+   selection instead of moving focus. Mirrors crit/frontend/style.css. Uses a
+   dedicated --crit-visual-accent so we don't conflate it with the modified-
+   line indicator (--crit-orange) or modified-file badges (--crit-yellow). */
 body.visual-mode .line-block.focused {
-  box-shadow: inset 3px 0 0 var(--crit-orange);
+  box-shadow: inset 3px 0 0 var(--crit-visual-accent);
 }
 
 /* ===== Gutter ===== */
