@@ -304,6 +304,12 @@
   --crit-editor-fg-muted:        #9aa1c8;
   --crit-editor-scrollbar-bg:    #1a1b26;
   --crit-editor-scrollbar-thumb: #3b4261;
+  /* Comment reference chip (dark) */
+  --crit-comment-ref-color:       #85aaf8;
+  --crit-comment-ref-color-hover: #94bcfb;
+  --crit-comment-ref-underline:   rgba(133, 170, 248, 0.35);
+  --crit-comment-ref-flash-bg:    rgba(187, 128, 9, 0.35);
+  --crit-comment-ref-flash-ring:  rgba(187, 128, 9, 0.85);
 }
 
 [data-theme="light"] {
