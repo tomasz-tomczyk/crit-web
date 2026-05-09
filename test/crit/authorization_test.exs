@@ -4,18 +4,8 @@ defmodule Crit.AuthorizationTest do
   alias Crit.Authorization
   alias Crit.User
 
-  setup do
-    prev = Application.get_env(:crit, :admin_emails, [])
-    Application.put_env(:crit, :admin_emails, ["pinned@example.com"])
-    on_exit(fn -> Application.put_env(:crit, :admin_emails, prev) end)
-    :ok
-  end
-
   defp admin, do: %User{id: Ecto.UUID.generate(), role: :admin, email: "alice@example.com"}
   defp user, do: %User{id: Ecto.UUID.generate(), role: :user, email: "bob@example.com"}
-
-  defp pinned_admin,
-    do: %User{id: Ecto.UUID.generate(), role: :admin, email: "pinned@example.com"}
 
   describe "admin?/1" do
     test "true for admin role" do
@@ -28,21 +18,6 @@ defmodule Crit.AuthorizationTest do
 
     test "false for nil" do
       refute Authorization.admin?(nil)
-    end
-  end
-
-  describe "env_pinned?/1" do
-    test "true when email is in ADMIN_EMAILS" do
-      assert Authorization.env_pinned?(pinned_admin())
-    end
-
-    test "false when email is not in ADMIN_EMAILS" do
-      refute Authorization.env_pinned?(admin())
-    end
-
-    test "case-insensitive" do
-      u = %User{id: Ecto.UUID.generate(), role: :admin, email: "PINNED@example.COM"}
-      assert Authorization.env_pinned?(u)
     end
   end
 
@@ -89,12 +64,9 @@ defmodule Crit.AuthorizationTest do
   end
 
   describe "can?/3 :delete_user" do
-    test "admin can delete a non-pinned user" do
+    test "admin can delete any user" do
       assert Authorization.can?(admin(), :delete_user, user())
-    end
-
-    test "admin cannot delete a pinned user" do
-      refute Authorization.can?(admin(), :delete_user, pinned_admin())
+      assert Authorization.can?(admin(), :delete_user, admin())
     end
 
     test "user cannot delete anyone" do
