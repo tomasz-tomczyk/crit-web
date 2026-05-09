@@ -188,24 +188,30 @@ defmodule CritWeb.UserAuth do
   def on_mount(:require_authenticated_user, _params, session, socket) do
     socket = assign_scope(socket, session)
 
-    if socket.assigns.current_scope.user do
-      {:cont, socket}
-    else
-      request_path = Map.get(session, "request_path", "/dashboard")
-      encoded = URI.encode_www_form(request_path)
+    cond do
+      socket.assigns.current_scope.user ->
+        {:cont, socket}
 
-      cond do
-        Application.get_env(:crit, :selfhosted) ->
-          # Selfhosted always lands on /users/log_in. The login page renders
-          # the OAuth button when `oauth_configured?` so the user can pick.
-          {:halt, redirect(socket, to: "/users/log_in?return_to=#{encoded}")}
+      Application.get_env(:crit, :selfhosted) ->
+        request_path = Map.get(session, "request_path", "/dashboard")
+        encoded = URI.encode_www_form(request_path)
+        # Selfhosted always lands on /users/log_in. The login page renders
+        # the OAuth button when `oauth_configured?` so the user can pick.
+        {:halt, redirect(socket, to: "/users/log_in?return_to=#{encoded}")}
 
-        Crit.Config.oauth_configured?() ->
-          {:halt, redirect(socket, to: "/auth/login?return_to=#{encoded}")}
+      Crit.Config.oauth_configured?() ->
+        request_path = Map.get(session, "request_path", "/dashboard")
+        encoded = URI.encode_www_form(request_path)
+        {:halt, redirect(socket, to: "/auth/login?return_to=#{encoded}")}
 
-        true ->
-          {:halt, redirect(socket, to: "/")}
-      end
+      not Crit.Config.auth_configured?() ->
+        # No OAuth, no admin password — nobody can sign in. Render the page
+        # anonymously rather than redirecting, which would otherwise loop
+        # through transformative proxies (see issue #50).
+        {:cont, socket}
+
+      true ->
+        {:halt, redirect(socket, to: "/")}
     end
   end
 
