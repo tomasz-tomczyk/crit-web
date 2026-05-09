@@ -639,7 +639,7 @@
         must be set on the <strong>CLI</strong>
         side, not on this hosted instance.
       </p>
-      <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
         If your proxy strips or rewrites WebSocket upgrades, set
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
           CRIT_LIVEVIEW_TRANSPORT=longpoll
@@ -650,6 +650,69 @@
           websocket
         </code>
         with automatic fallback after 2.5s.
+      </p>
+
+      <h3 class="text-lg font-bold tracking-tight mt-8 mb-2">
+        Trusted proxy header
+      </h3>
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
+        If your proxy already authenticates users (oauth2-proxy, Cloudflare
+        Access, Google IAP, Pomerium, Authelia), you can have Crit pick up the
+        signed-in user's email from a request header instead of running its
+        own OAuth. Set both:
+      </p>
+      <pre class="font-mono text-xs bg-(--crit-bg-elevated) p-3 rounded mb-4 max-w-[640px] overflow-x-auto"><code>CRIT_TRUSTED_PROXY_USER_HEADER=X-Auth-Request-Email
+CRIT_TRUSTED_PROXY_CIDRS=10.0.0.0/8,172.16.0.0/12</code></pre>
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
+        Common header names by proxy:
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          X-Auth-Request-Email
+        </code>
+        (oauth2-proxy),
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          Cf-Access-Authenticated-User-Email
+        </code>
+        (Cloudflare Access),
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          X-Goog-Authenticated-User-Email
+        </code>
+        (Google IAP),
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          X-Pomerium-Claim-Email
+        </code>
+        (Pomerium),
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          Remote-Email
+        </code>
+        (Authelia).
+      </p>
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
+        <strong>The CIDR list is mandatory.</strong>
+        Without it, anyone who can reach the app directly (bypassing the
+        proxy) could spoof the header and impersonate any user. Crit refuses
+        to start if the header is set without CIDRs. Set the CIDRs to cover
+        only the IP range your proxy uses to forward requests.
+      </p>
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
+        Your proxy must <strong>overwrite</strong>
+        the header on every request, not append to incoming values. Most SSO
+        proxies do this by default — verify yours does before enabling.
+      </p>
+      <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
+        This authenticates browser-driven flows only (review pages, dashboard,
+        the in-browser Share popup). The local CLI's direct
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          /api/reviews
+        </code>
+        uploads still require a bearer token from
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          crit auth
+        </code>
+        — use
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          share_flow: "popup"
+        </code>
+        on the CLI side if the proxy blocks direct API access.
       </p>
     </section>
 

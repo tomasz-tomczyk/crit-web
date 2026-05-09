@@ -13,6 +13,7 @@ defmodule CritWeb.Router do
     plug CritWeb.Plugs.SecurityHeaders
     plug CritWeb.Plugs.RateLimit
     plug :fetch_current_scope_for_user
+    plug CritWeb.Plugs.TrustedProxyAuth
   end
 
   pipeline :api do
