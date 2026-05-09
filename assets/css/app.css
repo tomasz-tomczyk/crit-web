@@ -819,6 +819,13 @@
 }
 .line-block.focused .line-gutter { background: var(--crit-line-focus-bg); }
 
+/* Visual line mode: recolor the focused block's left accent so it's clearly
+   distinct from the default j/k cursor, signalling that j/k now extends the
+   selection instead of moving focus. Mirrors crit/frontend/style.css. */
+body.visual-mode .line-block.focused {
+  box-shadow: inset 3px 0 0 var(--crit-orange);
+}
+
 /* ===== Gutter ===== */
 .line-gutter {
   position: relative;

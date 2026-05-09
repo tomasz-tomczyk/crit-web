@@ -677,12 +677,14 @@ function enterVisualMode(ctx) {
   }
   ctx.selectionStart = block.startLine
   ctx.selectionEnd = block.endLine
+  document.body.classList.add('visual-mode')
   refreshVisualSelectionVisuals(ctx)
 }
 
 function exitVisualMode(ctx, clearSelection) {
   if (!ctx.visualMode) return
   ctx.visualMode = null
+  document.body.classList.remove('visual-mode')
   if (clearSelection) {
     ctx.selectionStart = null
     ctx.selectionEnd = null
@@ -5121,6 +5123,7 @@ export const DocumentRenderer = {
               const startLine = ctx.selectionStart
               const endLine = ctx.selectionEnd
               ctx.visualMode = null
+              document.body.classList.remove('visual-mode')
               openForm(ctx, {
                 afterBlockIndex: lastBlockIndex,
                 startLine: startLine,
@@ -5215,6 +5218,7 @@ export const DocumentRenderer = {
     this.visualMode = null
     this.selectionStart = null
     this.selectionEnd = null
+    document.body.classList.remove('visual-mode')
     if (this._scrollHandler) {
       window.removeEventListener("scroll", this._scrollHandler)
     }
