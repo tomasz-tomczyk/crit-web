@@ -121,6 +121,26 @@ if System.get_env("PHX_SERVER") do
   config :crit, CritWeb.Endpoint, server: true
 end
 
+# LiveView transport selection. Default is "websocket"; set "longpoll" to skip
+# the WebSocket attempt entirely when deploying behind a proxy known to break
+# WS upgrades (e.g. some SSO/Envoy setups). See issue #50.
+case System.get_env("CRIT_LIVEVIEW_TRANSPORT") do
+  nil ->
+    :ok
+
+  "" ->
+    :ok
+
+  "websocket" ->
+    config :crit, CritWeb.Endpoint, liveview_transport: "websocket"
+
+  "longpoll" ->
+    config :crit, CritWeb.Endpoint, liveview_transport: "longpoll"
+
+  other ->
+    raise "CRIT_LIVEVIEW_TRANSPORT must be \"websocket\" or \"longpoll\", got: #{inspect(other)}"
+end
+
 config :crit, CritWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
