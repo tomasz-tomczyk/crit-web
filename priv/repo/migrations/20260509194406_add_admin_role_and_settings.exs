@@ -2,10 +2,13 @@ defmodule Crit.Repo.Migrations.AddAdminRoleAndSettings do
   use Ecto.Migration
 
   def change do
-    # ---- users.role + drop keep_reviews -------------------------------------
+    # ---- users.role ---------------------------------------------------------
+    # `keep_reviews` is intentionally NOT dropped here — it remains relevant
+    # for the hosted instance's 30-day-inactivity cleanup (see
+    # `Crit.Reviews.delete_inactive/1`). It is unrelated to account deletion,
+    # which is a hard cascade regardless of `keep_reviews`.
     alter table(:users) do
       add :role, :string, null: false, default: "user"
-      remove :keep_reviews, :boolean, default: false, null: false
     end
 
     create constraint(:users, :role_must_be_valid, check: "role IN ('admin', 'user')")

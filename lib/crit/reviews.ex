@@ -702,13 +702,17 @@ defmodule Crit.Reviews do
 
     ids_query =
       from r in Review,
-        where: r.last_activity_at < ^cutoff,
+        left_join: u in User,
+        on: u.id == r.user_id,
+        where:
+          r.last_activity_at < ^cutoff and
+            (is_nil(u.id) or u.keep_reviews == false),
         select: r.id
 
     ids_query =
       case Application.get_env(:crit, :demo_review_token) do
         nil -> ids_query
-        demo_token -> from r in ids_query, where: r.token != ^demo_token
+        demo_token -> from [r, _u] in ids_query, where: r.token != ^demo_token
       end
 
     {count, _} =
