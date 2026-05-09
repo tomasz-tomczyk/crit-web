@@ -77,28 +77,6 @@ commentMd.renderer.rules.file_ref = function(tokens, idx) {
   return '<span class="file-ref">' + escapeHtml(path) + '</span>'
 }
 
-// ===== Comment Reference Inline Rule =====
-// Linkify bare comment IDs (c_, r_, rp_ + 6+ hex chars) in comment bodies.
-commentMd.inline.ruler.push('comment_ref', (state, silent) => {
-  const start = state.pos
-  const src = state.src
-  const m = /^(c|r|rp)_[a-f0-9]{6,}/.exec(src.slice(start))
-  if (!m) return false
-  if (start > 0 && /[a-zA-Z0-9_]/.test(src[start - 1])) return false
-  const end = start + m[0].length
-  if (end < src.length && /[a-zA-Z0-9_]/.test(src[end])) return false
-  if (!silent) {
-    const token = state.push('comment_ref', '', 0)
-    token.content = m[0]
-  }
-  state.pos = end
-  return true
-})
-commentMd.renderer.rules.comment_ref = (tokens, idx) => {
-  const id = tokens[idx].content
-  return '<span class="comment-ref" data-ref-id="' + escapeHtml(id) + '">' + escapeHtml(id) + '</span>'
-}
-
 // Override code_inline so backtick-wrapped comment IDs render as the same chip.
 const defaultCodeInline = commentMd.renderer.rules.code_inline || function(tokens, idx, options, env, self) {
   return self.renderToken(tokens, idx, options)
@@ -109,6 +87,34 @@ commentMd.renderer.rules.code_inline = function(tokens, idx, options, env, self)
     return '<span class="comment-ref comment-ref-code" data-ref-id="' + escapeHtml(content) + '">' + escapeHtml(content) + '</span>'
   }
   return defaultCodeInline(tokens, idx, options, env, self)
+}
+
+function linkifyCommentRefsInDom(el) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false)
+  const textNodes = []
+  let node
+  while ((node = walker.nextNode())) {
+    if (node.parentNode.closest('code, pre, .comment-ref')) continue
+    textNodes.push(node)
+  }
+  const re = /((?:c|r|rp)_[a-f0-9]{6,})/g
+  textNodes.forEach(tn => {
+    if (!re.test(tn.nodeValue)) { re.lastIndex = 0; return }
+    re.lastIndex = 0
+    const frag = document.createDocumentFragment()
+    let last = 0, m
+    while ((m = re.exec(tn.nodeValue)) !== null) {
+      if (m.index > last) frag.appendChild(document.createTextNode(tn.nodeValue.slice(last, m.index)))
+      const span = document.createElement('span')
+      span.className = 'comment-ref'
+      span.dataset.refId = m[1]
+      span.textContent = m[1]
+      frag.appendChild(span)
+      last = m.index + m[0].length
+    }
+    if (last < tn.nodeValue.length) frag.appendChild(document.createTextNode(tn.nodeValue.slice(last)))
+    tn.parentNode.replaceChild(frag, tn)
+  })
 }
 
 // Scroll/expand/flash a comment card located anywhere in the document, given just its id.
@@ -2758,6 +2764,7 @@ function createCommentElement(comment, ctx) {
     }
   }
   body.innerHTML = commentMd.render(comment.body, env)
+  linkifyCommentRefsInDom(body)
 
   card.appendChild(header)
   card.appendChild(body)
@@ -3160,6 +3167,7 @@ function renderReplyList(comment, ctx) {
     replyBody.className = 'reply-body'
     replyBody.dataset.rawBody = reply.body
     replyBody.innerHTML = commentMd.render(reply.body)
+    linkifyCommentRefsInDom(replyBody)
     replyEl.appendChild(replyBody)
 
     repliesContainer.appendChild(replyEl)
@@ -3418,6 +3426,7 @@ function createResolvedElement(comment, ctx) {
     }
   }
   body.innerHTML = commentMd.render(comment.body, env)
+  linkifyCommentRefsInDom(body)
 
   card.appendChild(header)
   card.appendChild(body)
@@ -4090,6 +4099,7 @@ function renderPanelCard(ctx, comment, filePath) {
     }
   }
   bodyEl.innerHTML = commentMd.render(comment.body, env)
+  linkifyCommentRefsInDom(bodyEl)
   card.appendChild(bodyEl)
 
   // Replies (read-only in panel)
@@ -5022,7 +5032,7 @@ export const DocumentRenderer = {
       const card = ctx.el.querySelector(`.comment-card[data-comment-id="${id}"]`)
       if (card) {
         const bodyEl = card.querySelector('.comment-body')
-        if (bodyEl) bodyEl.innerHTML = commentMd.render(body)
+        if (bodyEl) { bodyEl.innerHTML = commentMd.render(body); linkifyCommentRefsInDom(bodyEl) }
       }
       rerenderPanel(ctx)
     })
@@ -5090,6 +5100,7 @@ export const DocumentRenderer = {
         if (bodyEl) {
           bodyEl.dataset.rawBody = body
           bodyEl.innerHTML = commentMd.render(body)
+          linkifyCommentRefsInDom(bodyEl)
         }
       }
       rerenderPanel(ctx)
