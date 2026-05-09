@@ -5,6 +5,8 @@ defmodule Crit.Release do
   """
   @app :crit
 
+  import Ecto.Query, only: [from: 2]
+
   def migrate do
     load_app()
 
@@ -25,11 +27,26 @@ defmodule Crit.Release do
   listed. Idempotent.
   """
   def reconcile_admin_emails do
+    emails = Application.get_env(:crit, :admin_emails, [])
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
     {:ok, _, _} =
       Ecto.Migrator.with_repo(Crit.Repo, fn _repo ->
-        for user <- Crit.Accounts.list_users() do
-          Crit.Accounts.apply_role_for_email(user)
+        # Promote env-listed users to admin.
+        if emails != [] do
+          from(u in Crit.User,
+            where: fragment("lower(?)", u.email) in ^emails and u.role != ^:admin,
+            update: [set: [role: ^:admin, updated_at: ^now]]
+          )
+          |> Crit.Repo.update_all([])
         end
+
+        # Demote any admin whose email is no longer listed.
+        from(u in Crit.User,
+          where: u.role == ^:admin and fragment("lower(?)", u.email) not in ^emails,
+          update: [set: [role: ^:user, updated_at: ^now]]
+        )
+        |> Crit.Repo.update_all([])
       end)
 
     :ok
