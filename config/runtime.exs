@@ -34,6 +34,24 @@ if System.get_env("SELFHOSTED") in ~w(true 1) do
   config :crit, :selfhosted, true
 end
 
+# ADMIN_EMAILS: comma-separated list of email addresses that should have the
+# instance admin role. Parsed into a list of trimmed, lowercased strings.
+# This is the single source of truth for admin status — see
+# `Crit.Authorization` and `Crit.Accounts.apply_role_for_email/1`.
+admin_emails =
+  case System.get_env("ADMIN_EMAILS") do
+    nil ->
+      []
+
+    raw ->
+      raw
+      |> String.split(",", trim: true)
+      |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
+      |> Enum.reject(&(&1 == ""))
+  end
+
+config :crit, :admin_emails, admin_emails
+
 # Sentry — only active when SENTRY_DSN is set. With no DSN the SDK is a no-op,
 # so self-hosted deployments make zero network calls to Sentry.
 if sentry_dsn = System.get_env("SENTRY_DSN") do
