@@ -5111,22 +5111,24 @@ export const DocumentRenderer = {
             const lineBlocks = fp
               ? (ctx.files.find(f => f.path === fp)?.lineBlocks || [])
               : ctx.lineBlocks
-            let lastBlockIndex = 0
+            let lastBlockIndex = -1
             for (let i = 0; i < lineBlocks.length; i++) {
               if (lineBlocks[i].startLine >= ctx.selectionStart && lineBlocks[i].endLine <= ctx.selectionEnd) {
                 lastBlockIndex = i
               }
             }
-            const startLine = ctx.selectionStart
-            const endLine = ctx.selectionEnd
-            ctx.visualMode = null
-            openForm(ctx, {
-              afterBlockIndex: lastBlockIndex,
-              startLine: startLine,
-              endLine: endLine,
-              editingId: null,
-              filePath: fp,
-            })
+            if (lastBlockIndex >= 0) {
+              const startLine = ctx.selectionStart
+              const endLine = ctx.selectionEnd
+              ctx.visualMode = null
+              openForm(ctx, {
+                afterBlockIndex: lastBlockIndex,
+                startLine: startLine,
+                endLine: endLine,
+                editingId: null,
+                filePath: fp,
+              })
+            }
             break
           }
           // If text is selected, comment on the selection (with quote).
@@ -5209,6 +5211,10 @@ export const DocumentRenderer = {
 
   destroyed() {
     document.body.classList.remove("dragging")
+    // Drop any visual-mode state so a remount starts clean.
+    this.visualMode = null
+    this.selectionStart = null
+    this.selectionEnd = null
     if (this._scrollHandler) {
       window.removeEventListener("scroll", this._scrollHandler)
     }
