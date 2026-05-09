@@ -128,8 +128,10 @@ function scrollToCommentRef(id) {
     commentCollapseOverrides[id] = false
   }
   card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  card.classList.remove('comment-ref-flash')
+  void card.offsetWidth
   card.classList.add('comment-ref-flash')
-  setTimeout(() => { card.classList.remove('comment-ref-flash') }, 1200)
+  setTimeout(() => { card.classList.remove('comment-ref-flash') }, 1650)
 }
 
 document.addEventListener('click', (e) => {
