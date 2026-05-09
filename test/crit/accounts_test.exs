@@ -364,4 +364,50 @@ defmodule Crit.AccountsTest do
                Accounts.update_user_profile(user, %{"name" => String.duplicate("a", 81)})
     end
   end
+
+  describe "upsert_user_by_email/1" do
+    test "creates a new user on first sight" do
+      assert {:ok, user} = Accounts.upsert_user_by_email("alice@example.com")
+      assert user.email == "alice@example.com"
+      assert user.provider == "trusted_proxy"
+      assert user.provider_uid == "alice@example.com"
+    end
+
+    test "returns existing user on second call (no duplicate)" do
+      {:ok, u1} = Accounts.upsert_user_by_email("bob@example.com")
+      {:ok, u2} = Accounts.upsert_user_by_email("bob@example.com")
+      assert u1.id == u2.id
+      assert Crit.Repo.aggregate(Crit.User, :count, :id) == 1
+    end
+
+    test "is case-insensitive" do
+      {:ok, u1} = Accounts.upsert_user_by_email("Carol@Example.COM")
+      {:ok, u2} = Accounts.upsert_user_by_email("carol@example.com")
+      assert u1.id == u2.id
+      assert u1.email == "carol@example.com"
+    end
+
+    test "returns error for malformed email" do
+      assert {:error, _} = Accounts.upsert_user_by_email("not-an-email")
+      assert {:error, _} = Accounts.upsert_user_by_email("")
+      assert {:error, _} = Accounts.upsert_user_by_email(nil)
+    end
+
+    test "concurrent inserts of the same email produce a single user" do
+      results =
+        1..5
+        |> Task.async_stream(fn _ -> Accounts.upsert_user_by_email("race@example.com") end,
+          max_concurrency: 5
+        )
+        |> Enum.map(fn {:ok, r} -> r end)
+
+      ids =
+        results
+        |> Enum.map(fn {:ok, u} -> u.id end)
+        |> Enum.uniq()
+
+      assert length(ids) == 1
+      assert Crit.Repo.aggregate(Crit.User, :count, :id) == 1
+    end
+  end
 end

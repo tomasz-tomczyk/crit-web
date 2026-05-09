@@ -157,6 +157,43 @@ defmodule Crit.Accounts do
     end
   end
 
+  @doc """
+  Find or create a user by email, for trusted-proxy header authentication.
+
+  Stores the user with `provider="trusted_proxy"` and `provider_uid=<email>`
+  (lowercased), which piggybacks on the existing `(provider, provider_uid)`
+  unique index for idempotency. Concurrent inserts of the same email are
+  resolved by re-reading on a unique-constraint violation.
+
+  Returns `{:ok, %User{}}` or `{:error, changeset}` / `{:error, :invalid_email}`.
+  """
+  def upsert_user_by_email(email) when is_binary(email) and email != "" do
+    normalized = email |> String.trim() |> String.downcase()
+
+    case Repo.get_by(User, provider: "trusted_proxy", provider_uid: normalized) do
+      %User{} = user ->
+        {:ok, user}
+
+      nil ->
+        %User{}
+        |> User.trusted_proxy_changeset(%{email: normalized})
+        |> Repo.insert()
+        |> case do
+          {:ok, user} ->
+            {:ok, user}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            # Concurrent insert race — re-read by the unique key.
+            case Repo.get_by(User, provider: "trusted_proxy", provider_uid: normalized) do
+              %User{} = user -> {:ok, user}
+              nil -> {:error, changeset}
+            end
+        end
+    end
+  end
+
+  def upsert_user_by_email(_), do: {:error, :invalid_email}
+
   @doc "Fetches a user by primary key. Returns {:ok, user} or {:error, :not_found}."
   def get_user(id) do
     with {:ok, uuid} <- Ecto.UUID.cast(id) do

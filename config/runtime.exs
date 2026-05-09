@@ -121,6 +121,38 @@ if System.get_env("PHX_SERVER") do
   config :crit, CritWeb.Endpoint, server: true
 end
 
+# Trusted reverse-proxy header authentication.
+#
+# When set, crit-web reads the configured request header to discover the
+# authenticated user's email (e.g. "X-Auth-Request-Email" from oauth2-proxy,
+# "Cf-Access-Authenticated-User-Email" from Cloudflare Access). The header is
+# trusted ONLY for requests from the configured CIDR ranges — without that
+# guard, anyone reaching the app directly could spoof identity, so the boot
+# validator below raises if the header is set without CIDRs.
+case System.get_env("CRIT_TRUSTED_PROXY_USER_HEADER") do
+  nil ->
+    :ok
+
+  "" ->
+    :ok
+
+  header ->
+    config :crit, :trusted_proxy_user_header, header
+end
+
+case System.get_env("CRIT_TRUSTED_PROXY_CIDRS") do
+  nil ->
+    :ok
+
+  "" ->
+    :ok
+
+  cidrs ->
+    config :crit, :trusted_proxy_cidrs, Crit.Config.parse_cidrs(cidrs)
+end
+
+Crit.Config.validate_trusted_proxy!()
+
 # LiveView transport selection. Default is "websocket"; set "longpoll" to skip
 # the WebSocket attempt entirely when deploying behind a proxy known to break
 # WS upgrades (e.g. some SSO/Envoy setups). See issue #50.
