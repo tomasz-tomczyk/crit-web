@@ -664,6 +664,68 @@ function clearFocus(ctx) {
   if (prev) prev.classList.remove('focused')
 }
 
+// Vim-style visual line mode: anchor on the focused block, extend with j/k.
+function enterVisualMode(ctx) {
+  if (ctx.focusedBlockIndex < 0) return
+  const lineBlocks = getFocusedLineBlocks(ctx)
+  const block = lineBlocks[ctx.focusedBlockIndex]
+  if (!block) return
+  ctx.visualMode = {
+    anchorStartLine: block.startLine,
+    anchorEndLine: block.endLine,
+    filePath: ctx.focusedFilePath || null,
+  }
+  ctx.selectionStart = block.startLine
+  ctx.selectionEnd = block.endLine
+  refreshVisualSelectionVisuals(ctx)
+}
+
+function exitVisualMode(ctx, clearSelection) {
+  if (!ctx.visualMode) return
+  ctx.visualMode = null
+  if (clearSelection) {
+    ctx.selectionStart = null
+    ctx.selectionEnd = null
+    refreshVisualSelectionVisuals(ctx)
+  }
+}
+
+function extendVisualSelection(ctx) {
+  if (!ctx.visualMode || ctx.focusedBlockIndex < 0) return
+  const blocks = ctx.el.querySelectorAll('.line-block')
+  const focused = blocks[ctx.focusedBlockIndex]
+  if (!focused) return
+  const focusedFp = focused.dataset.filePath || null
+  if (focusedFp !== (ctx.visualMode.filePath || null)) {
+    // Crossed file boundary — exit visual mode.
+    exitVisualMode(ctx, true)
+    return
+  }
+  const sLine = parseInt(focused.dataset.startLine)
+  const eLine = parseInt(focused.dataset.endLine)
+  ctx.selectionStart = Math.min(ctx.visualMode.anchorStartLine, sLine)
+  ctx.selectionEnd = Math.max(ctx.visualMode.anchorEndLine, eLine)
+  refreshVisualSelectionVisuals(ctx)
+}
+
+// Toggle .selected on line-blocks for the currently active visual selection
+// without re-rendering the whole tree. A full render replaces .line-block nodes
+// and breaks the focusedBlockIndex / DOM-position contract j/k relies on.
+function refreshVisualSelectionVisuals(ctx) {
+  const blocks = ctx.el.querySelectorAll('.line-block')
+  const fp = ctx.visualMode ? (ctx.visualMode.filePath || null) : null
+  for (let i = 0; i < blocks.length; i++) {
+    const lb = blocks[i]
+    const lbFp = lb.dataset.filePath || null
+    const sLine = parseInt(lb.dataset.startLine)
+    const eLine = parseInt(lb.dataset.endLine)
+    const matches = ctx.selectionStart !== null && ctx.selectionEnd !== null
+      && (fp === null || lbFp === fp)
+      && sLine >= ctx.selectionStart && eLine <= ctx.selectionEnd
+    lb.classList.toggle('selected', matches)
+  }
+}
+
 function formatTime(isoStr) {
   if (!isoStr) return ""
   const d = new Date(isoStr)
@@ -4370,6 +4432,7 @@ function renderShortcutsPane() {
     { label: 'Navigation', shortcuts: [
       { key: '<kbd>j</kbd>', action: 'Next block' },
       { key: '<kbd>k</kbd>', action: 'Previous block' },
+      { key: '<kbd>Shift</kbd>+<kbd>V</kbd>', action: 'Visual line mode (extend with j/k, then c to comment)' },
       { key: '<kbd>]</kbd>', action: 'Next comment' },
       { key: '<kbd>[</kbd>', action: 'Previous comment' },
     ]},
@@ -4469,6 +4532,9 @@ export const DocumentRenderer = {
     ctx.selectionEnd = null
     ctx.activeForms = []
     ctx.dragState = null
+    // Vim-style visual line mode (entered with Shift+V).
+    // null or { anchorBlockIndex, anchorStartLine, anchorEndLine, filePath }
+    ctx.visualMode = null
     ctx.focusedBlockIndex = -1
     ctx.identity = ctx.el.dataset.identity || ""
     ctx.userId = ctx.el.dataset.userId || ""
@@ -5017,16 +5083,52 @@ export const DocumentRenderer = {
           e.preventDefault()
           const next = ctx.focusedBlockIndex < blockCount - 1 ? ctx.focusedBlockIndex + 1 : 0
           focusBlock(ctx, next)
+          if (ctx.visualMode) extendVisualSelection(ctx)
           break
         }
         case 'k': {
           e.preventDefault()
           const prev = ctx.focusedBlockIndex > 0 ? ctx.focusedBlockIndex - 1 : blockCount - 1
           focusBlock(ctx, prev)
+          if (ctx.visualMode) extendVisualSelection(ctx)
+          break
+        }
+        case 'V': {
+          if (!e.shiftKey) break
+          e.preventDefault()
+          if (ctx.visualMode) {
+            exitVisualMode(ctx, true)
+          } else {
+            enterVisualMode(ctx)
+          }
           break
         }
         case 'c': {
           e.preventDefault()
+          // Visual mode: comment on the active selection.
+          if (ctx.visualMode && ctx.selectionStart !== null && ctx.selectionEnd !== null) {
+            const fp = ctx.visualMode.filePath
+            const lineBlocks = fp
+              ? (ctx.files.find(f => f.path === fp)?.lineBlocks || [])
+              : ctx.lineBlocks
+            let lastBlockIndex = 0
+            for (let i = 0; i < lineBlocks.length; i++) {
+              if (lineBlocks[i].startLine >= ctx.selectionStart && lineBlocks[i].endLine <= ctx.selectionEnd) {
+                lastBlockIndex = i
+              }
+            }
+            const startLine = ctx.selectionStart
+            const endLine = ctx.selectionEnd
+            ctx.visualMode = null
+            openForm(ctx, {
+              afterBlockIndex: lastBlockIndex,
+              startLine: startLine,
+              endLine: endLine,
+              editingId: null,
+              filePath: fp,
+            })
+            break
+          }
           // If text is selected, comment on the selection (with quote).
           // Otherwise fall back to the focused block.
           if (ctx._tryOpenFormFromSelection && ctx._tryOpenFormFromSelection()) break
@@ -5093,6 +5195,8 @@ export const DocumentRenderer = {
           if (ctx.activeForms.length > 0) {
             const top = ctx.activeForms[ctx.activeForms.length - 1]
             if (confirmDiscardIfDirty(top)) cancelComment(top, ctx)
+          } else if (ctx.visualMode) {
+            exitVisualMode(ctx, true)
           } else if (ctx.focusedBlockIndex >= 0) {
             clearFocus(ctx)
           }
