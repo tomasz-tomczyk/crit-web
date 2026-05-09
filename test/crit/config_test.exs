@@ -81,6 +81,57 @@ defmodule Crit.ConfigTest do
     end
   end
 
+  describe "auth_configured?/0" do
+    setup do
+      orig_oauth = Application.get_env(:crit, :oauth_provider)
+      orig_pw = Application.get_env(:crit, :admin_password)
+      orig_header = Application.get_env(:crit, :trusted_proxy_user_header)
+
+      on_exit(fn ->
+        if is_nil(orig_oauth),
+          do: Application.delete_env(:crit, :oauth_provider),
+          else: Application.put_env(:crit, :oauth_provider, orig_oauth)
+
+        if is_nil(orig_pw),
+          do: Application.delete_env(:crit, :admin_password),
+          else: Application.put_env(:crit, :admin_password, orig_pw)
+
+        if is_nil(orig_header),
+          do: Application.delete_env(:crit, :trusted_proxy_user_header),
+          else: Application.put_env(:crit, :trusted_proxy_user_header, orig_header)
+      end)
+
+      Application.delete_env(:crit, :oauth_provider)
+      Application.delete_env(:crit, :admin_password)
+      Application.delete_env(:crit, :trusted_proxy_user_header)
+      :ok
+    end
+
+    test "false when nothing configured" do
+      refute Config.auth_configured?()
+    end
+
+    test "true when oauth_provider set" do
+      Application.put_env(:crit, :oauth_provider, %{client_id: "x"})
+      assert Config.auth_configured?()
+    end
+
+    test "true when admin_password set" do
+      Application.put_env(:crit, :admin_password, "shh")
+      assert Config.auth_configured?()
+    end
+
+    test "true when trusted_proxy_user_header set" do
+      Application.put_env(:crit, :trusted_proxy_user_header, "x-auth-request-email")
+      assert Config.auth_configured?()
+    end
+
+    test "false when trusted_proxy_user_header is empty string" do
+      Application.put_env(:crit, :trusted_proxy_user_header, "")
+      refute Config.auth_configured?()
+    end
+  end
+
   describe "ip_in_cidrs?/2" do
     test "matches IPv4 inside range" do
       cidrs = [{{10, 0, 0, 0}, 8}]

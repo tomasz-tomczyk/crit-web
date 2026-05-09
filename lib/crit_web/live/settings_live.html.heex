@@ -7,283 +7,259 @@
     current_page={:settings}
   />
 
-  <%= if @current_scope.user == nil do %>
-    <div class="max-w-2xl mx-auto w-full px-8 my-20 max-sm:px-4 text-center">
-      <h1 class="text-2xl font-bold tracking-tight mb-3">Sign in to manage your settings</h1>
-      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-        <%= if @auth_configured do %>
-          Sign in to view and manage your account, API tokens, and preferences.
-        <% else %>
-          This deployment has no authentication backend configured, so per-user
-          settings are unavailable. Configure an OAuth provider or
-          <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1 rounded">
-            ADMIN_PASSWORD
-          </code>
-          to enable sign-in.
-        <% end %>
-      </p>
-    </div>
-  <% else %>
-    <%!-- Main content --%>
-    <div class="max-w-[1100px] mx-auto w-full px-10 my-10 max-sm:px-4">
-      <h1 class="text-2xl font-semibold text-(--crit-fg-primary) mb-8">Settings</h1>
+  <%!-- Main content --%>
+  <div class="max-w-[1100px] mx-auto w-full px-10 my-10 max-sm:px-4">
+    <h1 class="text-2xl font-semibold text-(--crit-fg-primary) mb-8">Settings</h1>
 
-      <div class="flex gap-10 max-md:flex-col">
-        <%!-- Sidebar nav --%>
-        <nav class="w-48 shrink-0 max-md:w-full">
-          <ul class="flex flex-col gap-1 max-md:flex-row max-md:gap-0 max-md:border-b max-md:border-(--crit-border)">
-            <li>
-              <a
-                href="#account"
-                class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-primary) bg-(--crit-bg-card) font-medium max-md:rounded-none max-md:border-b-2 max-md:border-(--crit-brand)"
-              >
-                Account
-              </a>
-            </li>
-            <li :if={!@selfhosted}>
-              <a
-                href="#reviews"
-                class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
-              >
-                Reviews
-              </a>
-            </li>
-            <li>
-              <a
-                href="#tokens"
-                class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
-              >
-                API Tokens
-              </a>
-            </li>
-            <li>
-              <a
-                href="#danger-zone"
-                class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
-              >
-                Danger Zone
-              </a>
-            </li>
-          </ul>
-        </nav>
-
-        <%!-- Content --%>
-        <div class="flex-1 min-w-0">
-          <%!-- Account section --%>
-          <section id="account" class="mb-12">
-            <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+    <div class="flex gap-10 max-md:flex-col">
+      <%!-- Sidebar nav --%>
+      <nav class="w-48 shrink-0 max-md:w-full">
+        <ul class="flex flex-col gap-1 max-md:flex-row max-md:gap-0 max-md:border-b max-md:border-(--crit-border)">
+          <li>
+            <a
+              href="#account"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-primary) bg-(--crit-bg-card) font-medium max-md:rounded-none max-md:border-b-2 max-md:border-(--crit-brand)"
+            >
               Account
-            </h2>
-            <div class="flex flex-col gap-4">
-              <div class="flex items-start gap-4">
-                <%= if @current_scope.user.avatar_url do %>
-                  <img
-                    src={@current_scope.user.avatar_url}
-                    alt={@current_scope.user.name}
-                    class="h-16 w-16 rounded-full border border-(--crit-border)"
-                  />
-                <% end %>
-                <div>
-                  <div class="text-base font-medium text-(--crit-fg-primary)">
-                    {@current_scope.user.name || "—"}
-                  </div>
-                  <div class="text-sm text-(--crit-fg-muted) mt-0.5">
-                    {@current_scope.user.email || "No email"}
-                  </div>
-                  <div class="text-xs text-(--crit-fg-muted) mt-1">
-                    Signed in via <span class="capitalize">{@current_scope.user.provider}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <%!-- Reviews section --%>
-          <section :if={!@selfhosted} id="reviews" class="mb-12">
-            <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+            </a>
+          </li>
+          <li :if={!@selfhosted}>
+            <a
+              href="#reviews"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
+            >
               Reviews
-            </h2>
-            <div class="flex items-start justify-between gap-4">
+            </a>
+          </li>
+          <li>
+            <a
+              href="#tokens"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
+            >
+              API Tokens
+            </a>
+          </li>
+          <li>
+            <a
+              href="#danger-zone"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
+            >
+              Danger Zone
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <%!-- Content --%>
+      <div class="flex-1 min-w-0">
+        <%!-- Account section --%>
+        <section id="account" class="mb-12">
+          <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+            Account
+          </h2>
+          <div class="flex flex-col gap-4">
+            <div class="flex items-start gap-4">
+              <%= if @current_scope.user.avatar_url do %>
+                <img
+                  src={@current_scope.user.avatar_url}
+                  alt={@current_scope.user.name}
+                  class="h-16 w-16 rounded-full border border-(--crit-border)"
+                />
+              <% end %>
               <div>
-                <div class="text-sm font-medium text-(--crit-fg-primary)">
-                  Keep reviews
+                <div class="text-base font-medium text-(--crit-fg-primary)">
+                  {@current_scope.user.name || "—"}
+                </div>
+                <div class="text-sm text-(--crit-fg-muted) mt-0.5">
+                  {@current_scope.user.email || "No email"}
                 </div>
                 <div class="text-xs text-(--crit-fg-muted) mt-1">
-                  Prevent your reviews from being automatically deleted after 30 days of inactivity.
+                  Signed in via <span class="capitalize">{@current_scope.user.provider}</span>
                 </div>
               </div>
-              <button
-                id="keep-reviews-toggle"
-                phx-click="toggle_keep_reviews"
-                role="switch"
-                aria-checked={to_string(@keep_reviews)}
-                class={[
-                  "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                  if(@keep_reviews,
-                    do: "bg-(--crit-brand)",
-                    else: "bg-(--crit-border)"
-                  )
-                ]}
-              >
-                <span class={[
-                  "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out",
-                  if(@keep_reviews, do: "translate-x-5", else: "translate-x-0")
-                ]} />
-              </button>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <%!-- API Tokens section --%>
-          <section id="tokens" class="mb-12">
-            <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-4">
-              API Tokens
-            </h2>
-            <p class="text-sm text-(--crit-fg-muted) mb-6">
-              Tokens authenticate the Crit CLI with your account. Treat them like passwords.
-            </p>
-
-            <.form
-              for={%{}}
-              phx-submit="create_token"
-              class="flex items-center gap-2 max-w-sm mb-6"
-              id="create-token-form"
+        <%!-- Reviews section --%>
+        <section :if={!@selfhosted} id="reviews" class="mb-12">
+          <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+            Reviews
+          </h2>
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="text-sm font-medium text-(--crit-fg-primary)">
+                Keep reviews
+              </div>
+              <div class="text-xs text-(--crit-fg-muted) mt-1">
+                Prevent your reviews from being automatically deleted after 30 days of inactivity.
+              </div>
+            </div>
+            <button
+              id="keep-reviews-toggle"
+              phx-click="toggle_keep_reviews"
+              role="switch"
+              aria-checked={to_string(@keep_reviews)}
+              class={[
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                if(@keep_reviews,
+                  do: "bg-(--crit-brand)",
+                  else: "bg-(--crit-border)"
+                )
+              ]}
             >
-              <input
-                type="text"
-                name="name"
-                value={@new_token_name}
-                placeholder="Token name (e.g. my laptop)"
-                maxlength="80"
-                required
-                class="flex-1 bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand)"
-              />
-              <button
-                type="submit"
-                class="shrink-0 px-4 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-all cursor-pointer"
-              >
-                Create
-              </button>
-            </.form>
+              <span class={[
+                "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out",
+                if(@keep_reviews, do: "translate-x-5", else: "translate-x-0")
+              ]} />
+            </button>
+          </div>
+        </section>
 
-            <%= if @new_token_plaintext do %>
-              <div
-                id="new-token-reveal"
-                class="mb-6 p-4 border border-green-500/40 bg-green-500/10 rounded-lg"
-              >
-                <div class="text-sm text-green-400 font-medium mb-2">
-                  Token created — copy it now. It won't be shown again.
-                </div>
-                <div class="flex items-center gap-2">
-                  <code class="flex-1 text-xs font-mono bg-(--crit-bg-page) border border-(--crit-border) rounded px-3 py-2 text-(--crit-fg-primary) break-all">
-                    {@new_token_plaintext}
-                  </code>
-                  <button
-                    phx-click={
-                      JS.dispatch("clipboard:copy", detail: %{text: @new_token_plaintext})
-                    }
-                    class="shrink-0 text-xs px-3 py-2 bg-(--crit-bg-card) border border-(--crit-border) rounded hover:border-(--crit-brand) transition-colors cursor-pointer"
-                  >
-                    Copy
-                  </button>
-                </div>
+        <%!-- API Tokens section --%>
+        <section id="tokens" class="mb-12">
+          <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-4">
+            API Tokens
+          </h2>
+          <p class="text-sm text-(--crit-fg-muted) mb-6">
+            Tokens authenticate the Crit CLI with your account. Treat them like passwords.
+          </p>
+
+          <.form
+            for={%{}}
+            phx-submit="create_token"
+            class="flex items-center gap-2 max-w-sm mb-6"
+            id="create-token-form"
+          >
+            <input
+              type="text"
+              name="name"
+              value={@new_token_name}
+              placeholder="Token name (e.g. my laptop)"
+              maxlength="80"
+              required
+              class="flex-1 bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand)"
+            />
+            <button
+              type="submit"
+              class="shrink-0 px-4 py-2 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold hover:bg-(--crit-brand-cta-hover) transition-all cursor-pointer"
+            >
+              Create
+            </button>
+          </.form>
+
+          <%= if @new_token_plaintext do %>
+            <div
+              id="new-token-reveal"
+              class="mb-6 p-4 border border-green-500/40 bg-green-500/10 rounded-lg"
+            >
+              <div class="text-sm text-green-400 font-medium mb-2">
+                Token created — copy it now. It won't be shown again.
+              </div>
+              <div class="flex items-center gap-2">
+                <code class="flex-1 text-xs font-mono bg-(--crit-bg-page) border border-(--crit-border) rounded px-3 py-2 text-(--crit-fg-primary) break-all">
+                  {@new_token_plaintext}
+                </code>
                 <button
-                  phx-click="dismiss_token"
-                  class="mt-2 text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors cursor-pointer"
+                  phx-click={JS.dispatch("clipboard:copy", detail: %{text: @new_token_plaintext})}
+                  class="shrink-0 text-xs px-3 py-2 bg-(--crit-bg-card) border border-(--crit-border) rounded hover:border-(--crit-brand) transition-colors cursor-pointer"
                 >
-                  Dismiss
+                  Copy
                 </button>
               </div>
-            <% end %>
-
-            <%= if @tokens == [] do %>
-              <div class="text-sm text-(--crit-fg-muted)">
-                No tokens yet.
-              </div>
-            <% else %>
-              <div class="flex flex-col gap-2">
-                <div
-                  :for={token <- @tokens}
-                  id={"token-#{token.id}"}
-                  class="flex items-center justify-between p-4 border border-(--crit-border) bg-(--crit-bg-card) rounded-lg"
-                >
-                  <div>
-                    <div class="text-sm font-medium text-(--crit-fg-primary)">{token.name}</div>
-                    <div class="text-xs text-(--crit-fg-muted) mt-0.5">
-                      Created {time_ago(token.inserted_at)}
-                      <%= if token.last_used_at do %>
-                        &middot; Last used {time_ago(token.last_used_at)}
-                      <% else %>
-                        &middot; Never used
-                      <% end %>
-                    </div>
-                  </div>
-                  <button
-                    phx-click="revoke_token"
-                    phx-value-id={token.id}
-                    data-confirm="Revoke this token? Any CLI using it will stop working."
-                    class="text-(--crit-fg-muted) hover:text-red-400 transition-colors cursor-pointer shrink-0 ml-4 text-xs"
-                  >
-                    Revoke
-                  </button>
-                </div>
-              </div>
-            <% end %>
-          </section>
-
-          <%!-- Danger Zone --%>
-          <section id="danger-zone">
-            <h2 class="text-lg font-semibold text-red-400 pb-3 border-b border-red-500/30 mb-6">
-              Danger Zone
-            </h2>
-            <div class="border border-red-500/30 rounded-lg p-6">
-              <h3 class="text-base font-semibold text-(--crit-fg-primary) mb-1">
-                Delete account
-              </h3>
-              <p class="text-sm text-(--crit-fg-muted) mb-4">
-                Once you delete your account, there is no going back. Your API tokens will be revoked and your shared reviews will become anonymous.
-              </p>
-              <.form
-                for={%{}}
-                phx-submit="delete_account"
-                phx-change="validate_delete"
-                id="delete-account-form"
+              <button
+                phx-click="dismiss_token"
+                class="mt-2 text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors cursor-pointer"
               >
-                <label class="block text-sm text-(--crit-fg-primary) mb-2">
-                  To confirm, type
-                  <strong class="font-semibold">
-                    {delete_confirmation_text(@current_scope.user)}
-                  </strong>
-                  below:
-                </label>
-                <input
-                  type="text"
-                  name="confirmation"
-                  value={@delete_confirmation}
-                  autocomplete="off"
-                  class="w-full max-w-sm bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) focus:outline-none focus:border-red-500 mb-4"
-                />
-                <div>
-                  <button
-                    type="submit"
-                    disabled={
-                      @delete_confirmation != delete_confirmation_text(@current_scope.user)
-                    }
-                    class={[
-                      "px-4 py-2 rounded-md text-sm font-semibold transition-opacity cursor-pointer",
-                      if(@delete_confirmation == delete_confirmation_text(@current_scope.user),
-                        do: "bg-red-600 text-white hover:bg-red-700",
-                        else: "bg-red-600/30 text-red-400/50 cursor-not-allowed"
-                      )
-                    ]}
-                  >
-                    Delete this account
-                  </button>
-                </div>
-              </.form>
+                Dismiss
+              </button>
             </div>
-          </section>
-        </div>
+          <% end %>
+
+          <%= if @tokens == [] do %>
+            <div class="text-sm text-(--crit-fg-muted)">
+              No tokens yet.
+            </div>
+          <% else %>
+            <div class="flex flex-col gap-2">
+              <div
+                :for={token <- @tokens}
+                id={"token-#{token.id}"}
+                class="flex items-center justify-between p-4 border border-(--crit-border) bg-(--crit-bg-card) rounded-lg"
+              >
+                <div>
+                  <div class="text-sm font-medium text-(--crit-fg-primary)">{token.name}</div>
+                  <div class="text-xs text-(--crit-fg-muted) mt-0.5">
+                    Created {time_ago(token.inserted_at)}
+                    <%= if token.last_used_at do %>
+                      &middot; Last used {time_ago(token.last_used_at)}
+                    <% else %>
+                      &middot; Never used
+                    <% end %>
+                  </div>
+                </div>
+                <button
+                  phx-click="revoke_token"
+                  phx-value-id={token.id}
+                  data-confirm="Revoke this token? Any CLI using it will stop working."
+                  class="text-(--crit-fg-muted) hover:text-red-400 transition-colors cursor-pointer shrink-0 ml-4 text-xs"
+                >
+                  Revoke
+                </button>
+              </div>
+            </div>
+          <% end %>
+        </section>
+
+        <%!-- Danger Zone --%>
+        <section id="danger-zone">
+          <h2 class="text-lg font-semibold text-red-400 pb-3 border-b border-red-500/30 mb-6">
+            Danger Zone
+          </h2>
+          <div class="border border-red-500/30 rounded-lg p-6">
+            <h3 class="text-base font-semibold text-(--crit-fg-primary) mb-1">Delete account</h3>
+            <p class="text-sm text-(--crit-fg-muted) mb-4">
+              Once you delete your account, there is no going back. Your API tokens will be revoked and your shared reviews will become anonymous.
+            </p>
+            <.form
+              for={%{}}
+              phx-submit="delete_account"
+              phx-change="validate_delete"
+              id="delete-account-form"
+            >
+              <label class="block text-sm text-(--crit-fg-primary) mb-2">
+                To confirm, type
+                <strong class="font-semibold">
+                  {delete_confirmation_text(@current_scope.user)}
+                </strong>
+                below:
+              </label>
+              <input
+                type="text"
+                name="confirmation"
+                value={@delete_confirmation}
+                autocomplete="off"
+                class="w-full max-w-sm bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) focus:outline-none focus:border-red-500 mb-4"
+              />
+              <div>
+                <button
+                  type="submit"
+                  disabled={@delete_confirmation != delete_confirmation_text(@current_scope.user)}
+                  class={[
+                    "px-4 py-2 rounded-md text-sm font-semibold transition-opacity cursor-pointer",
+                    if(@delete_confirmation == delete_confirmation_text(@current_scope.user),
+                      do: "bg-red-600 text-white hover:bg-red-700",
+                      else: "bg-red-600/30 text-red-400/50 cursor-not-allowed"
+                    )
+                  ]}
+                >
+                  Delete this account
+                </button>
+              </div>
+            </.form>
+          </div>
+        </section>
       </div>
     </div>
-  <% end %>
+  </div>
 </div>
