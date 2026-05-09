@@ -77,6 +77,62 @@ commentMd.renderer.rules.file_ref = function(tokens, idx) {
   return '<span class="file-ref">' + escapeHtml(path) + '</span>'
 }
 
+// ===== Comment Reference Inline Rule =====
+// Linkify bare comment IDs (c_, r_, rp_ + 6+ hex chars) in comment bodies.
+commentMd.inline.ruler.push('comment_ref', (state, silent) => {
+  const start = state.pos
+  const src = state.src
+  const m = /^(c|r|rp)_[a-f0-9]{6,}/.exec(src.slice(start))
+  if (!m) return false
+  if (start > 0 && /[a-zA-Z0-9_]/.test(src[start - 1])) return false
+  const end = start + m[0].length
+  if (end < src.length && /[a-zA-Z0-9_]/.test(src[end])) return false
+  if (!silent) {
+    const token = state.push('comment_ref', '', 0)
+    token.content = m[0]
+  }
+  state.pos = end
+  return true
+})
+commentMd.renderer.rules.comment_ref = (tokens, idx) => {
+  const id = tokens[idx].content
+  return '<span class="comment-ref" data-ref-id="' + escapeHtml(id) + '">' + escapeHtml(id) + '</span>'
+}
+
+// Override code_inline so backtick-wrapped comment IDs render as the same chip.
+const defaultCodeInline = commentMd.renderer.rules.code_inline || function(tokens, idx, options, env, self) {
+  return self.renderToken(tokens, idx, options)
+}
+commentMd.renderer.rules.code_inline = function(tokens, idx, options, env, self) {
+  const content = tokens[idx].content
+  if (/^(c|r|rp)_[a-f0-9]{6,}$/.test(content)) {
+    return '<span class="comment-ref comment-ref-code" data-ref-id="' + escapeHtml(content) + '">' + escapeHtml(content) + '</span>'
+  }
+  return defaultCodeInline(tokens, idx, options, env, self)
+}
+
+// Scroll/expand/flash a comment card located anywhere in the document, given just its id.
+function scrollToCommentRef(id) {
+  const card = document.querySelector(`.comment-card[data-comment-id="${CSS.escape(id)}"]`)
+  if (!card) return
+  const section = card.closest('details')
+  if (section && !section.open) section.open = true
+  if (card.classList.contains('collapsed')) {
+    card.classList.remove('collapsed')
+    commentCollapseOverrides[id] = false
+  }
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  card.classList.add('comment-ref-flash')
+  setTimeout(() => { card.classList.remove('comment-ref-flash') }, 1200)
+}
+
+document.addEventListener('click', (e) => {
+  const ref = e.target.closest && e.target.closest('.comment-ref')
+  if (!ref) return
+  e.preventDefault()
+  scrollToCommentRef(ref.dataset.refId)
+})
+
 // ===== Word-Level Diff =====
 
 // Split a line into tokens: words (alphanumeric + underscore) and individual non-word characters.

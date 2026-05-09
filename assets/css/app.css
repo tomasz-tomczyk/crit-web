@@ -171,6 +171,12 @@
   --crit-editor-fg-muted:        #9aa1c8;
   --crit-editor-scrollbar-bg:    #1a1b26;
   --crit-editor-scrollbar-thumb: #3b4261;
+
+  /* Comment reference chip */
+  --crit-comment-ref-bg:        rgba(125, 207, 255, 0.12);
+  --crit-comment-ref-color:     #7dcfff;
+  --crit-comment-ref-border:    rgba(125, 207, 255, 0.30);
+  --crit-comment-ref-hover-bg:  rgba(125, 207, 255, 0.22);
 }
 
 /* Content width toggle (matches crit local) */
@@ -2358,6 +2364,32 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   padding: 1px 5px;
   border-radius: 3px;
   white-space: nowrap;
+}
+
+/* Comment Reference Chip */
+.comment-ref {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-family: var(--crit-font-mono);
+  font-size: 0.85em;
+  background: var(--crit-comment-ref-bg);
+  color: var(--crit-comment-ref-color);
+  border: 1px solid var(--crit-comment-ref-border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--crit-dur-fast) var(--crit-ease);
+  white-space: nowrap;
+}
+.comment-ref:hover {
+  background: var(--crit-comment-ref-hover-bg);
+}
+.comment-ref-flash {
+  animation: comment-ref-flash 1.2s ease-out;
+}
+@keyframes comment-ref-flash {
+  0%   { box-shadow: 0 0 0 3px var(--crit-comment-ref-color); }
+  100% { box-shadow: 0 0 0 3px transparent; }
 }
 
 /* Save Template Dialog */
