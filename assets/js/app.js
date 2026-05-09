@@ -111,7 +111,7 @@ function initSentry(liveSocket) {
 }
 
 // Establish Phoenix Socket and LiveView configuration.
-import {Socket} from "phoenix"
+import {Socket, LongPoll} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/crit"
 import topbar from "../vendor/topbar"
@@ -124,10 +124,19 @@ const DocumentRendererHook = isReviewPage
   : { mounted() {} }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
+// Operators behind WebSocket-incompatible proxies can pin transport to LongPoll
+// via CRIT_LIVEVIEW_TRANSPORT=longpoll, surfaced as a meta tag in root.html.heex.
+// Pass `transport:` as an option (NOT the positional 4th arg to LiveSocket): the
+// positional form silently breaks server-pushed events.
+const transportMeta = document.querySelector("meta[name='liveview-transport']")?.content
+const transportOpts = transportMeta === "longpoll" ? {transport: LongPoll} : {}
+
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
   hooks: {...colocatedHooks, "CritWeb.ReviewLive.DocumentRenderer": DocumentRendererHook},
+  ...transportOpts,
 })
 
 // Show progress bar on live navigation and form submits

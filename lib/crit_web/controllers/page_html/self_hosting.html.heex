@@ -632,12 +632,24 @@
         </code>
         device flow.
       </p>
-      <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
           share_flow
         </code>
         must be set on the <strong>CLI</strong>
         side, not on this hosted instance.
+      </p>
+      <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
+        If your proxy strips or rewrites WebSocket upgrades, set
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          CRIT_LIVEVIEW_TRANSPORT=longpoll
+        </code>
+        on the server to skip the WebSocket attempt and connect via long-polling
+        directly. Default is
+        <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+          websocket
+        </code>
+        with automatic fallback after 2.5s.
       </p>
     </section>
 
