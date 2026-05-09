@@ -1,6 +1,10 @@
 defmodule CritWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :crit
 
+  # Adds `Cache-Control: no-transform` to every response (including LiveView
+  # socket transport endpoints). See `CritWeb.Plugs.NoTransform` and issue #50.
+  @before_compile CritWeb.Plugs.NoTransform
+
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
