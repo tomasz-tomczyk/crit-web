@@ -926,6 +926,13 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .line-content li { margin: 0; }
 .line-content li::marker { color: var(--crit-editor-fg-muted); }
 .line-content ul li { list-style-type: '  \2022  '; }
+/* Outer wrappers added when a nested list item is split into its own line block.
+   They preserve semantic nesting (so CSS indentation works) without rendering
+   their own bullet/marker. */
+.line-content ul.crit-list-wrapper,
+.line-content ol.crit-list-wrapper { padding-left: 24px; margin: 0; }
+.line-content li.crit-list-wrapper { list-style: none; }
+.line-content ul.crit-list-wrapper > li.crit-list-wrapper { list-style-type: none; }
 .line-content hr { border: none; height: 1px; background: var(--crit-border); margin: 24px 0; }
 .line-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 4px 0; }
 .line-content blockquote { margin: 6px 0; padding: 8px 16px; border-left: 3px solid var(--crit-blockquote-border); background: var(--crit-blockquote-bg); border-radius: 0 6px 6px 0; color: var(--crit-editor-fg-secondary); }
