@@ -60,7 +60,8 @@ defmodule CritWeb.ReviewLive do
               comments: serialize_comments(comments),
               display_name: display_name,
               files: files_data,
-              can_comment: can_comment?(scope, review)
+              can_comment: can_comment?(scope, review),
+              is_admin: Crit.Authorization.admin?(scope)
             })
           else
             socket

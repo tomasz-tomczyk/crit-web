@@ -7,14 +7,14 @@ defmodule Crit.Authorization do
   is a denormalised cache — kept in sync by `Crit.Accounts.apply_role_for_email/1`
   on every login, registration, and app boot reconciliation.
 
-  All callers should use `can?/2,3` rather than reading `user.role` directly.
+  `can?/2,3` and `admin?/1` accept a `%Scope{}`. Templates pass
+  `@current_scope` directly — no need to dig out `.user`.
   """
 
-  alias Crit.User
+  alias Crit.Accounts.Scope
 
-  @doc "True if the user has the instance admin role."
-  def admin?(%User{role: :admin}), do: true
-  def admin?(_), do: false
+  @doc "True if the scope's user has the instance admin role."
+  defdelegate admin?(scope), to: Scope
 
   @doc """
   Permission check. `action` is one of:
@@ -25,24 +25,24 @@ defmodule Crit.Authorization do
     * `:edit_settings`   — admin
     * `:delete_user`     — admin
   """
-  def can?(user, action, resource \\ nil)
+  def can?(scope, action, resource \\ nil)
 
-  def can?(%User{} = user, :manage_users, _), do: admin?(user)
-  def can?(%User{} = user, :edit_settings, _), do: admin?(user)
+  def can?(%Scope{} = scope, :manage_users, _), do: admin?(scope)
+  def can?(%Scope{} = scope, :edit_settings, _), do: admin?(scope)
 
-  def can?(%User{} = user, :delete_review, %{user_id: owner_id}) do
-    admin?(user) or user.id == owner_id
+  def can?(%Scope{user: %{id: user_id}} = scope, :delete_review, %{user_id: owner_id}) do
+    admin?(scope) or user_id == owner_id
   end
 
-  def can?(%User{} = user, :delete_review, _), do: admin?(user)
+  def can?(%Scope{} = scope, :delete_review, _), do: admin?(scope)
 
-  def can?(%User{} = user, :delete_comment, %{user_id: author_id}) do
-    admin?(user) or user.id == author_id
+  def can?(%Scope{user: %{id: user_id}} = scope, :delete_comment, %{user_id: author_id}) do
+    admin?(scope) or user_id == author_id
   end
 
-  def can?(%User{} = user, :delete_comment, _), do: admin?(user)
+  def can?(%Scope{} = scope, :delete_comment, _), do: admin?(scope)
 
-  def can?(%User{} = user, :delete_user, %User{}), do: admin?(user)
+  def can?(%Scope{} = scope, :delete_user, %Crit.User{}), do: admin?(scope)
 
   def can?(_, _, _), do: false
 end

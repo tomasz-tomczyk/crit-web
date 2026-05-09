@@ -193,6 +193,42 @@ defmodule CritWeb.UserAuthTest do
     end
   end
 
+  describe "on_mount :require_admin" do
+    test "halts and redirects to /dashboard for non-admin user" do
+      user = create_user!()
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          flash: %{},
+          current_scope: Scope.for_user(user)
+        }
+      }
+
+      assert {:halt, redirected} = UserAuth.on_mount(:require_admin, %{}, %{}, socket)
+      assert redirected.redirected == {:redirect, %{to: "/dashboard", status: 302}}
+    end
+
+    test "continues for admin user" do
+      user = create_user!()
+
+      {:ok, admin} =
+        user
+        |> Crit.User.role_changeset(%{role: :admin})
+        |> Crit.Repo.update()
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          flash: %{},
+          current_scope: Scope.for_user(admin)
+        }
+      }
+
+      assert {:cont, _socket} = UserAuth.on_mount(:require_admin, %{}, %{}, socket)
+    end
+  end
+
   describe "log_in_user/3" do
     test "writes user_id to the session", %{conn: conn} do
       user = AccountsFixtures.user_fixture()

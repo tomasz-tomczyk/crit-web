@@ -76,9 +76,14 @@ defmodule CritWeb.Layouts do
   def site_header(assigns) do
     current_user = assigns.current_scope && assigns.current_scope.user
 
+    is_admin =
+      Crit.Accounts.Scope.admin?(assigns.current_scope) and
+        Application.get_env(:crit, :selfhosted) == true
+
     assigns =
       assigns
       |> assign(:current_user, current_user)
+      |> assign(:is_admin, is_admin)
       |> assign(:user_initial, user_initial(current_user))
       |> assign(:github_oauth?, github_oauth?())
 
@@ -149,6 +154,9 @@ defmodule CritWeb.Layouts do
           <%= if @current_user do %>
             <div>
               <.nav_link href={~p"/dashboard"}>Dashboard</.nav_link>
+            </div>
+            <div :if={@is_admin}>
+              <.nav_link navigate={~p"/admin/users"}>Admin</.nav_link>
             </div>
 
             <div class="relative max-sm:hidden">
@@ -358,10 +366,15 @@ defmodule CritWeb.Layouts do
     host = if assigns.show_overview_link, do: CritWeb.Endpoint.host(), else: nil
     current_user = assigns.current_scope && assigns.current_scope.user
 
+    is_admin =
+      Crit.Accounts.Scope.admin?(assigns.current_scope) and
+        Application.get_env(:crit, :selfhosted) == true
+
     assigns =
       assigns
       |> assign(:host, host)
       |> assign(:current_user, current_user)
+      |> assign(:is_admin, is_admin)
       |> assign(:user_initial, user_initial(current_user))
 
     ~H"""
@@ -430,6 +443,11 @@ defmodule CritWeb.Layouts do
               <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
                 Dashboard
               </.nav_link>
+              <%= if @is_admin do %>
+                <.nav_link navigate={~p"/admin/users"} active={@current_page == :admin}>
+                  Admin
+                </.nav_link>
+              <% end %>
             </nav>
 
             <span
@@ -635,6 +653,53 @@ defmodule CritWeb.Layouts do
         </div>
       </div>
     </header>
+    """
+  end
+
+  @doc """
+  Sub-navigation strip rendered on admin pages. Pass `current_section` as
+  `:users` or `:settings` to mark the active tab.
+  """
+  attr :current_section, :atom, required: true, values: [:users, :settings]
+
+  def admin_subnav(assigns) do
+    ~H"""
+    <nav
+      aria-label="Admin sections"
+      class="border-b border-(--crit-border) bg-(--crit-bg-card)"
+    >
+      <div class="max-w-7xl mx-auto px-8 max-sm:px-4 flex items-center gap-1 -mb-px">
+        <.subnav_tab navigate={~p"/admin/users"} active={@current_section == :users}>
+          Users
+        </.subnav_tab>
+        <.subnav_tab navigate={~p"/admin/settings"} active={@current_section == :settings}>
+          Settings
+        </.subnav_tab>
+      </div>
+    </nav>
+    """
+  end
+
+  attr :navigate, :string, required: true
+  attr :active, :boolean, default: false
+  slot :inner_block, required: true
+
+  defp subnav_tab(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      aria-current={@active && "page"}
+      class={[
+        "inline-flex items-center h-10 px-4 text-sm font-medium tracking-tight no-underline border-b-2 transition-colors",
+        if(@active,
+          do: "text-(--crit-fg-primary) border-(--crit-brand)",
+          else:
+            "text-(--crit-fg-secondary) border-transparent hover:text-(--crit-fg-primary) hover:border-(--crit-border-strong)"
+        )
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </.link>
     """
   end
 

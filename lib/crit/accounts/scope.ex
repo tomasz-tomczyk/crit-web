@@ -1,12 +1,15 @@
 defmodule Crit.Accounts.Scope do
   alias Crit.User
 
-  defstruct user: nil, identity: nil, display_name: nil
+  defstruct user: nil, identity: nil, display_name: nil, role: nil
+
+  @type role :: :admin | :user | nil
 
   @type t :: %__MODULE__{
           user: User.t() | nil,
           identity: String.t() | nil,
-          display_name: String.t() | nil
+          display_name: String.t() | nil,
+          role: role()
         }
 
   @doc """
@@ -49,14 +52,19 @@ defmodule Crit.Accounts.Scope do
 
   @doc "Build scope for an authenticated user."
   def for_user(%User{} = user) do
-    %__MODULE__{user: user, identity: nil, display_name: display_name_for(user)}
+    %__MODULE__{
+      user: user,
+      identity: nil,
+      display_name: display_name_for(user),
+      role: user.role
+    }
   end
 
   def for_user(nil), do: %__MODULE__{}
 
   @doc "Replace the user (used by SettingsLive after profile update)."
   def put_user(%__MODULE__{} = scope, %User{} = user) do
-    %{scope | user: user, display_name: display_name_for(user)}
+    %{scope | user: user, display_name: display_name_for(user), role: user.role}
   end
 
   @doc "Replace the display name (used by anonymous visitors via /set-name)."
@@ -67,6 +75,10 @@ defmodule Crit.Accounts.Scope do
   @doc "Returns the user_id, or nil if anonymous."
   def user_id(%__MODULE__{user: nil}), do: nil
   def user_id(%__MODULE__{user: %User{id: id}}), do: id
+
+  @doc "True if the scope has the instance admin role."
+  def admin?(%__MODULE__{role: :admin}), do: true
+  def admin?(_), do: false
 
   # Public display name. Never falls back to email — comment authors are
   # visible to anyone with the share URL, so leaking an email here would

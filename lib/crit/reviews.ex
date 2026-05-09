@@ -131,14 +131,17 @@ defmodule Crit.Reviews do
     end
   end
 
-  @doc "Delete a comment if the caller's scope owns it. See `update_comment/3` for ownership rules."
+  @doc """
+  Delete a comment if the caller's scope owns it, or if the caller is an
+  instance admin. See `update_comment/3` for ownership rules.
+  """
   def delete_comment(%Scope{} = scope, comment_id) do
     case Repo.get(Comment, comment_id) do
       nil ->
         {:error, :not_found}
 
       %Comment{} = comment ->
-        if comment_owned_by?(scope, comment) do
+        if comment_owned_by?(scope, comment) or Scope.admin?(scope) do
           Repo.delete(comment)
         else
           {:error, :unauthorized}
@@ -223,8 +226,7 @@ defmodule Crit.Reviews do
 
   # Owner-only mutation gate. Anonymous-owned reviews (`user_id: nil`) are
   # never modifiable through scope-authed paths — they're administered via
-  # their `delete_token` (see `delete_by_delete_token/1`). When admin scopes
-  # land, this is the seam to extend.
+  # their `delete_token` (see `delete_by_delete_token/1`).
   defp scope_can_modify_review?(%Scope{}, %Review{user_id: nil}), do: false
 
   defp scope_can_modify_review?(%Scope{} = scope, %Review{user_id: owner_id}) do
@@ -820,7 +822,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       review ->
-        if scope_can_modify_review?(scope, review) do
+        if scope_can_modify_review?(scope, review) or Scope.admin?(scope) do
           case Repo.delete(review) do
             {:ok, _} -> :ok
             {:error, _} -> {:error, :delete_failed}
@@ -998,7 +1000,7 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = reply ->
-        if comment_owned_by?(scope, reply) do
+        if comment_owned_by?(scope, reply) or Scope.admin?(scope) do
           Repo.delete(reply)
         else
           {:error, :unauthorized}

@@ -110,6 +110,22 @@ defmodule CritWeb.Router do
     end
   end
 
+  # Admin panel — selfhosted-only. Gated by both the SelfhostedOnly plug and
+  # the `:require_admin` on_mount hook (the latter via ADMIN_EMAILS).
+  scope "/", CritWeb do
+    pipe_through [:browser, :noindex, CritWeb.Plugs.SelfhostedOnly]
+
+    live_session :admin_panel,
+      on_mount: [
+        {CritWeb.UserAuth, :require_authenticated_user},
+        {CritWeb.UserAuth, :require_admin}
+      ],
+      session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
+      live "/admin/users", AdminUsersLive, :index
+      live "/admin/settings", AdminSettingsLive, :index
+    end
+  end
+
   # Local-auth routes — only mounted on selfhosted instances.
   scope "/", CritWeb do
     pipe_through [

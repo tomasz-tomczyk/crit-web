@@ -1,0 +1,145 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header
+    current_scope={@current_scope}
+    show_overview_link={@selfhosted}
+    current_page={:admin}
+  />
+
+  <Layouts.admin_subnav current_section={:users} />
+
+  <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
+    <div class="mb-8">
+      <h1 class="text-2xl font-semibold text-(--crit-fg-primary)">Admin — Users</h1>
+      <p class="text-sm text-(--crit-fg-muted) mt-1">
+        {@user_count} {if @user_count == 1, do: "user", else: "users"} on this instance.
+      </p>
+    </div>
+
+    <div class="border border-(--crit-border) rounded-lg overflow-hidden bg-(--crit-bg-card)">
+      <div class="grid grid-cols-[1fr_1fr_120px_160px_120px] gap-x-4 px-4 py-3 border-b border-(--crit-border) bg-(--crit-bg-elevated) text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold max-md:hidden">
+        <span>Email</span>
+        <span>Display name</span>
+        <span>Role</span>
+        <span>Joined</span>
+        <span class="text-right">Actions</span>
+      </div>
+
+      <div id="admin-users-list" phx-update="stream" class="divide-y divide-(--crit-border)">
+        <div
+          :for={{dom_id, user} <- @streams.users}
+          id={dom_id}
+          class="grid grid-cols-[1fr_1fr_120px_160px_120px] gap-x-4 px-4 py-3 items-center text-sm max-md:grid-cols-1 max-md:gap-y-1"
+        >
+          <div class="text-(--crit-fg-primary) truncate">
+            {user.email || "—"}
+          </div>
+          <div class="text-(--crit-fg-secondary) truncate">
+            {user.name || "—"}
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              :if={user.role == :admin}
+              class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-(--crit-brand-bg) text-(--crit-brand)"
+              data-test="role-badge-admin"
+            >
+              Admin
+            </span>
+            <span
+              :if={user.role != :admin}
+              class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-(--crit-bg-elevated) text-(--crit-fg-muted)"
+              data-test="role-badge-user"
+            >
+              User
+            </span>
+          </div>
+          <div class="text-xs text-(--crit-fg-muted)">
+            {Calendar.strftime(user.inserted_at, "%Y-%m-%d")}
+          </div>
+          <div class="text-right">
+            <button
+              phx-click="request_delete"
+              phx-value-id={user.id}
+              data-test={"delete-user-#{user.id}"}
+              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) transition-colors cursor-pointer"
+            >
+              <.icon name="hero-trash" class="size-3.5" />
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Email-confirmation delete modal --%>
+  <div
+    :if={@delete_target}
+    id="delete-user-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-user-modal-title"
+    phx-window-keydown="cancel_delete"
+    phx-key="Escape"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+  >
+    <div
+      phx-click-away="cancel_delete"
+      class="w-full max-w-md bg-(--crit-bg-card) border border-red-500/30 rounded-lg shadow-2xl p-6"
+    >
+      <h2 id="delete-user-modal-title" class="text-lg font-semibold text-red-400 mb-2">
+        Delete user
+      </h2>
+      <p class="text-sm text-(--crit-fg-muted) mb-4">
+        This will permanently delete <strong class="text-(--crit-fg-primary)">{@delete_target.email}</strong>,
+        their reviews, and their comments. This cannot be undone.
+      </p>
+
+      <.form
+        for={%{}}
+        id="confirm-delete-form"
+        phx-change="validate_delete"
+        phx-submit="confirm_delete"
+      >
+        <label
+          for="delete-confirmation-input"
+          class="block text-sm text-(--crit-fg-primary) mb-2"
+        >
+          To confirm, type <strong class="font-semibold">{@delete_target.email}</strong> below:
+        </label>
+        <input
+          id="delete-confirmation-input"
+          type="text"
+          name="confirmation"
+          value={@delete_confirmation}
+          autocomplete="off"
+          autofocus
+          phx-debounce="100"
+          class="w-full bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) focus:outline-none focus:border-red-500 mb-4"
+        />
+
+        <div class="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            phx-click="cancel_delete"
+            class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={
+              String.downcase(String.trim(@delete_confirmation)) !=
+                String.downcase(@delete_target.email)
+            }
+            data-test="confirm-delete-user"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-semibold bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <.icon name="hero-trash" class="size-4" /> Delete user
+          </button>
+        </div>
+      </.form>
+    </div>
+  </div>
+</div>

@@ -346,6 +346,7 @@
   </div>
 
   <% owner? = !!(@current_scope.user && @review.user_id == @current_scope.user.id) %>
+  <% can_delete_review? = Crit.Authorization.can?(@current_scope, :delete_review, @review) %>
   <% author = @review.user %>
   <% comment_count =
     Enum.reduce(@review.comments, 0, fn c, acc ->
@@ -504,7 +505,7 @@
               Raw
             </a>
           <% end %>
-          <%= if owner? do %>
+          <%= if can_delete_review? do %>
             <button
               phx-click="delete_review"
               data-confirm="Delete this review? This cannot be undone."

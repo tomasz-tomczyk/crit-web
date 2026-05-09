@@ -24,7 +24,7 @@ defmodule Crit.Release do
   @doc """
   Reconciles `users.role` against the parsed `ADMIN_EMAILS` list. Promotes
   users whose email is now listed; demotes users whose email is no longer
-  listed. Idempotent.
+  listed. Idempotent. Two `update_all` queries.
   """
   def reconcile_admin_emails do
     emails = Application.get_env(:crit, :admin_emails, [])

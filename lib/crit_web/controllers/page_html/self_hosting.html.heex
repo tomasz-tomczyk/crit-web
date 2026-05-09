@@ -389,6 +389,13 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary)">ADMIN_EMAILS</code>
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              Comma-separated list of admin email addresses. Users with these emails are auto-promoted to admin on every login and on app boot, gaining access to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/admin/users</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/admin/settings</code> plus moderation powers (delete any review or comment). Removing an email and restarting demotes that user back to a regular user.
+            </p>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
+          </div>
         </div>
       </div>
 

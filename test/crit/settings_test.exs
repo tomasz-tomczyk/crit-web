@@ -14,27 +14,56 @@ defmodule Crit.SettingsTest do
   end
 
   describe "update/1" do
-    test "happy path" do
+    test "MB/KB virtual fields write the underlying byte columns" do
       {:ok, updated} =
         Settings.update(%{
-          max_document_bytes: 1_000_000,
-          max_comments_per_review: 100,
-          max_comment_body_bytes: 2_000
+          "max_document_mb" => 5,
+          "max_comments_per_review" => 100,
+          "max_comment_body_kb" => 50
         })
 
       assert updated.id == 1
-      assert updated.max_document_bytes == 1_000_000
-      assert Settings.get().max_comments_per_review == 100
+      assert updated.max_document_bytes == 5 * 1_048_576
+      assert updated.max_comments_per_review == 100
+      assert updated.max_comment_body_bytes == 50 * 1024
+    end
+
+    test "fractional MB rounds to bytes" do
+      {:ok, updated} =
+        Settings.update(%{
+          "max_document_mb" => 1.5,
+          "max_comments_per_review" => 100,
+          "max_comment_body_kb" => 50
+        })
+
+      assert updated.max_document_bytes == round(1.5 * 1_048_576)
+    end
+
+    test "rejects zero" do
+      original = Settings.get()
+
+      assert {:error, changeset} =
+               Settings.update(%{
+                 "max_document_mb" => 0,
+                 "max_comments_per_review" => 100,
+                 "max_comment_body_kb" => 50
+               })
+
+      refute changeset.valid?
+      assert {_msg, _} = changeset.errors[:max_document_mb]
+      assert Settings.get().max_document_bytes == original.max_document_bytes
     end
 
     test "rejects negative numbers" do
-      original = Settings.get()
+      assert {:error, changeset} =
+               Settings.update(%{
+                 "max_document_mb" => 10,
+                 "max_comments_per_review" => 100,
+                 "max_comment_body_kb" => -1
+               })
 
-      assert {:error, changeset} = Settings.update(%{max_document_bytes: -1})
       refute changeset.valid?
-      assert {_msg, _} = changeset.errors[:max_document_bytes]
-
-      assert Settings.get().max_document_bytes == original.max_document_bytes
+      assert {_msg, _} = changeset.errors[:max_comment_body_kb]
     end
   end
 

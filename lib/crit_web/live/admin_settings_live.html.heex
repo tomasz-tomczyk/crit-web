@@ -1,0 +1,154 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header
+    current_scope={@current_scope}
+    show_overview_link={@selfhosted}
+    current_page={:admin}
+  />
+
+  <Layouts.admin_subnav current_section={:settings} />
+
+  <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
+    <div class="mb-8">
+      <h1 class="text-2xl font-semibold text-(--crit-fg-primary)">Admin — Instance settings</h1>
+      <p class="text-sm text-(--crit-fg-muted) mt-1">
+        Limits applied to API uploads from the Crit CLI.
+      </p>
+    </div>
+
+    <.form
+      for={@form}
+      id="admin-settings-form"
+      phx-change="validate"
+      phx-submit="save"
+      class="flex flex-col gap-6 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6"
+    >
+      <div>
+        <label
+          for={@form[:max_document_mb].id}
+          class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+        >
+          Max document size (MB)
+        </label>
+        <div class="relative w-full max-w-xs">
+          <input
+            type="number"
+            step="0.5"
+            min="0.5"
+            id={@form[:max_document_mb].id}
+            name={@form[:max_document_mb].name}
+            value={@form[:max_document_mb].value}
+            required
+            class={[
+              "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 pr-12 text-sm text-(--crit-fg-primary) border focus:outline-none focus:border-(--crit-brand)",
+              if(
+                Phoenix.Component.used_input?(@form[:max_document_mb]) and
+                  @form[:max_document_mb].errors != [],
+                do: "border-red-500",
+                else: "border-(--crit-border)"
+              )
+            ]}
+          />
+          <span class="absolute inset-y-0 right-3 flex items-center text-xs text-(--crit-fg-muted) pointer-events-none">
+            MB
+          </span>
+        </div>
+        <p class="mt-1.5 text-xs text-(--crit-fg-muted)">
+          Total size of all files in a shared review.
+        </p>
+        <p
+          :for={err <- @form[:max_document_mb].errors}
+          :if={Phoenix.Component.used_input?(@form[:max_document_mb])}
+          class="mt-1.5 text-xs text-red-500"
+        >
+          {CritWeb.CoreComponents.translate_error(err)}
+        </p>
+      </div>
+
+      <div>
+        <label
+          for={@form[:max_comments_per_review].id}
+          class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+        >
+          Max comments per review
+        </label>
+        <input
+          type="number"
+          id={@form[:max_comments_per_review].id}
+          name={@form[:max_comments_per_review].name}
+          value={
+            Phoenix.HTML.Form.normalize_value("number", @form[:max_comments_per_review].value)
+          }
+          min="1"
+          required
+          class={[
+            "w-full max-w-xs bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) border focus:outline-none focus:border-(--crit-brand)",
+            if(
+              Phoenix.Component.used_input?(@form[:max_comments_per_review]) and
+                @form[:max_comments_per_review].errors != [],
+              do: "border-red-500",
+              else: "border-(--crit-border)"
+            )
+          ]}
+        />
+        <p
+          :for={err <- @form[:max_comments_per_review].errors}
+          :if={Phoenix.Component.used_input?(@form[:max_comments_per_review])}
+          class="mt-1.5 text-xs text-red-500"
+        >
+          {CritWeb.CoreComponents.translate_error(err)}
+        </p>
+      </div>
+
+      <div>
+        <label
+          for={@form[:max_comment_body_kb].id}
+          class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+        >
+          Max comment body (KB)
+        </label>
+        <div class="relative w-full max-w-xs">
+          <input
+            type="number"
+            step="1"
+            min="1"
+            id={@form[:max_comment_body_kb].id}
+            name={@form[:max_comment_body_kb].name}
+            value={@form[:max_comment_body_kb].value}
+            required
+            class={[
+              "w-full bg-(--crit-bg-page) rounded-md px-3 py-2 pr-12 text-sm text-(--crit-fg-primary) border focus:outline-none focus:border-(--crit-brand)",
+              if(
+                Phoenix.Component.used_input?(@form[:max_comment_body_kb]) and
+                  @form[:max_comment_body_kb].errors != [],
+                do: "border-red-500",
+                else: "border-(--crit-border)"
+              )
+            ]}
+          />
+          <span class="absolute inset-y-0 right-3 flex items-center text-xs text-(--crit-fg-muted) pointer-events-none">
+            KB
+          </span>
+        </div>
+        <p
+          :for={err <- @form[:max_comment_body_kb].errors}
+          :if={Phoenix.Component.used_input?(@form[:max_comment_body_kb])}
+          class="mt-1.5 text-xs text-red-500"
+        >
+          {CritWeb.CoreComponents.translate_error(err)}
+        </p>
+      </div>
+
+      <div>
+        <button
+          type="submit"
+          phx-disable-with="Saving..."
+          class="bg-(--crit-brand-cta) text-(--crit-fg-on-brand) hover:bg-(--crit-brand-cta-hover) rounded-lg px-4 py-2 text-sm font-bold cursor-pointer transition-all"
+        >
+          Save settings
+        </button>
+      </div>
+    </.form>
+  </div>
+</div>

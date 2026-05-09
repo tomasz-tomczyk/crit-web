@@ -209,6 +209,17 @@ defmodule CritWeb.UserAuth do
     end
   end
 
+  def on_mount(:require_admin, _params, _session, socket) do
+    if Crit.Accounts.Scope.admin?(socket.assigns.current_scope) do
+      {:cont, socket}
+    else
+      {:halt,
+       socket
+       |> Phoenix.LiveView.put_flash(:error, "Admins only.")
+       |> redirect(to: "/dashboard")}
+    end
+  end
+
   def on_mount(:require_selfhosted_auth, _params, session, socket) do
     if Application.get_env(:crit, :selfhosted) do
       socket = assign_scope(socket, session)

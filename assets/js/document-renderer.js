@@ -27,6 +27,10 @@ function isOwnComment(c, ctx) {
   return c.author_identity != null && c.author_identity !== "" && c.author_identity === ctx.identity
 }
 
+function canDeleteComment(c, ctx) {
+  return isOwnComment(c, ctx) || ctx.isAdmin === true
+}
+
 function isReviewOwner(ctx) {
   return ctx.userId !== "" && ctx.reviewOwnerId !== "" && String(ctx.userId) === String(ctx.reviewOwnerId)
 }
@@ -2664,7 +2668,10 @@ function createCommentElement(comment, ctx) {
       addForm(ctx, editFormObj)
       render(ctx)
     })
+    actions.appendChild(editBtn)
+  }
 
+  if (canDeleteComment(comment, ctx)) {
     const deleteBtn = document.createElement("button")
     deleteBtn.className = "delete-btn"
     deleteBtn.title = "Delete"
@@ -2672,8 +2679,6 @@ function createCommentElement(comment, ctx) {
     deleteBtn.addEventListener("click", () => {
       ctx.pushEvent("delete_comment", { id: comment.id })
     })
-
-    actions.appendChild(editBtn)
     actions.appendChild(deleteBtn)
   }
 
@@ -3066,26 +3071,30 @@ function renderReplyList(comment, ctx) {
     replyMeta.appendChild(replyTime)
     replyHeader.appendChild(replyMeta)
 
-    if (isOwnReply) {
+    if (isOwnReply || canDeleteComment(reply, ctx)) {
       const replyActions = document.createElement('div')
       replyActions.className = 'reply-actions'
 
-      const replyEditBtn = document.createElement('button')
-      replyEditBtn.title = 'Edit'
-      replyEditBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>'
-      replyEditBtn.addEventListener('click', function(e) { e.stopPropagation(); editReply(comment.id, reply, ctx) })
+      if (isOwnReply) {
+        const replyEditBtn = document.createElement('button')
+        replyEditBtn.title = 'Edit'
+        replyEditBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>'
+        replyEditBtn.addEventListener('click', function(e) { e.stopPropagation(); editReply(comment.id, reply, ctx) })
+        replyActions.appendChild(replyEditBtn)
+      }
 
-      const replyDeleteBtn = document.createElement('button')
-      replyDeleteBtn.className = 'delete-btn'
-      replyDeleteBtn.title = 'Delete'
-      replyDeleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
-      replyDeleteBtn.addEventListener('click', function(e) {
-        e.stopPropagation()
-        ctx.pushEvent("delete_reply", { id: reply.id })
-      })
+      if (canDeleteComment(reply, ctx)) {
+        const replyDeleteBtn = document.createElement('button')
+        replyDeleteBtn.className = 'delete-btn'
+        replyDeleteBtn.title = 'Delete'
+        replyDeleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+        replyDeleteBtn.addEventListener('click', function(e) {
+          e.stopPropagation()
+          ctx.pushEvent("delete_reply", { id: reply.id })
+        })
+        replyActions.appendChild(replyDeleteBtn)
+      }
 
-      replyActions.appendChild(replyEditBtn)
-      replyActions.appendChild(replyDeleteBtn)
       replyHeader.appendChild(replyActions)
     }
 
@@ -3321,7 +3330,7 @@ function createResolvedElement(comment, ctx) {
     actions.appendChild(unresolveBtn)
   }
 
-  if (isOwn) {
+  if (canDeleteComment(comment, ctx)) {
     const deleteBtn = document.createElement('button')
     deleteBtn.className = 'delete-btn'
     deleteBtn.title = 'Delete'
@@ -3989,7 +3998,7 @@ function renderPanelCard(ctx, comment, filePath) {
       actions.appendChild(resolveBtn)
     }
 
-    if (isOwn) {
+    if (canDeleteComment(comment, ctx)) {
       const deleteBtn = document.createElement('button')
       deleteBtn.className = 'delete-btn'
       deleteBtn.title = 'Delete'
@@ -4876,10 +4885,11 @@ export const DocumentRenderer = {
       }
     })
 
-    ctx.handleEvent("init", ({ comments, display_name, files, can_comment }) => {
+    ctx.handleEvent("init", ({ comments, display_name, files, can_comment, is_admin }) => {
       ctx.displayName = display_name || null
       ctx.comments = comments
       ctx.canComment = can_comment !== false
+      ctx.isAdmin = is_admin === true
 
       if (files && files.length > 1) {
         ctx.multiFile = true
