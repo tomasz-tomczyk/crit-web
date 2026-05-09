@@ -173,6 +173,7 @@
   --crit-editor-scrollbar-thumb: #3b4261;
 
   /* Comment reference chip */
+  /* dark theme */
   --crit-comment-ref-color:       #85aaf8;
   --crit-comment-ref-color-hover: #94bcfb;
   --crit-comment-ref-underline:   rgba(133, 170, 248, 0.35);
@@ -423,6 +424,12 @@
   --crit-editor-fg-muted:        #59636e;
   --crit-editor-scrollbar-bg:    #ffffff;
   --crit-editor-scrollbar-thumb: #d1d9e0;
+  /* Comment reference chip (light) */
+  --crit-comment-ref-color:       #0550ae;
+  --crit-comment-ref-color-hover: #033d8b;
+  --crit-comment-ref-underline:   rgba(5, 80, 174, 0.50);
+  --crit-comment-ref-flash-bg:    rgba(255, 212, 59, 0.55);
+  --crit-comment-ref-flash-ring:  rgba(154, 103, 0, 0.70);
 }
 
 /* System preference: light — overrides dark :root defaults when OS is light */
@@ -545,6 +552,12 @@
     --crit-editor-fg-muted:        #59636e;
     --crit-editor-scrollbar-bg:    #ffffff;
     --crit-editor-scrollbar-thumb: #d1d9e0;
+    /* Comment reference chip (light) */
+    --crit-comment-ref-color:       #0550ae;
+    --crit-comment-ref-color-hover: #033d8b;
+    --crit-comment-ref-underline:   rgba(5, 80, 174, 0.50);
+    --crit-comment-ref-flash-bg:    rgba(255, 212, 59, 0.55);
+    --crit-comment-ref-flash-ring:  rgba(154, 103, 0, 0.70);
   }
 }
 
