@@ -84,7 +84,7 @@ const defaultCodeInline = commentMd.renderer.rules.code_inline || function(token
 commentMd.renderer.rules.code_inline = function(tokens, idx, options, env, self) {
   const content = tokens[idx].content
   if (/^(c|r|rp)_[a-f0-9]{6,}$/.test(content)) {
-    return '<span class="comment-ref comment-ref-code" data-ref-id="' + escapeHtml(content) + '">' + escapeHtml(content) + '</span>'
+    return '<span class="comment-ref comment-ref-code" tabindex="0" role="link" data-ref-id="' + escapeHtml(content) + '">' + escapeHtml(content) + '</span>'
   }
   return defaultCodeInline(tokens, idx, options, env, self)
 }
@@ -107,6 +107,8 @@ function linkifyCommentRefsInDom(el) {
       if (m.index > last) frag.appendChild(document.createTextNode(tn.nodeValue.slice(last, m.index)))
       const span = document.createElement('span')
       span.className = 'comment-ref'
+      span.tabIndex = 0
+      span.setAttribute('role', 'link')
       span.dataset.refId = m[1]
       span.textContent = m[1]
       frag.appendChild(span)
@@ -131,10 +133,20 @@ function scrollToCommentRef(id) {
   card.classList.remove('comment-ref-flash')
   void card.offsetWidth
   card.classList.add('comment-ref-flash')
-  setTimeout(() => { card.classList.remove('comment-ref-flash') }, 1650)
+  card.addEventListener('animationend', function() {
+    card.classList.remove('comment-ref-flash')
+  }, { once: true })
 }
 
 document.addEventListener('click', (e) => {
+  const ref = e.target.closest && e.target.closest('.comment-ref')
+  if (!ref) return
+  e.preventDefault()
+  scrollToCommentRef(ref.dataset.refId)
+})
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return
   const ref = e.target.closest && e.target.closest('.comment-ref')
   if (!ref) return
   e.preventDefault()
