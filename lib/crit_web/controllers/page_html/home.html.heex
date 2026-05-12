@@ -61,10 +61,13 @@
       tabindex="0"
     >
       <img
-        src="/images/video-thumbnail.png"
+        src="/images/video-thumbnail@1x.webp"
+        srcset="/images/video-thumbnail@1x.webp 1x, /images/video-thumbnail@2x.webp 2x"
         alt="Crit demo video thumbnail"
         class="absolute inset-0 w-full h-full object-cover"
-        loading="lazy"
+        fetchpriority="high"
+        width="1280"
+        height="720"
       />
       <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
         <svg viewBox="0 0 68 48" class="w-[68px] h-[48px] drop-shadow-lg" aria-hidden="true">
@@ -128,16 +131,22 @@
     </div>
     <figure class="not-prose">
       <img
-        src="/images/screenshots/ai-loop-dark.png"
+        src="/images/screenshots/ai-loop-dark@1x.png"
+        srcset="/images/screenshots/ai-loop-dark@1x.png 1x, /images/screenshots/ai-loop-dark@2x.png 2x"
         alt="Crit reviewing a plan: inline comments, agent replies, and round-2 diff"
         class="logo-dark w-full rounded-xl border border-(--crit-border)"
         loading="lazy"
+        width="1200"
+        height="675"
       />
       <img
-        src="/images/screenshots/ai-loop-light.png"
+        src="/images/screenshots/ai-loop-light@1x.png"
+        srcset="/images/screenshots/ai-loop-light@1x.png 1x, /images/screenshots/ai-loop-light@2x.png 2x"
         alt="Crit reviewing a plan: inline comments, agent replies, and round-2 diff"
         class="logo-light w-full rounded-xl border border-(--crit-border)"
         loading="lazy"
+        width="1200"
+        height="675"
       />
     </figure>
   </section>
@@ -155,30 +164,42 @@
     <div class="grid grid-cols-2 gap-5 max-md:grid-cols-1">
       <figure class="not-prose">
         <img
-          src="/images/screenshots/plan-dark.png"
+          src="/images/screenshots/plan-dark@1x.png"
+          srcset="/images/screenshots/plan-dark@1x.png 1x, /images/screenshots/plan-dark@2x.png 2x"
           alt="Reviewing a Markdown plan in Crit"
           class="logo-dark w-full rounded-xl border border-(--crit-border)"
           loading="lazy"
+          width="590"
+          height="787"
         />
         <img
-          src="/images/screenshots/plan-light.png"
+          src="/images/screenshots/plan-light@1x.png"
+          srcset="/images/screenshots/plan-light@1x.png 1x, /images/screenshots/plan-light@2x.png 2x"
           alt="Reviewing a Markdown plan in Crit"
           class="logo-light w-full rounded-xl border border-(--crit-border)"
           loading="lazy"
+          width="590"
+          height="787"
         />
       </figure>
       <figure class="not-prose">
         <img
-          src="/images/screenshots/code-dark.png"
+          src="/images/screenshots/code-dark@1x.png"
+          srcset="/images/screenshots/code-dark@1x.png 1x, /images/screenshots/code-dark@2x.png 2x"
           alt="Reviewing a syntax-highlighted source file in Crit"
           class="logo-dark w-full rounded-xl border border-(--crit-border)"
           loading="lazy"
+          width="590"
+          height="787"
         />
         <img
-          src="/images/screenshots/code-light.png"
+          src="/images/screenshots/code-light@1x.png"
+          srcset="/images/screenshots/code-light@1x.png 1x, /images/screenshots/code-light@2x.png 2x"
           alt="Reviewing a syntax-highlighted source file in Crit"
           class="logo-light w-full rounded-xl border border-(--crit-border)"
           loading="lazy"
+          width="590"
+          height="787"
         />
       </figure>
     </div>
@@ -198,16 +219,22 @@
     </div>
     <figure class="not-prose">
       <img
-        src="/images/screenshots/share-dark.png"
+        src="/images/screenshots/share-dark@1x.png"
+        srcset="/images/screenshots/share-dark@1x.png 1x, /images/screenshots/share-dark@2x.png 2x"
         alt="A shared Crit review with multi-author comment threads"
         class="logo-dark w-full rounded-xl border border-(--crit-border)"
         loading="lazy"
+        width="1200"
+        height="675"
       />
       <img
-        src="/images/screenshots/share-light.png"
+        src="/images/screenshots/share-light@1x.png"
+        srcset="/images/screenshots/share-light@1x.png 1x, /images/screenshots/share-light@2x.png 2x"
         alt="A shared Crit review with multi-author comment threads"
         class="logo-light w-full rounded-xl border border-(--crit-border)"
         loading="lazy"
+        width="1200"
+        height="675"
       />
     </figure>
   </section>
@@ -310,7 +337,8 @@
     </h2>
     <div class="flex gap-8 items-start max-sm:flex-col max-sm:gap-5">
       <img
-        src="/images/founder/photo.jpg"
+        src="/images/founder/photo@1x.webp"
+        srcset="/images/founder/photo@1x.webp 1x, /images/founder/photo@2x.webp 2x"
         alt="Tomasz's photo"
         class="size-32 shrink-0 rounded-full object-cover bg-(--crit-bg-card)"
         loading="lazy"

@@ -26,7 +26,8 @@ defmodule CritWeb.Endpoint do
     gzip: not code_reloading?,
     only: CritWeb.static_paths(),
     only_matching: CritWeb.static_paths_matching(),
-    raise_on_missing_only: code_reloading?
+    raise_on_missing_only: code_reloading?,
+    headers: %{"cache-control" => "public, max-age=31536000, immutable"}
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
