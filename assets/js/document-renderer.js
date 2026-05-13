@@ -2745,6 +2745,8 @@ function createCommentElement(comment, ctx) {
     resolveBtn.title = 'Resolve'
     resolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Resolve</span>'
     resolveBtn.addEventListener('click', function() {
+      if (resolveBtn.disabled) return;
+      resolveBtn.disabled = true;
       ctx.pushEvent("resolve_comment", { id: comment.id, resolved: true })
     })
     actions.appendChild(resolveBtn)
@@ -3418,6 +3420,8 @@ function createResolvedElement(comment, ctx) {
     unresolveBtn.setAttribute('aria-label', 'Unresolve thread')
     unresolveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
     unresolveBtn.addEventListener('click', function() {
+      if (unresolveBtn.disabled) return;
+      unresolveBtn.disabled = true;
       ctx.pushEvent("resolve_comment", { id: comment.id, resolved: false })
     })
     actions.appendChild(unresolveBtn)
@@ -4087,6 +4091,8 @@ function renderPanelCard(ctx, comment, filePath) {
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Resolve</span>'
       resolveBtn.addEventListener('click', function(e) {
         e.stopPropagation()
+        if (resolveBtn.disabled) return;
+        resolveBtn.disabled = true;
         ctx.pushEvent('resolve_comment', { id: comment.id, resolved: !isResolved })
       })
       actions.appendChild(resolveBtn)
