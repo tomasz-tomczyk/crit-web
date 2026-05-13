@@ -2570,6 +2570,9 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   font-weight: 500;
   color: var(--crit-editor-fg);
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .file-header-name .dir { color: var(--crit-editor-fg-muted); }
 
@@ -2801,6 +2804,30 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 
 .tree-dir {
   color: var(--crit-editor-fg-muted);
+}
+
+/* Copy path button in file header */
+.file-header-copy-path {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--crit-editor-fg-muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+  border-radius: 3px;
+}
+.file-header:hover .file-header-copy-path,
+.file-header-copy-path:focus-visible {
+  opacity: 1;
+}
+.file-header-copy-path:hover {
+  color: var(--crit-brand);
 }
 
 /* Comment badge in tree */
