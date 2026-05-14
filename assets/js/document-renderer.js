@@ -1,11 +1,13 @@
 import markdownit from "markdown-it"
 import hljs from "highlight.js"
 import { registerMarkdownPatch } from "./highlight-markdown-patch"
+import { heex } from "highlightjs-heex"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 
 // Re-register hljs 'markdown' with patched grammar. Must run before any
 // hljs.highlight() call. See highlight-markdown-patch.js for rationale.
 registerMarkdownPatch(hljs)
+hljs.registerLanguage('heex', heex)
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -865,6 +867,8 @@ const EXT_OVERRIDES = {
   sh: 'bash',
   zig: 'zig',
   md: 'markdown',    // normalize: callers compare lang against 'markdown'
+  heex: 'heex',
+  leex: 'heex',
 }
 // Files identified by basename rather than extension.
 const BASENAME_LANG = {

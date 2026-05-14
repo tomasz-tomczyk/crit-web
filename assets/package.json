@@ -15,6 +15,7 @@
     "@sentry/browser": "^10.51.0",
     "@tailwindcss/typography": "^0.5.19",
     "highlight.js": "^11.11.1",
+    "highlightjs-heex": "^1.0.1",
     "markdown-it": "^14.1.1",
     "mermaid": "^11.14.0"
   }
