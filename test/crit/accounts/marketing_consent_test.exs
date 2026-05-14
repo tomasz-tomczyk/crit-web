@@ -33,12 +33,22 @@ defmodule Crit.Accounts.MarketingConsentTest do
 
   describe "MarketingConsentEvent changeset" do
     test "rejects invalid action" do
-      changeset = MarketingConsentEvent.changeset(%MarketingConsentEvent{}, %{action: "invalid", method: "settings_toggle"})
+      changeset =
+        MarketingConsentEvent.changeset(%MarketingConsentEvent{}, %{
+          action: "invalid",
+          method: "settings_toggle"
+        })
+
       assert errors_on(changeset).action
     end
 
     test "rejects invalid method" do
-      changeset = MarketingConsentEvent.changeset(%MarketingConsentEvent{}, %{action: "opted_in", method: "invalid"})
+      changeset =
+        MarketingConsentEvent.changeset(%MarketingConsentEvent{}, %{
+          action: "opted_in",
+          method: "invalid"
+        })
+
       assert errors_on(changeset).method
     end
   end

@@ -36,8 +36,11 @@ defmodule CritWeb.UserSessionController do
       {:ok, user} ->
         if user_params["marketing_opt_in"] == "true" do
           case Accounts.toggle_marketing_consent(user, "registration_checkbox") do
-            {:ok, _} -> :ok
-            {:error, changeset} -> Logger.error("Failed to record marketing consent: #{inspect(changeset.errors)}")
+            {:ok, _} ->
+              :ok
+
+            {:error, changeset} ->
+              Logger.error("Failed to record marketing consent: #{inspect(changeset.errors)}")
           end
         end
 
