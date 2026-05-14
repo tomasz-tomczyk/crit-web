@@ -26,13 +26,13 @@
     <div class="grid grid-cols-[220px_1fr] gap-10 items-start max-md:grid-cols-1">
       <%!-- Sidebar nav --%>
       <nav class="sticky top-20 flex flex-col gap-[1px] max-md:static max-md:flex-row max-md:flex-wrap max-md:gap-0">
-        <.link
-          navigate={~p"/orgs/#{@org.slug}/settings"}
+        <a
+          href="#general"
           class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium bg-(--crit-bg-card) text-(--crit-fg-primary) no-underline"
         >
           <.icon name="hero-cog-6-tooth" class="size-3.5 opacity-60" />
           General
-        </.link>
+        </a>
         <.link
           navigate={~p"/orgs/#{@org.slug}/members"}
           class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors no-underline"
@@ -40,26 +40,13 @@
           <.icon name="hero-users" class="size-3.5 opacity-50" />
           Members
         </.link>
-        <span class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-fg-secondary) cursor-default">
-          <.icon name="hero-globe-alt" class="size-3.5 opacity-50" />
-          Domain & SSO
-        </span>
-        <span class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-fg-secondary) cursor-default">
-          <.icon name="hero-share" class="size-3.5 opacity-50" />
-          Sharing
-        </span>
-        <span class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-fg-secondary) cursor-default">
-          <.icon name="hero-bolt" class="size-3.5 opacity-50" />
-          Billing
-        </span>
-        <span class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-fg-secondary) cursor-default">
-          <.icon name="hero-key" class="size-3.5 opacity-50" />
-          API tokens
-        </span>
-        <span class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-red) cursor-default">
+        <a
+          href="#danger-zone"
+          class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-red) hover:bg-(--crit-bg-card) transition-colors no-underline"
+        >
           <.icon name="hero-trash" class="size-3.5 opacity-70" />
           Danger zone
-        </span>
+        </a>
         <div class="mt-4 px-2.5 text-[11px] text-(--crit-fg-muted) leading-relaxed max-md:hidden">
           Changes save automatically.<br />Some settings require admin role.
         </div>
@@ -68,7 +55,7 @@
       <%!-- Content area --%>
       <div class="min-w-0">
         <%!-- Section 1: Organization profile --%>
-        <section class="mb-9">
+        <section id="general" class="mb-9">
           <h2 class="text-[16px] font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
             Organization profile
           </h2>
@@ -77,28 +64,12 @@
             <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-6">
               <div class="flex gap-7 items-start max-sm:flex-col">
                 <%!-- Logo / Avatar --%>
-                <div class="text-center shrink-0">
-                  <span
-                    class="inline-flex items-center justify-center w-[72px] h-[72px] rounded-[14px] text-[26px] font-semibold select-none"
-                    style="background: rgba(122,162,247,0.18); color: #7aa2f7;"
-                  >
-                    {String.first(@org.name)}
-                  </span>
-                  <div class="mt-2.5 flex flex-col gap-1 items-center">
-                    <button
-                      type="button"
-                      class="px-3 py-1 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-default"
-                    >
-                      Upload
-                    </button>
-                    <button
-                      type="button"
-                      class="text-[11px] text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-default"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
+                <span
+                  class="inline-flex items-center justify-center w-[72px] h-[72px] rounded-[14px] text-[26px] font-semibold select-none shrink-0"
+                  style="background: rgba(122,162,247,0.18); color: #7aa2f7;"
+                >
+                  {String.first(@org.name)}
+                </span>
 
                 <%!-- Form --%>
                 <div class="flex-1 min-w-0">
@@ -170,21 +141,8 @@
                         {msg}
                       </p>
                       <p class="text-[12px] text-(--crit-fg-muted) mt-1.5">
-                        Lowercase letters, numbers, hyphens. Changing this breaks existing share links.
+                        Lowercase letters, numbers, hyphens.
                       </p>
-                    </div>
-
-                    <%!-- Description (optional) --%>
-                    <div>
-                      <label class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
-                        Description (optional)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Internal tools team at Acme."
-                        disabled
-                        class="block w-full px-3 py-2.5 text-[14px] bg-(--crit-bg-page) border border-(--crit-border) rounded-md text-(--crit-fg-muted) placeholder:text-(--crit-fg-muted) opacity-60 cursor-not-allowed"
-                      />
                     </div>
                   </.form>
                 </div>
@@ -221,102 +179,56 @@
           <% end %>
         </section>
 
-        <%!-- Section 2: Default review sharing --%>
+        <%!-- Section 2: Default review sharing (Coming soon) --%>
         <section class="mb-9">
-          <h2 class="text-[16px] font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+          <h2 class="text-[16px] font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6 flex items-center gap-2.5">
             Default review sharing
+            <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-(--crit-fg-muted)/15 text-(--crit-fg-muted)">
+              Coming soon
+            </span>
           </h2>
 
-          <%= if @is_admin do %>
-            <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
-              <label class="flex gap-3.5 px-5 py-4 cursor-pointer border-b border-(--crit-border)">
-                <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0"></span>
-                <div>
-                  <div class="text-[13px] font-semibold">Public link</div>
-                  <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
-                    Anyone with the URL can view. Best for open-source review.
-                  </div>
+          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
+            <div class="flex gap-3.5 px-5 py-4 border-b border-(--crit-border)">
+              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0"></span>
+              <div>
+                <div class="text-[13px] font-semibold">Public link</div>
+                <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
+                  Anyone with the URL can view. Best for open-source review.
                 </div>
-              </label>
-              <label class="flex gap-3.5 px-5 py-4 cursor-pointer border-b border-(--crit-border) bg-(--crit-bg-elevated)">
-                <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[5px] border-(--crit-brand) bg-(--crit-bg-page) shrink-0"></span>
-                <div>
-                  <div class="text-[13px] font-semibold">Sign-in required</div>
-                  <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
-                    Viewers must sign in with any account before reading.
-                  </div>
-                </div>
-              </label>
-              <label class="flex gap-3.5 px-5 py-4 cursor-pointer">
-                <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0"></span>
-                <div>
-                  <div class="text-[13px] font-semibold">Org members only</div>
-                  <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
-                    Only members of {@org.name} can open shared review links.
-                  </div>
-                </div>
-              </label>
-            </div>
-          <% else %>
-            <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-5">
-              <p class="text-[13px] text-(--crit-fg-muted)">Admin access required to change sharing defaults.</p>
-            </div>
-          <% end %>
-        </section>
-
-        <%!-- Section 3: Domain auto-join --%>
-        <section class="mb-9">
-          <h2 class="text-[16px] font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
-            Domain auto-join
-          </h2>
-
-          <%= if @is_admin do %>
-            <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-5">
-              <div class="flex gap-4 items-center">
-                <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center shrink-0">
-                  <.icon name="hero-globe-alt" class="size-4" />
-                </span>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2.5">
-                    <span class="text-[13px] font-semibold">acme.dev</span>
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/15 text-emerald-400">
-                      <.icon name="hero-check" class="size-2.5" /> Verified
-                    </span>
-                  </div>
-                  <p class="text-[12px] text-(--crit-fg-muted) mt-1">
-                    Anyone signing in with an @acme.dev email will be auto-added as a Member.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-default"
-                >
-                  Configure
-                </button>
-              </div>
-
-              <div class="mt-3.5 pt-3.5 border-t border-dashed border-(--crit-border) flex items-center gap-3 text-[12px] text-(--crit-fg-muted)">
-                <.icon name="hero-lock-closed" class="size-3.5" />
-                <span>GitHub SSO is enabled.</span>
-                <span class="ml-1 text-(--crit-brand) font-medium cursor-default">
-                  Switch to SAML/OIDC &rarr;
-                </span>
               </div>
             </div>
-          <% else %>
-            <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-5">
-              <p class="text-[13px] text-(--crit-fg-muted)">Admin access required to configure domain settings.</p>
+            <div class="flex gap-3.5 px-5 py-4 border-b border-(--crit-border) bg-(--crit-bg-elevated)">
+              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[5px] border-(--crit-brand) bg-(--crit-bg-page) shrink-0"></span>
+              <div>
+                <div class="text-[13px] font-semibold">Sign-in required</div>
+                <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
+                  Viewers must sign in with any account before reading.
+                </div>
+              </div>
             </div>
-          <% end %>
+            <div class="flex gap-3.5 px-5 py-4">
+              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0"></span>
+              <div>
+                <div class="text-[13px] font-semibold">Org members only</div>
+                <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
+                  Only members of {@org.name} can open shared review links.
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <%!-- Section 4: Plan --%>
+        <%!-- Section 3: Plan (Coming soon) --%>
         <section class="mb-9">
-          <h2 class="text-[16px] font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+          <h2 class="text-[16px] font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6 flex items-center gap-2.5">
             Plan
+            <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-(--crit-fg-muted)/15 text-(--crit-fg-muted)">
+              Coming soon
+            </span>
           </h2>
 
-          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
+          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
             <div class="p-5 flex items-center gap-5">
               <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center shrink-0">
                 <.icon name="hero-square-3-stack-3d" class="size-4" />
@@ -326,56 +238,31 @@
                   Team plan &middot; Free during beta
                 </div>
                 <p class="text-[12px] text-(--crit-fg-muted) mt-0.5">
-                  Unlimited seats &middot; no credit card required
+                  No credit card required
                 </p>
               </div>
-              <%= if @is_admin do %>
-                <button
-                  type="button"
-                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-default"
-                >
-                  Manage billing
-                </button>
-              <% end %>
             </div>
             <div class="px-5 py-3 bg-(--crit-bg-page) border-t border-(--crit-border) flex gap-4 text-[11px] text-(--crit-fg-muted)">
               <span class="inline-flex items-center gap-1">
-                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> Unlimited reviews
+                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> More reviews
               </span>
               <span class="inline-flex items-center gap-1">
-                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> Audit log
+                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> Higher upload limits
               </span>
               <span class="inline-flex items-center gap-1">
-                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> Priority support
+                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> SSO
               </span>
             </div>
           </div>
         </section>
 
-        <%!-- Section 5: Danger zone --%>
-        <section>
+        <%!-- Section 4: Danger zone --%>
+        <section id="danger-zone">
           <h2 class="text-[16px] font-semibold text-(--crit-red) pb-3 border-b border-(--crit-red)/25 mb-6">
             Danger zone
           </h2>
 
           <div class="border border-(--crit-red)/30 rounded-xl overflow-hidden">
-            <%= if @is_admin do %>
-              <div class="flex items-center justify-between px-5 py-4 border-b border-(--crit-red)/[0.18]">
-                <div>
-                  <div class="text-[13px] font-semibold">Transfer ownership</div>
-                  <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
-                    Make another admin the owner of this organization.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-default"
-                >
-                  Transfer
-                </button>
-              </div>
-            <% end %>
-
             <div class={[
               "flex items-center justify-between px-5 py-4",
               @is_admin && "border-b border-(--crit-red)/[0.18]"
@@ -406,10 +293,67 @@
                 </div>
                 <button
                   type="button"
-                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-white bg-(--crit-red) rounded-md hover:opacity-90 transition-opacity cursor-default"
+                  phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal") |> JS.focus(to: "#delete-org-confirm-input")}
+                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-white bg-(--crit-red) rounded-md hover:opacity-90 transition-opacity"
                 >
                   Delete
                 </button>
+              </div>
+
+              <%!-- Delete confirmation modal --%>
+              <div
+                id="delete-org-modal"
+                hidden
+                class="fixed inset-0 z-50 flex items-center justify-center"
+                phx-click-away={JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")}
+              >
+                <div class="fixed inset-0 bg-black/60" aria-hidden="true"></div>
+                <div class="relative bg-(--crit-bg-card) border border-(--crit-border) rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+                  <div class="flex items-center gap-3 mb-4">
+                    <span class="w-9 h-9 rounded-full bg-(--crit-red)/15 text-(--crit-red) inline-flex items-center justify-center shrink-0">
+                      <.icon name="hero-exclamation-triangle" class="size-5" />
+                    </span>
+                    <h3 class="text-[16px] font-semibold text-(--crit-fg-primary)">Delete {@org.name}?</h3>
+                  </div>
+                  <p class="text-[13px] text-(--crit-fg-secondary) mb-5 leading-relaxed">
+                    This will permanently delete the organization, all shared reviews, and revoke all member access. This action cannot be undone.
+                  </p>
+                  <label class="block text-[11px] font-mono uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+                    Type <span class="font-semibold text-(--crit-fg-secondary)">{@org.slug}</span> to confirm
+                  </label>
+                  <input
+                    id="delete-org-confirm-input"
+                    type="text"
+                    value={@delete_confirmation}
+                    phx-keyup="update_delete_confirmation"
+                    autocomplete="off"
+                    placeholder={@org.slug}
+                    class="block w-full px-3 py-2.5 text-[13px] font-mono bg-(--crit-bg-page) border border-(--crit-border) rounded-md text-(--crit-fg-primary) placeholder:text-(--crit-fg-muted) focus:outline-none focus:border-(--crit-red) mb-5"
+                  />
+                  <div class="flex justify-end gap-2.5">
+                    <button
+                      type="button"
+                      phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")}
+                      class="inline-flex items-center px-3 py-1.5 text-[13px] font-medium text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) rounded-md transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      phx-click="delete_org"
+                      disabled={@delete_confirmation != @org.slug}
+                      class={[
+                        "inline-flex items-center px-4 py-1.5 text-[13px] font-medium rounded-md transition-opacity",
+                        if(@delete_confirmation == @org.slug,
+                          do: "text-white bg-(--crit-red) hover:opacity-90",
+                          else: "text-(--crit-fg-muted) bg-(--crit-bg-elevated) cursor-not-allowed opacity-50"
+                        )
+                      ]}
+                    >
+                      Delete organization
+                    </button>
+                  </div>
+                </div>
               </div>
             <% end %>
           </div>

@@ -387,13 +387,13 @@ defmodule CritWeb.Layouts do
 
     ~H"""
     <header class="bg-(--crit-bg-card) border-b border-(--crit-border)">
-      <div class="max-w-7xl mx-auto flex items-center gap-4 px-8 py-3 max-sm:px-4">
+      <div class="max-w-7xl mx-auto flex items-center gap-4 px-8 py-3.5 max-sm:px-4 max-sm:py-3">
         <%!-- Logo --%>
         <a
           href={~p"/dashboard"}
           class="text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring) flex-shrink-0"
         >
-          <svg class="h-[18px] w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
+          <svg class="h-5 w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
             <g transform="scale(1,-1)">
               <path
                 d="M628 -22Q459 -22 336.5 50.5Q214 123 147.5 252.5Q81 382 81 554Q81 727 147.5 857.0Q214 987 336.5 1059.5Q459 1132 628 1132Q827 1132 960.0 1032.5Q1093 933 1125 760L846 708Q827 795 772.5 845.5Q718 896 631 896Q511 896 449.0 801.5Q387 707 387 555Q387 405 449.0 309.5Q511 214 631 214Q718 214 774.0 266.5Q830 319 848 409L1127 358Q1095 181 962.0 79.5Q829 -22 628 -22Z"
@@ -419,7 +419,23 @@ defmodule CritWeb.Layouts do
           </svg>
         </a>
 
-        <%!-- Workspace breadcrumb --%>
+        <%!-- Self-hosted badge --%>
+        <%= if @show_overview_link do %>
+          <div
+            role="group"
+            aria-label={"Self-hosted instance: " <> @host}
+            class="inline-flex items-center gap-1.5 pl-3 border-l border-(--crit-border-strong) max-sm:hidden"
+          >
+            <span class="text-[10px] font-semibold uppercase tracking-[0.1em] text-(--crit-fg-muted)">
+              Self-hosted
+            </span>
+            <span class="font-mono text-[12px] font-medium text-(--crit-fg-primary) tracking-tight truncate max-w-[200px]">
+              {@host}
+            </span>
+          </div>
+        <% end %>
+
+        <%!-- Organization breadcrumb --%>
         <div class="flex items-center gap-2 pl-3 border-l border-(--crit-border-strong) min-w-0 max-sm:hidden">
           <%= if @current_org do %>
             <.link
@@ -465,10 +481,7 @@ defmodule CritWeb.Layouts do
               </.nav_link>
             <% else %>
               <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
-                My Reviews
-              </.nav_link>
-              <.nav_link navigate={~p"/settings"} active={@current_page == :settings}>
-                Account
+                Dashboard
               </.nav_link>
               <%= if @show_overview_link do %>
                 <.nav_link href={~p"/overview"} active={@current_page == :overview}>
@@ -581,9 +594,9 @@ defmodule CritWeb.Layouts do
 
                 <div class="h-px bg-(--crit-border) my-0.5"></div>
 
-                <%!-- Workspaces --%>
+                <%!-- Organizations --%>
                 <div class="text-[10px] font-mono uppercase tracking-[0.12em] text-(--crit-fg-muted) font-medium px-3 pt-2.5 pb-1">
-                  Workspaces
+                  Organizations
                 </div>
 
                 <.link
@@ -745,7 +758,7 @@ defmodule CritWeb.Layouts do
               </.nav_mobile_link>
             <% else %>
               <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
-                My Reviews
+                Dashboard
               </.nav_mobile_link>
               <%= if @show_overview_link do %>
                 <.nav_mobile_link href={~p"/overview"} active={@current_page == :overview}>
@@ -755,10 +768,10 @@ defmodule CritWeb.Layouts do
             <% end %>
 
             <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
-              Workspaces
+              Organizations
             </div>
             <.nav_mobile_link navigate={~p"/orgs"}>
-              All workspaces
+              All organizations
             </.nav_mobile_link>
 
             <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">

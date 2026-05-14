@@ -9,30 +9,30 @@
   />
 
   <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
-    <div class="flex items-end justify-between mb-7 gap-4">
-      <div>
-        <div class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-2">
-          Personal workspace
-        </div>
-        <h1 class="text-2xl font-bold tracking-tight">
-          My Reviews
-          <span class="text-(--crit-fg-muted) font-normal text-lg ml-2">{@review_count}</span>
-        </h1>
-        <p class="text-sm text-(--crit-fg-secondary) mt-1">
-          Reviews you share from your CLI. Visible only to you unless you copy the link.
-        </p>
+    <%!-- Page header --%>
+    <div class="mb-7">
+      <div class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-2">
+        Dashboard
       </div>
-      <div class="flex items-center gap-2 flex-shrink-0">
-        <.link
-          navigate={~p"/orgs"}
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-(--crit-border) rounded-md text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors no-underline max-sm:hidden"
-        >
-          <.icon name="hero-building-office-2-mini" class="size-3.5" /> Workspaces
-        </.link>
-      </div>
+      <h1 class="text-2xl font-bold tracking-tight">
+        Hi {(@current_scope.user && @current_scope.user.name) || "there"}, where to today?
+      </h1>
+      <p class="text-sm text-(--crit-fg-secondary) mt-1">
+        <%= cond do %>
+          <% length(@orgs) == 0 and @review_count == 0 -> %>
+            Get started by installing crit and sharing your first review.
+          <% length(@orgs) == 0 -> %>
+            You have {if @review_count == 1, do: "1 personal review", else: "#{@review_count} personal reviews"}.
+          <% length(@orgs) == 1 -> %>
+            You have 1 organization and {if @review_count == 1, do: "1 personal review", else: "#{@review_count} personal reviews"}.
+          <% true -> %>
+            You have {length(@orgs)} organizations and {if @review_count == 1, do: "1 personal review", else: "#{@review_count} personal reviews"}.
+        <% end %>
+      </p>
     </div>
 
-    <%= if @review_count == 0 do %>
+    <%= if @review_count == 0 and @orgs == [] do %>
+      <%!-- ═══════════════ ONBOARDING EMPTY STATE ═══════════════ --%>
       <div id="empty-state" phx-hook=".EmptyState" phx-update="ignore">
         <script :type={Phoenix.LiveView.ColocatedHook} name=".EmptyState">
           export default {
@@ -342,43 +342,377 @@
         </p>
       </div>
     <% else %>
-      <div
-        id="reviews-list"
-        class="flex flex-col gap-7"
-        phx-update="stream"
-        phx-hook=".SnippetHighlight"
-      >
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".SnippetHighlight">
-          import hljs from "highlight.js"
-          export default {
-            mounted() { this.run() },
-            updated() { this.run() },
-            run() {
-              this.el.querySelectorAll('[data-snippet-line]:not([data-hl])').forEach(el => {
-                const lang = el.dataset.lang
-                if (lang && hljs.getLanguage(lang)) {
-                  try {
-                    el.innerHTML = hljs.highlight(el.textContent, { language: lang, ignoreIllegals: true }).value
-                  } catch (_) {}
-                }
-                el.setAttribute('data-hl', '1')
-              })
-            }
-          }
-        </script>
-        <article :for={{dom_id, review} <- @streams.reviews} id={dom_id} class="group">
-          <div class="mb-2 px-0.5">
-            <.review_listing_header
-              path={review.first_file_path}
-              last_activity_at={review.last_activity_at}
-              file_count={review.file_count}
-              comment_count={review.comment_count}
-              link_to={~p"/r/#{review.token}"}
-            />
+      <%!-- ═══════════════ TWO-COLUMN DASHBOARD ═══════════════ --%>
+      <div class="grid grid-cols-[1.55fr_1fr] gap-[18px] items-start max-lg:grid-cols-1">
+
+        <%!-- ─── Left column: Organization cards ─── --%>
+        <div class="flex flex-col gap-3.5">
+          <%= if @orgs != [] do %>
+            <.link
+              :for={org <- @orgs}
+              navigate={~p"/orgs/#{org.slug}"}
+              class="bg-(--crit-bg-card) border border-(--crit-border-strong) rounded-[10px] overflow-hidden flex flex-col relative no-underline hover:border-(--crit-brand) transition-colors"
+            >
+              <%!-- Banner --%>
+              <div class="relative p-[24px_28px_20px] bg-(--crit-bg-page) border-b border-(--crit-border)">
+                <div class="flex items-start gap-4 relative">
+                  <span class="w-14 h-14 rounded-[14px] bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[22px] font-semibold flex-shrink-0">
+                    {String.first(org.name) |> String.upcase()}
+                  </span>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.12em] font-mono">
+                      Your organization
+                    </div>
+                    <div class="text-[22px] font-bold text-(--crit-fg-primary) tracking-[-0.02em] mt-1">
+                      {org.name}
+                    </div>
+                  </div>
+                </div>
+
+                <%!-- Stats inline --%>
+                <div class="grid grid-cols-2 mt-[22px] border-t border-(--crit-border) pt-4">
+                  <div>
+                    <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Reviews</div>
+                    <div class="text-[22px] font-bold text-(--crit-fg-primary) mt-1 tracking-[-0.02em]">{org.review_count}</div>
+                  </div>
+                  <div>
+                    <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Members</div>
+                    <div class="text-[22px] font-bold text-(--crit-fg-primary) mt-1 tracking-[-0.02em] flex items-center gap-2.5">
+                      {org.member_count}
+                      <div class="flex">
+                        <span
+                          :for={i <- 0..min(org.member_count - 1, 3)}
+                          class="w-[22px] h-[22px] rounded-full bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
+                          style={if i > 0, do: "margin-left: -8px", else: ""}
+                        >
+                          {String.at("ABCDEFGH", i)}
+                        </span>
+                        <%= if org.member_count > 4 do %>
+                          <span
+                            class="w-[22px] h-[22px] rounded-full bg-(--crit-bg-elevated) text-(--crit-fg-secondary) inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
+                            style="margin-left: -8px"
+                          >
+                            +{org.member_count - 4}
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="px-4 py-4 text-center text-[13px] text-(--crit-fg-muted)">
+                No recent activity
+              </div>
+            </.link>
+          <% end %>
+        </div>
+
+        <%!-- ─── Right column: Personal reviews ─── --%>
+        <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[10px] p-[18px] flex flex-col gap-3">
+          <div class="flex items-start gap-3">
+            <span class="w-11 h-11 rounded-[11px] bg-(--crit-bg-elevated) border border-(--crit-border) text-(--crit-fg-secondary) inline-flex items-center justify-center flex-shrink-0">
+              <.icon name="hero-user" class="size-5" />
+            </span>
+            <div class="flex-1">
+              <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.12em] font-mono">
+                Just for you
+              </div>
+              <div class="text-[17px] font-bold text-(--crit-fg-primary) tracking-[-0.015em] mt-1">
+                Personal reviews
+              </div>
+            </div>
           </div>
-          <.review_snippet path={review.first_file_path} content={review.first_file_content} />
-        </article>
+
+          <p class="text-[12.5px] text-(--crit-fg-secondary) leading-[1.55] m-0">
+            Reviews you share from your CLI without picking an org. Visible only to you, unless you copy the link out.
+          </p>
+
+          <%= if @review_count > 0 do %>
+            <%!-- Review list --%>
+            <div
+              id="reviews-list"
+              class="mt-1 -mb-0.5 flex flex-col"
+              phx-update="stream"
+              phx-hook=".SnippetHighlight"
+            >
+              <script :type={Phoenix.LiveView.ColocatedHook} name=".SnippetHighlight">
+                import hljs from "highlight.js"
+                export default {
+                  mounted() { this.run() },
+                  updated() { this.run() },
+                  run() {
+                    this.el.querySelectorAll('[data-snippet-line]:not([data-hl])').forEach(el => {
+                      const lang = el.dataset.lang
+                      if (lang && hljs.getLanguage(lang)) {
+                        try {
+                          el.innerHTML = hljs.highlight(el.textContent, { language: lang, ignoreIllegals: true }).value
+                        } catch (_) {}
+                      }
+                      el.setAttribute('data-hl', '1')
+                    })
+                  }
+                }
+              </script>
+              <article :for={{dom_id, review} <- @streams.reviews} id={dom_id} class="group">
+                <div class="mb-2 px-0.5">
+                  <.review_listing_header
+                    path={review.first_file_path}
+                    last_activity_at={review.last_activity_at}
+                    file_count={review.file_count}
+                    comment_count={review.comment_count}
+                    link_to={~p"/r/#{review.token}"}
+                  />
+                </div>
+                <.review_snippet path={review.first_file_path} content={review.first_file_content} />
+              </article>
+            </div>
+          <% else %>
+            <div class="py-6 text-center text-[13px] text-(--crit-fg-muted)">
+              No personal reviews yet
+            </div>
+          <% end %>
+
+          <div class="flex items-center justify-between text-[12px] text-(--crit-fg-muted) pt-2 border-t border-(--crit-border)">
+            <span><span class="font-mono text-(--crit-fg-primary)">{@review_count}</span> personal {if @review_count == 1, do: "review", else: "reviews"}</span>
+          </div>
+        </div>
       </div>
+
+      <%!-- Onboarding steps (shown when no personal reviews) --%>
+      <%= if @review_count == 0 do %>
+        <div id="onboarding-steps" phx-hook=".OnboardingSteps" phx-update="ignore" class="mt-8">
+          <script :type={Phoenix.LiveView.ColocatedHook} name=".OnboardingSteps">
+            export default {
+              mounted() {
+                this.el.addEventListener("click", (e) => {
+                  const installTab = e.target.closest(".install-tab")
+                  if (installTab) {
+                    const target = installTab.dataset.target
+                    this.el.querySelectorAll(".install-tab").forEach(t => {
+                      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
+                      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
+                    })
+                    installTab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
+                    installTab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
+                    this.el.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"))
+                    const panel = this.el.querySelector("#ob-" + target)
+                    if (panel) panel.classList.remove("hidden")
+                  }
+                  const agentTab = e.target.closest(".agent-tab")
+                  if (agentTab) {
+                    const target = agentTab.dataset.target
+                    this.el.querySelectorAll(".agent-tab").forEach(t => {
+                      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
+                      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
+                    })
+                    agentTab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
+                    agentTab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
+                    this.el.querySelectorAll(".agent-panel").forEach(p => p.classList.add("hidden"))
+                    const panel = this.el.querySelector("#ob-" + target)
+                    if (panel) panel.classList.remove("hidden")
+                  }
+                  const copyBtn = e.target.closest(".copy-btn, .agent-copy-btn")
+                  if (copyBtn) {
+                    let text
+                    if (copyBtn.dataset.copy) {
+                      text = copyBtn.dataset.copy
+                    } else {
+                      const pre = copyBtn.closest("div")?.querySelector("pre")
+                      if (pre) text = pre.textContent.replace(/^\$ /, "").replace(/ or .*$/, "").split("\n")[0].trim()
+                    }
+                    if (text) {
+                      navigator.clipboard.writeText(text).then(() => {
+                        const defaultIcon = copyBtn.querySelector(".icon-default")
+                        const copiedIcon = copyBtn.querySelector(".icon-copied")
+                        if (defaultIcon) defaultIcon.classList.add("hidden")
+                        if (copiedIcon) copiedIcon.classList.remove("hidden")
+                        setTimeout(() => {
+                          if (defaultIcon) defaultIcon.classList.remove("hidden")
+                          if (copiedIcon) copiedIcon.classList.add("hidden")
+                        }, 2000)
+                      }).catch(() => {})
+                    }
+                  }
+                })
+              }
+            }
+          </script>
+
+          <div class="max-w-[640px] mx-auto">
+            <div class="text-center mb-12">
+              <h2 class="text-2xl font-bold tracking-tight mb-2.5">
+                Get your first review on the web
+              </h2>
+              <p class="text-xl max-sm:text-base leading-relaxed text-(--crit-fg-secondary) max-w-2xl mx-auto mb-10">
+                Install crit, connect your agent, share your review in one command.
+              </p>
+            </div>
+
+            <div class="flex flex-col">
+              <%!-- Step 1: Install --%>
+              <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+                <div class="flex flex-col items-center max-sm:hidden">
+                  <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                    1
+                  </div>
+                  <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
+                </div>
+                <div class="pb-8 min-w-0">
+                  <div class="text-xl font-bold tracking-tight leading-8">
+                    <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">1.</span>Install crit
+                  </div>
+                  <div class="mt-3">
+                    <CritWeb.PageHTML.install_widget />
+                  </div>
+                </div>
+              </div>
+
+              <%!-- Step 2: Connect your agent --%>
+              <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+                <div class="flex flex-col items-center max-sm:hidden">
+                  <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                    2
+                  </div>
+                  <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
+                </div>
+                <div class="pb-8 min-w-0">
+                  <div class="text-xl font-bold tracking-tight leading-8">
+                    <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">2.</span>Connect your agent
+                  </div>
+                  <div class="mt-3">
+                    <CritWeb.PageHTML.agent_setup_widget />
+                  </div>
+                </div>
+              </div>
+
+              <%= if @selfhosted do %>
+                <%!-- Step 3 (selfhosted): Point crit at this instance --%>
+                <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+                  <div class="flex flex-col items-center max-sm:hidden">
+                    <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                      3
+                    </div>
+                    <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
+                  </div>
+                  <div class="pb-8 min-w-0">
+                    <div class="text-xl font-bold tracking-tight leading-8">
+                      <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">3.</span>Point crit at this instance
+                    </div>
+                    <p
+                      class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed"
+                      phx-no-format
+                    >
+                      By default, crit shares to <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit.md</code>. Set <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">share_url</code>
+                      so it talks to this self-hosted instance instead.
+                    </p>
+
+                    <div class="mt-3 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
+                      <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-4 py-3 overflow-x-auto whitespace-pre"><span class="text-(--crit-fg-muted) select-none">$ </span>export CRIT_SHARE_URL={@instance_url}</pre>
+                      <button
+                        class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+                        aria-label="Copy to clipboard"
+                        data-copy={"export CRIT_SHARE_URL=#{@instance_url}"}
+                      >
+                        <.icon name="hero-clipboard" class="size-4 icon-default" />
+                        <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+                      </button>
+                    </div>
+
+                    <p class="mt-2 text-xs text-(--crit-fg-muted) leading-relaxed">
+                      Or pass <code class="font-mono">--share-url</code>
+                      per command, or set <code class="font-mono">share_url</code>
+                      in <code class="font-mono">~/.crit.config.json</code>.
+                    </p>
+                  </div>
+                </div>
+              <% end %>
+
+              <%!-- Step: Log in --%>
+              <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+                <div class="flex flex-col items-center max-sm:hidden">
+                  <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                    {if @selfhosted, do: 4, else: 3}
+                  </div>
+                  <div class="w-px flex-1 bg-(--crit-border) min-h-5"></div>
+                </div>
+                <div class="pb-8 min-w-0">
+                  <div class="text-xl font-bold tracking-tight leading-8">
+                    <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">{if @selfhosted, do: 4, else: 3}.</span>Log in
+                  </div>
+                  <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
+                    Run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit auth login</code>
+                    to link shared reviews to your account. Opens your browser for a one-time confirmation.
+                  </p>
+
+                  <div class="mt-3 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
+                    <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-4 py-3 overflow-x-auto whitespace-pre"><span class="text-(--crit-fg-muted) select-none">$ </span>crit auth login</pre>
+                    <button
+                      class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+                      aria-label="Copy to clipboard"
+                      data-copy="crit auth login"
+                    >
+                      <.icon name="hero-clipboard" class="size-4 icon-default" />
+                      <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <%!-- Step: Share --%>
+              <div class="grid grid-cols-[40px_1fr] gap-x-5 max-sm:block">
+                <div class="flex flex-col items-center max-sm:hidden">
+                  <div class="w-8 h-8 rounded-full border-[1.5px] border-(--crit-border-strong) bg-(--crit-bg-card) flex items-center justify-center text-sm font-semibold text-(--crit-fg-secondary) shrink-0 relative z-[1]">
+                    {if @selfhosted, do: 5, else: 4}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xl font-bold tracking-tight leading-8">
+                    <span class="sm:hidden text-(--crit-fg-muted) font-normal mr-1.5">{if @selfhosted, do: 5, else: 4}.</span>Share to the web
+                  </div>
+                  <p class="mt-1.5 text-sm text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
+                    When you're ready, run <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit share</code>
+                    to upload your review to a shareable URL.
+                  </p>
+
+                  <div class="mt-3 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
+                    <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-4 py-3 overflow-x-auto whitespace-pre"><span class="text-(--crit-fg-muted) select-none">$ </span>crit share
+<span class="text-(--crit-fg-muted) italic">Shared at {if @selfhosted, do: String.replace(@instance_url, ~r{^https?://}, ""), else: "crit.md"}/r/abc123</span></pre>
+                  </div>
+
+                  <div class="mt-3 flex flex-col gap-1.5">
+                    <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
+                      <.icon name="hero-arrows-right-left" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
+                      <span>Comments sync bidirectionally — web replies flow back to your CLI</span>
+                    </div>
+                    <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
+                      <.icon name="hero-arrow-path" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
+                      <span>Re-share anytime to update the web version with new changes</span>
+                    </div>
+                    <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
+                      <.icon name="hero-clock" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
+                      <span>Reviews expire after 30 days of inactivity</span>
+                    </div>
+                    <div class="flex items-baseline gap-2 text-sm text-(--crit-fg-secondary) leading-normal">
+                      <.icon name="hero-trash" class="size-4 text-(--crit-fg-muted) shrink-0 relative top-0.5" />
+                      <span phx-no-format>
+                        Unpublish anytime with <code class="font-mono text-sm text-(--crit-brand) bg-(--crit-brand-subtle) px-1 py-0.5 rounded">crit unpublish</code>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-10 text-center">
+              <p class="text-sm text-(--crit-fg-muted)">
+                Learn more in the
+                <a href="/getting-started" class="crit-link">getting started guide</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      <% end %>
     <% end %>
   </div>
 </div>

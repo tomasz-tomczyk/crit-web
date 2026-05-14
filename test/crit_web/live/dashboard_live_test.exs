@@ -61,7 +61,7 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
-      assert html =~ ~r/Reviews[^<]*<[^>]*>1</
+      assert html =~ "1 personal review"
       assert html =~ hd(review.files).file_path
       refute html =~ hd(other_review.files).file_path
     end
@@ -168,19 +168,19 @@ defmodule CritWeb.DashboardLiveTest do
 
       {:ok, _view, html} = live(conn, ~p"/dashboard")
 
-      assert html =~ ~r/Reviews[^<]*<[^>]*>2</
+      assert html =~ "2 personal reviews"
       assert html =~ "older.md"
       assert html =~ "newer.md"
     end
   end
 
   describe "dashboard page title" do
-    test "page title is My Reviews - Crit", %{conn: conn} do
+    test "page title is Dashboard - Crit", %{conn: conn} do
       conn = login_user(conn)
 
       {:ok, view, _html} = live(conn, ~p"/dashboard")
 
-      assert page_title(view) =~ "My Reviews - Crit"
+      assert page_title(view) =~ "Dashboard - Crit"
     end
   end
 

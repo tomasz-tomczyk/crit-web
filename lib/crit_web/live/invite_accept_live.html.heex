@@ -5,6 +5,7 @@
     current_scope={@current_scope}
     show_overview_link={@selfhosted}
     current_page={nil}
+    orgs={assigns[:orgs] || []}
   />
 
   <div class="max-w-7xl mx-auto w-full px-8 py-14 max-sm:px-4 max-sm:py-8">
@@ -187,7 +188,7 @@
               class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
             >
               <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
-              Back to workspaces
+              Back to organizations
             </.link>
           </div>
         </div>
@@ -212,7 +213,7 @@
               class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
             >
               <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
-              Back to workspaces
+              Back to organizations
             </.link>
           </div>
         </div>
@@ -237,7 +238,7 @@
               class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
             >
               <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
-              Back to workspaces
+              Back to organizations
             </.link>
           </div>
         </div>

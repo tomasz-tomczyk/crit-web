@@ -16,7 +16,7 @@ defmodule CritWeb.DashboardLive do
 
     socket =
       socket
-      |> assign(:page_title, "My Reviews - Crit")
+      |> assign(:page_title, "Dashboard - Crit")
       |> assign(:noindex, true)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
       |> assign(:instance_url, CritWeb.Endpoint.url())

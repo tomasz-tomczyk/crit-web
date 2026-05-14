@@ -5,6 +5,7 @@
     current_scope={@current_scope}
     show_overview_link={@selfhosted}
     current_page={:settings}
+    orgs={@orgs}
   />
 
   <%!-- Main content --%>
@@ -528,7 +529,7 @@
                   </div>
                 </div>
                 <.link
-                  navigate={~p"/orgs"}
+                  navigate={~p"/orgs/#{org.slug}"}
                   class="text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) no-underline ml-4 shrink-0 transition-colors"
                 >
                   Open →

@@ -20,6 +20,7 @@ defmodule CritWeb.OrgMembersLive do
       |> assign(:org, org)
       |> assign(:is_admin, is_admin)
       |> assign(:current_user_id, scope.user.id)
+      |> assign(:tab, "active")
       |> assign(:orgs, Organizations.list_user_organizations(scope))
       |> load_members()
 
@@ -35,6 +36,11 @@ defmodule CritWeb.OrgMembersLive do
       end
 
     {:ok, socket, layout: false}
+  end
+
+  @impl true
+  def handle_event("switch_tab", %{"tab" => tab}, socket) when tab in ["active", "pending"] do
+    {:noreply, assign(socket, :tab, tab)}
   end
 
   @impl true
@@ -107,32 +113,60 @@ defmodule CritWeb.OrgMembersLive do
   def handle_event("send_invite", %{"invite" => params}, socket) do
     scope = socket.assigns.current_scope
     org = socket.assigns.org
+    role = Map.get(params, "role", "member")
 
-    case Organizations.create_invite(scope, org, params) do
-      {:ok, {raw_token, invite}} ->
-        url = CritWeb.Endpoint.url() <> ~p"/invites/#{raw_token}"
-        OrgNotifier.deliver_invitation(invite, org, scope.user, url)
+    emails =
+      (Map.get(params, "email") || "")
+      |> String.split(~r/[\s,]+/, trim: true)
+      |> Enum.uniq()
 
-        {:noreply,
-         socket
-         |> load_invites()
-         |> assign(:invite_form, build_invite_form())
-         |> put_flash(:info, "Invitation sent to #{invite.email}.")}
-
-      {:error, :already_member} ->
-        {:noreply, put_flash(socket, :error, "This person is already a member.")}
-
-      {:error, :invite_exists} ->
-        {:noreply, put_flash(socket, :error, "An invite for this email already exists.")}
-
-      {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "Not authorized.")}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
+    case emails do
+      [] ->
+        changeset = Organizations.invite_changeset_error(:email, "can't be blank")
         {:noreply, assign(socket, :invite_form, to_form(changeset, as: "invite"))}
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Could not send invite.")}
+        {sent, errors} =
+          Enum.reduce(emails, {[], []}, fn email, {sent_acc, err_acc} ->
+            case Organizations.create_invite(scope, org, %{"email" => email, "role" => role}) do
+              {:ok, {raw_token, invite}} ->
+                url = CritWeb.Endpoint.url() <> ~p"/invites/#{raw_token}"
+                OrgNotifier.deliver_invitation(invite, org, scope.user, url)
+                {[invite.email | sent_acc], err_acc}
+
+              {:error, :already_member} ->
+                {sent_acc, ["#{email} is already a member" | err_acc]}
+
+              {:error, :invite_exists} ->
+                {sent_acc, ["#{email} already has a pending invite" | err_acc]}
+
+              {:error, %Ecto.Changeset{} = cs} ->
+                msg = Ecto.Changeset.traverse_errors(cs, fn {m, _} -> m end) |> inspect()
+                {sent_acc, ["#{email}: #{msg}" | err_acc]}
+
+              _ ->
+                {sent_acc, ["#{email}: could not send" | err_acc]}
+            end
+          end)
+
+        socket = load_invites(socket)
+
+        socket =
+          case sent do
+            [] -> socket
+            _ ->
+              socket
+              |> assign(:invite_form, build_invite_form())
+              |> put_flash(:info, "Invited #{Enum.join(Enum.reverse(sent), ", ")}.")
+          end
+
+        socket =
+          case errors do
+            [] -> socket
+            _ -> put_flash(socket, :error, Enum.join(Enum.reverse(errors), ". ") <> ".")
+          end
+
+        {:noreply, socket}
     end
   end
 

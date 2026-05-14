@@ -10,397 +10,43 @@
 
   <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
     <%!-- Hero strip --%>
-    <div class="flex items-end justify-between mb-6 gap-4 max-sm:flex-col max-sm:items-start">
-      <div>
-        <p class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-2">
-          Overview
-        </p>
-        <h1 class="text-2xl font-bold text-(--crit-fg-primary) leading-tight">
-          Good morning, Tomasz.
-        </h1>
-        <p class="text-sm text-(--crit-fg-secondary) mt-1">
-          3 reviews waiting on the team, 1 waiting on you.
-        </p>
-      </div>
-      <div class="flex items-center gap-2 flex-shrink-0">
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium border border-(--crit-border) text-(--crit-fg-primary) rounded-md bg-(--crit-bg-card) hover:bg-(--crit-bg-elevated) transition-colors"
-        >
-          <.icon name="hero-share" class="size-[13px]" /> Share a review
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium bg-(--crit-brand) text-white rounded-md hover:opacity-90 transition-opacity"
-        >
-          <.icon name="hero-plus" class="size-[14px]" /> New review
-        </button>
-      </div>
+    <div class="mb-6">
+      <p class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-2">
+        Overview
+      </p>
+      <h1 class="text-2xl font-bold text-(--crit-fg-primary) leading-tight">
+        {@greeting}
+      </h1>
     </div>
 
-    <%!-- Stat tiles --%>
-    <div class="grid grid-cols-4 gap-2.5 mb-7 max-md:grid-cols-2 max-sm:grid-cols-1">
-      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[18px] relative overflow-hidden">
-        <p class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
-          Awaiting your reply
-        </p>
-        <div class="flex items-baseline gap-2.5 mt-1.5">
-          <span class="text-[28px] font-bold text-(--crit-fg-primary) leading-none">3</span>
-          <span class="text-xs text-(--crit-green)">&#8593; 1 since yesterday</span>
-        </div>
-      </div>
-      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[18px] relative overflow-hidden">
-        <p class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
-          Reviews this org
-        </p>
-        <div class="flex items-baseline gap-2.5 mt-1.5">
-          <span class="text-[28px] font-bold text-(--crit-fg-primary) leading-none">218</span>
-          <span class="text-xs text-(--crit-fg-muted)">all-time</span>
-        </div>
-      </div>
-      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[18px] relative overflow-hidden">
-        <p class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
-          Active members
-        </p>
-        <div class="flex items-baseline gap-2.5 mt-1.5">
-          <span class="text-[28px] font-bold text-(--crit-fg-primary) leading-none">14</span>
-          <span class="text-xs text-(--crit-fg-muted)">of 14</span>
-        </div>
-      </div>
-      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[18px] relative overflow-hidden">
-        <p class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
-          Inline comments
-        </p>
-        <div class="flex items-baseline gap-2.5 mt-1.5">
-          <span class="text-[28px] font-bold text-(--crit-fg-primary) leading-none">6.4k</span>
-          <span class="text-xs text-(--crit-green)">&#8593; 12% this week</span>
-        </div>
-      </div>
-    </div>
-
-    <%!-- Main grid: reviews feed + sidebar --%>
-    <div class="grid grid-cols-[1fr_320px] gap-6 items-start max-md:grid-cols-1">
+    <%!-- Main grid: reviews feed + members sidebar --%>
+    <div class={[
+      "grid gap-6 items-start",
+      if(length(@members) > 1, do: "grid-cols-[1fr_320px] max-md:grid-cols-1", else: "grid-cols-1 max-w-3xl")
+    ]}>
       <%!-- Left: Recent shared reviews --%>
       <div>
         <div class="flex items-center justify-between mb-3.5">
           <h2 class="text-[15px] font-semibold text-(--crit-fg-primary)">Recent shared reviews</h2>
-          <div class="flex gap-0.5 bg-(--crit-bg-card) border border-(--crit-border) rounded-[7px] p-0.5">
-            <button
-              type="button"
-              class="px-2.5 py-1 text-[11px] font-medium rounded-md bg-(--crit-bg-elevated) text-(--crit-fg-primary) border border-transparent"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              class="px-2.5 py-1 text-[11px] font-medium rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) bg-transparent border border-transparent"
-            >
-              For you
-            </button>
-            <button
-              type="button"
-              class="px-2.5 py-1 text-[11px] font-medium rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) bg-transparent border border-transparent"
-            >
-              Open
-            </button>
-            <button
-              type="button"
-              class="px-2.5 py-1 text-[11px] font-medium rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) bg-transparent border border-transparent"
-            >
-              Resolved
-            </button>
-          </div>
         </div>
 
         <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg overflow-hidden">
-          <%!-- Review row 1: feat: org auto-join via verified domains --%>
-          <a class="grid grid-cols-[24px_1fr_auto_auto_auto] gap-3.5 px-4 py-3 items-center border-b border-(--crit-border) cursor-pointer hover:bg-(--crit-bg-elevated) transition-colors no-underline">
-            <span class="text-(--crit-brand)">
-              <.icon name="hero-document-text" class="size-[15px]" />
-            </span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-semibold text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
-                feat: org auto-join via verified domains
-              </div>
-              <div class="text-[11px] text-(--crit-fg-muted) mt-0.5 flex items-center gap-2.5">
-                <span class="font-mono">plans/org-auto-join.md</span>
-                <span>&middot;</span>
-                <span>182 lines</span>
-                <span>&middot;</span>
-                <span>round 2</span>
-              </div>
+          <div class="px-6 py-10 text-center">
+            <div class="text-(--crit-fg-muted) mb-1">
+              <.icon name="hero-document-text" class="size-8 mx-auto" />
             </div>
-            <span class="inline-flex items-center gap-[5px] px-2 py-[3px] rounded-md text-[11px] font-medium" style="background: rgba(255,158,100,.12); color: var(--crit-orange);">
-              <span class="w-[5px] h-[5px] rounded-full bg-current"></span>
-              In review
-            </span>
-            <div class="flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold" style="background: rgba(187,154,247,0.18); color: #bb9af7;">
-                MP
-              </span>
-              <div class="text-[11px] leading-[1.3]">
-                <div class="text-(--crit-fg-secondary)">Mira</div>
-                <div class="text-(--crit-fg-muted)">3 min ago</div>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-1 text-xs text-(--crit-fg-muted)">
-              <.icon name="hero-chat-bubble-left" class="size-3" /> 14
-            </span>
-          </a>
-
-          <%!-- Review row 2: fix: invite expiry off-by-one + email locale --%>
-          <a class="grid grid-cols-[24px_1fr_auto_auto_auto] gap-3.5 px-4 py-3 items-center border-b border-(--crit-border) cursor-pointer hover:bg-(--crit-bg-elevated) transition-colors no-underline">
-            <span class="text-(--crit-orange)">
-              <.icon name="hero-code-bracket" class="size-[15px]" />
-            </span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-semibold text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
-                fix: invite expiry off-by-one + email locale
-              </div>
-              <div class="text-[11px] text-(--crit-fg-muted) mt-0.5 flex items-center gap-2.5">
-                <span class="font-mono">lib/invites.ex</span>
-                <span>&middot;</span>
-                <span>54 lines</span>
-                <span>&middot;</span>
-                <span>round 1</span>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-[5px] px-2 py-[3px] rounded-md text-[11px] font-medium" style="background: rgba(86,211,100,.12); color: var(--crit-green);">
-              <span class="w-[5px] h-[5px] rounded-full bg-current"></span>
-              Resolved
-            </span>
-            <div class="flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold" style="background: rgba(158,206,106,0.18); color: #9ece6a;">
-                SO
-              </span>
-              <div class="text-[11px] leading-[1.3]">
-                <div class="text-(--crit-fg-secondary)">Sam</div>
-                <div class="text-(--crit-fg-muted)">42 min ago</div>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-1 text-xs text-(--crit-fg-muted)">
-              <.icon name="hero-chat-bubble-left" class="size-3" /> 6
-            </span>
-          </a>
-
-          <%!-- Review row 3: refactor: scope checks pulled to plug --%>
-          <a class="grid grid-cols-[24px_1fr_auto_auto_auto] gap-3.5 px-4 py-3 items-center border-b border-(--crit-border) cursor-pointer hover:bg-(--crit-bg-elevated) transition-colors no-underline">
-            <span class="text-(--crit-orange)">
-              <.icon name="hero-code-bracket" class="size-[15px]" />
-            </span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-semibold text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
-                refactor: scope checks pulled to plug
-                <span class="inline-flex ml-2 px-1.5 py-px text-[10px] font-medium rounded text-(--crit-brand)" style="background: rgba(122,162,247,.14);">For you</span>
-              </div>
-              <div class="text-[11px] text-(--crit-fg-muted) mt-0.5 flex items-center gap-2.5">
-                <span class="font-mono">lib/scope.ex</span>
-                <span>&middot;</span>
-                <span>236 lines</span>
-                <span>&middot;</span>
-                <span>round 3</span>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-[5px] px-2 py-[3px] rounded-md text-[11px] font-medium" style="background: rgba(122,162,247,.14); color: var(--crit-brand);">
-              <span class="w-[5px] h-[5px] rounded-full bg-current"></span>
-              Awaiting agent
-            </span>
-            <div class="flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold" style="background: rgba(255,158,100,0.18); color: #ff9e64;">
-                TT
-              </span>
-              <div class="text-[11px] leading-[1.3]">
-                <div class="text-(--crit-fg-secondary)">Tomasz</div>
-                <div class="text-(--crit-fg-muted)">2 hours ago</div>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-1 text-xs text-(--crit-fg-muted)">
-              <.icon name="hero-chat-bubble-left" class="size-3" /> 21
-            </span>
-          </a>
-
-          <%!-- Review row 4: plan: SAML SSO + JIT provisioning --%>
-          <a class="grid grid-cols-[24px_1fr_auto_auto_auto] gap-3.5 px-4 py-3 items-center border-b border-(--crit-border) cursor-pointer hover:bg-(--crit-bg-elevated) transition-colors no-underline">
-            <span class="text-(--crit-brand)">
-              <.icon name="hero-document-text" class="size-[15px]" />
-            </span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-semibold text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
-                plan: SAML SSO + JIT provisioning
-              </div>
-              <div class="text-[11px] text-(--crit-fg-muted) mt-0.5 flex items-center gap-2.5">
-                <span class="font-mono">plans/saml-sso.md</span>
-                <span>&middot;</span>
-                <span>412 lines</span>
-                <span>&middot;</span>
-                <span>round 1</span>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-[5px] px-2 py-[3px] rounded-md text-[11px] font-medium" style="background: rgba(255,158,100,.12); color: var(--crit-orange);">
-              <span class="w-[5px] h-[5px] rounded-full bg-current"></span>
-              In review
-            </span>
-            <div class="flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold" style="background: rgba(247,118,142,0.18); color: #f7768e;">
-                AT
-              </span>
-              <div class="text-[11px] leading-[1.3]">
-                <div class="text-(--crit-fg-secondary)">Aiyana</div>
-                <div class="text-(--crit-fg-muted)">Yesterday</div>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-1 text-xs text-(--crit-fg-muted)">
-              <.icon name="hero-chat-bubble-left" class="size-3" /> 9
-            </span>
-          </a>
-
-          <%!-- Review row 5: docs: organization admin guide --%>
-          <a class="grid grid-cols-[24px_1fr_auto_auto_auto] gap-3.5 px-4 py-3 items-center cursor-pointer hover:bg-(--crit-bg-elevated) transition-colors no-underline">
-            <span class="text-(--crit-brand)">
-              <.icon name="hero-document-text" class="size-[15px]" />
-            </span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-semibold text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
-                docs: organization admin guide
-              </div>
-              <div class="text-[11px] text-(--crit-fg-muted) mt-0.5 flex items-center gap-2.5">
-                <span class="font-mono">docs/admin.md</span>
-                <span>&middot;</span>
-                <span>88 lines</span>
-                <span>&middot;</span>
-                <span>round 2</span>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-[5px] px-2 py-[3px] rounded-md text-[11px] font-medium" style="background: rgba(86,211,100,.12); color: var(--crit-green);">
-              <span class="w-[5px] h-[5px] rounded-full bg-current"></span>
-              Resolved
-            </span>
-            <div class="flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold" style="background: rgba(122,162,247,0.18); color: #7aa2f7;">
-                JW
-              </span>
-              <div class="text-[11px] leading-[1.3]">
-                <div class="text-(--crit-fg-secondary)">Jules</div>
-                <div class="text-(--crit-fg-muted)">Yesterday</div>
-              </div>
-            </div>
-            <span class="inline-flex items-center gap-1 text-xs text-(--crit-fg-muted)">
-              <.icon name="hero-chat-bubble-left" class="size-3" /> 3
-            </span>
-          </a>
-
-          <%!-- Footer --%>
-          <div class="flex items-center justify-between px-4 py-3 bg-(--crit-bg-page)">
-            <span class="text-xs text-(--crit-fg-muted)">Showing 5 of 218 reviews</span>
-            <a class="text-xs font-medium text-(--crit-brand) hover:underline cursor-pointer no-underline">
-              View all reviews &rarr;
-            </a>
+            <p class="text-sm text-(--crit-fg-secondary) mt-3">
+              No reviews shared yet.
+            </p>
+            <p class="text-xs text-(--crit-fg-muted) mt-1">
+              Reviews shared to this organization will appear here.
+            </p>
           </div>
         </div>
       </div>
 
-      <%!-- Right sidebar --%>
-      <aside class="flex flex-col gap-4">
-        <%!-- Pinned --%>
-        <div>
-          <h3 class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mb-2 font-medium">
-            Pinned
-          </h3>
-          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg overflow-hidden">
-            <a class="flex gap-2.5 px-3.5 py-3 items-start border-b border-(--crit-border) cursor-pointer hover:bg-(--crit-bg-elevated) transition-colors no-underline">
-              <span class="text-(--crit-fg-muted) mt-px">
-                <.icon name="hero-shield-check" class="size-[14px]" />
-              </span>
-              <div class="min-w-0">
-                <div class="text-[13px] font-medium text-(--crit-fg-primary) leading-[1.35]">
-                  Org permissions matrix (canonical)
-                </div>
-                <div class="text-[11px] text-(--crit-fg-muted) mt-[3px]">
-                  Tomasz &middot; updated 4d ago
-                </div>
-              </div>
-            </a>
-            <a class="flex gap-2.5 px-3.5 py-3 items-start cursor-pointer hover:bg-(--crit-bg-elevated) transition-colors no-underline">
-              <span class="text-(--crit-fg-muted) mt-px">
-                <.icon name="hero-document-text" class="size-[14px]" />
-              </span>
-              <div class="min-w-0">
-                <div class="text-[13px] font-medium text-(--crit-fg-primary) leading-[1.35]">
-                  Q2 review process
-                </div>
-                <div class="text-[11px] text-(--crit-fg-muted) mt-[3px]">
-                  Mira &middot; updated 1w ago
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-
-        <%!-- Team activity --%>
-        <div>
-          <h3 class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mb-2 font-medium">
-            Team activity
-          </h3>
-          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg py-1.5">
-            <div class="flex gap-2.5 px-3.5 py-2.5 items-start">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold flex-shrink-0" style="background: rgba(187,154,247,0.18); color: #bb9af7;">
-                MP
-              </span>
-              <div class="min-w-0 text-xs leading-[1.45] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-fg-primary) font-medium">Mira</span>
-                resolved
-                <span class="text-(--crit-fg-primary)">invite expiry off-by-one</span>
-                <div class="text-(--crit-fg-muted) text-[11px] mt-0.5">42m</div>
-              </div>
-            </div>
-            <div class="flex gap-2.5 px-3.5 py-2.5 items-start">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold flex-shrink-0" style="background: rgba(158,206,106,0.20); color: #9ece6a;">
-                SO
-              </span>
-              <div class="min-w-0 text-xs leading-[1.45] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-fg-primary) font-medium">Sam</span>
-                opened
-                <span class="text-(--crit-fg-primary)">plan: SAML SSO + JIT</span>
-                <div class="text-(--crit-fg-muted) text-[11px] mt-0.5">2h</div>
-              </div>
-            </div>
-            <div class="flex gap-2.5 px-3.5 py-2.5 items-start">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold flex-shrink-0" style="background: rgba(122,162,247,0.18); color: #7aa2f7;">
-                JW
-              </span>
-              <div class="min-w-0 text-xs leading-[1.45] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-fg-primary) font-medium">Jules</span>
-                replied to
-                <span class="text-(--crit-fg-primary)">scope checks pulled to plug</span>
-                <div class="text-(--crit-fg-muted) text-[11px] mt-0.5">3h</div>
-              </div>
-            </div>
-            <div class="flex gap-2.5 px-3.5 py-2.5 items-start">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold flex-shrink-0" style="background: rgba(247,118,142,0.18); color: #f7768e;">
-                AT
-              </span>
-              <div class="min-w-0 text-xs leading-[1.45] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-fg-primary) font-medium">Aiyana</span>
-                shared
-                <span class="text-(--crit-fg-primary)">docs: organization admin guide</span>
-                <div class="text-(--crit-fg-muted) text-[11px] mt-0.5">yest</div>
-              </div>
-            </div>
-            <div class="flex gap-2.5 px-3.5 py-2.5 items-start">
-              <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[8px] font-semibold flex-shrink-0" style="background: rgba(125,207,255,0.18); color: #7dcfff;">
-                QB
-              </span>
-              <div class="min-w-0 text-xs leading-[1.45] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-fg-primary) font-medium">Quentin</span>
-                joined
-                <span class="text-(--crit-fg-primary)">the organization</span>
-                <div class="text-(--crit-fg-muted) text-[11px] mt-0.5">yest</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <%!-- Members peek --%>
+      <%!-- Right sidebar: Members peek --%>
+      <aside :if={length(@members) > 1} class="flex flex-col gap-4">
         <div>
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em] font-medium">
@@ -414,33 +60,23 @@
             </.link>
           </div>
           <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-3.5 flex flex-wrap gap-1.5">
-            <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold" style="background: rgba(255,158,100,0.18); color: #ff9e64;">
-              TT
-            </span>
-            <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold" style="background: rgba(187,154,247,0.18); color: #bb9af7;">
-              MP
-            </span>
-            <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold" style="background: rgba(158,206,106,0.20); color: #9ece6a;">
-              SO
-            </span>
-            <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold" style="background: rgba(122,162,247,0.18); color: #7aa2f7;">
-              JW
-            </span>
-            <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold" style="background: rgba(247,118,142,0.18); color: #f7768e;">
-              AT
-            </span>
-            <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold" style="background: rgba(125,207,255,0.18); color: #7dcfff;">
-              QB
-            </span>
-            <span class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold" style="background: rgba(154,165,177,0.18); color: #9aa5b1;">
-              RL
-            </span>
-            <button
-              type="button"
-              class="w-7 h-7 rounded-full bg-(--crit-bg-elevated) text-(--crit-fg-secondary) border border-dashed border-(--crit-border-strong) inline-flex items-center justify-center"
+            <span
+              :for={member <- @members}
+              class="w-7 h-7 rounded-full inline-flex items-center justify-center text-[10px] font-semibold flex-shrink-0"
+              style="background: rgba(122,162,247,0.18); color: #7aa2f7;"
+              title={member.user.name || member.user.email}
             >
-              <.icon name="hero-plus" class="size-3.5" />
-            </button>
+              <%= if member.user.avatar_url do %>
+                <img
+                  src={member.user.avatar_url}
+                  alt=""
+                  class="w-7 h-7 rounded-full"
+                />
+              <% else %>
+                {String.first(member.user.name || member.user.email || "?")
+                |> String.upcase()}
+              <% end %>
+            </span>
           </div>
         </div>
       </aside>

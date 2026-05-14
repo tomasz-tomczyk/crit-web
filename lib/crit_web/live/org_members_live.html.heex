@@ -20,20 +20,6 @@
           Invite teammates, review pending invitations, and manage roles.
         </p>
       </div>
-      <div :if={@is_admin} class="flex gap-2 shrink-0">
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-default"
-        >
-          <.icon name="hero-arrow-top-right-on-square" class="size-3.5" /> Export
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-white bg-(--crit-brand) rounded-md hover:opacity-90 transition-opacity cursor-default"
-        >
-          <.icon name="hero-plus" class="size-3.5" /> Invite members
-        </button>
-      </div>
     </div>
 
     <%!-- Seat usage bar --%>
@@ -43,19 +29,10 @@
           <span class="text-[15px] font-semibold">Seats</span>
           <span class="text-[13px] text-(--crit-fg-muted)">
             <span class="font-mono font-semibold text-(--crit-fg-primary)">{length(@members)}</span>
-            of {length(@members)} used &middot; 0 remaining
+            used &middot; unlimited during beta
           </span>
         </div>
-        <div class="mt-2.5 h-1.5 rounded-full bg-(--crit-bg-elevated) overflow-hidden">
-          <div class="h-full bg-(--crit-brand) rounded-full" style="width: 100%"></div>
-        </div>
       </div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-default"
-      >
-        <.icon name="hero-bolt" class="size-3.5" /> Add seats
-      </button>
     </div>
 
     <%!-- Invite by email (admin only) --%>
@@ -72,6 +49,9 @@
           class="flex gap-2.5 items-start max-sm:flex-col max-sm:items-stretch"
         >
           <div class="flex-1 min-w-0">
+            <label class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+              Email addresses
+            </label>
             <input
               type="text"
               name={@invite_form[:email].name}
@@ -88,12 +68,12 @@
               {msg}
             </p>
             <p class="text-[12px] text-(--crit-fg-muted) mt-1.5">
-              Paste multiple emails, separated by commas, spaces, or new lines.
+              Separate multiple emails with commas or spaces.
             </p>
           </div>
           <div class="w-40 max-sm:w-full">
             <label class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
-              Default role
+              Role
             </label>
             <select
               name={@invite_form[:role].name}
@@ -106,7 +86,10 @@
               <option value="admin" selected={@invite_form[:role].value == "admin"}>Admin</option>
             </select>
           </div>
-          <div class="pt-6 max-sm:pt-0">
+          <div class="max-sm:pt-0">
+            <label class="block font-mono text-[11px] uppercase tracking-[0.08em] text-transparent mb-1.5 max-sm:hidden">
+              &nbsp;
+            </label>
             <button
               type="submit"
               phx-disable-with="Sending..."
@@ -117,15 +100,6 @@
           </div>
         </.form>
 
-        <div class="mt-4 pt-4 border-t border-dashed border-(--crit-border) flex items-center gap-3.5 text-[12px] text-(--crit-fg-muted)">
-          <.icon name="hero-globe-alt" class="size-3.5 shrink-0" />
-          <span>
-            Anyone with an <span class="font-mono text-(--crit-fg-secondary)">@acme.dev</span> email can join without an invite.
-          </span>
-          <button type="button" class="ml-auto text-(--crit-brand) font-medium hover:underline whitespace-nowrap">
-            Configure domain &rarr;
-          </button>
-        </div>
       </div>
     </section>
 
@@ -134,73 +108,49 @@
       <div class="inline-flex gap-0.5 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[3px]">
         <button
           type="button"
-          class="px-3 py-1 text-[13px] font-medium rounded-md bg-(--crit-bg-elevated) text-(--crit-fg-primary)"
+          phx-click="switch_tab"
+          phx-value-tab="active"
+          class={[
+            "px-3 py-1 text-[13px] font-medium rounded-md transition-colors",
+            if(@tab == "active",
+              do: "bg-(--crit-bg-elevated) text-(--crit-fg-primary)",
+              else: "text-(--crit-fg-muted) hover:text-(--crit-fg-primary)"
+            )
+          ]}
         >
           Active <span class="text-(--crit-fg-muted) ml-1.5">{length(@members)}</span>
         </button>
         <button
           type="button"
-          class="px-3 py-1 text-[13px] font-medium rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+          phx-click="switch_tab"
+          phx-value-tab="pending"
+          class={[
+            "px-3 py-1 text-[13px] font-medium rounded-md transition-colors",
+            if(@tab == "pending",
+              do: "bg-(--crit-bg-elevated) text-(--crit-fg-primary)",
+              else: "text-(--crit-fg-muted) hover:text-(--crit-fg-primary)"
+            )
+          ]}
         >
           Pending <span class="ml-1.5">{length(@invites)}</span>
-        </button>
-        <button
-          type="button"
-          class="px-3 py-1 text-[13px] font-medium rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
-        >
-          Removed <span class="ml-1.5">0</span>
-        </button>
-      </div>
-      <div class="flex gap-2">
-        <div class="relative w-60 max-sm:flex-1">
-          <.icon
-            name="hero-magnifying-glass"
-            class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-(--crit-fg-muted)"
-          />
-          <input
-            type="text"
-            placeholder="Filter by name or email..."
-            disabled
-            class="w-full pl-8 pr-3 py-1.5 text-[13px] bg-(--crit-bg-page) border border-(--crit-border) rounded-md text-(--crit-fg-primary) placeholder:text-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand)"
-          />
-        </div>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-default"
-        >
-          <.icon name="hero-funnel" class="size-3.5" /> Role: All
         </button>
       </div>
     </div>
 
     <%!-- Active members table --%>
-    <section class="mb-7">
+    <section :if={@tab == "active"} class="mb-7">
       <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
         <table class="w-full text-[13px]">
           <thead>
             <tr class="border-b border-(--crit-border)">
-              <th class="w-[52px] pl-[18px] pr-0 py-2.5 text-left">
-                <input
-                  type="checkbox"
-                  disabled
-                  class="rounded border-(--crit-border) bg-(--crit-bg-page)"
-                  style="accent-color: var(--crit-brand);"
-                />
-              </th>
-              <th class="text-left py-2.5 pr-4 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider">
+              <th class="text-left pl-[18px] py-2.5 pr-4 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider">
                 Member
               </th>
               <th class="text-left px-4 py-2.5 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider">
                 Role
               </th>
-              <th class="text-left px-4 py-2.5 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider">
-                Reviews
-              </th>
               <th class="text-left px-4 py-2.5 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider max-sm:hidden">
                 Joined
-              </th>
-              <th class="text-left px-4 py-2.5 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider max-sm:hidden">
-                Last seen
               </th>
               <th class="text-right pr-[18px] py-2.5">
                 <span class="sr-only">Actions</span>
@@ -208,19 +158,10 @@
             </tr>
           </thead>
           <tbody>
-            <%= for {member, idx} <- Enum.with_index(@members) do %>
+            <%= for member <- @members do %>
               <tr class="border-b border-(--crit-border) last:border-b-0 hover:bg-(--crit-bg-elevated) group">
-                <td class="w-[52px] pl-[18px] pr-0 py-3">
-                  <input
-                    type="checkbox"
-                    disabled
-                    class="rounded border-(--crit-border) bg-(--crit-bg-page)"
-                    style="accent-color: var(--crit-brand);"
-                  />
-                </td>
-
                 <%!-- Member: avatar + name + email --%>
-                <td class="py-3 pr-4">
+                <td class="py-3 pr-4 pl-[18px]">
                   <div class="flex items-center gap-2.5">
                     <%= if member.user.avatar_url do %>
                       <img
@@ -280,38 +221,9 @@
                   <% end %>
                 </td>
 
-                <%!-- Reviews (placeholder) --%>
-                <td class="px-4 py-3">
-                  <span class="font-mono text-[12px] text-(--crit-fg-primary)">
-                    {idx * 10 + 4}
-                  </span>
-                </td>
-
-                <%!-- Joined (placeholder) --%>
+                <%!-- Joined --%>
                 <td class="px-4 py-3 text-[12px] text-(--crit-fg-secondary) max-sm:hidden">
-                  <%= case rem(idx, 3) do %>
-                    <% 0 -> %>
-                      Jan 2024
-                    <% 1 -> %>
-                      Mar 2024
-                    <% _ -> %>
-                      Nov 2024
-                  <% end %>
-                </td>
-
-                <%!-- Last seen (placeholder) --%>
-                <td class="px-4 py-3 max-sm:hidden">
-                  <%= cond do %>
-                    <% idx < 2 -> %>
-                      <span class="inline-flex items-center gap-1.5 text-[12px]">
-                        <span class="h-1.5 w-1.5 rounded-full bg-(--crit-green) shrink-0"></span>
-                        <span class="text-(--crit-green)">Active now</span>
-                      </span>
-                    <% idx < 4 -> %>
-                      <span class="text-[12px] text-(--crit-fg-secondary)">Yesterday</span>
-                    <% true -> %>
-                      <span class="text-[12px] text-(--crit-fg-secondary)">5 days ago</span>
-                  <% end %>
+                  {Calendar.strftime(member.inserted_at, "%b %Y")}
                 </td>
 
                 <%!-- Actions --%>
@@ -347,17 +259,12 @@
       </div>
     </section>
 
-    <%!-- Pending invites (collapsed details) --%>
-    <details :if={@is_admin and @invites != []} class="mb-8">
-      <summary class="cursor-pointer list-none flex items-center gap-2 text-[13px] text-(--crit-fg-secondary) py-2 select-none">
-        <.icon name="hero-chevron-right" class="size-3 transition-transform [[open]>&]:rotate-90" />
-        <span>
-          <strong class="text-(--crit-fg-primary)">{length(@invites)} pending {if length(@invites) == 1, do: "invite", else: "invites"}</strong>
-          awaiting response
-        </span>
-      </summary>
-
-      <div class="mt-3 bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
+    <%!-- Pending invites tab content --%>
+    <section :if={@tab == "pending"} class="mb-7">
+      <div :if={@invites == []} class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-8 text-center">
+        <p class="text-[14px] text-(--crit-fg-muted)">No pending invitations.</p>
+      </div>
+      <div :if={@invites != []} class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
         <table class="w-full text-[13px]">
           <thead>
             <tr class="border-b border-(--crit-border)">
@@ -426,6 +333,6 @@
           </tbody>
         </table>
       </div>
-    </details>
+    </section>
   </div>
 </div>

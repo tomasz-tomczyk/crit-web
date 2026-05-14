@@ -13,6 +13,7 @@ defmodule CritWeb.OrgNewLive do
       |> assign(:page_title, "New Organization - Crit")
       |> assign(:noindex, true)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
+      |> assign(:orgs, Organizations.list_user_organizations(socket.assigns.current_scope))
       |> assign(:form, to_form(changeset, as: "org"))
       |> assign(:slug_manually_edited, false)
 

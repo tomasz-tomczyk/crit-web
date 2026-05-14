@@ -25,6 +25,7 @@ defmodule CritWeb.SettingsLive do
       |> assign(:keep_reviews, user.keep_reviews)
       |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
+      |> assign(:orgs, Organizations.list_user_organizations(socket.assigns.current_scope))
       |> assign(:local_registration_enabled, local_registration_enabled)
       |> assign(:has_password, is_binary(user.hashed_password))
       |> assign(:can_edit_email, is_nil(user.provider) and local_registration_enabled)

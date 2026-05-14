@@ -60,6 +60,12 @@ defmodule Crit.Organizations do
     end
   end
 
+  def delete_organization(%Scope{} = scope, %Organization{} = org) do
+    with :ok <- check_org_admin(scope) do
+      Repo.delete(org)
+    end
+  end
+
   def change_organization(%Organization{} = org, attrs \\ %{}) do
     Organization.changeset(org, attrs)
   end
@@ -201,7 +207,7 @@ defmodule Crit.Organizations do
     end
   end
 
-  defp invite_changeset_error(field, msg) do
+  def invite_changeset_error(field, msg) do
     %OrganizationInvite{}
     |> Ecto.Changeset.change(%{})
     |> Ecto.Changeset.add_error(field, msg)

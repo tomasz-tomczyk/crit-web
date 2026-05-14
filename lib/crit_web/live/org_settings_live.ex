@@ -20,6 +20,7 @@ defmodule CritWeb.OrgSettingsLive do
       |> assign(:is_admin, Scope.org_admin?(scope))
       |> assign(:orgs, Organizations.list_user_organizations(scope))
       |> assign(:form, to_form(changeset, as: "org"))
+      |> assign(:delete_confirmation, "")
 
     {:ok, socket, layout: false}
   end
@@ -72,6 +73,35 @@ defmodule CritWeb.OrgSettingsLive do
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, as: "org"))}
+    end
+  end
+
+  @impl true
+  def handle_event("update_delete_confirmation", %{"value" => value}, socket) do
+    {:noreply, assign(socket, :delete_confirmation, value)}
+  end
+
+  @impl true
+  def handle_event("delete_org", _params, socket) do
+    if socket.assigns.delete_confirmation != socket.assigns.org.slug do
+      {:noreply, put_flash(socket, :error, "Slug does not match. Deletion cancelled.")}
+    else
+      case Organizations.delete_organization(
+             socket.assigns.current_scope,
+             socket.assigns.org
+           ) do
+        {:ok, _org} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Organization deleted.")
+           |> push_navigate(to: ~p"/orgs")}
+
+        {:error, :unauthorized} ->
+          {:noreply, put_flash(socket, :error, "Not authorized.")}
+
+        {:error, _changeset} ->
+          {:noreply, put_flash(socket, :error, "Could not delete organization.")}
+      end
     end
   end
 

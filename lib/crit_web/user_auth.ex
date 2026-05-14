@@ -189,7 +189,8 @@ defmodule CritWeb.UserAuth do
     socket = assign_scope(socket, session)
 
     if socket.assigns.current_scope.user do
-      {:cont, socket}
+      orgs = Crit.Organizations.list_user_organizations(socket.assigns.current_scope)
+      {:cont, Phoenix.Component.assign(socket, :orgs, orgs)}
     else
       request_path = Map.get(session, "request_path", "/dashboard")
       encoded = URI.encode_www_form(request_path)
