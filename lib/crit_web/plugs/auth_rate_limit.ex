@@ -36,6 +36,6 @@ defmodule CritWeb.Plugs.AuthRateLimit do
 
   defp disabled? do
     System.get_env("E2E") == "true" or
-      Application.get_env(:crit, CritWeb.Plugs.RateLimit, [])[:disabled] == true
+      Application.get_env(:crit, CritWeb.Plugs.AuthRateLimit, [])[:disabled] == true
   end
 end

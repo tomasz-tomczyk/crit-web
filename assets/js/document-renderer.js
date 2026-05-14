@@ -2078,9 +2078,10 @@ function renderFileSection(ctx, file) {
     copyPathBtn.addEventListener('click', function(e) {
       e.preventDefault()
       e.stopPropagation()
-      navigator.clipboard.writeText(filePath)
-      copyPathBtn.innerHTML = checkSVG
-      setTimeout(function() { copyPathBtn.innerHTML = clipboardSVG }, 1500)
+      navigator.clipboard.writeText(filePath).then(function() {
+        copyPathBtn.innerHTML = checkSVG
+        setTimeout(function() { copyPathBtn.innerHTML = clipboardSVG }, 1500)
+      }).catch(function() { /* clipboard not available */ })
     })
   })(file.path)
 

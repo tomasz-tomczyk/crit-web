@@ -42,11 +42,13 @@ defmodule Crit.Release do
         end
 
         # Demote any admin whose email is no longer listed.
-        from(u in Crit.User,
-          where: u.role == ^:admin and fragment("lower(?)", u.email) not in ^emails,
-          update: [set: [role: ^:user, updated_at: ^now]]
-        )
-        |> Crit.Repo.update_all([])
+        if emails != [] do
+          from(u in Crit.User,
+            where: u.role == ^:admin and fragment("lower(?)", u.email) not in ^emails,
+            update: [set: [role: ^:user, updated_at: ^now]]
+          )
+          |> Crit.Repo.update_all([])
+        end
       end)
 
     :ok
