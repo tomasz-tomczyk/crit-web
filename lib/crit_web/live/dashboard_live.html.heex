@@ -278,10 +278,16 @@
           ]}
         >
           <span class="shrink-0 w-9 h-9 rounded-[10px] flex items-center justify-center bg-(--crit-brand-subtle)">
-            <.icon name="hero-bell-solid" class={[
-              "size-5 transition-all duration-300",
-              if(@marketing_opted_in, do: "text-(--crit-green) -rotate-12", else: "text-(--crit-brand)")
-            ]} />
+            <.icon
+              name="hero-bell-solid"
+              class={[
+                "size-5 transition-all duration-300",
+                if(@marketing_opted_in,
+                  do: "text-(--crit-green) -rotate-12",
+                  else: "text-(--crit-brand)"
+                )
+              ]}
+            />
           </span>
           <div class="flex-1 min-w-0">
             <div class="text-sm font-semibold text-(--crit-fg-primary) leading-snug">
@@ -293,6 +299,7 @@
           </div>
           <button
             phx-click="toggle_marketing_consent"
+            phx-throttle="500"
             role="switch"
             aria-checked={to_string(@marketing_opted_in)}
             class={[
@@ -314,8 +321,7 @@
       <%!-- Footer --%>
       <div class="mt-10 text-center">
         <p class="text-sm text-(--crit-fg-muted)">
-          Learn more in the
-          <a href="/getting-started" class="crit-link">getting started guide</a>
+          Learn more in the <a href="/getting-started" class="crit-link">getting started guide</a>
         </p>
       </div>
     <% else %>

@@ -365,6 +365,7 @@
             <button
               id="marketing-consent-toggle"
               phx-click="toggle_marketing_consent"
+              phx-throttle="500"
               role="switch"
               aria-checked={to_string(@marketing_opted_in)}
               class={[
