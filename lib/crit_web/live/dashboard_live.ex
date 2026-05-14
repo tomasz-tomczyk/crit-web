@@ -26,7 +26,10 @@ defmodule CritWeb.DashboardLive do
 
   @impl true
   def handle_event("toggle_marketing_consent", _params, socket) do
-    case Accounts.toggle_marketing_consent(socket.assigns.current_scope.user, "dashboard_checkbox") do
+    case Accounts.toggle_marketing_consent(
+           socket.assigns.current_scope.user,
+           "dashboard_checkbox"
+         ) do
       {:ok, new_value} ->
         {:noreply, assign(socket, :marketing_opted_in, new_value)}
 
