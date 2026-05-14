@@ -57,6 +57,7 @@ defmodule CritWeb.Router do
     get "/privacy", PageController, :privacy
     get "/getting-started", PageController, :getting_started
     get "/self-hosting", PageController, :self_hosting
+    get "/teams", PageController, :teams
     get "/changelog", PageController, :changelog
     get "/sitemap.xml", PageController, :sitemap_xml
     get "/robots.txt", PageController, :robots_txt
@@ -103,7 +104,24 @@ defmodule CritWeb.Router do
       session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
       live "/dashboard", DashboardLive, :index
       live "/settings", SettingsLive, :index
+      live "/orgs", OrgSelectLive, :index
+      live "/orgs/new", OrgNewLive, :index
+      live "/invites/:token", InviteAcceptLive, :index
     end
+
+    live_session :org,
+      on_mount: [
+        {CritWeb.UserAuth, :require_authenticated_user},
+        {CritWeb.UserAuth, :ensure_org}
+      ],
+      session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
+      live "/orgs/:org_slug", OrgOverviewLive, :index
+      live "/orgs/:org_slug/settings", OrgSettingsLive, :index
+      live "/orgs/:org_slug/members", OrgMembersLive, :index
+    end
+
+    post "/invites/:token/accept", OrgSessionController, :accept_invite
+    post "/invites/:id/accept-direct", OrgSessionController, :accept_invite_direct
 
     live_session :admin,
       on_mount: [{CritWeb.UserAuth, :require_selfhosted_auth}],
@@ -207,6 +225,13 @@ defmodule CritWeb.Router do
       post "/reviews/:token/seed-reply/:comment_id", ApiController, :seed_reply
       post "/reviews/:token/seed-resolve/:comment_id", ApiController, :seed_resolve
       post "/test/seed-user", ApiController, :seed_user
+    end
+  end
+
+  if Mix.env() == :dev do
+    scope "/dev" do
+      pipe_through :browser
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 

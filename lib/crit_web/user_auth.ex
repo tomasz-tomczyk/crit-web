@@ -235,6 +235,35 @@ defmodule CritWeb.UserAuth do
     end
   end
 
+  def on_mount(:ensure_org, %{"org_slug" => slug}, _session, socket) do
+    user = socket.assigns.current_scope.user
+
+    with {:ok, org} <- Crit.Organizations.get_organization_by_slug(slug),
+         {:ok, membership} <- Crit.Organizations.get_membership_for_user(org.id, user.id) do
+      scope = Scope.put_organization(socket.assigns.current_scope, org, membership)
+      {:cont, Phoenix.Component.assign(socket, :current_scope, scope)}
+    else
+      _ -> {:halt, redirect(socket, to: "/orgs")}
+    end
+  end
+
+  def on_mount(:ensure_org, _params, _session, socket) do
+    {:halt, redirect(socket, to: "/orgs")}
+  end
+
+  def on_mount(:require_org_admin, _params, _session, socket) do
+    if Crit.Accounts.Scope.org_admin?(socket.assigns.current_scope) do
+      {:cont, socket}
+    else
+      slug = socket.assigns.current_scope.organization.slug
+
+      {:halt,
+       socket
+       |> Phoenix.LiveView.put_flash(:error, "Admin access required.")
+       |> redirect(to: "/orgs/#{slug}/members")}
+    end
+  end
+
   defp assign_scope(socket, session) do
     Phoenix.Component.assign(socket, :current_scope, Scope.for_session(session))
   end

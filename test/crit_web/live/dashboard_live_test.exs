@@ -175,12 +175,12 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   describe "dashboard page title" do
-    test "page title is Dashboard - Crit", %{conn: conn} do
+    test "page title is My Reviews - Crit", %{conn: conn} do
       conn = login_user(conn)
 
       {:ok, view, _html} = live(conn, ~p"/dashboard")
 
-      assert page_title(view) =~ "Dashboard - Crit"
+      assert page_title(view) =~ "My Reviews - Crit"
     end
   end
 

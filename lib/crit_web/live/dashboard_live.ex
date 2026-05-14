@@ -2,22 +2,26 @@ defmodule CritWeb.DashboardLive do
   use CritWeb, :live_view
 
   alias Crit.{Accounts, Reviews}
+  alias Crit.Organizations
 
   import CritWeb.Components.ReviewSnippet
   import CritWeb.Components.ReviewListingHeader
 
   @impl true
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_scope.user
-    reviews = Reviews.list_user_reviews_with_counts(socket.assigns.current_scope)
+    scope = socket.assigns.current_scope
+    user = scope.user
+    reviews = Reviews.list_user_reviews_with_counts(scope)
+    orgs = Organizations.list_user_organizations(scope)
 
     socket =
       socket
-      |> assign(:page_title, "Dashboard - Crit")
+      |> assign(:page_title, "My Reviews - Crit")
       |> assign(:noindex, true)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
       |> assign(:instance_url, CritWeb.Endpoint.url())
       |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
+      |> assign(:orgs, orgs)
       |> stream(:reviews, reviews)
       |> assign(:review_count, length(reviews))
 

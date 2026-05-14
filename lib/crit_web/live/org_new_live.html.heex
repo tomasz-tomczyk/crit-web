@@ -1,0 +1,102 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header
+    current_scope={@current_scope}
+    show_overview_link={@selfhosted}
+    current_page={nil}
+  />
+
+  <div class="max-w-[640px] mx-auto w-full px-10 my-10 max-sm:px-4">
+    <.link
+      navigate={~p"/orgs"}
+      class="inline-flex items-center gap-1 text-sm text-(--crit-fg-muted) hover:text-(--crit-fg-primary) no-underline mb-4"
+    >
+      <.icon name="hero-chevron-left-mini" class="size-4" /> Back to organizations
+    </.link>
+    <h1 class="text-2xl font-semibold text-(--crit-fg-primary) mb-8">New organization</h1>
+
+    <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-6">
+      <.form
+        for={@form}
+        id="new_org_form"
+        phx-change="validate"
+        phx-submit="save"
+        class="flex flex-col gap-4"
+      >
+        <div>
+          <label
+            for={@form[:name].id}
+            class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+          >
+            Organization name
+          </label>
+          <input
+            type="text"
+            name={@form[:name].name}
+            id={@form[:name].id}
+            value={Phoenix.HTML.Form.normalize_value("text", @form[:name].value)}
+            phx-debounce="200"
+            autocomplete="off"
+            placeholder="Acme, Inc."
+            class="w-full px-3 py-2 text-sm bg-(--crit-bg-page) border border-(--crit-border) rounded-md text-(--crit-fg-primary) focus:outline-none focus:border-(--crit-brand)"
+          />
+          <p
+            :for={msg <- Enum.map(@form[:name].errors, &translate_error/1)}
+            class="text-xs text-(--crit-red) mt-1.5"
+          >
+            {msg}
+          </p>
+        </div>
+
+        <div>
+          <label
+            for={@form[:slug].id}
+            class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+          >
+            URL slug
+          </label>
+          <div class="flex items-center gap-0 w-full bg-(--crit-bg-page) border border-(--crit-border) rounded-md focus-within:border-(--crit-brand)">
+            <span class="pl-3 text-sm text-(--crit-fg-muted) select-none shrink-0">{URI.parse(CritWeb.Endpoint.url()).host}/orgs/</span>
+            <input
+              type="text"
+              name={@form[:slug].name}
+              id={@form[:slug].id}
+              value={Phoenix.HTML.Form.normalize_value("text", @form[:slug].value)}
+              phx-debounce="200"
+              phx-focus="slug_edited"
+              autocomplete="off"
+              placeholder="acme"
+              class="flex-1 px-0 py-2 text-sm bg-transparent text-(--crit-fg-primary) focus:outline-none"
+            />
+          </div>
+          <p
+            :for={msg <- Enum.map(@form[:slug].errors, &translate_error/1)}
+            class="text-xs text-(--crit-red) mt-1.5"
+          >
+            {msg}
+          </p>
+          <p class="text-xs text-(--crit-fg-muted) mt-1.5">
+            Auto-generated from the name. Edit to customize.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <.link
+            navigate={~p"/orgs"}
+            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-(--crit-fg-primary) hover:bg-(--crit-row-hover) rounded-md no-underline"
+          >
+            Cancel
+          </.link>
+          <button
+            type="submit"
+            phx-disable-with="Creating..."
+            class="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-(--crit-brand) text-white rounded-md hover:opacity-90 transition-opacity"
+          >
+            Create organization
+          </button>
+        </div>
+      </.form>
+    </div>
+  </div>
+</div>

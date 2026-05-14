@@ -176,6 +176,15 @@ end
 config :crit, CritWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
+  config :crit, Crit.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: System.get_env("SMTP_HOST", "localhost"),
+    port: String.to_integer(System.get_env("SMTP_PORT", "587")),
+    username: System.get_env("SMTP_USERNAME"),
+    password: System.get_env("SMTP_PASSWORD"),
+    tls: :if_available,
+    auth: :if_available
+
   database_url =
     System.get_env("DATABASE_URL") ||
       case {

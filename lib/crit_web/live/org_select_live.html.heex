@@ -1,0 +1,488 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header
+    current_scope={@current_scope}
+    show_overview_link={@selfhosted}
+    current_page={nil}
+  />
+
+  <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
+    <%!-- Page head --%>
+    <div class="flex items-end justify-between mb-7 gap-4 max-sm:flex-col max-sm:items-start">
+      <div>
+        <div class="text-[11px] font-mono font-medium uppercase tracking-[0.12em] text-(--crit-fg-muted) mb-2">
+          Workspaces
+        </div>
+        <h1 class="text-[22px] font-bold text-white tracking-[-0.02em]">
+          <%= if length(@orgs) > 1 do %>
+            Pick a workspace
+          <% else %>
+            Hi {(@current_scope.user && @current_scope.user.name) || "there"}, where to today?
+          <% end %>
+        </h1>
+        <p class="text-[13px] text-(--crit-fg-muted) mt-1">
+          <%= cond do %>
+            <% length(@invites) > 0 and length(@orgs) > 0 -> %>
+              You have {length(@invites)} {if length(@invites) == 1, do: "invite", else: "invites"} waiting and {length(@orgs)} {if length(@orgs) == 1, do: "organization", else: "organizations"}.
+            <% length(@invites) > 0 -> %>
+              You have {length(@invites)} pending {if length(@invites) == 1, do: "invite", else: "invites"}.
+            <% length(@orgs) == 1 -> %>
+              Pick a workspace to jump in, or set up another one.
+            <% length(@orgs) > 1 -> %>
+              You have {length(@orgs)} organizations.
+            <% true -> %>
+              Create an organization or accept an invite to get started.
+          <% end %>
+        </p>
+      </div>
+      <div class="flex gap-2 flex-shrink-0">
+        <%= if length(@orgs) <= 1 do %>
+          <button
+            type="button"
+            disabled
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium border border-(--crit-border) rounded-md bg-(--crit-bg-card) text-(--crit-fg-primary) opacity-60 cursor-not-allowed"
+          >
+            <.icon name="hero-envelope-mini" class="size-[13px]" />
+            Have an invite link?
+          </button>
+        <% end %>
+        <.link
+          navigate={~p"/orgs/new"}
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold bg-(--crit-brand) text-(--crit-fg-on-brand) rounded-md hover:bg-(--crit-brand-hover) transition-colors no-underline"
+        >
+          <.icon name="hero-plus-mini" class="size-[14px]" />
+          New organization
+        </.link>
+      </div>
+    </div>
+
+    <%!-- Pending invites --%>
+    <%= if @invites != [] do %>
+      <section class="mb-7">
+        <h2 class="text-[13px] font-semibold text-(--crit-fg-primary) mb-3 flex items-center gap-2">
+          Pending invites
+          <span class="inline-flex items-center px-1.5 py-px rounded-full text-[11px] font-medium bg-[rgba(255,158,100,0.15)] text-(--crit-orange)">
+            {length(@invites)}
+          </span>
+        </h2>
+        <div class="flex flex-col gap-2">
+          <div
+            :for={invite <- @invites}
+            class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[10px] px-4 py-3 flex items-center gap-3 max-sm:flex-col max-sm:items-start"
+          >
+            <%!-- Org avatar --%>
+            <span class="w-8 h-8 rounded-lg bg-[rgba(86,211,100,0.18)] text-(--crit-green) inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+              {String.first(invite.organization.name) |> String.upcase()}
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[13px] font-semibold text-(--crit-fg-primary)">
+                {invite.organization.name}
+              </div>
+              <div class="text-[11px] text-(--crit-fg-muted) mt-0.5">
+                Invited by <span class="text-(--crit-fg-secondary)">{invite.invited_by.name || invite.invited_by.email}</span> as
+                <span class={[
+                  "inline-flex items-center px-1.5 py-px rounded-full text-[10px] font-medium ml-1 capitalize",
+                  if(invite.role == "admin", do: "bg-(--crit-brand-bg) text-(--crit-brand)", else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted)")
+                ]}>
+                  {invite.role}
+                </span>
+              </div>
+            </div>
+            <span class="text-[11px] text-(--crit-fg-muted) flex items-center gap-1 flex-shrink-0">
+              <.icon name="hero-clock-mini" class="size-[10px]" />
+              <% days_left = max(0, Crit.Organizations.OrganizationInvite.ttl_days() - div(DateTime.diff(DateTime.utc_now(), invite.inserted_at, :second), 86400)) %>
+              Expires in {days_left}d
+            </span>
+            <button
+              type="button"
+              phx-click="dismiss_invite"
+              phx-value-id={invite.id}
+              class="inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-muted) hover:text-(--crit-fg-primary) border border-(--crit-border) bg-(--crit-bg-card) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer"
+            >
+              Decline
+            </button>
+            <.form
+              for={%{}}
+              as={:invite}
+              action={~p"/invites/#{invite.id}/accept-direct"}
+              method="post"
+            >
+              <button
+                type="submit"
+                class="inline-flex items-center px-3 py-1.5 text-[12px] font-semibold bg-(--crit-brand) text-(--crit-fg-on-brand) rounded-md hover:bg-(--crit-brand-hover) transition-colors cursor-pointer"
+              >
+                Accept
+              </button>
+            </.form>
+          </div>
+        </div>
+      </section>
+    <% end %>
+
+    <%!-- Empty state --%>
+    <%= if @orgs == [] and @invites == [] do %>
+      <div class="text-center py-16 text-(--crit-fg-muted)">
+        <.icon name="hero-building-office-2" class="size-12 mx-auto mb-4 opacity-40" />
+        <p class="text-base font-medium text-(--crit-fg-secondary) mb-2">No organizations yet</p>
+        <p class="text-sm mb-6">Create one or accept a pending invite.</p>
+        <.link
+          navigate={~p"/orgs/new"}
+          class="text-sm text-(--crit-brand) no-underline hover:underline"
+        >
+          Create your first organization &rarr;
+        </.link>
+      </div>
+    <% end %>
+
+    <%!-- ═══════════════ SINGLE-ORG STATE ═══════════════ --%>
+    <%= if length(@orgs) == 1 do %>
+      <% [org] = @orgs %>
+      <div class="grid grid-cols-[1.55fr_1fr] gap-[18px] items-stretch max-lg:grid-cols-1">
+
+        <%!-- ─── Featured Org card ─── --%>
+        <div class="bg-(--crit-bg-card) border border-(--crit-border-strong) rounded-[10px] overflow-hidden flex flex-col relative">
+          <%!-- Banner --%>
+          <div class="relative p-[24px_28px_20px] bg-(--crit-bg-page) border-b border-(--crit-border)">
+            <div class="flex items-start gap-4 relative">
+              <span class="w-14 h-14 rounded-[14px] bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[22px] font-semibold flex-shrink-0">
+                {String.first(org.name) |> String.upcase()}
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.12em] font-mono">
+                  Your organization
+                </div>
+                <div class="text-[22px] font-bold text-white tracking-[-0.02em] mt-1">
+                  {org.name}
+                </div>
+                <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-1">
+                  {org.slug}
+                </div>
+              </div>
+              <.link
+                navigate={~p"/orgs/#{org.slug}"}
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold bg-(--crit-brand) text-(--crit-fg-on-brand) rounded-md hover:bg-(--crit-brand-hover) transition-colors no-underline flex-shrink-0"
+              >
+                Open <.icon name="hero-arrow-right-mini" class="size-[13px]" />
+              </.link>
+            </div>
+
+            <%!-- Stats inline --%>
+            <div class="grid grid-cols-3 mt-[22px] border-t border-(--crit-border) pt-4">
+              <div>
+                <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Reviews</div>
+                <div class="text-[22px] font-bold text-white mt-1 tracking-[-0.02em]">{org.review_count}</div>
+              </div>
+              <div>
+                <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Members</div>
+                <div class="text-[22px] font-bold text-white mt-1 tracking-[-0.02em] flex items-center gap-2.5">
+                  {org.member_count}
+                  <%!-- Avatar stack --%>
+                  <div class="flex">
+                    <span
+                      :for={i <- 0..min(org.member_count - 1, 3)}
+                      class="w-[22px] h-[22px] rounded-full bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
+                      style={if i > 0, do: "margin-left: -8px", else: ""}
+                    >
+                      {String.at("ABCDEFGH", i)}
+                    </span>
+                    <%= if (org.member_count) > 4 do %>
+                      <span
+                        class="w-[22px] h-[22px] rounded-full bg-(--crit-bg-elevated) text-(--crit-fg-secondary) inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
+                        style="margin-left: -8px"
+                      >
+                        +{(org.member_count) - 4}
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Awaiting you</div>
+                <div class="text-[22px] font-bold text-(--crit-brand) mt-1 tracking-[-0.02em]">{org.review_count}</div>
+              </div>
+            </div>
+          </div>
+
+          <%!-- Live activity preview --%>
+          <div class="pt-1 border-t border-(--crit-border)">
+            <div class="px-4 pt-3 pb-1.5 flex items-center gap-2 text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em] font-mono">
+              <span class="relative flex h-1.5 w-1.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-(--crit-green) opacity-40"></span>
+                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-(--crit-green)" style="box-shadow: 0 0 0 3px rgba(86,211,100,0.15)"></span>
+              </span>
+              Live &middot; last 24 hours
+            </div>
+
+            <%!-- Activity rows (placeholder data matching design) --%>
+            <div class="grid grid-cols-[24px_1fr_auto_auto] gap-x-2.5 items-center px-4 py-2.5">
+              <span class="w-1.5 h-[22px] rounded-[3px] bg-(--crit-orange) justify-self-center"></span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-medium text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
+                  feat: org auto-join via verified domains
+                </div>
+                <div class="text-[11px] text-(--crit-fg-muted) mt-0.5">round 2 &middot; 3m</div>
+              </div>
+              <span class="text-[11px] text-(--crit-fg-muted) inline-flex items-center gap-1">
+                <.icon name="hero-chat-bubble-left-mini" class="size-[11px]" /> 14
+              </span>
+              <span class="w-[22px] h-[22px] rounded-full bg-[rgba(187,154,247,0.18)] text-[#bb9af7] inline-flex items-center justify-center text-[9px] font-semibold">M</span>
+            </div>
+            <div class="grid grid-cols-[24px_1fr_auto_auto] gap-x-2.5 items-center px-4 py-2.5 border-t border-(--crit-border)">
+              <span class="w-1.5 h-[22px] rounded-[3px] bg-(--crit-green) justify-self-center"></span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-medium text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
+                  fix: invite expiry off-by-one
+                </div>
+                <div class="text-[11px] text-(--crit-fg-muted) mt-0.5">round 1 &middot; 42m</div>
+              </div>
+              <span class="text-[11px] text-(--crit-fg-muted) inline-flex items-center gap-1">
+                <.icon name="hero-chat-bubble-left-mini" class="size-[11px]" /> 6
+              </span>
+              <span class="w-[22px] h-[22px] rounded-full bg-[rgba(158,206,106,0.20)] text-[#9ece6a] inline-flex items-center justify-center text-[9px] font-semibold">S</span>
+            </div>
+            <div class="grid grid-cols-[24px_1fr_auto_auto] gap-x-2.5 items-center px-4 py-2.5 border-t border-(--crit-border)">
+              <span class="w-1.5 h-[22px] rounded-[3px] bg-(--crit-brand) justify-self-center"></span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-medium text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">
+                  refactor: scope checks pulled to plug
+                  <span class="inline-flex items-center px-1.5 py-px rounded-full text-[10px] font-medium bg-(--crit-brand-bg) text-(--crit-brand) ml-2">For you</span>
+                </div>
+                <div class="text-[11px] text-(--crit-fg-muted) mt-0.5">round 3 &middot; 2h</div>
+              </div>
+              <span class="text-[11px] text-(--crit-fg-muted) inline-flex items-center gap-1">
+                <.icon name="hero-chat-bubble-left-mini" class="size-[11px]" /> 21
+              </span>
+              <span class="w-[22px] h-[22px] rounded-full bg-[rgba(255,158,100,0.18)] text-[#ff9e64] inline-flex items-center justify-center text-[9px] font-semibold">T</span>
+            </div>
+
+            <%!-- Footer --%>
+            <div class="px-4 py-3 text-[12px] text-(--crit-fg-muted) bg-(--crit-bg-page) border-t border-(--crit-border) flex items-center justify-between">
+              <span>3 reviews shared today across the team.</span>
+              <.link
+                navigate={~p"/orgs/#{org.slug}"}
+                class="text-[12px] text-(--crit-brand) no-underline hover:underline"
+              >
+                Open {org.name} overview &rarr;
+              </.link>
+            </div>
+          </div>
+        </div>
+
+        <%!-- ─── Personal column ─── --%>
+        <div class="flex flex-col gap-3.5">
+          <.link
+            navigate={~p"/dashboard"}
+            class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[10px] p-[18px] flex flex-col gap-3 flex-1 no-underline cursor-pointer hover:border-(--crit-border-strong) transition-colors"
+          >
+            <div class="flex items-start gap-3">
+              <span class="w-11 h-11 rounded-[11px] bg-(--crit-bg-elevated) border border-(--crit-border) text-(--crit-fg-secondary) inline-flex items-center justify-center flex-shrink-0">
+                <.icon name="hero-user" class="size-5" />
+              </span>
+              <div class="flex-1">
+                <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.12em] font-mono">
+                  Just for you
+                </div>
+                <div class="text-[17px] font-bold text-white tracking-[-0.015em] mt-1">
+                  Personal reviews
+                </div>
+                <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-1">
+                  crit.md/me
+                </div>
+              </div>
+            </div>
+
+            <p class="text-[12.5px] text-(--crit-fg-secondary) leading-[1.55] m-0">
+              Reviews you share from your CLI without picking an org. Visible only to you, unless you copy the link out.
+            </p>
+
+            <%!-- Mini review list --%>
+            <div class="mt-1 -mb-0.5 bg-(--crit-bg-page) border border-(--crit-border) rounded-lg overflow-hidden">
+              <div class="flex items-center gap-2.5 px-3.5 py-[9px] border-b border-(--crit-border)">
+                <span class="w-1.5 h-1.5 rounded-full bg-(--crit-orange) flex-shrink-0"></span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-medium text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">refactor: kbd handler split</div>
+                  <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-0.5">lib/kbd.ex</div>
+                </div>
+                <span class="text-[11px] text-(--crit-fg-muted) inline-flex items-center gap-1">
+                  <.icon name="hero-chat-bubble-left-mini" class="size-[11px]" /> 7
+                </span>
+                <span class="text-[11px] text-(--crit-fg-muted) w-16 text-right">12 min ago</span>
+              </div>
+              <div class="flex items-center gap-2.5 px-3.5 py-[9px] border-b border-(--crit-border)">
+                <span class="w-1.5 h-1.5 rounded-full bg-(--crit-orange) flex-shrink-0"></span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-medium text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">plan: editor multi-cursor</div>
+                  <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-0.5">plans/multi-cursor.md</div>
+                </div>
+                <span class="text-[11px] text-(--crit-fg-muted) inline-flex items-center gap-1">
+                  <.icon name="hero-chat-bubble-left-mini" class="size-[11px]" /> 14
+                </span>
+                <span class="text-[11px] text-(--crit-fg-muted) w-16 text-right">Yesterday</span>
+              </div>
+              <div class="flex items-center gap-2.5 px-3.5 py-[9px] border-b border-(--crit-border)">
+                <span class="w-1.5 h-1.5 rounded-full bg-(--crit-green) flex-shrink-0"></span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-medium text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">docs: contributing guide</div>
+                  <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-0.5">CONTRIBUTING.md</div>
+                </div>
+                <span class="text-[11px] text-(--crit-fg-muted) inline-flex items-center gap-1">
+                  <.icon name="hero-chat-bubble-left-mini" class="size-[11px]" /> 3
+                </span>
+                <span class="text-[11px] text-(--crit-fg-muted) w-16 text-right">2 days ago</span>
+              </div>
+              <div class="flex items-center gap-2.5 px-3.5 py-[9px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-(--crit-green) flex-shrink-0"></span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-medium text-(--crit-fg-primary) whitespace-nowrap overflow-hidden text-ellipsis">fix: token renewal race</div>
+                  <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-0.5">lib/auth/tokens.ex</div>
+                </div>
+                <span class="text-[11px] text-(--crit-fg-muted) inline-flex items-center gap-1">
+                  <.icon name="hero-chat-bubble-left-mini" class="size-[11px]" /> 4
+                </span>
+                <span class="text-[11px] text-(--crit-fg-muted) w-16 text-right">1 wk ago</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[12px] text-(--crit-fg-muted)">
+              <span><span class="font-mono text-(--crit-fg-primary)">26</span> personal reviews</span>
+              <span class="text-(--crit-brand)">Open personal &rarr;</span>
+            </div>
+          </.link>
+        </div>
+      </div>
+
+      <%!-- Discovery row --%>
+      <div class="grid grid-cols-2 gap-3 mt-6 max-sm:grid-cols-1">
+        <.link
+          navigate={~p"/orgs/new"}
+          class="bg-(--crit-bg-card) border border-dashed border-(--crit-border) rounded-[10px] p-5 flex gap-3.5 items-start no-underline hover:border-(--crit-border-strong) transition-colors"
+        >
+          <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center flex-shrink-0">
+            <.icon name="hero-plus" class="size-[17px]" />
+          </span>
+          <div class="flex-1">
+            <div class="text-[14px] font-semibold text-(--crit-fg-primary)">Start another organization</div>
+            <div class="text-[12px] text-(--crit-fg-muted) mt-1 leading-[1.5]">
+              Spin one up for a side project or open-source crew. Free for up to 3 seats during beta.
+            </div>
+          </div>
+          <span class="inline-flex items-center px-3 py-1.5 text-[13px] font-medium border border-(--crit-border) bg-(--crit-bg-card) rounded-md text-(--crit-fg-primary) flex-shrink-0">
+            Create
+          </span>
+        </.link>
+        <div class="bg-(--crit-bg-card) border border-dashed border-(--crit-border) rounded-[10px] p-5 flex gap-3.5 items-start">
+          <span class="w-9 h-9 rounded-[9px] bg-[rgba(86,211,100,0.12)] text-(--crit-green) inline-flex items-center justify-center flex-shrink-0">
+            <.icon name="hero-globe-alt" class="size-[17px]" />
+          </span>
+          <div class="flex-1">
+            <div class="text-[14px] font-semibold text-(--crit-fg-primary)">Join via your work email</div>
+            <div class="text-[12px] text-(--crit-fg-muted) mt-1 leading-[1.5]">
+              If your team uses a verified domain, sign in with that email to join automatically.
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled
+            class="inline-flex items-center px-3 py-1.5 text-[13px] font-medium border border-(--crit-border) bg-(--crit-bg-card) rounded-md text-(--crit-fg-primary) flex-shrink-0 cursor-not-allowed opacity-60"
+          >
+            Find my team
+          </button>
+        </div>
+      </div>
+    <% end %>
+
+    <%!-- ═══════════════ MULTI-ORG STATE ═══════════════ --%>
+    <%= if length(@orgs) > 1 do %>
+      <section>
+        <h2 class="text-[13px] font-semibold text-(--crit-fg-primary) mb-3">
+          Your workspaces
+        </h2>
+        <div class="grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
+          <%!-- Personal as first card --%>
+          <.link
+            navigate={~p"/dashboard"}
+            class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[10px] p-[18px] flex flex-col gap-3 no-underline hover:border-(--crit-border-strong) transition-colors"
+          >
+            <div class="flex gap-3 items-start">
+              <span class="w-9 h-9 rounded-[9px] bg-(--crit-bg-elevated) border border-(--crit-border) text-(--crit-fg-secondary) inline-flex items-center justify-center flex-shrink-0">
+                <.icon name="hero-user" class="size-4" />
+              </span>
+              <div class="min-w-0">
+                <div class="text-[15px] font-semibold text-(--crit-fg-primary)">Personal</div>
+                <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-0.5">crit.md/me</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 flex-wrap">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)">
+                <.icon name="hero-document-text-mini" class="size-[11px]" /> 26 reviews
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)">
+                <.icon name="hero-lock-closed-mini" class="size-[11px]" /> Private
+              </span>
+            </div>
+            <div class="flex-1"></div>
+            <span class="inline-flex items-center justify-between w-full px-3 py-1.5 text-[13px] font-medium border border-(--crit-border) bg-(--crit-bg-card) rounded-md text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors">
+              <span>Open</span>
+              <.icon name="hero-arrow-right-mini" class="size-[13px]" />
+            </span>
+          </.link>
+
+          <%!-- Org cards --%>
+          <.link
+            :for={org <- @orgs}
+            navigate={~p"/orgs/#{org.slug}"}
+            class={[
+              "bg-(--crit-bg-card) border rounded-[10px] p-[18px] flex flex-col gap-3.5 no-underline relative hover:border-(--crit-border-strong) transition-colors",
+              if(@current_scope.organization && @current_scope.organization.id == org.id,
+                do: "border-(--crit-brand) shadow-[inset_0_0_0_1px_var(--crit-brand)]",
+                else: "border-(--crit-border)"
+              )
+            ]}
+          >
+            <%!-- Active pill --%>
+            <%= if @current_scope.organization && @current_scope.organization.id == org.id do %>
+              <span class="absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--crit-brand-bg) text-(--crit-brand)">
+                <span class="w-1.5 h-1.5 rounded-full bg-(--crit-brand)"></span>
+                Active
+              </span>
+            <% end %>
+            <div class="flex gap-3 items-start">
+              <span class="w-9 h-9 rounded-[9px] bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
+                {String.first(org.name) |> String.upcase()}
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="text-[15px] font-semibold text-(--crit-fg-primary) tracking-[-0.01em]">{org.name}</div>
+                <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-0.5">{org.slug}</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 flex-wrap">
+              <span class={[
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium capitalize",
+                if(org.role == "admin", do: "bg-(--crit-brand-bg) text-(--crit-brand)", else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)")
+              ]}>
+                <.icon name="hero-shield-check-mini" class="size-[11px]" /> {org.role}
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)">
+                <.icon name="hero-users-mini" class="size-[11px]" /> {org.member_count}
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)">
+                <.icon name="hero-document-text-mini" class="size-[11px]" /> {org.review_count}
+              </span>
+            </div>
+            <div class="text-[12px] text-(--crit-fg-muted) flex items-center gap-1.5">
+              <.icon name="hero-clock-mini" class="size-[11px]" />
+              Active {Calendar.strftime(org.updated_at, "%b %-d")}
+            </div>
+            <div class="flex gap-2">
+              <span class="inline-flex items-center justify-between flex-1 px-3 py-1.5 text-[13px] font-medium border border-(--crit-border) bg-(--crit-bg-card) rounded-md text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors">
+                <span>Open</span>
+                <.icon name="hero-arrow-right-mini" class="size-[13px]" />
+              </span>
+            </div>
+          </.link>
+        </div>
+      </section>
+    <% end %>
+  </div>
+</div>

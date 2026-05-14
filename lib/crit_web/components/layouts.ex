@@ -349,18 +349,23 @@ defmodule CritWeb.Layouts do
   end
 
   @doc """
-  Header for dashboard, overview, and settings pages. No marketing nav links.
-  Used in both public and selfhosted modes.
+  Header for dashboard, overview, and settings pages.
 
-  Layout: a chrome row (logo + identity popover) and a tab strip below
-  (Dashboard, optional Overview, Settings). Pass `current_page` to mark
-  the active tab. Sign out lives inside the identity popover on desktop
-  and at the bottom of the mobile drawer.
+  Layout matches the design: logo + workspace breadcrumb (left), context-aware
+  nav tabs (center), theme toggle + avatar popover (right).
+
+  ## Attrs
+
+    * `current_scope` — the auth scope (carries user + optional organization)
+    * `show_overview_link` — show selfhosted Overview tab
+    * `current_page` — active tab atom
+    * `orgs` — list of user's orgs for the popover (optional, defaults to [])
   """
   attr :authenticated, :boolean, default: true
   attr :current_scope, :any, default: nil
   attr :show_overview_link, :boolean, default: false
   attr :current_page, :atom, default: nil
+  attr :orgs, :list, default: []
 
   def dashboard_header(assigns) do
     host = if assigns.show_overview_link, do: CritWeb.Endpoint.host(), else: nil
@@ -370,92 +375,119 @@ defmodule CritWeb.Layouts do
       Crit.Accounts.Scope.admin?(assigns.current_scope) and
         Application.get_env(:crit, :selfhosted) == true
 
+    current_org = assigns.current_scope && assigns.current_scope.organization
+
     assigns =
       assigns
       |> assign(:host, host)
       |> assign(:current_user, current_user)
       |> assign(:is_admin, is_admin)
+      |> assign(:current_org, current_org)
       |> assign(:user_initial, user_initial(current_user))
 
     ~H"""
     <header class="bg-(--crit-bg-card) border-b border-(--crit-border)">
-      <%!-- Chrome row: logo + scope chip (left), identity popover + theme + hamburger (right) --%>
-      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 px-8 py-3.5 max-sm:px-4 max-sm:py-3">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <a
-            href={~p"/dashboard"}
-            class="text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
-          >
-            <svg class="h-5 w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
-              <g transform="scale(1,-1)">
-                <path
-                  d="M628 -22Q459 -22 336.5 50.5Q214 123 147.5 252.5Q81 382 81 554Q81 727 147.5 857.0Q214 987 336.5 1059.5Q459 1132 628 1132Q827 1132 960.0 1032.5Q1093 933 1125 760L846 708Q827 795 772.5 845.5Q718 896 631 896Q511 896 449.0 801.5Q387 707 387 555Q387 405 449.0 309.5Q511 214 631 214Q718 214 774.0 266.5Q830 319 848 409L1127 358Q1095 181 962.0 79.5Q829 -22 628 -22Z"
-                  fill="currentColor"
-                /><path
-                  d="M128 0V1118H418V923H430Q461 1026 533.5 1079.5Q606 1133 700 1133Q751 1133 797 1123V855Q777 861 738.5 865.5Q700 870 667 870Q563 870 495.5 805.0Q428 740 428 636V0Z"
-                  fill="currentColor"
-                  transform="translate(1103,0)"
-                /><path
-                  d="M128 0V1118H428V0ZM278 1264Q210 1264 162.0 1309.0Q114 1354 114 1418Q114 1482 162.0 1527.0Q210 1572 278 1572Q346 1572 394.5 1527.0Q443 1482 443 1418Q443 1354 394.5 1309.0Q346 1264 278 1264Z"
-                  fill="currentColor"
-                  transform="translate(1835,0)"
-                /><path
-                  d="M683 1118V889H474V327Q474 223 576 223Q593 223 623.5 227.5Q654 232 671 236L714 11Q664 -4 614.5 -10.0Q565 -16 520 -16Q352 -16 263.0 65.5Q174 147 174 301V889H20V1118H174V1384H474V1118Z"
-                  fill="currentColor"
-                  transform="translate(2288,0)"
-                /><path
-                  d="M342 -19Q269 -19 219.0 30.5Q169 80 169 153Q169 226 219.0 275.5Q269 325 342 325Q415 325 465.0 275.5Q515 226 515 153Q515 80 465.0 30.5Q415 -19 342 -19Z"
-                  fill="#7aa2f7"
-                  transform="translate(2936,0)"
-                />
-              </g>
-            </svg>
-          </a>
+      <div class="max-w-7xl mx-auto flex items-center gap-4 px-8 py-3 max-sm:px-4">
+        <%!-- Logo --%>
+        <a
+          href={~p"/dashboard"}
+          class="text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring) flex-shrink-0"
+        >
+          <svg class="h-[18px] w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
+            <g transform="scale(1,-1)">
+              <path
+                d="M628 -22Q459 -22 336.5 50.5Q214 123 147.5 252.5Q81 382 81 554Q81 727 147.5 857.0Q214 987 336.5 1059.5Q459 1132 628 1132Q827 1132 960.0 1032.5Q1093 933 1125 760L846 708Q827 795 772.5 845.5Q718 896 631 896Q511 896 449.0 801.5Q387 707 387 555Q387 405 449.0 309.5Q511 214 631 214Q718 214 774.0 266.5Q830 319 848 409L1127 358Q1095 181 962.0 79.5Q829 -22 628 -22Z"
+                fill="currentColor"
+              /><path
+                d="M128 0V1118H418V923H430Q461 1026 533.5 1079.5Q606 1133 700 1133Q751 1133 797 1123V855Q777 861 738.5 865.5Q700 870 667 870Q563 870 495.5 805.0Q428 740 428 636V0Z"
+                fill="currentColor"
+                transform="translate(1103,0)"
+              /><path
+                d="M128 0V1118H428V0ZM278 1264Q210 1264 162.0 1309.0Q114 1354 114 1418Q114 1482 162.0 1527.0Q210 1572 278 1572Q346 1572 394.5 1527.0Q443 1482 443 1418Q443 1354 394.5 1309.0Q346 1264 278 1264Z"
+                fill="currentColor"
+                transform="translate(1835,0)"
+              /><path
+                d="M683 1118V889H474V327Q474 223 576 223Q593 223 623.5 227.5Q654 232 671 236L714 11Q664 -4 614.5 -10.0Q565 -16 520 -16Q352 -16 263.0 65.5Q174 147 174 301V889H20V1118H174V1384H474V1118Z"
+                fill="currentColor"
+                transform="translate(2288,0)"
+              /><path
+                d="M342 -19Q269 -19 219.0 30.5Q169 80 169 153Q169 226 219.0 275.5Q269 325 342 325Q415 325 465.0 275.5Q515 226 515 153Q515 80 465.0 30.5Q415 -19 342 -19Z"
+                fill="#7aa2f7"
+                transform="translate(2936,0)"
+              />
+            </g>
+          </svg>
+        </a>
 
-          <%= if @show_overview_link do %>
-            <div
-              role="group"
-              aria-label={"Self-hosted instance: " <> @host}
-              class="relative inline-flex items-stretch h-[30px] ml-1 min-w-0 max-sm:hidden text-(--crit-fg-muted) before:content-[''] before:absolute before:left-0 before:top-[7px] before:bottom-[7px] before:w-px before:bg-(--crit-border-strong)"
+        <%!-- Workspace breadcrumb --%>
+        <div class="flex items-center gap-2 pl-3 border-l border-(--crit-border-strong) min-w-0 max-sm:hidden">
+          <%= if @current_org do %>
+            <.link
+              navigate={~p"/orgs/#{@current_org.slug}"}
+              class="inline-flex items-center gap-2 text-[13px] font-medium text-(--crit-fg-primary) no-underline px-1.5 py-1 rounded-md hover:bg-(--crit-row-hover) transition-colors"
             >
-              <span class="inline-flex items-center px-2.5">
-                <span class="text-xs font-semibold uppercase tracking-[0.1em] text-(--crit-fg-muted) leading-none">
-                  Self-hosted
-                </span>
+              <span class="w-[18px] h-[18px] rounded-[5px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
+                {String.first(@current_org.name) |> String.upcase()}
               </span>
-              <span class="relative inline-flex items-center px-2.5 before:content-[''] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-(--crit-border-strong)">
-                <span class="font-mono text-sm font-medium text-(--crit-fg-primary) tracking-tight truncate max-w-[240px] leading-none">
-                  {@host}
-                </span>
+              <span class="truncate max-w-[160px]">{@current_org.name}</span>
+            </.link>
+          <% else %>
+            <span class="inline-flex items-center gap-2 text-[13px] font-medium text-(--crit-fg-primary) px-1.5 py-1">
+              <span class="w-[18px] h-[18px] rounded-[5px] bg-(--crit-bg-elevated) border border-(--crit-border) text-(--crit-fg-secondary) inline-flex items-center justify-center flex-shrink-0">
+                <.icon name="hero-user-mini" class="size-2.5" />
               </span>
-            </div>
+              Personal
+            </span>
           <% end %>
         </div>
 
-        <div class="flex items-center gap-1.5">
-          <%= if @current_user do %>
-            <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
+        <%!-- Context nav tabs --%>
+        <%= if @current_user do %>
+          <nav aria-label="Primary" class="flex items-center gap-0.5 ml-2 max-sm:hidden">
+            <%= if @current_org do %>
+              <.nav_link
+                navigate={~p"/orgs/#{@current_org.slug}"}
+                active={@current_page == :org_overview}
+              >
+                Overview
+              </.nav_link>
+              <.nav_link
+                navigate={~p"/orgs/#{@current_org.slug}/members"}
+                active={@current_page == :org_members}
+              >
+                Members
+              </.nav_link>
+              <.nav_link
+                navigate={~p"/orgs/#{@current_org.slug}/settings"}
+                active={@current_page == :org_settings}
+              >
+                Settings
+              </.nav_link>
+            <% else %>
+              <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
+                My Reviews
+              </.nav_link>
+              <.nav_link navigate={~p"/settings"} active={@current_page == :settings}>
+                Account
+              </.nav_link>
               <%= if @show_overview_link do %>
                 <.nav_link href={~p"/overview"} active={@current_page == :overview}>
                   Overview
                 </.nav_link>
               <% end %>
-              <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
-                Dashboard
-              </.nav_link>
               <%= if @is_admin do %>
                 <.nav_link navigate={~p"/admin/users"} active={@current_page == :admin}>
                   Admin
                 </.nav_link>
               <% end %>
-            </nav>
+            <% end %>
+          </nav>
+        <% end %>
 
-            <span
-              aria-hidden="true"
-              class="w-px h-4 bg-(--crit-border-strong) mx-1.5 max-sm:hidden"
-            >
-            </span>
+        <div class="flex-1" />
 
+        <div class="flex items-center gap-1.5">
+          <%= if @current_user do %>
             <div class="relative max-sm:hidden">
               <button
                 id="dashboard-identity-toggle"
@@ -493,7 +525,7 @@ defmodule CritWeb.Layouts do
                 aria-label="Account menu"
                 hidden
                 phx-hook=".IdentityPopover"
-                class="absolute right-0 top-[calc(100%+8px)] min-w-[280px] bg-(--crit-popover-bg) border border-(--crit-border-strong) rounded-[10px] p-1.5 z-40 shadow-[var(--crit-popover-shadow)]"
+                class="absolute right-0 top-[calc(100%+8px)] min-w-[300px] bg-(--crit-popover-bg) border border-(--crit-border-strong) rounded-[10px] p-1.5 z-40 shadow-[var(--crit-popover-shadow)]"
               >
                 <script :type={Phoenix.LiveView.ColocatedHook} name=".IdentityPopover">
                   export default {
@@ -521,15 +553,17 @@ defmodule CritWeb.Layouts do
                     }
                   }
                 </script>
+
+                <%!-- Identity --%>
                 <div class="flex gap-3 items-start px-3 pt-3 pb-3.5">
                   <%= if @current_user.avatar_url do %>
                     <img
                       src={@current_user.avatar_url}
                       alt=""
-                      class="h-9 w-9 rounded-md flex-shrink-0"
+                      class="h-9 w-9 rounded-lg flex-shrink-0"
                     />
                   <% else %>
-                    <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                    <span class="h-9 w-9 rounded-lg bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-sm font-semibold flex-shrink-0">
                       {@user_initial}
                     </span>
                   <% end %>
@@ -547,16 +581,81 @@ defmodule CritWeb.Layouts do
 
                 <div class="h-px bg-(--crit-border) my-0.5"></div>
 
-                <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-3 pt-2 pb-1">
-                  Account
+                <%!-- Workspaces --%>
+                <div class="text-[10px] font-mono uppercase tracking-[0.12em] text-(--crit-fg-muted) font-medium px-3 pt-2.5 pb-1">
+                  Workspaces
                 </div>
+
+                <.link
+                  navigate={~p"/dashboard"}
+                  role="menuitem"
+                  class={[
+                    "flex items-center gap-2.5 px-2.5 py-[7px] rounded-md no-underline",
+                    if(!@current_org,
+                      do: "bg-(--crit-bg-elevated)",
+                      else: "hover:bg-(--crit-row-hover)"
+                    )
+                  ]}
+                >
+                  <span class="w-[22px] h-[22px] rounded-md bg-(--crit-bg-elevated) border border-(--crit-border) text-(--crit-fg-secondary) inline-flex items-center justify-center flex-shrink-0">
+                    <.icon name="hero-user-mini" class="size-3" />
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[13px] font-medium text-(--crit-fg-primary)">Personal</div>
+                  </div>
+                  <.icon
+                    :if={!@current_org}
+                    name="hero-check-mini"
+                    class="size-3.5 text-(--crit-brand)"
+                  />
+                </.link>
+
+                <.link
+                  :for={org <- @orgs}
+                  navigate={~p"/orgs/#{org.slug}"}
+                  role="menuitem"
+                  class={[
+                    "flex items-center gap-2.5 px-2.5 py-[7px] rounded-md no-underline",
+                    if(@current_org && @current_org.id == org.id,
+                      do: "bg-(--crit-bg-elevated)",
+                      else: "hover:bg-(--crit-row-hover)"
+                    )
+                  ]}
+                >
+                  <span class="w-[22px] h-[22px] rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
+                    {String.first(org.name) |> String.upcase()}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[13px] font-medium text-(--crit-fg-primary)">{org.name}</div>
+                  </div>
+                  <.icon
+                    :if={@current_org && @current_org.id == org.id}
+                    name="hero-check-mini"
+                    class="size-3.5 text-(--crit-brand)"
+                  />
+                </.link>
+
+                <.link
+                  navigate={~p"/orgs/new"}
+                  role="menuitem"
+                  class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-(--crit-fg-secondary) hover:bg-(--crit-row-hover) no-underline mt-0.5"
+                >
+                  <span class="w-[22px] h-[22px] rounded-md border border-dashed border-(--crit-border-strong) text-(--crit-fg-muted) inline-flex items-center justify-center flex-shrink-0">
+                    <.icon name="hero-plus-mini" class="size-3" />
+                  </span>
+                  <span class="text-[13px]">Create organization</span>
+                </.link>
+
+                <div class="h-px bg-(--crit-border) my-1"></div>
+
+                <%!-- Account --%>
                 <.link
                   navigate={~p"/settings"}
                   role="menuitem"
-                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
+                  class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-sm text-(--crit-fg-primary) hover:bg-(--crit-row-hover) no-underline"
                 >
                   <.icon name="hero-cog-6-tooth-mini" class="size-3.5 text-(--crit-fg-muted)" />
-                  <span>Settings</span>
+                  <span class="text-[13px]">Account settings</span>
                 </.link>
 
                 <div class="h-px bg-(--crit-border) my-0.5"></div>
@@ -565,10 +664,10 @@ defmodule CritWeb.Layouts do
                   href={~p"/auth/logout"}
                   method="delete"
                   role="menuitem"
-                  class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
+                  class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-sm text-(--crit-red) hover:bg-(--crit-btn-danger-hover-bg) no-underline"
                 >
                   <.icon name="hero-arrow-right-on-rectangle-mini" class="size-3.5" />
-                  <span>Sign out</span>
+                  <span class="text-[13px]">Sign out</span>
                 </.link>
               </div>
             </div>
@@ -600,7 +699,11 @@ defmodule CritWeb.Layouts do
           <%= if @current_user do %>
             <div class="flex items-center gap-3 px-3 py-3 border-b border-(--crit-border) mb-1.5">
               <%= if @current_user.avatar_url do %>
-                <img src={@current_user.avatar_url} alt="" class="h-9 w-9 rounded-md flex-shrink-0" />
+                <img
+                  src={@current_user.avatar_url}
+                  alt=""
+                  class="h-9 w-9 rounded-md flex-shrink-0"
+                />
               <% else %>
                 <span class="h-9 w-9 rounded-md bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center text-sm font-semibold flex-shrink-0">
                   {@user_initial}
@@ -621,13 +724,41 @@ defmodule CritWeb.Layouts do
             <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
               Navigate
             </div>
-            <%= if @show_overview_link do %>
-              <.nav_mobile_link href={~p"/overview"} active={@current_page == :overview}>
+            <%= if @current_org do %>
+              <.nav_mobile_link
+                navigate={~p"/orgs/#{@current_org.slug}"}
+                active={@current_page == :org_overview}
+              >
                 Overview
               </.nav_mobile_link>
+              <.nav_mobile_link
+                navigate={~p"/orgs/#{@current_org.slug}/members"}
+                active={@current_page == :org_members}
+              >
+                Members
+              </.nav_mobile_link>
+              <.nav_mobile_link
+                navigate={~p"/orgs/#{@current_org.slug}/settings"}
+                active={@current_page == :org_settings}
+              >
+                Settings
+              </.nav_mobile_link>
+            <% else %>
+              <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
+                My Reviews
+              </.nav_mobile_link>
+              <%= if @show_overview_link do %>
+                <.nav_mobile_link href={~p"/overview"} active={@current_page == :overview}>
+                  Overview
+                </.nav_mobile_link>
+              <% end %>
             <% end %>
-            <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
-              Dashboard
+
+            <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+              Workspaces
+            </div>
+            <.nav_mobile_link navigate={~p"/orgs"}>
+              All workspaces
             </.nav_mobile_link>
 
             <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">

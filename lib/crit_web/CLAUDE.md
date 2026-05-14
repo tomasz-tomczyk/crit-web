@@ -134,3 +134,88 @@ In LiveViews and controllers, get scope from `socket.assigns.current_scope` or `
 - `user.name || user.email` in any template served by the public review surface.
 - Raw `Reviews.<func>(id, body, identity, display_name, ...)` threading — pass `scope` instead.
 - Direct `%Scope{user: ..., identity: ...}` construction — use `for_user/1`, `for_session/1`, `for_visitor/2`.
+- `Crit.Repo.*` calls in LiveViews or controllers — always go through a context function.
+- `raise "not authorized"` in context functions — return `{:error, :unauthorized}` instead.
+- `throw/catch` for access control in `mount/3` — use an `on_mount` hook in the router.
+- `GET` routes that write to session — session-mutating endpoints must be `POST`-only (CSRF risk).
+- `redirect` for same-app LiveView navigation — use `push_navigate` unless the destination is a controller action that writes session.
+
+## Organizations & multi-tenancy
+
+These patterns apply anywhere code is org-scoped (i.e., depends on `scope.organization`).
+
+### Authorization in context functions
+
+Every function that requires org-admin access uses a private `check_org_admin/1` and returns `{:error, :unauthorized}` — never `raise`:
+
+```elixir
+defp check_org_admin(scope) do
+  if Scope.org_admin?(scope), do: :ok, else: {:error, :unauthorized}
+end
+
+def update_something(%Scope{} = scope, resource, attrs) do
+  with :ok <- check_org_admin(scope),
+       :ok <- check_belongs_to_org(scope, resource) do
+    # ...
+  end
+end
+```
+
+### Cross-tenant guard
+
+Every context function that accepts a resource by id must verify `resource.organization_id == Scope.org_id(scope)` before acting. Skipping this lets an admin of org A manipulate resources belonging to org B.
+
+```elixir
+defp check_belongs_to_org(scope, resource) do
+  if resource.organization_id == Scope.org_id(scope), do: :ok, else: {:error, :unauthorized}
+end
+```
+
+### Scope helpers
+
+Use these helpers — never pattern-match on `scope.membership.role` or `scope.organization` directly:
+
+| Helper | Returns |
+|--------|---------|
+| `Scope.org_admin?(scope)` | `true` when membership role is `"admin"` |
+| `Scope.in_org?(scope)` | `true` when `scope.organization` is set |
+| `Scope.org_id(scope)` | org id string or `nil` |
+
+### Access control via `on_mount`, not `mount`
+
+Use dedicated `on_mount` hooks for route-level guards. Don't `throw/catch` inside `mount/3`.
+
+```elixir
+# In user_auth.ex — define once
+def on_mount(:require_org_admin, _params, _session, socket) do
+  if Crit.Accounts.Scope.org_admin?(socket.assigns.current_scope) do
+    {:cont, socket}
+  else
+    slug = socket.assigns.current_scope.organization.slug
+    {:halt, socket |> put_flash(:error, "Admin access required.") |> redirect(to: "/orgs/#{slug}/members")}
+  end
+end
+
+# In router.ex — compose on_mounts
+live_session :org_admin,
+  on_mount: [
+    {CritWeb.UserAuth, :require_authenticated_user},
+    {CritWeb.UserAuth, :ensure_org},
+    {CritWeb.UserAuth, :require_org_admin}
+  ], ... do
+  live "/orgs/:org_slug/invites", OrgInvitesLive, :index
+end
+```
+
+### Session writes must be POST-only
+
+Any route that calls `put_session` must be `POST` (or `DELETE`). A `GET` route that writes session is CSRF-exploitable via `<img src>` or a plain link. Templates that trigger session-writing actions use `<.form method="post">` with CSRF token, not plain `<.link href>`.
+
+### `push_navigate` vs `redirect` in LiveView handlers
+
+| Destination | Use |
+|---|---|
+| Another LiveView route | `push_navigate(socket, to: ~p"/...")` |
+| Controller action that writes session | `redirect(socket, to: ~p"/...")` |
+
+`redirect` does a full-page reload; `push_navigate` keeps the LiveView socket alive.

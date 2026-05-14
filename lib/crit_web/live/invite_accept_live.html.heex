@@ -1,0 +1,246 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header
+    current_scope={@current_scope}
+    show_overview_link={@selfhosted}
+    current_page={nil}
+  />
+
+  <div class="max-w-7xl mx-auto w-full px-8 py-14 max-sm:px-4 max-sm:py-8">
+    <%= case @status do %>
+      <% :ok -> %>
+        <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
+          <%!-- Banner --%>
+          <div class="h-20 relative overflow-hidden bg-(--crit-bg-page) border-b border-(--crit-border)">
+            <div class="absolute top-4 left-5 flex items-center gap-2 text-[12px] text-(--crit-fg-muted)">
+              <.icon name="hero-envelope" class="size-3.5" />
+              Organization invitation
+            </div>
+          </div>
+
+          <div class="px-10 pb-9 -mt-5 max-sm:px-5">
+            <%!-- Org avatar overlapping the banner --%>
+            <span
+              class="inline-flex items-center justify-center w-[72px] h-[72px] rounded-2xl text-[28px] font-semibold border-4 border-(--crit-bg-card)"
+              style="background: rgba(158,206,106,0.20); color: #9ece6a;"
+            >
+              {String.first(@invite.organization.name) |> String.upcase()}
+            </span>
+
+            <%!-- Heading --%>
+            <h1 class="text-[28px] font-bold tracking-[-0.02em] mt-5 mb-1.5">
+              You're invited to join <span class="text-(--crit-brand)">{@invite.organization.name}</span>
+            </h1>
+
+            <%!-- Invited by line --%>
+            <p class="text-[15px] text-(--crit-fg-secondary) leading-relaxed">
+              <strong class="text-(--crit-fg-primary) font-semibold">
+                {@invite.invited_by.name || @invite.invited_by.email}
+              </strong>
+              invited you as
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 mx-1 rounded-full text-[12px] font-medium bg-(--crit-brand-bg) text-(--crit-brand)">
+                <.icon name="hero-shield-check" class="size-3" />
+                {String.capitalize(@invite.role)}
+              </span>
+              on {Calendar.strftime(@invite.inserted_at, "%b %-d")}.
+            </p>
+
+            <%!-- Stats preview --%>
+            <div class="mt-7 p-[18px_20px] bg-(--crit-bg-page) border border-(--crit-border) rounded-[10px]">
+              <div class="grid grid-cols-3">
+                <%!-- Members column --%>
+                <div class="border-r border-(--crit-border) pr-4">
+                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Members</div>
+                  <div class="mt-2 flex items-center gap-2">
+                    <div class="flex">
+                      <span
+                        class="w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
+                        style="background: rgba(122,162,247,0.18); color: #7aa2f7;"
+                      >
+                        T
+                      </span>
+                      <span
+                        class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
+                        style="background: rgba(187,154,247,0.18); color: #bb9af7;"
+                      >
+                        M
+                      </span>
+                      <span
+                        class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
+                        style="background: rgba(158,206,106,0.20); color: #9ece6a;"
+                      >
+                        S
+                      </span>
+                      <span
+                        class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
+                        style="background: rgba(247,118,142,0.18); color: #f7768e;"
+                      >
+                        J
+                      </span>
+                      <span class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page) bg-(--crit-bg-elevated) text-(--crit-fg-secondary)">
+                        +3
+                      </span>
+                    </div>
+                    <span class="text-[13px] font-semibold">8 people</span>
+                  </div>
+                </div>
+
+                <%!-- Reviews column --%>
+                <div class="border-r border-(--crit-border) px-4">
+                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Shared reviews</div>
+                  <div class="mt-2 text-[18px] font-bold text-(--crit-fg-primary)">142</div>
+                </div>
+
+                <%!-- Sharing column --%>
+                <div class="pl-4">
+                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Sharing</div>
+                  <div class="mt-2 text-[13px] font-semibold flex items-center gap-1.5">
+                    <.icon name="hero-lock-closed" class="size-3" /> Members only
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <%!-- Permission bullets --%>
+            <ul class="mt-5.5 flex flex-col gap-2 list-none p-0 m-0">
+              <li class="flex items-start gap-2.5 text-[13px] text-(--crit-fg-secondary)">
+                <span class="text-(--crit-green) mt-0.5 shrink-0">
+                  <.icon name="hero-check" class="size-3.5" />
+                </span>
+                View every review the team has shared, including drafts.
+              </li>
+              <li class="flex items-start gap-2.5 text-[13px] text-(--crit-fg-secondary)">
+                <span class="text-(--crit-green) mt-0.5 shrink-0">
+                  <.icon name="hero-check" class="size-3.5" />
+                </span>
+                Comment, resolve threads, and request follow-up rounds.
+              </li>
+              <li class="flex items-start gap-2.5 text-[13px] text-(--crit-fg-secondary)">
+                <span class="text-(--crit-green) mt-0.5 shrink-0">
+                  <.icon name="hero-check" class="size-3.5" />
+                </span>
+                <%= if @invite.role == "admin" do %>
+                  Invite teammates and configure organization settings (you're an admin).
+                <% else %>
+                  View team members and access shared organization resources.
+                <% end %>
+              </li>
+            </ul>
+
+            <%!-- CTAs --%>
+            <div class="mt-7 flex items-center gap-2.5 flex-wrap">
+              <.form
+                for={%{}}
+                as={:invite}
+                action={~p"/invites/#{@raw_token}/accept"}
+                method="post"
+              >
+                <button
+                  type="submit"
+                  class="inline-flex items-center px-[18px] py-2.5 text-[14px] font-semibold text-white bg-(--crit-brand) rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  Accept invitation
+                </button>
+              </.form>
+              <.link
+                navigate={~p"/orgs"}
+                class="inline-flex items-center px-[18px] py-2.5 text-[14px] font-medium text-(--crit-fg-secondary) border border-(--crit-border) rounded-lg hover:bg-(--crit-bg-elevated) transition-colors no-underline"
+              >
+                Decline
+              </.link>
+              <% days_remaining = max(0, Crit.Organizations.OrganizationInvite.ttl_days() - div(DateTime.diff(DateTime.utc_now(), @invite.inserted_at, :second), 86400)) %>
+              <span class="ml-auto flex items-center gap-1.5 text-[11px] text-(--crit-fg-muted) max-sm:ml-0 max-sm:mt-1">
+                <.icon name="hero-clock" class="size-3" />
+                Invite expires in {days_remaining} {if days_remaining == 1, do: "day", else: "days"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Below card info --%>
+        <p class="text-center text-[12px] text-(--crit-fg-muted) mt-[18px]">
+          Joining as <span class="font-mono text-(--crit-fg-secondary)">{@invite.email}</span>.
+          <.link navigate={~p"/orgs"} class="text-(--crit-brand) no-underline hover:underline ml-1">
+            Not you?
+          </.link>
+        </p>
+
+      <% :email_mismatch -> %>
+        <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
+          <div class="h-20 bg-(--crit-bg-page) border-b border-(--crit-border) flex items-center gap-2.5 px-10 max-sm:px-5">
+            <.icon name="hero-exclamation-triangle" class="size-5 text-amber-500" />
+            <span class="text-[12px] font-medium tracking-wide text-(--crit-fg-muted) uppercase">
+              Wrong account
+            </span>
+          </div>
+          <div class="px-10 py-9 max-sm:px-5">
+            <h1 class="text-[20px] font-semibold text-(--crit-fg-primary) mb-2">
+              This invite is for someone else
+            </h1>
+            <p class="text-[14px] text-(--crit-fg-muted) mb-6">
+              This invitation was sent to <span class="font-mono text-(--crit-fg-secondary)">{@invite.email}</span>.
+              Sign in with that account to accept it.
+            </p>
+            <.link
+              navigate={~p"/orgs"}
+              class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
+            >
+              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
+              Back to workspaces
+            </.link>
+          </div>
+        </div>
+
+      <% :expired -> %>
+        <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
+          <div class="h-20 bg-(--crit-bg-page) border-b border-(--crit-border) flex items-center gap-2.5 px-10 max-sm:px-5">
+            <.icon name="hero-clock" class="size-5 text-(--crit-fg-muted)" />
+            <span class="text-[12px] font-medium tracking-wide text-(--crit-fg-muted) uppercase">
+              Expired
+            </span>
+          </div>
+          <div class="px-10 py-9 max-sm:px-5">
+            <h1 class="text-[20px] font-semibold text-(--crit-fg-primary) mb-2">
+              This invite has expired
+            </h1>
+            <p class="text-[14px] text-(--crit-fg-muted) mb-6">
+              Ask the organization admin to send you a new invitation.
+            </p>
+            <.link
+              navigate={~p"/orgs"}
+              class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
+            >
+              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
+              Back to workspaces
+            </.link>
+          </div>
+        </div>
+
+      <% :not_found -> %>
+        <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
+          <div class="h-20 bg-(--crit-bg-page) border-b border-(--crit-border) flex items-center gap-2.5 px-10 max-sm:px-5">
+            <.icon name="hero-x-circle" class="size-5 text-(--crit-red)" />
+            <span class="text-[12px] font-medium tracking-wide text-(--crit-fg-muted) uppercase">
+              Invalid link
+            </span>
+          </div>
+          <div class="px-10 py-9 max-sm:px-5">
+            <h1 class="text-[20px] font-semibold text-(--crit-fg-primary) mb-2">
+              Invalid invitation link
+            </h1>
+            <p class="text-[14px] text-(--crit-fg-muted) mb-6">
+              This invite link is invalid or has been revoked.
+            </p>
+            <.link
+              navigate={~p"/orgs"}
+              class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
+            >
+              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
+              Back to workspaces
+            </.link>
+          </div>
+        </div>
+    <% end %>
+  </div>
+</div>

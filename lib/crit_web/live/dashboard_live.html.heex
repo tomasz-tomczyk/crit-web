@@ -5,14 +5,31 @@
     current_scope={@current_scope}
     show_overview_link={@selfhosted}
     current_page={:dashboard}
+    orgs={@orgs}
   />
 
   <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
-    <div class="flex justify-between items-baseline mb-6 pb-4 border-b border-(--crit-border)">
-      <h1 class="text-3xl font-extrabold tracking-tight">
-        Your Reviews <span class="text-(--crit-fg-muted) font-normal ml-2">{@review_count}</span>
-      </h1>
-      <span class="text-xs text-(--crit-fg-muted) max-sm:hidden">Sorted by recent activity</span>
+    <div class="flex items-end justify-between mb-7 gap-4">
+      <div>
+        <div class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-2">
+          Personal workspace
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight">
+          My Reviews
+          <span class="text-(--crit-fg-muted) font-normal text-lg ml-2">{@review_count}</span>
+        </h1>
+        <p class="text-sm text-(--crit-fg-secondary) mt-1">
+          Reviews you share from your CLI. Visible only to you unless you copy the link.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <.link
+          navigate={~p"/orgs"}
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-(--crit-border) rounded-md text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors no-underline max-sm:hidden"
+        >
+          <.icon name="hero-building-office-2-mini" class="size-3.5" /> Workspaces
+        </.link>
+      </div>
     </div>
 
     <%= if @review_count == 0 do %>

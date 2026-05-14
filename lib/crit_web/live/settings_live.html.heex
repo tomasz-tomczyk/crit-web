@@ -41,6 +41,14 @@
           </li>
           <li>
             <a
+              href="#organizations"
+              class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
+            >
+              Organizations
+            </a>
+          </li>
+          <li>
+            <a
               href="#danger-zone"
               class="block px-3 py-2 text-sm rounded-md text-(--crit-fg-muted) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors max-md:rounded-none"
             >
@@ -476,6 +484,63 @@
                 </button>
               </div>
             </div>
+          <% end %>
+        </section>
+
+        <%!-- Organizations section --%>
+        <section id="organizations" class="mb-12">
+          <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
+            Organizations
+          </h2>
+          <%= if @orgs == [] do %>
+            <div class="flex flex-col items-center gap-4 py-10 text-center">
+              <div class="h-12 w-12 rounded-xl bg-(--crit-bg-card) border border-(--crit-border) flex items-center justify-center">
+                <.icon name="hero-building-office-2" class="size-6 text-(--crit-fg-muted)" />
+              </div>
+              <div>
+                <p class="text-sm font-medium text-(--crit-fg-primary)">
+                  You're not in any organization
+                </p>
+                <p class="text-xs text-(--crit-fg-muted) mt-1">
+                  Create one or ask a teammate to send you an invite.
+                </p>
+              </div>
+              <.link
+                navigate={~p"/orgs/new"}
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-(--crit-brand-cta) text-(--crit-fg-on-brand) hover:bg-(--crit-brand-cta-hover) text-sm font-semibold no-underline transition-all"
+              >
+                <.icon name="hero-plus-mini" class="size-4" /> Create an organization
+              </.link>
+            </div>
+          <% else %>
+            <div class="flex flex-col gap-3 mb-6">
+              <div
+                :for={org <- @orgs}
+                id={"org-#{org.id}"}
+                class="flex items-center justify-between p-4 border border-(--crit-border) bg-(--crit-bg-card) rounded-lg"
+              >
+                <div class="min-w-0">
+                  <div class="text-sm font-medium text-(--crit-fg-primary) truncate">
+                    {org.name}
+                  </div>
+                  <div class="text-xs text-(--crit-fg-muted) mt-0.5">
+                    {org.slug}
+                  </div>
+                </div>
+                <.link
+                  navigate={~p"/orgs"}
+                  class="text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) no-underline ml-4 shrink-0 transition-colors"
+                >
+                  Open →
+                </.link>
+              </div>
+            </div>
+            <.link
+              navigate={~p"/orgs/new"}
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-(--crit-border) text-(--crit-fg-primary) hover:bg-(--crit-bg-card) text-sm font-medium no-underline transition-all"
+            >
+              <.icon name="hero-plus-mini" class="size-4" /> Create another organization
+            </.link>
           <% end %>
         </section>
 

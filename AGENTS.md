@@ -25,6 +25,9 @@ crit-web/
 │   │   ├── config.ex                # Runtime config helpers
 │   │   ├── statistics.ex / statistic.ex   # Usage statistics
 │   │   ├── accounts.ex + accounts/scope.ex # Phoenix 1.8 scope-based auth
+│   │   ├── organizations.ex               # Org context: create/manage orgs, memberships, invites
+│   │   ├── organizations/                 # Organization, OrganizationMembership, OrganizationInvite schemas + OrgNotifier
+│   │   ├── mailer.ex                      # Swoosh mailer (local in dev/test, SMTP in prod)
 │   │   ├── user.ex / user_api_token.ex     # Authenticated user + CLI bearer tokens
 │   │   ├── device_codes.ex / device_code.ex / device_code_cleaner.ex # OAuth device flow
 │   │   ├── sentry_filter.ex / sentry_http_client.ex # Sentry plumbing
@@ -39,6 +42,12 @@ crit-web/
 │   │   │   ├── dashboard_live.ex    # User dashboard
 │   │   │   ├── settings_live.ex     # User settings
 │   │   │   ├── overview_live.ex     # Selfhost admin overview
+│   │   │   ├── org_select_live.ex   # /orgs — pick active org, view pending invites
+│   │   │   ├── org_new_live.ex      # /orgs/new — create org
+│   │   │   ├── org_settings_live.ex # /org/settings — name/slug (admin)
+│   │   │   ├── org_members_live.ex  # /org/members — member list, role, remove, leave
+│   │   │   ├── org_invites_live.ex  # /org/invites — send/resend/revoke (admin only)
+│   │   │   ├── invite_accept_live.ex # /invites/:token — accept/decline from email link
 │   │   │   └── tokens_live.ex       # CLI token management
 │   │   ├── components/              # core_components.ex, layouts.ex
 │   │   └── plugs/                   # security_headers, rate_limit, api_auth, require_bearer_auth, localhost_cors, canonical_host
@@ -106,6 +115,9 @@ CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, El
 
 - `/r/:token` — review surface (`live_session :review`)
 - `/dashboard`, `/settings` — `live_session :user`, requires authenticated user
+- `/orgs`, `/orgs/new`, `/invites/:token` — `live_session :user`, requires authenticated user
+- `/orgs/:org_slug/settings`, `/orgs/:org_slug/members` — `live_session :org`, requires authenticated user + org membership (slug in URL)
+- `/orgs/:org_slug/invites` — `live_session :org_admin`, requires authenticated user + org membership + admin role
 - `/overview` — `live_session :admin`, selfhost admin only
 
 **Browser controllers (noindex):**

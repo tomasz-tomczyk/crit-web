@@ -98,3 +98,5 @@ config :phoenix_live_view,
   debug_attributes: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Local

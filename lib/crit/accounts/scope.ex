@@ -1,7 +1,13 @@
 defmodule Crit.Accounts.Scope do
   alias Crit.User
+  alias Crit.Organizations.{Organization, OrganizationMembership}
 
-  defstruct user: nil, identity: nil, display_name: nil, role: nil
+  defstruct user: nil,
+            identity: nil,
+            display_name: nil,
+            role: nil,
+            organization: nil,
+            membership: nil
 
   @type role :: :admin | :user | nil
 
@@ -9,7 +15,9 @@ defmodule Crit.Accounts.Scope do
           user: User.t() | nil,
           identity: String.t() | nil,
           display_name: String.t() | nil,
-          role: role()
+          role: role(),
+          organization: Organization.t() | nil,
+          membership: OrganizationMembership.t() | nil
         }
 
   @doc """
@@ -18,6 +26,9 @@ defmodule Crit.Accounts.Scope do
   Authenticated → `%Scope{user: %User{}, identity: nil, ...}`.
   Anonymous → `%Scope{user: nil, identity: <session uuid>, ...}`.
   Mutually exclusive — never both set.
+
+  Organization is not hydrated here — it comes from the URL slug via
+  `on_mount(:ensure_org)` in LiveView routes.
   """
   def for_session(session) when is_map(session) do
     user =
@@ -72,6 +83,15 @@ defmodule Crit.Accounts.Scope do
     %{scope | display_name: name}
   end
 
+  @doc "Attach an organization + membership to the scope."
+  def put_organization(
+        %__MODULE__{} = scope,
+        %Organization{} = org,
+        %OrganizationMembership{} = membership
+      ) do
+    %{scope | organization: org, membership: membership}
+  end
+
   @doc "Returns the user_id, or nil if anonymous."
   def user_id(%__MODULE__{user: nil}), do: nil
   def user_id(%__MODULE__{user: %User{id: id}}), do: id
@@ -79,6 +99,18 @@ defmodule Crit.Accounts.Scope do
   @doc "True if the scope has the instance admin role."
   def admin?(%__MODULE__{role: :admin}), do: true
   def admin?(_), do: false
+
+  @doc "True if the current scope is admin of its current organization."
+  def org_admin?(%__MODULE__{membership: %OrganizationMembership{role: "admin"}}), do: true
+  def org_admin?(_), do: false
+
+  @doc "Current organization id, or nil if none is selected."
+  def org_id(%__MODULE__{organization: nil}), do: nil
+  def org_id(%__MODULE__{organization: %Organization{id: id}}), do: id
+
+  @doc "True if a scope has a currently selected organization."
+  def in_org?(%__MODULE__{organization: %Organization{}}), do: true
+  def in_org?(_), do: false
 
   # Public display name. Never falls back to email — comment authors are
   # visible to anyone with the share URL, so leaking an email here would
