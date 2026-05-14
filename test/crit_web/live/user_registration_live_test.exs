@@ -65,4 +65,42 @@ defmodule CritWeb.UserRegistrationLiveTest do
     conn = get(conn, ~p"/users/register")
     assert conn.status == 404
   end
+
+  test "registration with marketing opt-in records consent event", %{conn: conn} do
+    email = AccountsFixtures.unique_user_email()
+    pw = AccountsFixtures.valid_user_password()
+
+    conn =
+      post(conn, ~p"/users/register", %{
+        "user" => %{"email" => email, "password" => pw, "marketing_opt_in" => "true"}
+      })
+
+    assert redirected_to(conn) == ~p"/dashboard"
+
+    user = Crit.Accounts.get_user_by_email(email)
+    assert Crit.Accounts.marketing_opted_in?(user)
+  end
+
+  test "registration without marketing opt-in does not record consent", %{conn: conn} do
+    email = AccountsFixtures.unique_user_email()
+    pw = AccountsFixtures.valid_user_password()
+
+    conn =
+      post(conn, ~p"/users/register", %{
+        "user" => %{"email" => email, "password" => pw}
+      })
+
+    assert redirected_to(conn) == ~p"/dashboard"
+
+    user = Crit.Accounts.get_user_by_email(email)
+    refute Crit.Accounts.marketing_opted_in?(user)
+  end
+
+  test "marketing checkbox is hidden in selfhosted mode", %{conn: conn} do
+    # Registration route is gated by SelfhostedOnly, so selfhosted is always true here.
+    {:ok, _lv, html} = live(conn, ~p"/users/register")
+
+    refute html =~ "marketing_opt_in"
+    refute html =~ "Email me about new features and releases"
+  end
 end

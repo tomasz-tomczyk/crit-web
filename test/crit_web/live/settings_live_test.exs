@@ -414,4 +414,54 @@ defmodule CritWeb.SettingsLiveTest do
       refute html =~ "Keep reviews"
     end
   end
+
+  describe "marketing consent toggle" do
+    test "shows toggle in off state by default", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      assert has_element?(view, "#marketing-consent-toggle[aria-checked='false']")
+    end
+
+    test "toggling on records opted_in event", %{conn: conn} do
+      {conn, user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      view
+      |> element("#marketing-consent-toggle")
+      |> render_click()
+
+      assert has_element?(view, "#marketing-consent-toggle[aria-checked='true']")
+      assert Crit.Accounts.marketing_opted_in?(user)
+    end
+
+    test "toggling off after on records opted_out event", %{conn: conn} do
+      {conn, user} = login_user(conn)
+      {:ok, true} = Crit.Accounts.toggle_marketing_consent(user, "settings_toggle")
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      assert has_element?(view, "#marketing-consent-toggle[aria-checked='true']")
+
+      view
+      |> element("#marketing-consent-toggle")
+      |> render_click()
+
+      assert has_element?(view, "#marketing-consent-toggle[aria-checked='false']")
+      refute Crit.Accounts.marketing_opted_in?(user)
+    end
+
+    test "is hidden in selfhosted mode", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      refute has_element?(view, "#marketing-consent-toggle")
+    end
+  end
 end

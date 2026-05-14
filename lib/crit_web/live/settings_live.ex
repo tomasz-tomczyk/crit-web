@@ -22,6 +22,7 @@ defmodule CritWeb.SettingsLive do
       |> assign(:new_token_name, "")
       |> assign(:delete_confirmation, "")
       |> assign(:keep_reviews, user.keep_reviews)
+      |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
       |> assign(:local_registration_enabled, local_registration_enabled)
       |> assign(:has_password, is_binary(user.hashed_password))
@@ -127,6 +128,17 @@ defmodule CritWeb.SettingsLive do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to update setting.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_marketing_consent", _params, socket) do
+    case Accounts.toggle_marketing_consent(socket.assigns.current_scope.user, "settings_toggle") do
+      {:ok, new_value} ->
+        {:noreply, assign(socket, :marketing_opted_in, new_value)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update preference.")}
     end
   end
 

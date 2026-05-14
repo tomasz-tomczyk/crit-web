@@ -120,6 +120,21 @@
             </p>
           </div>
 
+          <label :if={!@selfhosted} class="flex items-start gap-2.5 mt-1 cursor-pointer">
+            <input
+              type="checkbox"
+              name="user[marketing_opt_in]"
+              value="true"
+              class="mt-0.5 accent-(--crit-brand)"
+            />
+            <span class="text-sm text-(--crit-fg-primary) leading-snug">
+              Email me about new features and releases
+              <span class="block text-xs text-(--crit-fg-muted) mt-0.5">
+                We email when it's actually worth your time.
+              </span>
+            </span>
+          </label>
+
           <button
             type="submit"
             phx-disable-with="Creating account..."

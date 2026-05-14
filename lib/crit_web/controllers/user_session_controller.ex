@@ -1,6 +1,8 @@
 defmodule CritWeb.UserSessionController do
   use CritWeb, :controller
 
+  require Logger
+
   alias Crit.Accounts
   alias CritWeb.UserAuth
 
@@ -32,6 +34,13 @@ defmodule CritWeb.UserSessionController do
 
     case Accounts.register_user(user_params) do
       {:ok, user} ->
+        if user_params["marketing_opt_in"] == "true" do
+          case Accounts.toggle_marketing_consent(user, "registration_checkbox") do
+            {:ok, _} -> :ok
+            {:error, changeset} -> Logger.error("Failed to record marketing consent: #{inspect(changeset.errors)}")
+          end
+        end
+
         conn
         |> put_flash(:info, "Welcome to crit!")
         |> UserAuth.log_in_user(user, %{})

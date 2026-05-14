@@ -184,6 +184,48 @@ defmodule CritWeb.DashboardLiveTest do
     end
   end
 
+  describe "marketing consent checkbox (empty state)" do
+    test "shows checkbox in unchecked state by default", %{conn: conn} do
+      {conn, _user} = login_user_with_record(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      assert has_element?(view, "#dashboard-marketing-opt-in")
+    end
+
+    test "toggling records opted_in event", %{conn: conn} do
+      {conn, user} = login_user_with_record(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      render_click(view, "toggle_marketing_consent")
+
+      assert Crit.Accounts.marketing_opted_in?(user)
+    end
+
+    test "toggling off after on records opted_out event", %{conn: conn} do
+      {conn, user} = login_user_with_record(conn)
+      {:ok, true} = Crit.Accounts.toggle_marketing_consent(user, "dashboard_checkbox")
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      render_click(view, "toggle_marketing_consent")
+
+      refute Crit.Accounts.marketing_opted_in?(user)
+    end
+
+    test "is hidden in selfhosted mode", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      {conn, _user} = login_user_with_record(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      refute has_element?(view, "#dashboard-marketing-opt-in")
+    end
+  end
+
   describe "homepage redirect" do
     setup do
       Application.put_env(:crit, :selfhosted, true)
