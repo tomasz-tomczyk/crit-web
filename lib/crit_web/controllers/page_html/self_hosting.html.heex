@@ -699,38 +699,44 @@
           </span>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_TRUSTED_PROXY_USER_HEADER</code>
-            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
-              Request header containing the authenticated user's email. Common values:
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Auth-Request-Email</code> (oauth2-proxy),
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Cf-Access-Authenticated-User-Email</code> (Cloudflare Access),
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Goog-Authenticated-User-Email</code> (Google IAP),
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Pomerium-Claim-Email</code> (Pomerium),
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Remote-Email</code> (Authelia).
+          <div class="grid grid-cols-[minmax(200px,300px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary) break-all">CRIT_TRUSTED_PROXY_USER_HEADER</code>
+            <p class="text-sm text-(--crit-fg-secondary)">
+              Request header containing the authenticated user's email.
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_TRUSTED_PROXY_CIDRS</code>
+          <div class="grid grid-cols-[minmax(200px,300px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary) break-all">CRIT_TRUSTED_PROXY_CIDRS</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               Comma-separated CIDR ranges your proxy forwards from, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">10.0.0.0/8,172.16.0.0/12</code>.
-              The header is only trusted when the request originates from these ranges. <strong class="text-(--crit-fg-primary)">Mandatory</strong> — Crit refuses to start if the header is set without CIDRs.
+              <strong class="text-(--crit-fg-primary)">Mandatory</strong> — Crit refuses to start if the header is set without CIDRs.
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(200px,300px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_LIVEVIEW_TRANSPORT</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">websocket</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">
               Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">longpoll</code>
-              if your proxy strips or rewrites WebSocket upgrades. Default falls back automatically after 2.5s.
+              if your proxy strips or rewrites WebSocket upgrades.
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
         </div>
+      </div>
+
+      <div phx-no-format class="mt-5 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3">
+        <h3 class="text-base font-semibold tracking-tight text-(--crit-fg-primary)">Common header names</h3>
+        <p>
+          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Auth-Request-Email</code> (oauth2-proxy),
+          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Cf-Access-Authenticated-User-Email</code> (Cloudflare Access),
+          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Goog-Authenticated-User-Email</code> (Google IAP),
+          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Pomerium-Claim-Email</code> (Pomerium),
+          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Remote-Email</code> (Authelia).
+        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-4 py-3 flex items-start gap-3 mb-5">
@@ -762,10 +768,6 @@
           </li>
         </ul>
       </div>
-
-      <p phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-        Full backstory and edge cases: <a href="https://github.com/tomasz-tomczyk/crit-web/issues/50" class="crit-link">github.com/tomasz-tomczyk/crit-web#50</a>.
-      </p>
     </section>
 
     <%!-- What's next --%>
