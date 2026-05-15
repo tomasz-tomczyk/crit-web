@@ -1,6 +1,18 @@
 defmodule CritWeb.Plugs.SecurityHeaders do
   import Plug.Conn
 
+  @permissions_policy [
+    "camera=()",
+    "microphone=()",
+    "geolocation=()",
+    "accelerometer=()",
+    "gyroscope=()",
+    "magnetometer=()",
+    "payment=()",
+    "usb=()",
+    "interest-cohort=()"
+  ]
+
   def init(opts), do: opts
 
   def call(conn, _opts) do
@@ -8,6 +20,16 @@ defmodule CritWeb.Plugs.SecurityHeaders do
     |> put_resp_header("content-security-policy", csp())
     |> put_resp_header("x-content-type-options", "nosniff")
     |> put_resp_header("x-frame-options", "DENY")
+    |> put_resp_header("permissions-policy", Enum.join(@permissions_policy, ", "))
+    |> maybe_put_hsts()
+  end
+
+  defp maybe_put_hsts(conn) do
+    if Application.get_env(:crit, :hsts_enabled) do
+      put_resp_header(conn, "strict-transport-security", "max-age=31536000; includeSubDomains")
+    else
+      conn
+    end
   end
 
   defp csp do

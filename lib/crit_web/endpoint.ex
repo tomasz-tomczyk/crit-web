@@ -15,6 +15,9 @@ defmodule CritWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  @session_init Plug.Session.init(@session_options)
+  @secure_session_init Plug.Session.init(Keyword.put(@session_options, :secure, true))
+
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]],
     longpoll: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]]
@@ -53,7 +56,7 @@ defmodule CritWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug CritWeb.Plugs.CanonicalHost
-  plug Plug.Session, @session_options
+  plug :session
 
   # Drop request body and cookies — review documents and comment bodies must
   # never leave the deployment. Placed after Session/MethodOverride so the
@@ -63,4 +66,12 @@ defmodule CritWeb.Endpoint do
     cookie_scrubber: nil
 
   plug CritWeb.Router
+
+  defp session(conn, _opts) do
+    if Application.get_env(:crit, :secure_cookies) do
+      Plug.Session.call(conn, @secure_session_init)
+    else
+      Plug.Session.call(conn, @session_init)
+    end
+  end
 end

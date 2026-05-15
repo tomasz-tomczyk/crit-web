@@ -34,6 +34,15 @@ if System.get_env("SELFHOSTED") in ~w(true 1) do
   config :crit, :selfhosted, true
 end
 
+# HSTS + secure cookies — off by default to protect self-hosters on plain HTTP.
+# When enabled, browsers remember "always use HTTPS" for this domain and cookies
+# are only sent over HTTPS. Only enable when the deployment is behind HTTPS
+# (e.g. Fly.io, Caddy, nginx with TLS).
+if System.get_env("ENABLE_HSTS") in ~w(true 1) do
+  config :crit, :hsts_enabled, true
+  config :crit, :secure_cookies, true
+end
+
 # ADMIN_EMAILS: comma-separated list of email addresses that should have the
 # instance admin role. Parsed into a list of trimmed, lowercased strings.
 # This is the single source of truth for admin status — see
