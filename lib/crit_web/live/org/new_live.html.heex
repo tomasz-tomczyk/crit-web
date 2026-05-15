@@ -87,14 +87,14 @@
         <div class="flex items-center justify-end gap-2 pt-2">
           <.link
             navigate={~p"/orgs"}
-            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-(--crit-fg-primary) hover:bg-(--crit-row-hover) rounded-md no-underline"
+            class="inline-flex items-center px-4 py-2 text-sm font-semibold text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) rounded-lg no-underline transition-all"
           >
             Cancel
           </.link>
           <button
             type="submit"
             phx-disable-with="Creating..."
-            class="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-(--crit-brand) text-white rounded-md hover:opacity-90 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
+            class="inline-flex items-center px-4 py-2 text-sm font-bold bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg hover:bg-(--crit-brand-cta-hover) transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
           >
             Create organization
           </button>

@@ -125,9 +125,6 @@ defmodule CritWeb.Layouts do
             <.nav_link href={~p"/features"} active={@current_page == :features}>
               Features
             </.nav_link>
-            <.nav_link href={~p"/teams"} active={@current_page == :teams}>
-              Teams
-            </.nav_link>
             <.nav_link href={~p"/getting-started"} active={@current_page == :getting_started}>
               Get Started
             </.nav_link>
@@ -286,9 +283,6 @@ defmodule CritWeb.Layouts do
           </div>
           <.nav_mobile_link href={~p"/features"} active={@current_page == :features}>
             Features
-          </.nav_mobile_link>
-          <.nav_mobile_link href={~p"/teams"} active={@current_page == :teams}>
-            Teams
           </.nav_mobile_link>
           <.nav_mobile_link
             href={~p"/getting-started"}
@@ -476,6 +470,12 @@ defmodule CritWeb.Layouts do
                 Overview
               </.nav_link>
               <.nav_link
+                navigate={~p"/orgs/#{@current_org.slug}/reviews"}
+                active={@current_page == :org_reviews}
+              >
+                Reviews
+              </.nav_link>
+              <.nav_link
                 navigate={~p"/orgs/#{@current_org.slug}/members"}
                 active={@current_page == :org_members}
               >
@@ -492,6 +492,9 @@ defmodule CritWeb.Layouts do
             <% else %>
               <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
                 Dashboard
+              </.nav_link>
+              <.nav_link navigate={~p"/reviews"} active={@current_page == :reviews}>
+                Reviews
               </.nav_link>
               <%= if @show_overview_link do %>
                 <.nav_link href={~p"/overview"} active={@current_page == :overview}>
@@ -755,6 +758,12 @@ defmodule CritWeb.Layouts do
                 Overview
               </.nav_mobile_link>
               <.nav_mobile_link
+                navigate={~p"/orgs/#{@current_org.slug}/reviews"}
+                active={@current_page == :org_reviews}
+              >
+                Reviews
+              </.nav_mobile_link>
+              <.nav_mobile_link
                 navigate={~p"/orgs/#{@current_org.slug}/members"}
                 active={@current_page == :org_members}
               >
@@ -771,6 +780,9 @@ defmodule CritWeb.Layouts do
             <% else %>
               <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
                 Dashboard
+              </.nav_mobile_link>
+              <.nav_mobile_link navigate={~p"/reviews"} active={@current_page == :reviews}>
+                Reviews
               </.nav_mobile_link>
               <%= if @show_overview_link do %>
                 <.nav_mobile_link href={~p"/overview"} active={@current_page == :overview}>

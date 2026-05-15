@@ -91,6 +91,17 @@
             </ul>
           <% end %>
         </div>
+
+        <%= if @reviews != [] do %>
+          <div class="mt-3 text-right">
+            <.link
+              navigate={~p"/orgs/#{@org.slug}/reviews"}
+              class="text-[13px] font-medium text-(--crit-brand) hover:underline no-underline"
+            >
+              View all reviews &rarr;
+            </.link>
+          </div>
+        <% end %>
       </div>
 
       <%!-- Right sidebar: Members peek --%>

@@ -444,46 +444,35 @@
           </p>
 
           <%= if @review_count > 0 do %>
-            <%!-- Review list --%>
-            <div
-              id="reviews-list"
-              class="mt-1 -mb-0.5 flex flex-col"
-              phx-update="stream"
-              phx-hook=".SnippetHighlight"
-            >
-              <script :type={Phoenix.LiveView.ColocatedHook} name=".SnippetHighlight">
-                import hljs from "highlight.js"
-                export default {
-                  mounted() { this.run() },
-                  updated() { this.run() },
-                  run() {
-                    this.el.querySelectorAll('[data-snippet-line]:not([data-hl])').forEach(el => {
-                      const lang = el.dataset.lang
-                      if (lang && hljs.getLanguage(lang)) {
-                        try {
-                          el.innerHTML = hljs.highlight(el.textContent, { language: lang, ignoreIllegals: true }).value
-                        } catch (_) {}
-                      }
-                      el.setAttribute('data-hl', '1')
-                    })
-                  }
-                }
-              </script>
-              <article :for={{dom_id, review} <- @streams.reviews} id={dom_id} class="group">
-                <div class="mb-2 px-0.5">
-                  <.review_listing_header
-                    path={review.first_file_path}
-                    last_activity_at={review.last_activity_at}
-                    file_count={review.file_count}
-                    comment_count={review.comment_count}
-                    link_to={~p"/r/#{review.token}"}
-                  />
+            <div class="mt-1 flex flex-col rounded-lg border border-(--crit-border) overflow-hidden">
+              <.link
+                :for={review <- @recent_reviews}
+                navigate={~p"/r/#{review.token}"}
+                class="flex items-center gap-3 px-3.5 py-3 border-b border-(--crit-border) last:border-b-0 no-underline hover:bg-(--crit-bg-elevated) transition-colors"
+              >
+                <% status = activity_status(review.last_activity_at) %>
+                <span class={[
+                  "w-[3px] self-stretch rounded-full shrink-0",
+                  case status do
+                    :active -> "bg-(--crit-green)"
+                    :idle -> "bg-(--crit-yellow)"
+                    :stale -> "bg-(--crit-fg-muted)"
+                  end
+                ]} />
+                <% {dir, file} = split_path(review.first_file_path) %>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm text-(--crit-fg-primary) leading-tight truncate">
+                    <span class="text-(--crit-fg-muted) font-normal">{dir}</span>{file}
+                  </div>
                 </div>
-                <.review_snippet
-                  path={review.first_file_path}
-                  content={review.first_file_content}
-                />
-              </article>
+                <div class="flex items-center gap-3 shrink-0 text-xs text-(--crit-fg-muted)">
+                  <span class="inline-flex items-center gap-1 tabular-nums">
+                    <.icon name="hero-chat-bubble-left-micro" class="size-3.5" />
+                    {review.comment_count}
+                  </span>
+                  <span class="tabular-nums">{time_ago(review.last_activity_at)}</span>
+                </div>
+              </.link>
             </div>
           <% else %>
             <div class="py-6 text-center text-[13px] text-(--crit-fg-muted)">
@@ -496,6 +485,13 @@
               <span class="font-mono text-(--crit-fg-primary)">{@review_count}</span>
               personal {if @review_count == 1, do: "review", else: "reviews"}
             </span>
+            <.link
+              :if={@review_count > 0}
+              navigate={~p"/reviews"}
+              class="text-[12px] crit-link inline-flex items-center gap-0.5"
+            >
+              Open personal <span aria-hidden="true">&rarr;</span>
+            </.link>
           </div>
         </div>
       </div>

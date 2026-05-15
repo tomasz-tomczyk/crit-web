@@ -338,16 +338,6 @@ defmodule CritWeb.PageController do
     )
   end
 
-  def teams(conn, _params) do
-    render(conn, :teams,
-      current_page: :teams,
-      canonical_url: canonical_url(conn),
-      page_title: "Crit for Teams - Shared code reviews for the whole team",
-      meta_description:
-        "Crit Organizations turn your local-first review workflow into a shared one. Pool reviews, share inline comments, and keep agent handoffs visible."
-    )
-  end
-
   def changelog(conn, _params) do
     releases = Crit.Changelog.list_releases()
     cli_releases = Enum.filter(releases, &(&1.source == :cli))
@@ -388,7 +378,6 @@ defmodule CritWeb.PageController do
     {"/integrations/windsurf", "monthly", "0.8"},
     {"/integrations/cline", "monthly", "0.8"},
     {"/integrations/aider", "monthly", "0.8"},
-    {"/teams", "weekly", "0.9"},
     {"/getting-started", "monthly", "0.9"},
     {"/self-hosting", "monthly", "0.7"},
     {"/changelog", "daily", "0.7"},

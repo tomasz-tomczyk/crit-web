@@ -98,12 +98,11 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   describe "review counts and metadata" do
-    test "shows comment and file counts", %{conn: conn} do
+    test "shows comment count in condensed review list", %{conn: conn} do
       {conn, user} = login_user_with_record(conn)
 
       review = review_fixture(user_id: user.id)
 
-      # Add a comment to the review
       {:ok, _comment} =
         Crit.Reviews.create_comment(
           Crit.Accounts.Scope.for_visitor(Ecto.UUID.generate()),
@@ -111,23 +110,15 @@ defmodule CritWeb.DashboardLiveTest do
           %{"start_line" => 1, "end_line" => 1, "body" => "Test comment"}
         )
 
-      {:ok, _view, html} = live(conn, ~p"/dashboard")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
-      assert html =~ ~r{>\s*1\s*</span>\s*comment}
-      assert html =~ ~r{>\s*1\s*</span>\s*file}
+      assert has_element?(view, "span", "1")
     end
 
-    test "pluralizes counts correctly for multiple items", %{conn: conn} do
+    test "shows comment counts for multiple comments", %{conn: conn} do
       {conn, user} = login_user_with_record(conn)
 
-      review =
-        review_fixture(
-          user_id: user.id,
-          files: [
-            %{"path" => "file1.go", "content" => "pkg main"},
-            %{"path" => "file2.go", "content" => "pkg util"}
-          ]
-        )
+      review = review_fixture(user_id: user.id)
 
       {:ok, _} =
         Crit.Reviews.create_comment(
@@ -143,10 +134,9 @@ defmodule CritWeb.DashboardLiveTest do
           %{"start_line" => 2, "end_line" => 2, "body" => "Comment 2"}
         )
 
-      {:ok, _view, html} = live(conn, ~p"/dashboard")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
-      assert html =~ ~r{>\s*2\s*</span>\s*comments}
-      assert html =~ ~r{>\s*2\s*</span>\s*files}
+      assert has_element?(view, "span", "2")
     end
   end
 

@@ -20,6 +20,28 @@ defmodule CritWeb.Helpers do
   end
 
   @doc """
+  Formats a datetime as a human-friendly date label. Uses relative terms
+  for recent dates, day names for the current week, and short month+day
+  for anything older.
+  """
+  def date_label(datetime) do
+    diff = DateTime.diff(DateTime.utc_now(), datetime, :second)
+    now = DateTime.utc_now()
+    date = DateTime.to_date(datetime)
+    today = DateTime.to_date(now)
+
+    cond do
+      diff < @minute_seconds -> "just now"
+      diff < @hour_seconds -> "#{div(diff, @minute_seconds)}m ago"
+      diff < @active_within_seconds -> "#{div(diff, @hour_seconds)}h ago"
+      Date.diff(today, date) == 1 -> "Yesterday"
+      Date.diff(today, date) < 7 -> Calendar.strftime(datetime, "%a")
+      date.year == today.year -> Calendar.strftime(datetime, "%b %-d")
+      true -> Calendar.strftime(datetime, "%b %-d, %Y")
+    end
+  end
+
+  @doc """
   Classifies how recently a review has been touched. Drives the leading
   status dot color in the reviews list (green / yellow / muted).
   """

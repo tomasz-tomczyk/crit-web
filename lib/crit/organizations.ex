@@ -84,6 +84,17 @@ defmodule Crit.Organizations do
     end
   end
 
+  @doc """
+  Paginated variant of `list_org_reviews/2`. Returns `{reviews, total_count}`.
+  """
+  def list_org_reviews_paginated(%Scope{} = scope, %Organization{} = org, opts) do
+    if Scope.org_id(scope) == org.id do
+      Crit.Reviews.list_org_reviews_paginated(org.id, opts)
+    else
+      {[], 0}
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Membership
   # ---------------------------------------------------------------------------

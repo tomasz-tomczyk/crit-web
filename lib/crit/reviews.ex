@@ -811,6 +811,17 @@ defmodule Crit.Reviews do
   end
 
   @doc """
+  Returns all reviews visible to the given user: their own reviews,
+  reviews with no org, and reviews from orgs they belong to.
+  Excludes reviews from orgs the user is not a member of.
+  """
+  def list_visible_reviews_with_counts(%Scope{user: %User{id: user_id}}) do
+    reviews_with_counts_query({:visible_to, user_id}) |> Repo.all()
+  end
+
+  def list_visible_reviews_with_counts(%Scope{}), do: []
+
+  @doc """
   Returns reviews for the authenticated user in the scope, with comment/file counts.
   Returns `[]` for an anonymous scope (no user).
   """
@@ -820,9 +831,76 @@ defmodule Crit.Reviews do
 
   def list_user_reviews_with_counts(%Scope{}), do: []
 
+  @doc """
+  Paginated variant of `list_user_reviews_with_counts/1`.
+  Returns `{reviews, total_count}`.
+  """
+  def list_user_reviews_paginated(%Scope{user: %User{id: user_id}}, opts) do
+    page = Keyword.get(opts, :page, 1)
+    per_page = Keyword.get(opts, :per_page, 15)
+    filter = {:user, user_id}
+
+    reviews =
+      reviews_with_counts_query(filter)
+      |> limit(^per_page)
+      |> offset(^((page - 1) * per_page))
+      |> Repo.all()
+
+    count = count_reviews(filter)
+    {reviews, count}
+  end
+
+  def list_user_reviews_paginated(%Scope{}, _opts), do: {[], 0}
+
   @doc "Returns reviews for an organization, with comment/file counts."
   def list_org_reviews_with_counts(org_id) do
     reviews_with_counts_query({:org, org_id}) |> Repo.all()
+  end
+
+  @doc """
+  Paginated variant of `list_org_reviews_with_counts/1`.
+  Returns `{reviews, total_count}`.
+  """
+  def list_org_reviews_paginated(org_id, opts) do
+    page = Keyword.get(opts, :page, 1)
+    per_page = Keyword.get(opts, :per_page, 15)
+    filter = {:org, org_id}
+
+    reviews =
+      reviews_with_counts_query(filter)
+      |> limit(^per_page)
+      |> offset(^((page - 1) * per_page))
+      |> Repo.all()
+
+    count = count_reviews(filter)
+    {reviews, count}
+  end
+
+  defp count_reviews(filter) do
+    base = from(r in Review, as: :review)
+
+    query =
+      case filter do
+        :all -> base
+        {:user, user_id} -> from(r in base, where: r.user_id == ^user_id)
+        {:org, org_id} ->
+          from(r in base,
+            where: r.organization_id == ^org_id and r.visibility in [:organization, :public]
+          )
+
+        {:visible_to, user_id} ->
+          user_org_ids =
+            from(m in Crit.Organizations.OrganizationMembership,
+              where: m.user_id == ^user_id,
+              select: m.organization_id
+            )
+
+          from(r in base,
+            where: is_nil(r.organization_id) or r.organization_id in subquery(user_org_ids)
+          )
+      end
+
+    Repo.aggregate(query, :count)
   end
 
   defp reviews_with_counts_query(filter) do
@@ -840,24 +918,35 @@ defmodule Crit.Reviews do
       |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
       |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
       |> join(:left, [r, _c, _rf, _fp], u in User, on: u.id == r.user_id)
-      |> group_by([r, _c, _rf, fp, u], [
+      |> join(:left, [r, _c, _rf, _fp, _u], o in Crit.Organizations.Organization,
+        on: o.id == r.organization_id
+      )
+      |> group_by([r, _c, _rf, fp, u, o], [
         r.id,
         r.token,
         r.inserted_at,
         r.last_activity_at,
         r.user_id,
+        r.visibility,
+        r.organization_id,
         fp.file_path,
         fp.content,
         u.name,
         u.email,
-        u.avatar_url
+        u.avatar_url,
+        o.name,
+        o.slug
       ])
-      |> select([r, c, rf, fp, u], %{
+      |> select([r, c, rf, fp, u, o], %{
         id: r.id,
         token: r.token,
         inserted_at: r.inserted_at,
         last_activity_at: r.last_activity_at,
         user_id: r.user_id,
+        visibility: r.visibility,
+        organization_id: r.organization_id,
+        org_name: o.name,
+        org_slug: o.slug,
         comment_count: count(c.id, :distinct),
         file_count: count(rf.id, :distinct),
         first_file_path: fp.file_path,
@@ -870,10 +959,22 @@ defmodule Crit.Reviews do
 
     case filter do
       :all -> base
-      {:user, user_id} -> from [r, _c, _rf, _fp, _u] in base, where: r.user_id == ^user_id
+      {:user, user_id} -> from [r, _c, _rf, _fp, _u, _o] in base, where: r.user_id == ^user_id
       {:org, org_id} ->
-        from [r, _c, _rf, _fp, _u] in base,
+        from [r, _c, _rf, _fp, _u, _o] in base,
           where: r.organization_id == ^org_id and r.visibility in [:organization, :public]
+
+      {:visible_to, user_id} ->
+        user_org_ids =
+          from(m in Crit.Organizations.OrganizationMembership,
+            where: m.user_id == ^user_id,
+            select: m.organization_id
+          )
+
+        from [r, _c, _rf, _fp, _u, _o] in base,
+          where:
+            is_nil(r.organization_id) or
+              r.organization_id in subquery(user_org_ids)
     end
   end
 

@@ -1,0 +1,42 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.dashboard_header
+    current_scope={@current_scope}
+    show_overview_link={@selfhosted}
+    current_page={:reviews}
+    orgs={@orgs}
+  />
+
+  <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
+    <div class="flex items-start justify-between mb-7">
+      <div>
+        <div class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-2">
+          Personal
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight">My reviews</h1>
+        <p class="text-sm text-(--crit-fg-secondary) mt-1">
+          Every review you've started. Some are private, some you've shared with a link, and some belong to an organization.
+        </p>
+      </div>
+    </div>
+
+    <%= if @review_count > 0 do %>
+      <CritWeb.Components.ReviewTable.review_table
+        variant={:personal}
+        reviews={@streams.reviews}
+        review_count={@review_count}
+        page={@page}
+        per_page={@per_page}
+      />
+    <% else %>
+      <div class="py-16 text-center text-(--crit-fg-muted) border border-(--crit-border) rounded-lg">
+        <.icon name="hero-document-text" class="size-10 mx-auto mb-3 text-(--crit-fg-muted)" />
+        <p class="text-sm">No reviews yet.</p>
+        <p class="text-xs mt-1 text-(--crit-fg-muted)">
+          Share a review from the CLI to see it here.
+        </p>
+      </div>
+    <% end %>
+  </div>
+</div>

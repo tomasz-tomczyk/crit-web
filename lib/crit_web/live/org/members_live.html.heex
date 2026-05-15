@@ -97,7 +97,7 @@
             <button
               type="submit"
               phx-disable-with="Sending..."
-              class="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium text-white bg-(--crit-brand) rounded-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
+              class="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-bold bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg hover:bg-(--crit-brand-cta-hover) transition-all whitespace-nowrap cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
             >
               <.icon name="hero-envelope" class="size-3.5" /> Send invites
             </button>
@@ -146,8 +146,8 @@
 
     <%!-- Active members table --%>
     <section :if={@tab == "active"} role="tabpanel" class="mb-7">
-      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
-        <table class="w-full text-[13px]">
+      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden overflow-x-auto">
+        <table class="w-full text-[13px] min-w-[480px]">
           <thead>
             <tr class="border-b border-(--crit-border)">
               <th class="text-left pl-[18px] py-2.5 pr-4 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider">
@@ -264,9 +264,9 @@
       </div>
       <div
         :if={@invites != []}
-        class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden"
+        class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden overflow-x-auto"
       >
-        <table class="w-full text-[13px]">
+        <table class="w-full text-[13px] min-w-[480px]">
           <thead>
             <tr class="border-b border-(--crit-border)">
               <th class="text-left px-4 py-2.5 font-medium text-(--crit-fg-muted) text-[11px] uppercase tracking-wider">

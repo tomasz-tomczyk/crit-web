@@ -57,7 +57,6 @@ defmodule CritWeb.Router do
     get "/privacy", PageController, :privacy
     get "/getting-started", PageController, :getting_started
     get "/self-hosting", PageController, :self_hosting
-    get "/teams", PageController, :teams
     get "/changelog", PageController, :changelog
     get "/sitemap.xml", PageController, :sitemap_xml
     get "/robots.txt", PageController, :robots_txt
@@ -103,6 +102,7 @@ defmodule CritWeb.Router do
       on_mount: [{CritWeb.UserAuth, :require_authenticated_user}],
       session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
       live "/dashboard", DashboardLive, :index
+      live "/reviews", ReviewsLive, :index
       live "/settings", SettingsLive, :index
       live "/orgs", Org.SelectLive, :index
       live "/orgs/new", Org.NewLive, :index
@@ -116,6 +116,7 @@ defmodule CritWeb.Router do
       ],
       session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
       live "/orgs/:org_slug", Org.OverviewLive, :index
+      live "/orgs/:org_slug/reviews", Org.ReviewsLive, :index
       live "/orgs/:org_slug/members", Org.MembersLive, :index
     end
 

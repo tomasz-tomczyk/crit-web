@@ -112,21 +112,23 @@
                       >
                         Slug
                       </label>
-                      <div class="flex items-stretch">
-                        <span class="inline-flex items-center px-3 bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border) border-r-0 rounded-l-md text-[13px] font-mono">
-                          {URI.parse(CritWeb.Endpoint.url()).host}/orgs/
-                        </span>
-                        <input
-                          type="text"
-                          name={@form[:slug].name}
-                          id={@form[:slug].id}
-                          value={Phoenix.HTML.Form.normalize_value("text", @form[:slug].value)}
-                          phx-debounce="200"
-                          class="flex-1 min-w-0 px-3 py-2.5 text-[13px] font-mono bg-(--crit-bg-page) border border-(--crit-border) rounded-r-md text-(--crit-fg-primary) focus:outline-none focus:border-(--crit-brand) focus:shadow-[0_0_0_3px_var(--crit-brand-subtle)] transition-[border-color]"
-                        />
+                      <div class="flex items-stretch max-sm:flex-col max-sm:gap-1.5">
+                        <div class="flex items-stretch flex-1 min-w-0">
+                          <span class="inline-flex items-center px-3 bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border) border-r-0 rounded-l-md text-[13px] font-mono max-sm:text-[11px] max-sm:px-2">
+                            {URI.parse(CritWeb.Endpoint.url()).host}/orgs/
+                          </span>
+                          <input
+                            type="text"
+                            name={@form[:slug].name}
+                            id={@form[:slug].id}
+                            value={Phoenix.HTML.Form.normalize_value("text", @form[:slug].value)}
+                            phx-debounce="200"
+                            class="flex-1 min-w-0 px-3 py-2.5 text-[13px] font-mono bg-(--crit-bg-page) border border-(--crit-border) rounded-r-md text-(--crit-fg-primary) focus:outline-none focus:border-(--crit-brand) focus:shadow-[0_0_0_3px_var(--crit-brand-subtle)] transition-[border-color]"
+                          />
+                        </div>
                         <button
                           type="button"
-                          class="ml-1.5 shrink-0 inline-flex items-center px-3 py-2 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-card) transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
+                          class="ml-1.5 shrink-0 inline-flex items-center px-3 py-2 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-card) transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) max-sm:ml-0 max-sm:self-start"
                         >
                           Copy URL
                         </button>
@@ -268,7 +270,7 @@
 
           <div class="border border-(--crit-red)/30 rounded-xl overflow-hidden">
             <div class={[
-              "flex items-center justify-between px-5 py-4",
+              "flex items-center justify-between px-5 py-4 max-sm:flex-col max-sm:items-start max-sm:gap-3",
               @is_admin && "border-b border-(--crit-red)/[0.18]"
             ]}>
               <div>
@@ -288,7 +290,7 @@
             </div>
 
             <%= if @is_admin do %>
-              <div class="flex items-center justify-between px-5 py-4">
+              <div class="flex items-center justify-between px-5 py-4 max-sm:flex-col max-sm:items-start max-sm:gap-3">
                 <div>
                   <div class="text-[13px] font-semibold">Delete organization</div>
                   <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
@@ -301,7 +303,7 @@
                     JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")
                     |> JS.focus(to: "#delete-org-confirm-input")
                   }
-                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-white bg-(--crit-red) rounded-md hover:opacity-90 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
+                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-semibold text-white bg-(--crit-red) rounded-lg hover:bg-(--crit-red)/85 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
                 >
                   Delete
                 </button>
@@ -366,7 +368,7 @@
                       class={[
                         "inline-flex items-center px-4 py-1.5 text-[13px] font-medium rounded-md transition-opacity focus-visible:ring-2 focus-visible:ring-(--crit-brand)",
                         if(@delete_confirmation == @org.slug,
-                          do: "text-white bg-(--crit-red) hover:opacity-90 cursor-pointer",
+                          do: "text-white bg-(--crit-red) hover:bg-(--crit-red)/85 cursor-pointer",
                           else:
                             "text-(--crit-fg-muted) bg-(--crit-bg-elevated) cursor-not-allowed opacity-50"
                         )
