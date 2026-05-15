@@ -657,12 +657,27 @@
         </code>
         device flow.
       </p>
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden mb-4 max-w-[640px]">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <span class="font-mono text-xs text-(--crit-fg-muted)">~/.crit.config.json</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div>{</div>
+          <div class="pl-4">
+            <span class="text-(--crit-fg-primary)">"share_url"</span>: <span class="text-(--crit-fg-muted)">"https://crit-web.your-company.example"</span>,
+          </div>
+          <div class="pl-4">
+            <span class="text-(--crit-fg-primary)">"proxy_auth"</span>: <span class="text-(--crit-brand)">true</span>
+          </div>
+          <div>}</div>
+        </div>
+      </div>
+
       <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
           proxy_auth
         </code>
-        must be set on the <strong>CLI</strong>
-        side, not on this hosted instance.
+        is a <strong>CLI</strong>-side setting, not a server env var.
       </p>
       <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
         If your proxy strips or rewrites WebSocket upgrades, set
@@ -687,7 +702,8 @@
         own OAuth. Set both:
       </p>
       <pre class="font-mono text-xs bg-(--crit-bg-elevated) p-3 rounded mb-4 max-w-[640px] overflow-x-auto"><code>CRIT_TRUSTED_PROXY_USER_HEADER=X-Auth-Request-Email
-CRIT_TRUSTED_PROXY_CIDRS=10.0.0.0/8,172.16.0.0/12</code></pre>
+CRIT_TRUSTED_PROXY_CIDRS=10.0.0.0/8,172.16.0.0/12
+CRIT_LIVEVIEW_TRANSPORT=longpoll  # optional, only if WebSocket is blocked</code></pre>
       <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
         Common header names by proxy:
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
@@ -723,7 +739,7 @@ CRIT_TRUSTED_PROXY_CIDRS=10.0.0.0/8,172.16.0.0/12</code></pre>
         the header on every request, not append to incoming values. Most SSO
         proxies do this by default — verify yours does before enabling.
       </p>
-      <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
         This authenticates browser-driven flows only (review pages, dashboard,
         the in-browser Share popup). The local CLI's direct
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
@@ -738,6 +754,37 @@ CRIT_TRUSTED_PROXY_CIDRS=10.0.0.0/8,172.16.0.0/12</code></pre>
           proxy_auth: true
         </code>
         on the CLI side if the proxy blocks direct API access.
+      </p>
+
+      <h3 class="text-lg font-bold tracking-tight mt-8 mb-2">
+        Known proxy behaviors
+      </h3>
+      <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
+        Two common proxy quirks are handled automatically:
+      </p>
+      <ul class="list-disc pl-5 space-y-2 text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed mb-4">
+        <li>
+          <strong class="text-(--crit-fg-primary)">Double-encoding</strong> —
+          some proxies re-compress responses that are already gzipped, producing
+          garbled output. Crit sets
+          <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">Cache-Control: no-transform</code>
+          on every response, which tells conformant proxies to leave the body
+          alone.
+        </li>
+        <li>
+          <strong class="text-(--crit-fg-primary)">Redirect-collapse loops</strong> —
+          when no auth backend is configured, crit-web renders inline auth gates
+          instead of HTTP redirects. This avoids the situation where a proxy
+          silently follows the redirect, the browser URL never changes, and the
+          page enters a reload loop that trips rate limiting.
+        </li>
+      </ul>
+      <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
+        Full backstory and edge cases:
+        <a
+          href="https://github.com/tomasz-tomczyk/crit-web/issues/50"
+          class="crit-link"
+        >github.com/tomasz-tomczyk/crit-web#50</a>.
       </p>
     </section>
 
