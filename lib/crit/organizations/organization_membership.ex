@@ -7,18 +7,15 @@ defmodule Crit.Organizations.OrganizationMembership do
   schema "organization_memberships" do
     belongs_to :organization, Organization
     belongs_to :user, User
-    field :role, :string, default: "member"
+    field :role, Ecto.Enum, values: [:admin, :member], default: :member
 
     timestamps(type: :utc_datetime)
   end
-
-  @valid_roles ~w(admin member)
 
   def changeset(membership, attrs) do
     membership
     |> cast(attrs, [:organization_id, :user_id, :role])
     |> validate_required([:organization_id, :user_id, :role])
-    |> validate_inclusion(:role, @valid_roles)
     |> unique_constraint([:organization_id, :user_id])
   end
 end

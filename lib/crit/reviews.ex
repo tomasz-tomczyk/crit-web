@@ -1048,7 +1048,7 @@ defmodule Crit.Reviews do
 
     if user_id do
       case Organizations.get_membership_for_user(org_id, user_id) do
-        {:ok, %{role: "admin"}} -> true
+        {:ok, %{role: :admin}} -> true
         _ -> false
       end
     else

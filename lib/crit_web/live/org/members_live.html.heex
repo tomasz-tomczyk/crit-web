@@ -51,7 +51,10 @@
           class="flex gap-2.5 items-start max-sm:flex-col max-sm:items-stretch"
         >
           <div class="flex-1 min-w-0">
-            <label for={@invite_form[:email].id} class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+            <label
+              for={@invite_form[:email].id}
+              class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5"
+            >
               Email addresses
             </label>
             <input
@@ -76,7 +79,10 @@
             </p>
           </div>
           <div class="w-40 max-sm:w-full">
-            <label for={@invite_form[:role].id} class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+            <label
+              for={@invite_form[:role].id}
+              class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5"
+            >
               Role
             </label>
             <select
@@ -108,7 +114,10 @@
 
     <%!-- Tabs + filters --%>
     <div class="flex items-center justify-between mb-4 gap-3 max-sm:flex-col max-sm:items-stretch">
-      <div role="tablist" class="inline-flex gap-0.5 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[3px]">
+      <div
+        role="tablist"
+        class="inline-flex gap-0.5 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[3px]"
+      >
         <button
           type="button"
           role="tab"
@@ -211,19 +220,19 @@
                         name="role"
                         class="w-[100px] px-2 py-1 text-[12px] bg-(--crit-bg-card) border border-(--crit-border) rounded text-(--crit-fg-primary) focus:outline-none focus:border-(--crit-brand)"
                       >
-                        <option value="admin" selected={member.role == "admin"}>Admin</option>
-                        <option value="member" selected={member.role == "member"}>Member</option>
+                        <option value="admin" selected={member.role == :admin}>Admin</option>
+                        <option value="member" selected={member.role == :member}>Member</option>
                       </select>
                     </form>
                   <% else %>
                     <span class={[
                       "inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full",
-                      if(member.role == "admin",
+                      if(member.role == :admin,
                         do: "bg-(--crit-brand-bg) text-(--crit-brand)",
                         else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted)"
                       )
                     ]}>
-                      {String.capitalize(member.role)}
+                      {Phoenix.Naming.humanize(member.role)}
                     </span>
                   <% end %>
                 </td>
@@ -297,12 +306,12 @@
               <td class="px-4 py-3">
                 <span class={[
                   "inline-flex px-2 py-0.5 text-[11px] font-medium rounded-full",
-                  if(invite.role == "admin",
+                  if(invite.role == :admin,
                     do: "bg-(--crit-brand-bg) text-(--crit-brand)",
                     else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted)"
                   )
                 ]}>
-                  {String.capitalize(invite.role)}
+                  {Phoenix.Naming.humanize(invite.role)}
                 </span>
               </td>
               <td class="px-4 py-3 text-[12px] text-(--crit-fg-secondary) max-sm:hidden">

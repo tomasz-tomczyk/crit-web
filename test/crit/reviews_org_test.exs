@@ -261,7 +261,9 @@ defmodule Crit.ReviewsOrgTest do
     test "blocks non-member from :organization review", ctx do
       scope = Scope.for_user(ctx.member)
       {:ok, review} = Reviews.create_review(scope, default_files(), 0, [], [], org: ctx.org.slug)
-      assert {:error, :unauthorized} = Reviews.check_org_access(review, Scope.for_user(ctx.outsider))
+
+      assert {:error, :unauthorized} =
+               Reviews.check_org_access(review, Scope.for_user(ctx.outsider))
     end
 
     test "blocks non-member from :unlisted org review", ctx do
@@ -273,7 +275,8 @@ defmodule Crit.ReviewsOrgTest do
           visibility: :unlisted
         )
 
-      assert {:error, :unauthorized} = Reviews.check_org_access(review, Scope.for_user(ctx.outsider))
+      assert {:error, :unauthorized} =
+               Reviews.check_org_access(review, Scope.for_user(ctx.outsider))
     end
 
     test "allows anyone to access :public org review", ctx do
@@ -295,7 +298,9 @@ defmodule Crit.ReviewsOrgTest do
 
       # Simulate org deletion orphaning the review
       review = %{review | organization_id: nil}
-      assert {:error, :unauthorized} = Reviews.check_org_access(review, Scope.for_user(ctx.member))
+
+      assert {:error, :unauthorized} =
+               Reviews.check_org_access(review, Scope.for_user(ctx.member))
     end
 
     test "blocks anonymous scope from org review", ctx do
@@ -311,7 +316,8 @@ defmodule Crit.ReviewsOrgTest do
       scope = Scope.for_user(ctx.member)
       {:ok, review} = Reviews.create_review(scope, default_files(), 0, [], [], org: ctx.org.slug)
 
-      assert {:error, :unauthorized} = Reviews.check_org_access(review, Scope.for_user(other_admin))
+      assert {:error, :unauthorized} =
+               Reviews.check_org_access(review, Scope.for_user(other_admin))
     end
   end
 
@@ -371,7 +377,9 @@ defmodule Crit.ReviewsOrgTest do
       _membership = membership_fixture(org_b, member_b, "member")
 
       member_scope = Scope.for_user(member_b)
-      {:ok, review} = Reviews.create_review(member_scope, default_files(), 0, [], [], org: org_b.slug)
+
+      {:ok, review} =
+        Reviews.create_review(member_scope, default_files(), 0, [], [], org: org_b.slug)
 
       admin_a_scope = Scope.for_user(admin_a)
       assert {:error, :unauthorized} = Reviews.delete_review(admin_a_scope, review.id)

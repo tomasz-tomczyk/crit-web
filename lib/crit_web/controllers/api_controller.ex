@@ -156,6 +156,7 @@ defmodule CritWeb.ApiController do
          :ok <- Reviews.check_org_access(review, api_scope(conn)) do
       comments = visible_comments(review)
       files = Enum.map(review.files, fn f -> %{path: f.file_path, content: f.content} end)
+
       md =
         "<!-- crit-comment-policy: #{review.comment_policy} -->\n" <>
           "<!-- crit-visibility: #{review.visibility} -->\n" <>

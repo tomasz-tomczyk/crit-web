@@ -101,7 +101,7 @@ defmodule Crit.Accounts.Scope do
   def admin?(_), do: false
 
   @doc "True if the current scope is admin of its current organization."
-  def org_admin?(%__MODULE__{membership: %OrganizationMembership{role: "admin"}}), do: true
+  def org_admin?(%__MODULE__{membership: %OrganizationMembership{role: :admin}}), do: true
   def org_admin?(_), do: false
 
   @doc "Current organization id, or nil if none is selected."

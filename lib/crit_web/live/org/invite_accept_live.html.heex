@@ -42,7 +42,7 @@
               invited you as
               <span class="inline-flex items-center gap-1 px-2 py-0.5 mx-1 rounded-full text-[12px] font-medium bg-(--crit-brand-bg) text-(--crit-brand)">
                 <.icon name="hero-shield-check" class="size-3" />
-                {String.capitalize(@invite.role)}
+                {Phoenix.Naming.humanize(@invite.role)}
               </span>
               on {Calendar.strftime(@invite.inserted_at, "%b %-d")}.
             </p>

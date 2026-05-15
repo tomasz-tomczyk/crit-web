@@ -24,7 +24,7 @@ defmodule Crit.Organizations do
             OrganizationMembership.changeset(%OrganizationMembership{}, %{
               organization_id: org.id,
               user_id: user.id,
-              role: "admin"
+              role: :admin
             })
 
           case Repo.insert(membership_cs) do
@@ -102,7 +102,8 @@ defmodule Crit.Organizations do
   def list_user_organizations(%Scope{user: %User{} = user}) do
     review_count_subquery =
       from(r in Crit.Review,
-        where: r.organization_id == parent_as(:org).id and r.visibility in [:organization, :public],
+        where:
+          r.organization_id == parent_as(:org).id and r.visibility in [:organization, :public],
         select: count(r.id)
       )
 
@@ -169,6 +170,8 @@ defmodule Crit.Organizations do
   end
 
   def update_membership_role(%Scope{} = scope, %OrganizationMembership{} = membership, role) do
+    role = to_role_atom(role)
+
     with :ok <- check_org_admin(scope),
          :ok <- check_membership_in_scope(scope, membership),
          :ok <- check_demote_last_admin(membership, role) do
@@ -178,10 +181,10 @@ defmodule Crit.Organizations do
     end
   end
 
-  defp check_demote_last_admin(%{role: "admin"} = membership, role) when role != "admin" do
+  defp check_demote_last_admin(%{role: :admin} = membership, role) when role != :admin do
     count =
       from(m in OrganizationMembership,
-        where: m.organization_id == ^membership.organization_id and m.role == "admin"
+        where: m.organization_id == ^membership.organization_id and m.role == :admin
       )
       |> Repo.aggregate(:count)
 
@@ -210,7 +213,7 @@ defmodule Crit.Organizations do
   defp check_not_last_admin(org, user) do
     admin_count =
       from(m in OrganizationMembership,
-        where: m.organization_id == ^org.id and m.role == "admin"
+        where: m.organization_id == ^org.id and m.role == :admin
       )
       |> Repo.aggregate(:count)
 
@@ -222,7 +225,7 @@ defmodule Crit.Organizations do
         case Repo.get_by(OrganizationMembership,
                organization_id: org.id,
                user_id: user.id,
-               role: "admin"
+               role: :admin
              ) do
           nil -> :ok
           _ -> {:error, :last_admin}
@@ -253,7 +256,7 @@ defmodule Crit.Organizations do
     with :ok <- check_org_admin(scope),
          :ok <- check_org_matches_scope(scope, org) do
       email = String.downcase(Map.get(attrs, "email") || Map.get(attrs, :email) || "")
-      role = Map.get(attrs, "role") || Map.get(attrs, :role) || "member"
+      role = to_role_atom(Map.get(attrs, "role") || Map.get(attrs, :role))
 
       cond do
         email == "" ->
@@ -490,4 +493,9 @@ defmodule Crit.Organizations do
       :error -> {:error, :invalid_token}
     end
   end
+
+  defp to_role_atom(role) when role in [:admin, :member], do: role
+  defp to_role_atom("admin"), do: :admin
+  defp to_role_atom("member"), do: :member
+  defp to_role_atom(_), do: :member
 end

@@ -92,8 +92,7 @@ defmodule CritWeb.Components.ReviewTable do
       <%!-- Pagination footer --%>
       <div class="flex items-center justify-between px-4 py-3 border-t border-(--crit-border) bg-(--crit-bg-card) text-xs text-(--crit-fg-muted)">
         <span>
-          Page <span class="font-mono text-(--crit-fg-primary)">{@page}</span>
-          of {@total_pages}
+          Page <span class="font-mono text-(--crit-fg-primary)">{@page}</span> of {@total_pages}
         </span>
         <div class="flex items-center gap-1">
           <button
@@ -123,10 +122,13 @@ defmodule CritWeb.Components.ReviewTable do
       case {assigns.review.visibility, assigns.review.organization_id} do
         {:organization, org_id} when not is_nil(org_id) ->
           initial = String.first(assigns.review.org_name || "?") |> String.upcase()
-          {"org_initial:#{initial}", assigns.review.org_name || "Org", "bg-[rgba(122,162,247,0.15)] text-[#7aa2f7]"}
+
+          {"org_initial:#{initial}", assigns.review.org_name || "Org",
+           "bg-[rgba(122,162,247,0.15)] text-[#7aa2f7]"}
 
         {:public, _} ->
-          {"hero-globe-alt-mini", "Public", "bg-[rgba(122,162,247,0.10)] text-(--crit-fg-secondary)"}
+          {"hero-globe-alt-mini", "Public",
+           "bg-[rgba(122,162,247,0.10)] text-(--crit-fg-secondary)"}
 
         {:unlisted, org_id} when not is_nil(org_id) ->
           {"hero-share-mini", "Unlisted", "bg-(--crit-bg-elevated) text-(--crit-fg-secondary)"}
@@ -135,7 +137,8 @@ defmodule CritWeb.Components.ReviewTable do
           {"hero-share-mini", "Unlisted", "bg-(--crit-bg-elevated) text-(--crit-fg-secondary)"}
 
         _ ->
-          {"hero-lock-closed-mini", "Private", "bg-(--crit-bg-elevated) text-(--crit-fg-secondary)"}
+          {"hero-lock-closed-mini", "Private",
+           "bg-(--crit-bg-elevated) text-(--crit-fg-secondary)"}
       end
 
     assigns = assign(assigns, icon: icon, label: label, classes: classes)

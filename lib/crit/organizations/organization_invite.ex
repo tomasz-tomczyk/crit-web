@@ -11,18 +11,15 @@ defmodule Crit.Organizations.OrganizationInvite do
     field :email, :string
     field :token, :binary
     belongs_to :invited_by, User, foreign_key: :invited_by_id
-    field :role, :string, default: "member"
+    field :role, Ecto.Enum, values: [:admin, :member], default: :member
 
     timestamps(type: :utc_datetime)
   end
-
-  @valid_roles ~w(admin member)
 
   def changeset(invite, attrs) do
     invite
     |> cast(attrs, [:organization_id, :email, :role, :invited_by_id])
     |> validate_required([:organization_id, :email, :role, :invited_by_id])
-    |> validate_inclusion(:role, @valid_roles)
     |> downcase_email()
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
     |> unique_constraint([:organization_id, :email],
@@ -31,7 +28,7 @@ defmodule Crit.Organizations.OrganizationInvite do
     )
   end
 
-  def build(org_id, email, invited_by_id, role \\ "member") do
+  def build(org_id, email, invited_by_id, role \\ :member) do
     raw_token = :crypto.strong_rand_bytes(32)
     token_hash = :crypto.hash(:sha256, raw_token)
 

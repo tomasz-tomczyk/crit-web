@@ -12,7 +12,10 @@ defmodule CritWeb.DashboardLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     user = scope.user
-    {recent_reviews, review_count} = Reviews.list_user_reviews_paginated(scope, page: 1, per_page: @recent_review_limit)
+
+    {recent_reviews, review_count} =
+      Reviews.list_user_reviews_paginated(scope, page: 1, per_page: @recent_review_limit)
+
     orgs = Organizations.list_user_organizations(scope)
 
     socket =

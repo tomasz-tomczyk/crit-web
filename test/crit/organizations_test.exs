@@ -33,7 +33,7 @@ defmodule Crit.OrganizationsTest do
 
       # User should be admin member
       assert {:ok, membership} = Organizations.get_membership_for_user(org.id, user.id)
-      assert membership.role == "admin"
+      assert membership.role == :admin
     end
 
     test "returns error changeset for invalid name" do
@@ -134,7 +134,7 @@ defmodule Crit.OrganizationsTest do
       assert [%Organization{} = listed] = orgs
       assert listed.id == org.id
       assert listed.member_count == 1
-      assert listed.role == "admin"
+      assert listed.role == :admin
     end
 
     test "returns empty list for user with no orgs" do
@@ -169,7 +169,7 @@ defmodule Crit.OrganizationsTest do
       scope = admin_scope(admin, org)
 
       assert {:ok, updated} = Organizations.update_membership_role(scope, membership, "admin")
-      assert updated.role == "admin"
+      assert updated.role == :admin
     end
 
     test "cannot demote last admin" do
@@ -257,7 +257,7 @@ defmodule Crit.OrganizationsTest do
 
       assert is_binary(raw_token)
       assert invite.email == "new@example.com"
-      assert invite.role == "member"
+      assert invite.role == :member
     end
 
     test "returns error changeset for blank email" do
@@ -332,7 +332,7 @@ defmodule Crit.OrganizationsTest do
 
       # Membership exists
       assert {:ok, membership} = Organizations.get_membership_for_user(org.id, invitee.id)
-      assert membership.role == "member"
+      assert membership.role == :member
 
       # Invite was deleted
       invites = Organizations.list_pending_invites(scope, org)
@@ -366,7 +366,7 @@ defmodule Crit.OrganizationsTest do
       # Create an invite for admin's email by building directly (bypassing the
       # already-member check at creation time)
       {raw_token, invite_struct} =
-        OrganizationInvite.build(org.id, admin.email, admin.id, "member")
+        OrganizationInvite.build(org.id, admin.email, admin.id, :member)
 
       invite_struct
       |> Ecto.Changeset.change(%{})

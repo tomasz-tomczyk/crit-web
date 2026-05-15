@@ -1066,9 +1066,9 @@ if Mix.env() in [:dev, :test] do
     end
   end
 
-  seed_membership.(acme, user, "admin")
-  seed_membership.(acme, alice, "member")
-  seed_membership.(acme, bob, "member")
+  seed_membership.(acme, user, :admin)
+  seed_membership.(acme, alice, :member)
+  seed_membership.(acme, bob, :member)
 
   # ════════════════════════════════════════════════════════════════════════
   # ORG-SCOPED REVIEWS — every combination of owner × visibility
@@ -1122,7 +1122,8 @@ if Mix.env() in [:dev, :test] do
         file_path: "architecture.md",
         start_line: 14,
         end_line: 16,
-        body: "Have we considered CQRS alongside this? Separate read/write models would help with query performance.",
+        body:
+          "Have we considered CQRS alongside this? Separate read/write models would help with query performance.",
         author_display_name: "Alice"
       }
     ]
@@ -1254,7 +1255,8 @@ if Mix.env() in [:dev, :test] do
       %{
         id: "a0000000-0000-0000-0001-000000000004",
         scope: "review",
-        body: "Looks solid. Let's discuss the cursor-based pagination format at standup — there are a few options.",
+        body:
+          "Looks solid. Let's discuss the cursor-based pagination format at standup — there are a few options.",
         author_display_name: "Tomasz Tomczyk"
       }
     ]
@@ -1448,14 +1450,21 @@ if Mix.env() in [:dev, :test] do
   IO.puts("    member: bob@example.com   / password1234\n")
 
   org_reviews = [
-    {"seed-org-admin-org01", "Admin / :organization", "architecture.md — visible in org listing, members only"},
-    {"seed-org-admin-unl01", "Admin / :unlisted", "draft-rfc.md — hidden from listing, members only with link"},
-    {"seed-org-admin-pub01", "Admin / :public", "onboarding.md — visible in org listing, anyone can view"},
-    {"seed-org-alice-org01", "Alice / :organization", "api-redesign.md — member-owned, members only"},
-    {"seed-org-alice-unl01", "Alice / :unlisted", "scratch.py — member-owned, hidden, members only with link"},
-    {"seed-org-bob-org0001", "Bob / :organization", "bugfix-notes.md — member-owned, members only"},
+    {"seed-org-admin-org01", "Admin / :organization",
+     "architecture.md — visible in org listing, members only"},
+    {"seed-org-admin-unl01", "Admin / :unlisted",
+     "draft-rfc.md — hidden from listing, members only with link"},
+    {"seed-org-admin-pub01", "Admin / :public",
+     "onboarding.md — visible in org listing, anyone can view"},
+    {"seed-org-alice-org01", "Alice / :organization",
+     "api-redesign.md — member-owned, members only"},
+    {"seed-org-alice-unl01", "Alice / :unlisted",
+     "scratch.py — member-owned, hidden, members only with link"},
+    {"seed-org-bob-org0001", "Bob / :organization",
+     "bugfix-notes.md — member-owned, members only"},
     {"seed-org-bob-pub0001", "Bob / :public", "style-guide.md — member-owned, anyone can view"},
-    {"seed-org-orphan-0001", "Orphaned author", "retro.md — author deleted, review persists under org"}
+    {"seed-org-orphan-0001", "Orphaned author",
+     "retro.md — author deleted, review persists under org"}
   ]
 
   IO.puts("  Org-scoped reviews (#{length(org_reviews)}):\n")

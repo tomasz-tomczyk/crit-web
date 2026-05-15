@@ -13,7 +13,7 @@ defmodule Crit.Organizations.Organization do
 
     field :member_count, :integer, virtual: true, default: 0
     field :review_count, :integer, virtual: true, default: 0
-    field :role, :string, virtual: true
+    field :role, Ecto.Enum, values: [:admin, :member], virtual: true
     field :member_initials, {:array, :string}, virtual: true, default: []
 
     timestamps(type: :utc_datetime)

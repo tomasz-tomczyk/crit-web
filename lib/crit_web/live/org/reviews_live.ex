@@ -10,7 +10,9 @@ defmodule CritWeb.Org.ReviewsLive do
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
     org = scope.organization
-    {reviews, count} = Organizations.list_org_reviews_paginated(scope, org, page: 1, per_page: @per_page)
+
+    {reviews, count} =
+      Organizations.list_org_reviews_paginated(scope, org, page: 1, per_page: @per_page)
 
     socket =
       socket
@@ -30,16 +32,20 @@ defmodule CritWeb.Org.ReviewsLive do
 
   @impl true
   def handle_event("change_page", %{"page" => page}, socket) do
-    page = case Integer.parse(page) do
-      {n, ""} -> n
-      _ -> socket.assigns.page
-    end
+    page =
+      case Integer.parse(page) do
+        {n, ""} -> n
+        _ -> socket.assigns.page
+      end
+
     total_pages = max(1, ceil(socket.assigns.review_count / @per_page))
     page = max(1, min(page, total_pages))
 
     scope = socket.assigns.current_scope
     org = socket.assigns.org
-    {reviews, count} = Organizations.list_org_reviews_paginated(scope, org, page: page, per_page: @per_page)
+
+    {reviews, count} =
+      Organizations.list_org_reviews_paginated(scope, org, page: page, per_page: @per_page)
 
     socket =
       socket

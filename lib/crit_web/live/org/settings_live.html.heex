@@ -189,7 +189,10 @@
             </span>
           </h2>
 
-          <div aria-disabled="true" class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
+          <div
+            aria-disabled="true"
+            class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none"
+          >
             <div class="flex gap-3.5 px-5 py-4 border-b border-(--crit-border)">
               <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0">
               </span>
@@ -232,7 +235,10 @@
             </span>
           </h2>
 
-          <div aria-disabled="true" class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
+          <div
+            aria-disabled="true"
+            class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none"
+          >
             <div class="p-5 flex items-center gap-5">
               <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center shrink-0">
                 <.icon name="hero-square-3-stack-3d" class="size-4" />
@@ -331,14 +337,20 @@
                     <span class="w-9 h-9 rounded-full bg-(--crit-red)/15 text-(--crit-red) inline-flex items-center justify-center shrink-0">
                       <.icon name="hero-exclamation-triangle" class="size-5" />
                     </span>
-                    <h3 id="delete-modal-title" class="text-[16px] font-semibold text-(--crit-fg-primary)">
+                    <h3
+                      id="delete-modal-title"
+                      class="text-[16px] font-semibold text-(--crit-fg-primary)"
+                    >
                       Delete {@org.name}?
                     </h3>
                   </div>
                   <p class="text-[13px] text-(--crit-fg-secondary) mb-5 leading-relaxed">
                     This will permanently delete the organization, all shared reviews, and revoke all member access. This action cannot be undone.
                   </p>
-                  <label for="delete-org-confirm-input" class="block text-[11px] font-mono uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+                  <label
+                    for="delete-org-confirm-input"
+                    class="block text-[11px] font-mono uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5"
+                  >
                     Type <span class="font-semibold text-(--crit-fg-secondary)">{@org.slug}</span>
                     to confirm
                   </label>
@@ -368,7 +380,8 @@
                       class={[
                         "inline-flex items-center px-4 py-1.5 text-[13px] font-medium rounded-md transition-opacity focus-visible:ring-2 focus-visible:ring-(--crit-brand)",
                         if(@delete_confirmation == @org.slug,
-                          do: "text-white bg-(--crit-red) hover:bg-(--crit-red)/85 cursor-pointer",
+                          do:
+                            "text-white bg-(--crit-red) hover:bg-(--crit-red)/85 cursor-pointer",
                           else:
                             "text-(--crit-fg-muted) bg-(--crit-bg-elevated) cursor-not-allowed opacity-50"
                         )

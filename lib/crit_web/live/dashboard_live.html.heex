@@ -338,76 +338,79 @@
       <%!-- ═══════════════ TWO-COLUMN DASHBOARD ═══════════════ --%>
       <div class={[
         "grid gap-[18px] items-start",
-        if(@orgs != [], do: "grid-cols-[1.55fr_1fr] max-lg:grid-cols-1", else: "grid-cols-1 max-w-2xl")
+        if(@orgs != [],
+          do: "grid-cols-[1.55fr_1fr] max-lg:grid-cols-1",
+          else: "grid-cols-1 max-w-2xl"
+        )
       ]}>
         <%!-- ─── Left column: Organization cards ─── --%>
         <div :if={@orgs != []} class="flex flex-col gap-3.5">
-            <.link
-              :for={org <- @orgs}
-              navigate={~p"/orgs/#{org.slug}"}
-              class="bg-(--crit-bg-card) border border-(--crit-border-strong) rounded-[10px] overflow-hidden flex flex-col relative no-underline hover:border-(--crit-brand) transition-colors"
-            >
-              <%!-- Banner --%>
-              <div class="relative p-[24px_28px_20px] bg-(--crit-bg-page) border-b border-(--crit-border)">
-                <div class="flex items-start gap-4 relative">
-                  <span class="w-14 h-14 rounded-[14px] bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[22px] font-semibold flex-shrink-0">
-                    {String.first(org.name) |> String.upcase()}
-                  </span>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.12em] font-mono">
-                      Your organization
-                    </div>
-                    <div class="text-[22px] font-bold text-(--crit-fg-primary) tracking-[-0.02em] mt-1">
-                      {org.name}
-                    </div>
+          <.link
+            :for={org <- @orgs}
+            navigate={~p"/orgs/#{org.slug}"}
+            class="bg-(--crit-bg-card) border border-(--crit-border-strong) rounded-[10px] overflow-hidden flex flex-col relative no-underline hover:border-(--crit-brand) transition-colors"
+          >
+            <%!-- Banner --%>
+            <div class="relative p-[24px_28px_20px] bg-(--crit-bg-page) border-b border-(--crit-border)">
+              <div class="flex items-start gap-4 relative">
+                <span class="w-14 h-14 rounded-[14px] bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[22px] font-semibold flex-shrink-0">
+                  {String.first(org.name) |> String.upcase()}
+                </span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.12em] font-mono">
+                    Your organization
+                  </div>
+                  <div class="text-[22px] font-bold text-(--crit-fg-primary) tracking-[-0.02em] mt-1">
+                    {org.name}
                   </div>
                 </div>
+              </div>
 
-                <%!-- Stats inline --%>
-                <div class="grid grid-cols-2 mt-[22px] border-t border-(--crit-border) pt-4">
-                  <div>
-                    <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
-                      Reviews
-                    </div>
-                    <div class="text-[22px] font-bold text-(--crit-fg-primary) mt-1 tracking-[-0.02em]">
-                      {org.review_count}
-                    </div>
+              <%!-- Stats inline --%>
+              <div class="grid grid-cols-2 mt-[22px] border-t border-(--crit-border) pt-4">
+                <div>
+                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
+                    Reviews
                   </div>
-                  <div>
-                    <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
-                      Members
-                    </div>
-                    <div class="text-[22px] font-bold text-(--crit-fg-primary) mt-1 tracking-[-0.02em] flex items-center gap-2.5">
-                      {org.member_count}
-                      <div class="flex">
+                  <div class="text-[22px] font-bold text-(--crit-fg-primary) mt-1 tracking-[-0.02em]">
+                    {org.review_count}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
+                    Members
+                  </div>
+                  <div class="text-[22px] font-bold text-(--crit-fg-primary) mt-1 tracking-[-0.02em] flex items-center gap-2.5">
+                    {org.member_count}
+                    <div class="flex">
+                      <span
+                        :for={
+                          {initial, i} <-
+                            org.member_initials |> Enum.take(4) |> Enum.with_index()
+                        }
+                        class="w-[22px] h-[22px] rounded-full bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
+                        style={if i > 0, do: "margin-left: -8px", else: ""}
+                      >
+                        {initial}
+                      </span>
+                      <%= if org.member_count > 4 do %>
                         <span
-                          :for={
-                            {initial, i} <-
-                              org.member_initials |> Enum.take(4) |> Enum.with_index()
-                          }
-                          class="w-[22px] h-[22px] rounded-full bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
-                          style={if i > 0, do: "margin-left: -8px", else: ""}
+                          class="w-[22px] h-[22px] rounded-full bg-(--crit-bg-elevated) text-(--crit-fg-secondary) inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
+                          style="margin-left: -8px"
                         >
-                          {initial}
+                          +{org.member_count - 4}
                         </span>
-                        <%= if org.member_count > 4 do %>
-                          <span
-                            class="w-[22px] h-[22px] rounded-full bg-(--crit-bg-elevated) text-(--crit-fg-secondary) inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-card)"
-                            style="margin-left: -8px"
-                          >
-                            +{org.member_count - 4}
-                          </span>
-                        <% end %>
-                      </div>
+                      <% end %>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div class="px-4 py-4 text-center text-[13px] text-(--crit-fg-muted)">
-                No recent activity
-              </div>
-            </.link>
+            <div class="px-4 py-4 text-center text-[13px] text-(--crit-fg-muted)">
+              No recent activity
+            </div>
+          </.link>
         </div>
 
         <%!-- ─── Right column: Personal reviews ─── --%>
@@ -485,8 +488,13 @@
 
       <%!-- Onboarding steps (shown when no personal reviews) --%>
       <%= if @review_count == 0 do %>
-        <div id="onboarding-steps" phx-hook=".OnboardingTabs" data-panel-prefix="ob-" phx-update="ignore" class="mt-8">
-
+        <div
+          id="onboarding-steps"
+          phx-hook=".OnboardingTabs"
+          data-panel-prefix="ob-"
+          phx-update="ignore"
+          class="mt-8"
+        >
           <div class="max-w-[640px] mx-auto">
             <div class="text-center mb-12">
               <h2 class="text-2xl font-bold tracking-tight mb-2.5">

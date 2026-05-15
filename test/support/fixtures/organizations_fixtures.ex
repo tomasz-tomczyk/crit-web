@@ -32,7 +32,7 @@ defmodule Crit.OrganizationsFixtures do
   Adds a user to an organization with the given role.
   Returns the membership.
   """
-  def membership_fixture(org, user, role \\ "member") do
+  def membership_fixture(org, user, role \\ :member) do
     {:ok, membership} =
       %OrganizationMembership{}
       |> OrganizationMembership.changeset(%{
@@ -49,7 +49,7 @@ defmodule Crit.OrganizationsFixtures do
   Creates an invite for the given org and email.
   Returns `{raw_token, invite}`.
   """
-  def invite_fixture(scope, org, email, role \\ "member") do
+  def invite_fixture(scope, org, email, role \\ :member) do
     {:ok, {raw_token, invite}} =
       Organizations.create_invite(scope, org, %{"email" => email, "role" => role})
 

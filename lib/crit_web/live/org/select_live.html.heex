@@ -77,7 +77,7 @@
                 as
                 <span class={[
                   "inline-flex items-center px-1.5 py-px rounded-full text-[10px] font-medium ml-1 capitalize",
-                  if(invite.role == "admin",
+                  if(invite.role == :admin,
                     do: "bg-(--crit-brand-bg) text-(--crit-brand)",
                     else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted)"
                   )
@@ -175,7 +175,7 @@
             <div class="flex gap-1.5 flex-wrap">
               <span class={[
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium capitalize",
-                if(org.role == "admin",
+                if(org.role == :admin,
                   do: "bg-(--crit-brand-bg) text-(--crit-brand)",
                   else:
                     "bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)"
