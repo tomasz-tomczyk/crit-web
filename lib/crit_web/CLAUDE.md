@@ -207,6 +207,44 @@ live_session :org_admin,
 end
 ```
 
+### Review visibility matrix
+
+Reviews may optionally belong to an organization (`organization_id`). Visibility controls who can access:
+
+| `organization_id` | `visibility` | Shown in org views | Who can access |
+|---|---|---|---|
+| set | `:organization` | yes | org members only |
+| set | `:unlisted` | no | org members only (direct link) |
+| set | `:public` | yes | anyone |
+| nil | `:unlisted` | N/A | anyone with the link |
+| nil | `:public` | N/A | anyone |
+| nil | `:organization` | N/A | **nobody** (orphaned — org was deleted) |
+
+The `organization_id` acts as an access boundary. When set, both `:organization` and `:unlisted` require org membership. The difference is discoverability (whether it appears in org review listings).
+
+**Orphaned reviews**: when an org is deleted, `on_delete: :nilify_all` sets `organization_id` to nil but `visibility` stays `:organization`. These become inaccessible — `Reviews.check_org_access/2` rejects them.
+
+### Review org access checks — all paths
+
+Org membership for reviews must be checked on **every access path**, not just the LiveView mount:
+
+| Path | Where the check lives |
+|---|---|
+| LiveView `/r/:token` | `ReviewLive.mount_review/4` via `Reviews.check_org_access/2` |
+| Unauthenticated gate | `UserAuth.check_org_visibility_gate/1` (redirects to login) |
+| API `GET /api/reviews/:token/*` | `ApiController` — `Reviews.check_org_access/2` in each action |
+| Raw `GET /r/:token/raw/*` | `RawController.show/2` — `Reviews.check_org_access/2` |
+
+When adding a new endpoint that reads review content by token, it **must** call `Reviews.check_org_access(review, scope)` before returning data.
+
+### Review lifecycle on user deletion
+
+When a user deletes their account:
+- **Personal reviews** (no `organization_id`): cascade-deleted with the user.
+- **Org-scoped reviews**: `user_id` is nilified before deletion so the review survives under the org. The org retains the content; authorship attribution is lost.
+
+This is handled in `Accounts.delete_user/1`. Don't change the `ON DELETE CASCADE` FK — the nilification happens in application code before the delete.
+
 ### Session writes must be POST-only
 
 Any route that calls `put_session` must be `POST` (or `DELETE`). A `GET` route that writes session is CSRF-exploitable via `<img src>` or a plain link. Templates that trigger session-writing actions use `<.form method="post">` with CSRF token, not plain `<.link href>`.

@@ -340,6 +340,7 @@ defmodule CritWeb.PageController do
 
   def teams(conn, _params) do
     render(conn, :teams,
+      current_page: :teams,
       canonical_url: canonical_url(conn),
       page_title: "Crit for Teams - Shared code reviews for the whole team",
       meta_description:

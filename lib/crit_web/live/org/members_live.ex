@@ -136,7 +136,9 @@ defmodule CritWeb.Org.MembersLive do
 
         socket =
           case sent do
-            [] -> socket
+            [] ->
+              socket
+
             _ ->
               socket
               |> assign(:invite_form, build_invite_form())

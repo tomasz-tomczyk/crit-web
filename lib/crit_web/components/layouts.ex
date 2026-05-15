@@ -125,6 +125,9 @@ defmodule CritWeb.Layouts do
             <.nav_link href={~p"/features"} active={@current_page == :features}>
               Features
             </.nav_link>
+            <.nav_link href={~p"/teams"} active={@current_page == :teams}>
+              Teams
+            </.nav_link>
             <.nav_link href={~p"/getting-started"} active={@current_page == :getting_started}>
               Get Started
             </.nav_link>
@@ -283,6 +286,9 @@ defmodule CritWeb.Layouts do
           </div>
           <.nav_mobile_link href={~p"/features"} active={@current_page == :features}>
             Features
+          </.nav_mobile_link>
+          <.nav_mobile_link href={~p"/teams"} active={@current_page == :teams}>
+            Teams
           </.nav_mobile_link>
           <.nav_mobile_link
             href={~p"/getting-started"}
@@ -1042,7 +1048,7 @@ defmodule CritWeb.Layouts do
       <div class="absolute w-1/3 h-full rounded-full border border-(--crit-border-strong) bg-(--crit-bg-card) left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex p-2 cursor-pointer w-1/3 rounded-full focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="system"
         role="radio"
@@ -1052,7 +1058,7 @@ defmodule CritWeb.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex p-2 cursor-pointer w-1/3 rounded-full focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="light"
         role="radio"
@@ -1062,7 +1068,7 @@ defmodule CritWeb.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex p-2 cursor-pointer w-1/3 rounded-full focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dark"
         role="radio"

@@ -82,7 +82,7 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `SMTP_PORT` | No | `587` | SMTP port. `465` uses implicit TLS; other ports use STARTTLS |
 | `SMTP_USERNAME` | No | — | SMTP auth username |
 | `SMTP_PASSWORD` | No | — | SMTP auth password |
-| `SMTP_FROM` | No | `no-reply@localhost` | From address used on outgoing email |
+| `SMTP_FROM` | No† | — | From address for outgoing email (e.g. `noreply@yourdomain.com`). Required when `SMTP_HOST` is set |
 | `GITHUB_CLIENT_ID` | No | — | GitHub OAuth App client ID. Set with `GITHUB_CLIENT_SECRET` to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews |
 | `GITHUB_CLIENT_SECRET` | No | — | GitHub OAuth App client secret |
 | `OAUTH_CLIENT_ID` | No | — | Generic OIDC/OAuth2 client ID for Google, GitLab, Okta, etc. Use with `OAUTH_CLIENT_SECRET` and `OAUTH_BASE_URL`. Mutually exclusive with `GITHUB_CLIENT_ID` |

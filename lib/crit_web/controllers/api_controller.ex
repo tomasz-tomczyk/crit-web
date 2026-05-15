@@ -14,6 +14,8 @@ defmodule CritWeb.ApiController do
     cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
+    org_slug = params["org"]
+    visibility = parse_visibility(params["visibility"])
     scope = api_scope(conn)
     max_comments = Settings.get().max_comments_per_review
 
@@ -26,7 +28,9 @@ defmodule CritWeb.ApiController do
 
       true ->
         case Reviews.create_review(scope, files, review_round, comments, review_comments,
-               cli_args: cli_args
+               cli_args: cli_args,
+               org: org_slug,
+               visibility: visibility
              ) do
           {:ok, review} ->
             review = maybe_update_comment_policy(scope, review, params)
@@ -43,6 +47,12 @@ defmodule CritWeb.ApiController do
           {:error, :total_size_exceeded} ->
             conn |> put_status(422) |> json(%{error: "Total file size exceeds 10 MB limit"})
 
+          {:error, :org_not_found} ->
+            conn |> put_status(404) |> json(%{error: "Organization not found"})
+
+          {:error, :not_a_member} ->
+            conn |> put_status(403) |> json(%{error: "You are not a member of this organization"})
+
           {:error, %Ecto.Changeset{} = changeset} ->
             errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
             conn |> put_status(422) |> json(%{error: "Validation failed", details: errors})
@@ -56,6 +66,8 @@ defmodule CritWeb.ApiController do
     cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
+    org_slug = params["org"]
+    visibility = parse_visibility(params["visibility"])
     scope = api_scope(conn)
 
     file_path = filename || "document"
@@ -76,7 +88,9 @@ defmodule CritWeb.ApiController do
                review_round,
                comments_with_file,
                review_comments,
-               cli_args: cli_args
+               cli_args: cli_args,
+               org: org_slug,
+               visibility: visibility
              ) do
           {:ok, review} ->
             review = maybe_update_comment_policy(scope, review, params)
@@ -93,6 +107,12 @@ defmodule CritWeb.ApiController do
           {:error, :total_size_exceeded} ->
             conn |> put_status(422) |> json(%{error: "Total file size exceeds 10 MB limit"})
 
+          {:error, :org_not_found} ->
+            conn |> put_status(404) |> json(%{error: "Organization not found"})
+
+          {:error, :not_a_member} ->
+            conn |> put_status(403) |> json(%{error: "You are not a member of this organization"})
+
           {:error, %Ecto.Changeset{} = changeset} ->
             errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
             conn |> put_status(422) |> json(%{error: "Validation failed", details: errors})
@@ -105,64 +125,60 @@ defmodule CritWeb.ApiController do
   end
 
   def document(conn, %{"token" => token}) do
-    case Reviews.get_by_token(token) do
-      nil ->
-        not_found(conn)
+    with %{} = review <- Reviews.get_by_token(token),
+         :ok <- Reviews.check_org_access(review, api_scope(conn)) do
+      files =
+        Enum.map(review.files, fn f ->
+          %{path: f.file_path, content: f.content, status: f.status}
+        end)
 
-      review ->
-        files =
-          Enum.map(review.files, fn f ->
-            %{path: f.file_path, content: f.content, status: f.status}
-          end)
-
-        json(conn, %{
-          files: files,
-          visibility: review.visibility,
-          comment_policy: review.comment_policy
-        })
+      json(conn, %{
+        files: files,
+        visibility: review.visibility,
+        comment_policy: review.comment_policy
+      })
+    else
+      _ -> not_found(conn)
     end
   end
 
   def comments_list(conn, %{"token" => token}) do
-    case Reviews.get_by_token(token) do
-      nil -> not_found(conn)
-      review -> json(conn, Enum.map(visible_comments(review), &Reviews.serialize_comment/1))
+    with %{} = review <- Reviews.get_by_token(token),
+         :ok <- Reviews.check_org_access(review, api_scope(conn)) do
+      json(conn, Enum.map(visible_comments(review), &Reviews.serialize_comment/1))
+    else
+      _ -> not_found(conn)
     end
   end
 
   def export_review(conn, %{"token" => token}) do
-    case Reviews.get_by_token(token) do
-      nil ->
-        not_found(conn)
+    with %{} = review <- Reviews.get_by_token(token),
+         :ok <- Reviews.check_org_access(review, api_scope(conn)) do
+      comments = visible_comments(review)
+      files = Enum.map(review.files, fn f -> %{path: f.file_path, content: f.content} end)
+      md =
+        "<!-- crit-comment-policy: #{review.comment_policy} -->\n" <>
+          "<!-- crit-visibility: #{review.visibility} -->\n" <>
+          Output.generate_multi_file_review_md(files, comments)
 
-      review ->
-        comments = visible_comments(review)
-        files = Enum.map(review.files, fn f -> %{path: f.file_path, content: f.content} end)
-        # Visibility prefix is a markdown HTML comment — invisible to renderers,
-        # greppable for callers piping the export into automation. Signals
-        # whether the source review is `:unlisted` (URL-only) or `:public`.
-        md =
-          "<!-- crit-comment-policy: #{review.comment_policy} -->\n" <>
-            "<!-- crit-visibility: #{review.visibility} -->\n" <>
-            Output.generate_multi_file_review_md(files, comments)
-
-        conn
-        |> put_resp_content_type("text/markdown")
-        |> put_resp_header("content-disposition", ~s(attachment; filename="review.md"))
-        |> send_resp(200, md)
+      conn
+      |> put_resp_content_type("text/markdown")
+      |> put_resp_header("content-disposition", ~s(attachment; filename="review.md"))
+      |> send_resp(200, md)
+    else
+      _ -> not_found(conn)
     end
   end
 
   def export_comments(conn, %{"token" => token}) do
-    case Reviews.get_by_token(token) do
-      nil ->
-        not_found(conn)
-
-      review ->
-        comments = visible_comments(review)
-        files = Enum.map(review.files, fn f -> %{path: f.file_path} end)
-        base_url = CritWeb.Endpoint.url()
-        json(conn, Output.multi_file_comments_json(review, files, comments, base_url))
+    with %{} = review <- Reviews.get_by_token(token),
+         :ok <- Reviews.check_org_access(review, api_scope(conn)) do
+      comments = visible_comments(review)
+      files = Enum.map(review.files, fn f -> %{path: f.file_path} end)
+      base_url = CritWeb.Endpoint.url()
+      json(conn, Output.multi_file_comments_json(review, files, comments, base_url))
+    else
+      _ -> not_found(conn)
     end
   end
 
@@ -314,6 +330,19 @@ defmodule CritWeb.ApiController do
       json(conn, %{user_id: user.id, name: user.name, email: user.email, token: plaintext})
     end
 
+    def seed_org(conn, params) do
+      user_id = params["user_id"] || raise "user_id required"
+      name = params["name"] || "Test Org"
+      slug = params["slug"] || "test-org-#{System.unique_integer([:positive])}"
+
+      user = Crit.Repo.get!(Crit.User, user_id)
+      scope = Crit.Accounts.Scope.for_user(user)
+
+      {:ok, org} = Crit.Organizations.create_organization(scope, %{name: name, slug: slug})
+
+      json(conn, %{id: org.id, name: org.name, slug: org.slug})
+    end
+
     def seed_resolve(conn, %{"token" => token, "comment_id" => comment_id} = params) do
       case Reviews.get_by_token(token) do
         nil ->
@@ -392,6 +421,11 @@ defmodule CritWeb.ApiController do
       end
     end
   end
+
+  defp parse_visibility("unlisted"), do: :unlisted
+  defp parse_visibility("public"), do: :public
+  defp parse_visibility("organization"), do: :organization
+  defp parse_visibility(_), do: nil
 
   # Track invalid token lookups: 10 per 5 minutes per IP, then return 429.
   defp not_found(conn) do

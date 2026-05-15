@@ -28,24 +28,21 @@
       <nav class="sticky top-20 flex flex-col gap-[1px] max-md:static max-md:flex-row max-md:flex-wrap max-md:gap-0">
         <a
           href="#general"
-          class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium bg-(--crit-bg-card) text-(--crit-fg-primary) no-underline"
+          class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium bg-(--crit-bg-card) text-(--crit-fg-primary) no-underline focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
         >
-          <.icon name="hero-cog-6-tooth" class="size-3.5 opacity-60" />
-          General
+          <.icon name="hero-cog-6-tooth" class="size-3.5 opacity-60" /> General
         </a>
         <.link
           navigate={~p"/orgs/#{@org.slug}/members"}
           class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-bg-card) transition-colors no-underline"
         >
-          <.icon name="hero-users" class="size-3.5 opacity-50" />
-          Members
+          <.icon name="hero-users" class="size-3.5 opacity-50" /> Members
         </.link>
         <a
           href="#danger-zone"
-          class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-red) hover:bg-(--crit-bg-card) transition-colors no-underline"
+          class="flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-(--crit-red) hover:bg-(--crit-bg-card) transition-colors no-underline focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
         >
-          <.icon name="hero-trash" class="size-3.5 opacity-70" />
-          Danger zone
+          <.icon name="hero-trash" class="size-3.5 opacity-70" /> Danger zone
         </a>
         <div class="mt-4 px-2.5 text-[11px] text-(--crit-fg-muted) leading-relaxed max-md:hidden">
           Changes save automatically.<br />Some settings require admin role.
@@ -129,7 +126,7 @@
                         />
                         <button
                           type="button"
-                          class="ml-1.5 shrink-0 inline-flex items-center px-3 py-2 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-card) transition-colors cursor-default"
+                          class="ml-1.5 shrink-0 inline-flex items-center px-3 py-2 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-card) transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
                         >
                           Copy URL
                         </button>
@@ -162,7 +159,9 @@
                     <div class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
                       Name
                     </div>
-                    <div class="text-[13px] font-semibold text-(--crit-fg-primary)">{@org.name}</div>
+                    <div class="text-[13px] font-semibold text-(--crit-fg-primary)">
+                      {@org.name}
+                    </div>
                   </div>
                   <div>
                     <div class="font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
@@ -188,9 +187,10 @@
             </span>
           </h2>
 
-          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
+          <div aria-disabled="true" class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
             <div class="flex gap-3.5 px-5 py-4 border-b border-(--crit-border)">
-              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0"></span>
+              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0">
+              </span>
               <div>
                 <div class="text-[13px] font-semibold">Public link</div>
                 <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
@@ -199,7 +199,8 @@
               </div>
             </div>
             <div class="flex gap-3.5 px-5 py-4 border-b border-(--crit-border) bg-(--crit-bg-elevated)">
-              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[5px] border-(--crit-brand) bg-(--crit-bg-page) shrink-0"></span>
+              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[5px] border-(--crit-brand) bg-(--crit-bg-page) shrink-0">
+              </span>
               <div>
                 <div class="text-[13px] font-semibold">Sign-in required</div>
                 <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
@@ -208,7 +209,8 @@
               </div>
             </div>
             <div class="flex gap-3.5 px-5 py-4">
-              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0"></span>
+              <span class="mt-[1px] w-[18px] h-[18px] rounded-full border-[1.5px] border-(--crit-border-strong) shrink-0">
+              </span>
               <div>
                 <div class="text-[13px] font-semibold">Org members only</div>
                 <div class="text-[12px] text-(--crit-fg-muted) mt-0.5">
@@ -228,7 +230,7 @@
             </span>
           </h2>
 
-          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
+          <div aria-disabled="true" class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden opacity-50 pointer-events-none select-none">
             <div class="p-5 flex items-center gap-5">
               <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center shrink-0">
                 <.icon name="hero-square-3-stack-3d" class="size-4" />
@@ -244,10 +246,12 @@
             </div>
             <div class="px-5 py-3 bg-(--crit-bg-page) border-t border-(--crit-border) flex gap-4 text-[11px] text-(--crit-fg-muted)">
               <span class="inline-flex items-center gap-1">
-                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> More reviews
+                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" />
+                More reviews
               </span>
               <span class="inline-flex items-center gap-1">
-                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> Higher upload limits
+                <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" />
+                Higher upload limits
               </span>
               <span class="inline-flex items-center gap-1">
                 <.icon name="hero-check" class="size-2.5 text-emerald-400 align-middle" /> SSO
@@ -277,7 +281,7 @@
                 type="button"
                 phx-click="leave"
                 data-confirm="Are you sure you want to leave this organization?"
-                class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors"
+                class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
               >
                 Leave
               </button>
@@ -293,8 +297,11 @@
                 </div>
                 <button
                   type="button"
-                  phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal") |> JS.focus(to: "#delete-org-confirm-input")}
-                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-white bg-(--crit-red) rounded-md hover:opacity-90 transition-opacity"
+                  phx-click={
+                    JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")
+                    |> JS.focus(to: "#delete-org-confirm-input")
+                  }
+                  class="shrink-0 inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-white bg-(--crit-red) rounded-md hover:opacity-90 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
                 >
                   Delete
                 </button>
@@ -304,8 +311,17 @@
               <div
                 id="delete-org-modal"
                 hidden
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delete-modal-title"
                 class="fixed inset-0 z-50 flex items-center justify-center"
-                phx-click-away={JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")}
+                phx-click-away={
+                  JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")
+                }
+                phx-window-keydown={
+                  JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")
+                }
+                phx-key="Escape"
               >
                 <div class="fixed inset-0 bg-black/60" aria-hidden="true"></div>
                 <div class="relative bg-(--crit-bg-card) border border-(--crit-border) rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
@@ -313,13 +329,16 @@
                     <span class="w-9 h-9 rounded-full bg-(--crit-red)/15 text-(--crit-red) inline-flex items-center justify-center shrink-0">
                       <.icon name="hero-exclamation-triangle" class="size-5" />
                     </span>
-                    <h3 class="text-[16px] font-semibold text-(--crit-fg-primary)">Delete {@org.name}?</h3>
+                    <h3 id="delete-modal-title" class="text-[16px] font-semibold text-(--crit-fg-primary)">
+                      Delete {@org.name}?
+                    </h3>
                   </div>
                   <p class="text-[13px] text-(--crit-fg-secondary) mb-5 leading-relaxed">
                     This will permanently delete the organization, all shared reviews, and revoke all member access. This action cannot be undone.
                   </p>
-                  <label class="block text-[11px] font-mono uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
-                    Type <span class="font-semibold text-(--crit-fg-secondary)">{@org.slug}</span> to confirm
+                  <label for="delete-org-confirm-input" class="block text-[11px] font-mono uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+                    Type <span class="font-semibold text-(--crit-fg-secondary)">{@org.slug}</span>
+                    to confirm
                   </label>
                   <input
                     id="delete-org-confirm-input"
@@ -333,8 +352,10 @@
                   <div class="flex justify-end gap-2.5">
                     <button
                       type="button"
-                      phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")}
-                      class="inline-flex items-center px-3 py-1.5 text-[13px] font-medium text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) rounded-md transition-colors"
+                      phx-click={
+                        JS.toggle_attribute({"hidden", "hidden"}, to: "#delete-org-modal")
+                      }
+                      class="inline-flex items-center px-3 py-1.5 text-[13px] font-medium text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
                     >
                       Cancel
                     </button>
@@ -343,10 +364,11 @@
                       phx-click="delete_org"
                       disabled={@delete_confirmation != @org.slug}
                       class={[
-                        "inline-flex items-center px-4 py-1.5 text-[13px] font-medium rounded-md transition-opacity",
+                        "inline-flex items-center px-4 py-1.5 text-[13px] font-medium rounded-md transition-opacity focus-visible:ring-2 focus-visible:ring-(--crit-brand)",
                         if(@delete_confirmation == @org.slug,
-                          do: "text-white bg-(--crit-red) hover:opacity-90",
-                          else: "text-(--crit-fg-muted) bg-(--crit-bg-elevated) cursor-not-allowed opacity-50"
+                          do: "text-white bg-(--crit-red) hover:opacity-90 cursor-pointer",
+                          else:
+                            "text-(--crit-fg-muted) bg-(--crit-bg-elevated) cursor-not-allowed opacity-50"
                         )
                       ]}
                     >

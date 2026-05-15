@@ -15,8 +15,7 @@
           <%!-- Banner --%>
           <div class="h-20 relative overflow-hidden bg-(--crit-bg-page) border-b border-(--crit-border)">
             <div class="absolute top-4 left-5 flex items-center gap-2 text-[12px] text-(--crit-fg-muted)">
-              <.icon name="hero-envelope" class="size-3.5" />
-              Organization invitation
+              <.icon name="hero-envelope" class="size-3.5" /> Organization invitation
             </div>
           </div>
 
@@ -31,7 +30,8 @@
 
             <%!-- Heading --%>
             <h1 class="text-[28px] font-bold tracking-[-0.02em] mt-5 mb-1.5">
-              You're invited to join <span class="text-(--crit-brand)">{@invite.organization.name}</span>
+              You're invited to join
+              <span class="text-(--crit-brand)">{@invite.organization.name}</span>
             </h1>
 
             <%!-- Invited by line --%>
@@ -57,21 +57,28 @@
               >
                 <button
                   type="submit"
-                  class="inline-flex items-center px-[18px] py-2.5 text-[14px] font-semibold text-white bg-(--crit-brand) rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                  class="inline-flex items-center px-[18px] py-2.5 text-[14px] font-semibold text-white bg-(--crit-brand) rounded-lg hover:opacity-90 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
                 >
                   Accept invitation
                 </button>
               </.form>
               <.link
                 navigate={~p"/orgs"}
-                class="inline-flex items-center px-[18px] py-2.5 text-[14px] font-medium text-(--crit-fg-secondary) border border-(--crit-border) rounded-lg hover:bg-(--crit-bg-elevated) transition-colors no-underline"
+                class="inline-flex items-center px-[18px] py-2.5 text-[14px] font-medium text-(--crit-fg-secondary) border border-(--crit-border) rounded-lg hover:bg-(--crit-bg-elevated) transition-colors no-underline focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
               >
                 Decline
               </.link>
-              <% days_remaining = max(0, Crit.Organizations.OrganizationInvite.ttl_days() - div(DateTime.diff(DateTime.utc_now(), @invite.inserted_at, :second), 86400)) %>
+              <% days_remaining =
+                max(
+                  0,
+                  Crit.Organizations.OrganizationInvite.ttl_days() -
+                    div(DateTime.diff(DateTime.utc_now(), @invite.inserted_at, :second), 86400)
+                ) %>
               <span class="ml-auto flex items-center gap-1.5 text-[11px] text-(--crit-fg-muted) max-sm:ml-0 max-sm:mt-1">
                 <.icon name="hero-clock" class="size-3" />
-                Invite expires in {days_remaining} {if days_remaining == 1, do: "day", else: "days"}
+                Invite expires in {days_remaining} {if days_remaining == 1,
+                  do: "day",
+                  else: "days"}
               </span>
             </div>
           </div>
@@ -80,11 +87,13 @@
         <%!-- Below card info --%>
         <p class="text-center text-[12px] text-(--crit-fg-muted) mt-[18px]">
           Joining as <span class="font-mono text-(--crit-fg-secondary)">{@invite.email}</span>.
-          <.link navigate={~p"/orgs"} class="text-(--crit-brand) no-underline hover:underline ml-1">
+          <.link
+            navigate={~p"/orgs"}
+            class="text-(--crit-brand) no-underline hover:underline ml-1"
+          >
             Not you?
           </.link>
         </p>
-
       <% :email_mismatch -> %>
         <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
           <div class="h-20 bg-(--crit-bg-page) border-b border-(--crit-border) flex items-center gap-2.5 px-10 max-sm:px-5">
@@ -105,12 +114,10 @@
               navigate={~p"/orgs"}
               class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
             >
-              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
-              Back to organizations
+              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" /> Back to organizations
             </.link>
           </div>
         </div>
-
       <% :expired -> %>
         <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
           <div class="h-20 bg-(--crit-bg-page) border-b border-(--crit-border) flex items-center gap-2.5 px-10 max-sm:px-5">
@@ -130,12 +137,10 @@
               navigate={~p"/orgs"}
               class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
             >
-              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
-              Back to organizations
+              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" /> Back to organizations
             </.link>
           </div>
         </div>
-
       <% :not_found -> %>
         <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
           <div class="h-20 bg-(--crit-bg-page) border-b border-(--crit-border) flex items-center gap-2.5 px-10 max-sm:px-5">
@@ -155,8 +160,7 @@
               navigate={~p"/orgs"}
               class="inline-flex items-center px-4 py-2 text-[14px] font-medium border border-(--crit-border) rounded-lg text-(--crit-fg-primary) hover:bg-(--crit-bg-elevated) transition-colors no-underline"
             >
-              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" />
-              Back to organizations
+              <.icon name="hero-arrow-left-mini" class="size-4 mr-1.5" /> Back to organizations
             </.link>
           </div>
         </div>

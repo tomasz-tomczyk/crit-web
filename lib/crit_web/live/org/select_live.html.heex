@@ -21,11 +21,17 @@
         <p class="text-[13px] text-(--crit-fg-muted) mt-1">
           <%= cond do %>
             <% length(@invites) > 0 and length(@orgs) > 0 -> %>
-              You have {length(@invites)} {if length(@invites) == 1, do: "invite", else: "invites"} waiting and {length(@orgs)} {if length(@orgs) == 1, do: "organization", else: "organizations"}.
+              You have {length(@invites)} {if length(@invites) == 1, do: "invite", else: "invites"} waiting and {length(
+                @orgs
+              )} {if length(@orgs) == 1, do: "organization", else: "organizations"}.
             <% length(@invites) > 0 -> %>
-              You have {length(@invites)} pending {if length(@invites) == 1, do: "invite", else: "invites"}.
+              You have {length(@invites)} pending {if length(@invites) == 1,
+                do: "invite",
+                else: "invites"}.
             <% length(@orgs) > 0 -> %>
-              You have {length(@orgs)} {if length(@orgs) == 1, do: "organization", else: "organizations"}.
+              You have {length(@orgs)} {if length(@orgs) == 1,
+                do: "organization",
+                else: "organizations"}.
             <% true -> %>
               Create an organization or accept an invite to get started.
           <% end %>
@@ -36,8 +42,7 @@
           navigate={~p"/orgs/new"}
           class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold bg-(--crit-brand) text-(--crit-fg-on-brand) rounded-md hover:bg-(--crit-brand-hover) transition-colors no-underline"
         >
-          <.icon name="hero-plus-mini" class="size-[14px]" />
-          New organization
+          <.icon name="hero-plus-mini" class="size-[14px]" /> New organization
         </.link>
       </div>
     </div>
@@ -65,10 +70,17 @@
                 {invite.organization.name}
               </div>
               <div class="text-[11px] text-(--crit-fg-muted) mt-0.5">
-                Invited by <span class="text-(--crit-fg-secondary)">{invite.invited_by.name || invite.invited_by.email}</span> as
+                Invited by
+                <span class="text-(--crit-fg-secondary)">
+                  {invite.invited_by.name || invite.invited_by.email}
+                </span>
+                as
                 <span class={[
                   "inline-flex items-center px-1.5 py-px rounded-full text-[10px] font-medium ml-1 capitalize",
-                  if(invite.role == "admin", do: "bg-(--crit-brand-bg) text-(--crit-brand)", else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted)")
+                  if(invite.role == "admin",
+                    do: "bg-(--crit-brand-bg) text-(--crit-brand)",
+                    else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted)"
+                  )
                 ]}>
                   {invite.role}
                 </span>
@@ -76,14 +88,18 @@
             </div>
             <span class="text-[11px] text-(--crit-fg-muted) flex items-center gap-1 flex-shrink-0">
               <.icon name="hero-clock-mini" class="size-[10px]" />
-              <% days_left = max(0, Crit.Organizations.OrganizationInvite.ttl_days() - div(DateTime.diff(DateTime.utc_now(), invite.inserted_at, :second), 86400)) %>
-              Expires in {days_left}d
+              <% days_left =
+                max(
+                  0,
+                  Crit.Organizations.OrganizationInvite.ttl_days() -
+                    div(DateTime.diff(DateTime.utc_now(), invite.inserted_at, :second), 86400)
+                ) %> Expires in {days_left}d
             </span>
             <button
               type="button"
               phx-click="dismiss_invite"
               phx-value-id={invite.id}
-              class="inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-muted) hover:text-(--crit-fg-primary) border border-(--crit-border) bg-(--crit-bg-card) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer"
+              class="inline-flex items-center px-3 py-1.5 text-[12px] font-medium text-(--crit-fg-muted) hover:text-(--crit-fg-primary) border border-(--crit-border) bg-(--crit-bg-card) rounded-md hover:bg-(--crit-bg-elevated) transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
             >
               Decline
             </button>
@@ -95,7 +111,7 @@
             >
               <button
                 type="submit"
-                class="inline-flex items-center px-3 py-1.5 text-[12px] font-semibold bg-(--crit-brand) text-(--crit-fg-on-brand) rounded-md hover:bg-(--crit-brand-hover) transition-colors cursor-pointer"
+                class="inline-flex items-center px-3 py-1.5 text-[12px] font-semibold bg-(--crit-brand) text-(--crit-fg-on-brand) rounded-md hover:bg-(--crit-brand-hover) transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
               >
                 Accept
               </button>
@@ -142,8 +158,7 @@
             <%!-- Active pill --%>
             <%= if @current_scope.organization && @current_scope.organization.id == org.id do %>
               <span class="absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--crit-brand-bg) text-(--crit-brand)">
-                <span class="w-1.5 h-1.5 rounded-full bg-(--crit-brand)"></span>
-                Active
+                <span class="w-1.5 h-1.5 rounded-full bg-(--crit-brand)"></span> Active
               </span>
             <% end %>
             <div class="flex gap-3 items-start">
@@ -151,14 +166,20 @@
                 {String.first(org.name) |> String.upcase()}
               </span>
               <div class="min-w-0 flex-1">
-                <div class="text-[15px] font-semibold text-(--crit-fg-primary) tracking-[-0.01em]">{org.name}</div>
+                <div class="text-[15px] font-semibold text-(--crit-fg-primary) tracking-[-0.01em]">
+                  {org.name}
+                </div>
                 <div class="text-[11px] font-mono text-(--crit-fg-muted) mt-0.5">{org.slug}</div>
               </div>
             </div>
             <div class="flex gap-1.5 flex-wrap">
               <span class={[
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium capitalize",
-                if(org.role == "admin", do: "bg-(--crit-brand-bg) text-(--crit-brand)", else: "bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)")
+                if(org.role == "admin",
+                  do: "bg-(--crit-brand-bg) text-(--crit-brand)",
+                  else:
+                    "bg-(--crit-bg-elevated) text-(--crit-fg-muted) border border-(--crit-border)"
+                )
               ]}>
                 <.icon name="hero-shield-check-mini" class="size-[11px]" /> {org.role}
               </span>

@@ -25,6 +25,11 @@ defmodule CritWeb.ReviewLive do
         raise CritWeb.NotFoundError
 
       review ->
+        case Reviews.check_org_access(review, scope) do
+          :ok -> :ok
+          {:error, :unauthorized} -> raise CritWeb.NotFoundError
+        end
+
         demo? = review.token == Application.get_env(:crit, :demo_review_token)
         identity = scope.identity
         display_name = scope.display_name

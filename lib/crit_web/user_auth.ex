@@ -169,7 +169,7 @@ defmodule CritWeb.UserAuth do
     {:cont, assign_scope(socket, session)}
   end
 
-  def on_mount(:require_review_scope, _params, session, socket) do
+  def on_mount(:require_review_scope, %{"token" => token}, session, socket) do
     socket = assign_scope(socket, session)
 
     cond do
@@ -181,8 +181,25 @@ defmodule CritWeb.UserAuth do
         {:halt, redirect(socket, to: "/auth/login?return_to=#{URI.encode_www_form(return_to)}")}
 
       true ->
-        {:cont, socket}
+        # For unauthenticated visitors, check if the review requires org membership.
+        # If so, redirect to login. The membership check happens in ReviewLive.mount/3
+        # after the user authenticates.
+        case check_org_visibility_gate(token) do
+          :ok ->
+            {:cont, socket}
+
+          :login_required ->
+            return_to = Map.get(session, "request_path", "/r/#{token}")
+
+            {:halt,
+             redirect(socket, to: "/auth/login?return_to=#{URI.encode_www_form(return_to)}")}
+        end
     end
+  end
+
+  def on_mount(:require_review_scope, _params, session, socket) do
+    socket = assign_scope(socket, session)
+    {:cont, socket}
   end
 
   def on_mount(:require_authenticated_user, _params, session, socket) do
@@ -227,10 +244,16 @@ defmodule CritWeb.UserAuth do
       authenticated = socket.assigns.current_scope.user != nil
       oauth_configured = Crit.Config.oauth_configured?()
 
+      orgs =
+        if authenticated,
+          do: Crit.Organizations.list_user_organizations(socket.assigns.current_scope),
+          else: []
+
       {:cont,
        socket
        |> Phoenix.Component.assign(:authenticated, authenticated)
-       |> Phoenix.Component.assign(:oauth_configured, oauth_configured)}
+       |> Phoenix.Component.assign(:oauth_configured, oauth_configured)
+       |> Phoenix.Component.assign(:orgs, orgs)}
     else
       {:halt, redirect(socket, to: "/")}
     end
@@ -267,5 +290,24 @@ defmodule CritWeb.UserAuth do
 
   defp assign_scope(socket, session) do
     Phoenix.Component.assign(socket, :current_scope, Scope.for_session(session))
+  end
+
+  # Quick check: does this review require org membership?
+  # Only queries the review's visibility + org_id — doesn't check membership (that's per-user).
+  # When organization_id is set, both :organization and :unlisted require login.
+  defp check_org_visibility_gate(token) do
+    import Ecto.Query, only: [from: 2]
+
+    case Crit.Repo.one(
+           from(r in Crit.Review,
+             where: r.token == ^token,
+             select: {r.visibility, r.organization_id}
+           )
+         ) do
+      {:public, _} -> :ok
+      {:organization, nil} -> :login_required
+      {_, org_id} when not is_nil(org_id) -> :login_required
+      _ -> :ok
+    end
   end
 end

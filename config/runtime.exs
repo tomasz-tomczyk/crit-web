@@ -185,6 +185,10 @@ if config_env() == :prod do
     tls: :if_available,
     auth: :if_available
 
+  if from = System.get_env("SMTP_FROM") do
+    config :crit, :smtp_from, from
+  end
+
   database_url =
     System.get_env("DATABASE_URL") ||
       case {

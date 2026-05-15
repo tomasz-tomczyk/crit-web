@@ -4,6 +4,7 @@ defmodule Crit.Reviews do
   import Ecto.Query
   alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Settings, Statistics, User}
   alias Crit.Accounts.Scope
+  alias Crit.Organizations
 
   @doc "Fetch a review by its token, preloading comments sorted by start_line."
   def get_by_token(token) do
@@ -282,59 +283,123 @@ defmodule Crit.Reviews do
 
     user_id = Scope.user_id(scope)
     cli_args = Keyword.get(opts, :cli_args) || []
+    org_slug = Keyword.get(opts, :org)
+    explicit_visibility = Keyword.get(opts, :visibility)
 
     max_total_size = Settings.get().max_document_bytes
 
     if total_bytes > max_total_size do
       {:error, :total_size_exceeded}
     else
-      review_changeset =
-        %Review{}
-        |> Review.create_changeset(%{"review_round" => review_round || 0, "cli_args" => cli_args})
-        |> then(fn cs ->
-          if user_id, do: Ecto.Changeset.put_change(cs, :user_id, user_id), else: cs
-        end)
+      with {:ok, org_attrs} <- resolve_org(scope, org_slug, explicit_visibility) do
+        review_changeset =
+          %Review{}
+          |> Review.create_changeset(%{
+            "review_round" => review_round || 0,
+            "cli_args" => cli_args
+          })
+          |> then(fn cs ->
+            if user_id, do: Ecto.Changeset.put_change(cs, :user_id, user_id), else: cs
+          end)
+          |> then(fn cs ->
+            case org_attrs do
+              %{organization_id: org_id, visibility: vis} ->
+                cs
+                |> Ecto.Changeset.put_change(:organization_id, org_id)
+                |> Ecto.Changeset.put_change(:visibility, vis)
 
-      Ecto.Multi.new()
-      |> Ecto.Multi.insert(
-        :review,
-        review_changeset
-      )
-      |> Ecto.Multi.run(:files, fn _repo, %{review: review} ->
-        case insert_round_snapshots(review, review.review_round, files_attrs) do
-          :ok -> {:ok, :ok}
-          error -> error
-        end
-      end)
-      |> Ecto.Multi.run(:comments, fn _repo, %{review: review} ->
-        case insert_imported_comments(review, comments_attrs, user_id) do
-          :ok -> {:ok, :ok}
-          error -> error
-        end
-      end)
-      |> Ecto.Multi.run(:review_comments, fn _repo, %{review: review} ->
-        case insert_imported_comments(review, review_comments_attrs, user_id) do
-          :ok -> {:ok, :ok}
-          error -> error
-        end
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{review: review}} ->
-          comment_count = length(comments_attrs) + length(review_comments_attrs)
+              _ ->
+                cs
+            end
+          end)
 
-          Statistics.increment_review(
-            length(files_attrs),
-            comment_count,
-            total_bytes,
-            total_lines
-          )
-
-          {:ok, review}
-
-        {:error, _step, reason, _changes} ->
-          {:error, reason}
+        do_create_review(
+          review_changeset,
+          files_attrs,
+          comments_attrs,
+          review_comments_attrs,
+          user_id,
+          total_bytes,
+          total_lines
+        )
       end
+    end
+  end
+
+  # Resolve org slug to org_id + visibility. Returns {:ok, map | nil} or {:error, reason}.
+  defp resolve_org(_scope, nil, _explicit_visibility), do: {:ok, nil}
+
+  defp resolve_org(%Scope{} = scope, org_slug, explicit_visibility) do
+    user_id = Scope.user_id(scope)
+
+    if is_nil(user_id) do
+      {:error, :not_a_member}
+    else
+      case Organizations.get_organization_by_slug(org_slug) do
+        {:error, :not_found} ->
+          {:error, :org_not_found}
+
+        {:ok, org} ->
+          case Organizations.get_membership_for_user(org.id, user_id) do
+            {:error, :not_found} ->
+              {:error, :not_a_member}
+
+            {:ok, _membership} ->
+              visibility = explicit_visibility || :organization
+              {:ok, %{organization_id: org.id, visibility: visibility}}
+          end
+      end
+    end
+  end
+
+  defp do_create_review(
+         review_changeset,
+         files_attrs,
+         comments_attrs,
+         review_comments_attrs,
+         user_id,
+         total_bytes,
+         total_lines
+       ) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(
+      :review,
+      review_changeset
+    )
+    |> Ecto.Multi.run(:files, fn _repo, %{review: review} ->
+      case insert_round_snapshots(review, review.review_round, files_attrs) do
+        :ok -> {:ok, :ok}
+        error -> error
+      end
+    end)
+    |> Ecto.Multi.run(:comments, fn _repo, %{review: review} ->
+      case insert_imported_comments(review, comments_attrs, user_id) do
+        :ok -> {:ok, :ok}
+        error -> error
+      end
+    end)
+    |> Ecto.Multi.run(:review_comments, fn _repo, %{review: review} ->
+      case insert_imported_comments(review, review_comments_attrs, user_id) do
+        :ok -> {:ok, :ok}
+        error -> error
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{review: review}} ->
+        comment_count = length(comments_attrs) + length(review_comments_attrs)
+
+        Statistics.increment_review(
+          length(files_attrs),
+          comment_count,
+          total_bytes,
+          total_lines
+        )
+
+        {:ok, review}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -755,6 +820,11 @@ defmodule Crit.Reviews do
 
   def list_user_reviews_with_counts(%Scope{}), do: []
 
+  @doc "Returns reviews for an organization, with comment/file counts."
+  def list_org_reviews_with_counts(org_id) do
+    reviews_with_counts_query({:org, org_id}) |> Repo.all()
+  end
+
   defp reviews_with_counts_query(filter) do
     first_file_subquery =
       from(rf in ReviewRoundSnapshot,
@@ -801,6 +871,9 @@ defmodule Crit.Reviews do
     case filter do
       :all -> base
       {:user, user_id} -> from [r, _c, _rf, _fp, _u] in base, where: r.user_id == ^user_id
+      {:org, org_id} ->
+        from [r, _c, _rf, _fp, _u] in base,
+          where: r.organization_id == ^org_id and r.visibility in [:organization, :public]
     end
   end
 
@@ -822,7 +895,8 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       review ->
-        if scope_can_modify_review?(scope, review) or Scope.admin?(scope) do
+        if scope_can_modify_review?(scope, review) or Scope.admin?(scope) or
+             org_admin_of_review?(scope, review) do
           case Repo.delete(review) do
             {:ok, _} -> :ok
             {:error, _} -> {:error, :delete_failed}
@@ -830,6 +904,52 @@ defmodule Crit.Reviews do
         else
           {:error, :unauthorized}
         end
+    end
+  end
+
+  @doc """
+  Checks whether the given scope is allowed to view this review based on
+  org membership rules. Returns :ok or {:error, :unauthorized}.
+
+  Rules when organization_id is set:
+    - :public → anyone
+    - :organization or :unlisted → org members only
+  When organization_id is nil (including orphaned reviews): existing behavior.
+  """
+  def check_org_access(%Review{organization_id: nil, visibility: :organization}, _scope),
+    do: {:error, :unauthorized}
+
+  def check_org_access(%Review{organization_id: nil}, _scope), do: :ok
+  def check_org_access(%Review{visibility: :public}, _scope), do: :ok
+
+  def check_org_access(%Review{organization_id: org_id}, %Scope{} = scope) do
+    user_id = Scope.user_id(scope)
+
+    if user_id do
+      case Organizations.get_membership_for_user(org_id, user_id) do
+        {:ok, _} -> :ok
+        _ -> {:error, :unauthorized}
+      end
+    else
+      {:error, :unauthorized}
+    end
+  end
+
+  def check_org_access(_review, _scope), do: {:error, :unauthorized}
+
+  # True if the scope's user is an admin of the review's organization.
+  defp org_admin_of_review?(_scope, %Review{organization_id: nil}), do: false
+
+  defp org_admin_of_review?(%Scope{} = scope, %Review{organization_id: org_id}) do
+    user_id = Scope.user_id(scope)
+
+    if user_id do
+      case Organizations.get_membership_for_user(org_id, user_id) do
+        {:ok, %{role: "admin"}} -> true
+        _ -> false
+      end
+    else
+      false
     end
   end
 

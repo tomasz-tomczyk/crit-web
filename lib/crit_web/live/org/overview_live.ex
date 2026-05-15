@@ -9,6 +9,7 @@ defmodule CritWeb.Org.OverviewLive do
     scope = socket.assigns.current_scope
     org = scope.organization
     members = Organizations.list_members(scope, org)
+    reviews = Organizations.list_org_reviews(scope, org)
 
     socket =
       socket
@@ -19,6 +20,7 @@ defmodule CritWeb.Org.OverviewLive do
       |> assign(:is_admin, Scope.org_admin?(scope))
       |> assign(:orgs, Organizations.list_user_organizations(scope))
       |> assign(:members, members)
+      |> assign(:reviews, reviews)
       |> assign(:greeting, greeting(scope))
 
     {:ok, socket, layout: false}

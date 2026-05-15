@@ -7,13 +7,14 @@ defmodule Crit.Review do
     field :last_activity_at, :utc_datetime
     field :review_round, :integer, default: 0
     field :cli_args, {:array, :string}, default: []
-    field :visibility, Ecto.Enum, values: [:unlisted, :public], default: :unlisted
+    field :visibility, Ecto.Enum, values: [:unlisted, :public, :organization], default: :unlisted
 
     field :comment_policy, Ecto.Enum,
       values: [:open, :logged_in_only, :disallowed],
       default: :open
 
     belongs_to :user, Crit.User, type: :binary_id
+    belongs_to :organization, Crit.Organizations.Organization, type: :binary_id
 
     has_many :comments, Crit.Comment
     has_many :round_snapshots, Crit.ReviewRoundSnapshot
@@ -56,6 +57,24 @@ defmodule Crit.Review do
     |> cast(attrs, [:visibility])
     |> validate_required([:visibility])
     |> validate_inclusion(:visibility, [:unlisted, :public])
+  end
+
+  @doc "Changeset for setting organization-scoped fields on a review."
+  def organization_changeset(review, attrs) do
+    review
+    |> cast(attrs, [:organization_id, :visibility])
+    |> validate_org_visibility()
+  end
+
+  defp validate_org_visibility(changeset) do
+    visibility = get_field(changeset, :visibility)
+    org_id = get_field(changeset, :organization_id)
+
+    if visibility == :organization and is_nil(org_id) do
+      add_error(changeset, :organization_id, "is required when visibility is :organization")
+    else
+      changeset
+    end
   end
 
   defp validate_cli_args(changeset) do

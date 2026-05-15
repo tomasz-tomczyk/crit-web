@@ -72,14 +72,33 @@ defmodule Crit.Organizations do
     Organization.changeset(org, attrs)
   end
 
+  @doc """
+  List reviews belonging to an organization, with comment/file counts.
+  Requires the scope to have the organization attached (i.e., user is a member).
+  """
+  def list_org_reviews(%Scope{} = scope, %Organization{} = org) do
+    if Scope.org_id(scope) == org.id do
+      Crit.Reviews.list_org_reviews_with_counts(org.id)
+    else
+      []
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Membership
   # ---------------------------------------------------------------------------
 
   def list_user_organizations(%Scope{user: %User{} = user}) do
+    review_count_subquery =
+      from(r in Crit.Review,
+        where: r.organization_id == parent_as(:org).id and r.visibility in [:organization, :public],
+        select: count(r.id)
+      )
+
     from(m in OrganizationMembership,
       where: m.user_id == ^user.id,
       join: o in assoc(m, :organization),
+      as: :org,
       left_join: m2 in OrganizationMembership,
       on: m2.organization_id == o.id,
       left_join: u2 in assoc(m2, :user),
@@ -88,27 +107,36 @@ defmodule Crit.Organizations do
         membership: m,
         organization: o,
         member_count: count(m2.id),
-        member_names: fragment("array_agg(? ORDER BY ? ASC NULLS LAST)", u2.name, u2.name)
+        member_names: fragment("array_agg(? ORDER BY ? ASC NULLS LAST)", u2.name, u2.name),
+        review_count: subquery(review_count_subquery)
       },
       order_by: [asc: o.name]
     )
     |> Repo.all()
     # Populate virtual fields on Organization — Ecto can't select into virtuals
     # directly, so we map over the joined result and set them from the membership.
-    |> Enum.map(fn %{membership: m, organization: org, member_count: count, member_names: names} ->
+    |> Enum.map(fn %{
+                     membership: m,
+                     organization: org,
+                     member_count: count,
+                     member_names: names,
+                     review_count: rc
+                   } ->
       initials =
         (names || [])
         |> Enum.reject(&is_nil/1)
         |> Enum.map(&String.first/1)
         |> Enum.uniq()
 
-      %{org | member_count: count, role: m.role, member_initials: initials}
+      %{org | member_count: count, review_count: rc, role: m.role, member_initials: initials}
     end)
   end
 
   def list_user_organizations(_scope), do: []
 
-  def list_members(%Scope{} = _scope, %Organization{} = org) do
+  def list_members(%Scope{} = scope, %Organization{} = org) do
+    if Scope.org_id(scope) != org.id, do: raise(ArgumentError, "scope/org mismatch")
+
     from(m in OrganizationMembership,
       where: m.organization_id == ^org.id,
       join: u in assoc(m, :user),
@@ -176,7 +204,9 @@ defmodule Crit.Organizations do
       |> Repo.aggregate(:count)
 
     cond do
-      admin_count > 1 -> :ok
+      admin_count > 1 ->
+        :ok
+
       admin_count == 1 ->
         case Repo.get_by(OrganizationMembership,
                organization_id: org.id,
@@ -186,7 +216,9 @@ defmodule Crit.Organizations do
           nil -> :ok
           _ -> {:error, :last_admin}
         end
-      true -> {:error, :last_admin}
+
+      true ->
+        {:error, :last_admin}
     end
   end
 
@@ -274,7 +306,9 @@ defmodule Crit.Organizations do
     if existing, do: {:error, :invite_exists}, else: :ok
   end
 
-  def list_pending_invites(%Scope{} = _scope, %Organization{} = org) do
+  def list_pending_invites(%Scope{} = scope, %Organization{} = org) do
+    if Scope.org_id(scope) != org.id, do: raise(ArgumentError, "scope/org mismatch")
+
     from(i in OrganizationInvite,
       where: i.organization_id == ^org.id,
       join: u in assoc(i, :invited_by),

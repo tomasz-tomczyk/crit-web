@@ -87,6 +87,7 @@ defmodule CritWeb.Org.SettingsLiveTest do
       _membership = membership_fixture(org, member, "member")
 
       conn = login(conn, member)
+
       assert {:error, {:redirect, %{to: "/orgs/member-org/members", flash: %{"error" => _}}}} =
                live(conn, ~p"/orgs/#{org.slug}/settings")
     end

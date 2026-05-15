@@ -53,7 +53,8 @@ if Mix.env() in [:dev, :test] do
           delete_token: "del_" <> token,
           review_round: attrs[:review_round] || 0,
           cli_args: attrs[:cli_args] || [],
-          user_id: user.id,
+          user_id: attrs[:user_id] || user.id,
+          organization_id: attrs[:organization_id],
           visibility: attrs[:visibility] || :unlisted,
           last_activity_at: attrs[:last_activity_at] || now,
           inserted_at: attrs[:inserted_at] || now,
@@ -1069,6 +1070,355 @@ if Mix.env() in [:dev, :test] do
   seed_membership.(acme, alice, "member")
   seed_membership.(acme, bob, "member")
 
+  # ════════════════════════════════════════════════════════════════════════
+  # ORG-SCOPED REVIEWS — every combination of owner × visibility
+  #
+  # Visibility matrix when org_id is set:
+  #   :organization — shown in org views, org members only
+  #   :unlisted     — hidden from org views, org members only (with link)
+  #   :public       — shown in org views, anyone can view
+  # ════════════════════════════════════════════════════════════════════════
+
+  # Admin-owned, visibility: :organization (default for org reviews)
+  seed_review.("seed-org-admin-org01", %{
+    user_id: user.id,
+    organization_id: acme.id,
+    visibility: :organization,
+    last_activity_at: now,
+    inserted_at: yesterday,
+    inserted_at_naive: yesterday_naive,
+    cli_args: ["architecture.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "architecture.md",
+        content: """
+        # Architecture Decision Record: Event Sourcing
+
+        ## Status
+        Proposed
+
+        ## Context
+        We need to track all state changes for audit compliance.
+        The current CRUD model loses history on every update.
+
+        ## Decision
+        Adopt event sourcing for the billing domain. Events are
+        immutable and stored in an append-only log. Projections
+        derive current state for queries.
+
+        ## Consequences
+        - Full audit trail for free
+        - Replay capability for debugging
+        - Higher complexity in the billing service
+        - Need to handle schema evolution for events
+        """,
+        position: 0
+      }
+    ],
+    comments: [
+      %{
+        id: "a0000000-0000-0000-0001-000000000001",
+        file_path: "architecture.md",
+        start_line: 14,
+        end_line: 16,
+        body: "Have we considered CQRS alongside this? Separate read/write models would help with query performance.",
+        author_display_name: "Alice"
+      }
+    ]
+  })
+
+  # Admin-owned, visibility: :unlisted (org-private but hidden from listing)
+  seed_review.("seed-org-admin-unl01", %{
+    user_id: user.id,
+    organization_id: acme.id,
+    visibility: :unlisted,
+    last_activity_at: yesterday,
+    inserted_at: yesterday,
+    inserted_at_naive: yesterday_naive,
+    cli_args: ["draft-rfc.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "draft-rfc.md",
+        content: """
+        # RFC: Database Migration Strategy (DRAFT)
+
+        **Status:** Draft — not ready for team review yet.
+
+        This is a work-in-progress proposal for migrating from
+        PostgreSQL 14 to 17. Sharing the link with select people
+        for early feedback before publishing to the full org.
+        """,
+        position: 0
+      }
+    ]
+  })
+
+  # Admin-owned, visibility: :public (anyone can view, shown in org listing)
+  seed_review.("seed-org-admin-pub01", %{
+    user_id: user.id,
+    organization_id: acme.id,
+    visibility: :public,
+    last_activity_at: now,
+    inserted_at: last_week,
+    inserted_at_naive: last_week_naive,
+    cli_args: ["onboarding.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "onboarding.md",
+        content: """
+        # Developer Onboarding Guide
+
+        Welcome to the team! This guide covers everything you need
+        to get your local environment running.
+
+        ## Prerequisites
+
+        - Docker Desktop
+        - Go 1.22+
+        - Node.js 20+ (for frontend tooling)
+
+        ## First Day Checklist
+
+        1. Clone the monorepo
+        2. Run `make setup` (installs deps, seeds DB)
+        3. Run `make dev` (starts all services)
+        4. Open http://localhost:3000
+
+        ## Team Norms
+
+        - PRs need one approval
+        - Write tests for new endpoints
+        - Use conventional commits
+        """,
+        position: 0
+      }
+    ],
+    comments: [
+      %{
+        id: "a0000000-0000-0000-0001-000000000002",
+        file_path: "onboarding.md",
+        start_line: 20,
+        end_line: 22,
+        body: "Should we add a note about which Slack channels to join?",
+        author_display_name: "Bob"
+      }
+    ]
+  })
+
+  # Member (Alice)-owned, visibility: :organization
+  seed_review.("seed-org-alice-org01", %{
+    user_id: alice.id,
+    organization_id: acme.id,
+    visibility: :organization,
+    last_activity_at: now,
+    inserted_at: now,
+    cli_args: ["api-redesign.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "api-redesign.md",
+        content: """
+        # API v2 Redesign Notes
+
+        ## Breaking Changes
+
+        - Remove `/api/v1/users/search` — use query params on `/api/v2/users`
+        - Pagination switches from offset to cursor-based
+        - Error responses follow RFC 7807 (Problem Details)
+
+        ## New Endpoints
+
+        | Method | Path                | Description        |
+        |--------|---------------------|--------------------|
+        | GET    | /api/v2/users       | List (cursor-based)|
+        | POST   | /api/v2/users       | Create             |
+        | GET    | /api/v2/users/:id   | Get by ID          |
+        | PATCH  | /api/v2/users/:id   | Partial update     |
+        | DELETE | /api/v2/users/:id   | Soft delete        |
+        """,
+        position: 0
+      }
+    ],
+    comments: [
+      %{
+        id: "a0000000-0000-0000-0001-000000000003",
+        file_path: "api-redesign.md",
+        start_line: 5,
+        end_line: 5,
+        body: "How long do we maintain v1 alongside v2? Suggest a 6-month deprecation window.",
+        author_display_name: "Bob"
+      },
+      %{
+        id: "a0000000-0000-0000-0001-000000000004",
+        scope: "review",
+        body: "Looks solid. Let's discuss the cursor-based pagination format at standup — there are a few options.",
+        author_display_name: "Tomasz Tomczyk"
+      }
+    ]
+  })
+
+  # Member (Alice)-owned, visibility: :unlisted
+  seed_review.("seed-org-alice-unl01", %{
+    user_id: alice.id,
+    organization_id: acme.id,
+    visibility: :unlisted,
+    last_activity_at: yesterday,
+    inserted_at: yesterday,
+    inserted_at_naive: yesterday_naive,
+    cli_args: ["scratch.py"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "scratch.py",
+        content: """
+        # Quick benchmark — not for team review
+        import timeit
+
+        def approach_a():
+            return [x**2 for x in range(1000)]
+
+        def approach_b():
+            return list(map(lambda x: x**2, range(1000)))
+
+        print("List comp:", timeit.timeit(approach_a, number=10000))
+        print("Map/lambda:", timeit.timeit(approach_b, number=10000))
+        """,
+        position: 0
+      }
+    ]
+  })
+
+  # Member (Bob)-owned, visibility: :organization
+  seed_review.("seed-org-bob-org0001", %{
+    user_id: bob.id,
+    organization_id: acme.id,
+    visibility: :organization,
+    last_activity_at: yesterday,
+    inserted_at: yesterday,
+    inserted_at_naive: yesterday_naive,
+    cli_args: ["bugfix-notes.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "bugfix-notes.md",
+        content: """
+        # Bug: Race condition in session cleanup
+
+        ## Symptom
+        Users randomly logged out during peak traffic.
+
+        ## Root Cause
+        The session cleanup job and the auth middleware both read/write
+        the session store without locking. Under high concurrency, the
+        cleanup deletes a session between the middleware's read and
+        the response's Set-Cookie.
+
+        ## Fix
+        Added a Redis WATCH/MULTI transaction around session refresh.
+        The cleanup job now uses SCAN with a cursor instead of KEYS.
+
+        ## Verification
+        - Load test at 2x peak: 0 spurious logouts over 1 hour
+        - Session cleanup latency: p99 dropped from 200ms to 15ms
+        """,
+        position: 0
+      }
+    ],
+    comments: [
+      %{
+        id: "a0000000-0000-0000-0001-000000000005",
+        file_path: "bugfix-notes.md",
+        start_line: 14,
+        end_line: 15,
+        body: "Nice write-up. Can we add this to the incident log wiki too?",
+        author_display_name: "Alice"
+      }
+    ]
+  })
+
+  # Member (Bob)-owned, visibility: :public
+  seed_review.("seed-org-bob-pub0001", %{
+    user_id: bob.id,
+    organization_id: acme.id,
+    visibility: :public,
+    last_activity_at: last_week,
+    inserted_at: last_week,
+    inserted_at_naive: last_week_naive,
+    cli_args: ["style-guide.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "style-guide.md",
+        content: """
+        # Go Style Guide (Acme Team)
+
+        ## Naming
+        - Exported functions: `PascalCase`
+        - Unexported: `camelCase`
+        - Acronyms: `HTTPClient`, not `HttpClient`
+
+        ## Error Handling
+        - Always wrap errors: `fmt.Errorf("op failed: %w", err)`
+        - Define sentinel errors for package boundaries
+        - Never ignore errors silently (use `_ = fn()` if intentional)
+
+        ## Testing
+        - Table-driven tests for functions with multiple cases
+        - Use `testify/assert` for assertions
+        - Test files: `foo_test.go` next to `foo.go`
+        """,
+        position: 0
+      }
+    ]
+  })
+
+  # Orphaned author — review belongs to org but author account was deleted.
+  # user_id is nil (simulates what happens after delete_user nilifies org reviews).
+  seed_review.("seed-org-orphan-0001", %{
+    user_id: nil,
+    organization_id: acme.id,
+    visibility: :organization,
+    last_activity_at: last_week,
+    inserted_at: last_week,
+    inserted_at_naive: last_week_naive,
+    cli_args: ["retro.md"],
+    snapshots: [
+      %{
+        round_number: 0,
+        file_path: "retro.md",
+        content: """
+        # Sprint Retro — Week 23
+
+        ## What went well
+        - Shipped the auth migration on time
+        - Zero downtime deploy
+
+        ## What could improve
+        - PR review turnaround was slow this week
+        - Flaky test in CI blocked 3 merges
+
+        ## Action items
+        - [ ] Set up auto-merge for green PRs
+        - [ ] Quarantine flaky tests in a separate suite
+        """,
+        position: 0
+      }
+    ],
+    comments: [
+      %{
+        id: "a0000000-0000-0000-0001-000000000006",
+        file_path: "retro.md",
+        start_line: 12,
+        end_line: 12,
+        body: "We should set a 24h SLA for PR reviews. Thoughts?",
+        author_display_name: "Former Member"
+      }
+    ]
+  })
+
   # ── Summary ────────────────────────────────────────────────────────────
 
   reviews = [
@@ -1092,8 +1442,26 @@ if Mix.env() in [:dev, :test] do
   IO.puts("  Dashboard: http://localhost:4000/dashboard")
   IO.puts("  (Log in with GitHub to see all reviews)\n")
 
-  IO.puts("  Organization: Acme (http://localhost:4000/orgs/acme/members)")
+  IO.puts("  Organization: Acme (http://localhost:4000/orgs/acme)")
   IO.puts("    admin:  #{user.name} (GitHub login)")
   IO.puts("    member: alice@example.com / password1234")
   IO.puts("    member: bob@example.com   / password1234\n")
+
+  org_reviews = [
+    {"seed-org-admin-org01", "Admin / :organization", "architecture.md — visible in org listing, members only"},
+    {"seed-org-admin-unl01", "Admin / :unlisted", "draft-rfc.md — hidden from listing, members only with link"},
+    {"seed-org-admin-pub01", "Admin / :public", "onboarding.md — visible in org listing, anyone can view"},
+    {"seed-org-alice-org01", "Alice / :organization", "api-redesign.md — member-owned, members only"},
+    {"seed-org-alice-unl01", "Alice / :unlisted", "scratch.py — member-owned, hidden, members only with link"},
+    {"seed-org-bob-org0001", "Bob / :organization", "bugfix-notes.md — member-owned, members only"},
+    {"seed-org-bob-pub0001", "Bob / :public", "style-guide.md — member-owned, anyone can view"},
+    {"seed-org-orphan-0001", "Orphaned author", "retro.md — author deleted, review persists under org"}
+  ]
+
+  IO.puts("  Org-scoped reviews (#{length(org_reviews)}):\n")
+
+  for {token, label, desc} <- org_reviews do
+    IO.puts("    #{String.pad_trailing(label, 28)} http://localhost:4000/r/#{token}")
+    IO.puts("    #{String.pad_trailing("", 28)} #{desc}\n")
+  end
 end

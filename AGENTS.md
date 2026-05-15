@@ -141,6 +141,7 @@ CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, El
 **Bearer-auth API (`/api/auth`):**
 
 - `GET /whoami` — current user info
+- `GET /orgs` — list user's organizations (`[{name, slug, role}]`)
 - `DELETE /token` — revoke current bearer token
 
 **Test/dev seeding (`/api/...`, compiled out of prod):** `seed-comment`, `seed-reply`, `seed-user`.

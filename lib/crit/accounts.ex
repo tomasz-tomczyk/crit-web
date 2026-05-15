@@ -317,6 +317,13 @@ defmodule Crit.Accounts do
         {:error, :not_found}
 
       user ->
+        # Detach org-scoped reviews so the CASCADE on user deletion doesn't
+        # destroy them — they belong to the org, not the departing user.
+        from(r in Crit.Review,
+          where: r.user_id == ^id and not is_nil(r.organization_id)
+        )
+        |> Repo.update_all(set: [user_id: nil])
+
         case Repo.delete(user) do
           {:ok, _} -> :ok
           {:error, _} -> {:error, :delete_failed}

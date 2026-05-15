@@ -47,6 +47,44 @@ defmodule CritWeb.AuthApiControllerTest do
     end
   end
 
+  describe "GET /api/auth/orgs" do
+    test "returns user's organizations", %{conn: conn} do
+      {user, token} = create_user_and_token()
+
+      scope = Crit.Accounts.Scope.for_user(user)
+      {:ok, org} = Crit.Organizations.create_organization(scope, %{"name" => "Test Org"})
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get("/api/auth/orgs")
+
+      body = json_response(conn, 200)
+      assert is_list(body)
+      assert length(body) == 1
+      [org_json] = body
+      assert org_json["name"] == "Test Org"
+      assert org_json["slug"] == org.slug
+      assert org_json["role"] == "admin"
+    end
+
+    test "returns empty list when user has no orgs", %{conn: conn} do
+      {_user, token} = create_user_and_token()
+
+      conn =
+        conn
+        |> auth_conn(token)
+        |> get("/api/auth/orgs")
+
+      assert json_response(conn, 200) == []
+    end
+
+    test "returns 401 without Bearer token", %{conn: conn} do
+      conn = get(conn, "/api/auth/orgs")
+      assert json_response(conn, 401)
+    end
+  end
+
   describe "DELETE /api/auth/token" do
     test "revokes the token used for authentication", %{conn: conn} do
       {_user, token} = create_user_and_token()

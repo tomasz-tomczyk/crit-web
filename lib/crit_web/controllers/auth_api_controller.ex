@@ -17,6 +17,22 @@ defmodule CritWeb.AuthApiController do
   end
 
   @doc """
+  GET /api/auth/orgs — returns the authenticated user's organizations.
+  """
+  def orgs(conn, _params) do
+    user = conn.assigns.current_user
+    scope = Crit.Accounts.Scope.for_user(user)
+    orgs = Crit.Organizations.list_user_organizations(scope)
+
+    json(
+      conn,
+      Enum.map(orgs, fn org ->
+        %{name: org.name, slug: org.slug, role: org.role}
+      end)
+    )
+  end
+
+  @doc """
   DELETE /api/auth/token — revokes the Bearer token used to authenticate this request.
 
   Idempotent: returns 204 even if the token is already gone.

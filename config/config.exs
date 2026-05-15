@@ -9,7 +9,8 @@ import Config
 
 config :crit,
   ecto_repos: [Crit.Repo],
-  generators: [timestamp_type: :utc_datetime, binary_id: true]
+  generators: [timestamp_type: :utc_datetime, binary_id: true],
+  smtp_from: "test@localhost"
 
 # Swoosh: we only use SMTP / Local / Test adapters, no HTTP-based delivery,
 # so the optional :hackney api_client dependency isn't needed.

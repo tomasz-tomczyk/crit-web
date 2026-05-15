@@ -151,5 +151,4 @@ defmodule CritWeb.Org.MembersLiveTest do
       assert html =~ "Invite resent"
     end
   end
-
 end

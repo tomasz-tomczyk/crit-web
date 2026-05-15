@@ -4,79 +4,135 @@
   <Layouts.site_header current_scope={@current_scope} />
 
   <%!-- ===== Hero ===== --%>
-  <section class="relative border-b border-(--crit-border) overflow-hidden">
-    <div class="relative max-w-[1120px] mx-auto pt-[100px] px-20 pb-20 max-sm:px-4 max-sm:pt-14 max-sm:pb-10">
-      <div class="flex items-center gap-2.5 mb-7">
-        <span class="inline-flex items-center gap-[7px] py-[5px] px-[11px] rounded-full bg-(--crit-brand-bg) text-(--crit-brand) text-[12px] font-medium">
-          <span class="inline-block w-1.5 h-1.5 rounded-full bg-(--crit-brand)"></span>
-          New &middot; Crit for teams
-        </span>
-        <span class="text-[12px] text-(--crit-fg-muted)">Available on every plan</span>
-      </div>
-
-      <h1 class="text-[76px] font-extrabold tracking-[-0.035em] leading-[0.98] text-white max-w-[920px] text-balance m-0 max-lg:text-6xl max-sm:text-5xl">
-        One review loop.<br />
-        The whole team in the<br />loop<span class="text-(--crit-brand)">.</span>
+  <section class="relative overflow-hidden">
+    <div class="relative max-w-7xl mx-auto pt-24 px-10 pb-16 max-sm:px-4 max-sm:pt-14 max-sm:pb-10">
+      <h1 class="text-7xl font-extrabold leading-none tracking-tight max-w-[920px] text-balance m-0 max-lg:text-6xl max-sm:text-5xl">
+        The whole team in the loop<span class="text-(--crit-brand)">.</span>
       </h1>
 
-      <p class="text-[19px] text-(--crit-fg-secondary) leading-[1.55] max-w-[640px] mt-6 mb-9">
+      <p class="text-xl max-sm:text-base leading-relaxed text-(--crit-fg-secondary) max-w-2xl mt-6 mb-10">
         Crit Organizations turn your local-first review workflow into a shared one.
         Pool reviews across teammates, share inline comments, and keep agent
-        handoffs visible &mdash; without leaving the terminal.
+        handoffs visible &mdash; from the CLI to the browser. Your code stays local unless you explicitly share it.
       </p>
 
       <div class="flex gap-2.5 items-center flex-wrap">
         <a
           href={~p"/orgs/new"}
-          class="inline-flex items-center gap-2 py-3 px-[22px] rounded-lg bg-(--crit-brand) text-(--crit-bg-page) text-[14px] font-semibold no-underline hover:bg-(--crit-brand-hover) transition-colors"
+          class="inline-flex items-center justify-center gap-2 px-7 py-3 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-brand-cta-hover) transition-all"
         >
-          Create an organization
-          <.icon name="hero-arrow-right-mini" class="w-3.5 h-3.5" />
+          Create an organization <.icon name="hero-arrow-right-mini" class="w-3.5 h-3.5" />
         </a>
         <a
-          href="#demo"
-          class="inline-flex items-center gap-2 py-3 px-[22px] rounded-lg border border-(--crit-border) bg-(--crit-bg-card) text-(--crit-fg-secondary) text-[14px] font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+          href={~p"/r/demo"}
+          class="inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-all"
         >
-          <svg viewBox="0 0 24 24" class="w-[11px] h-[11px]" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4" /></svg>
-          Watch 90-sec demo
+          See an example review
         </a>
-        <span class="text-[12px] text-(--crit-fg-muted) ml-1.5">
+        <span class="text-xs text-(--crit-fg-muted) ml-1.5">
           Free during beta &middot; No card required
         </span>
       </div>
 
       <%!-- Product preview frame --%>
-      <div class="mt-16 relative rounded-[14px] overflow-hidden border border-(--crit-border-strong) bg-(--crit-bg-card)" style="box-shadow: 0 30px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(122,162,247,0.06);">
-        <div class="grid grid-cols-[260px_1fr] min-h-[480px] text-[12px] max-md:grid-cols-1">
+      <div
+        class="mt-16 relative rounded-[14px] overflow-hidden border border-(--crit-border-strong) bg-(--crit-bg-card)"
+        style="box-shadow: 0 30px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(122,162,247,0.06);"
+      >
+        <div class="grid grid-cols-[260px_1fr] min-h-[360px] text-[12px] max-md:grid-cols-1">
           <%!-- Sidebar --%>
           <div class="bg-(--crit-bg-page) border-r border-(--crit-border) max-md:border-r-0 max-md:border-b p-3.5 flex flex-col gap-1">
             <div class="flex items-center gap-2 py-1.5 px-2 bg-(--crit-bg-card) border border-(--crit-border) rounded-[7px] mb-2.5">
-              <span class="w-5 h-5 rounded-[5px] bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] font-semibold text-[8px] inline-flex items-center justify-center">A</span>
+              <span class="w-5 h-5 rounded-[5px] bg-[rgba(122,162,247,0.18)] text-[#7aa2f7] font-semibold text-[8px] inline-flex items-center justify-center">
+                A
+              </span>
               <span class="font-semibold text-(--crit-fg-primary) text-[12px]">Acme, Inc.</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[11px] h-[11px] ml-auto opacity-50"><polyline points="6 9 12 15 18 9" /></svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-[11px] h-[11px] ml-auto opacity-50"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </div>
-            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.1em] py-1.5 px-2">Shared reviews</div>
+            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.1em] py-1.5 px-2">
+              Shared reviews
+            </div>
             <%!-- Active review --%>
             <div class="flex items-center gap-2 py-1.5 px-2 bg-(--crit-brand-bg) rounded-md text-(--crit-fg-primary)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[11px] h-[11px] text-(--crit-orange)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">feat: org auto-join</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-[11px] h-[11px] text-(--crit-orange)"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                feat: org auto-join
+              </span>
               <span class="text-[10px] text-(--crit-fg-muted)">14</span>
             </div>
             <%!-- Inactive reviews --%>
             <div class="flex items-center gap-2 py-1.5 px-2 rounded-md text-(--crit-fg-secondary)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[11px] h-[11px] text-(--crit-green)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">fix: invite expiry</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-[11px] h-[11px] text-(--crit-green)"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                fix: invite expiry
+              </span>
               <span class="text-[10px] text-(--crit-fg-muted)">6</span>
             </div>
             <div class="flex items-center gap-2 py-1.5 px-2 rounded-md text-(--crit-fg-secondary)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[11px] h-[11px] text-(--crit-orange)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">refactor: scope plug</span>
-              <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-(--crit-brand-bg) text-(--crit-brand) font-medium">you</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-[11px] h-[11px] text-(--crit-orange)"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                refactor: scope plug
+              </span>
+              <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-(--crit-brand-bg) text-(--crit-brand) font-medium">
+                you
+              </span>
               <span class="text-[10px] text-(--crit-fg-muted)">21</span>
             </div>
             <div class="flex items-center gap-2 py-1.5 px-2 rounded-md text-(--crit-fg-secondary)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[11px] h-[11px] text-(--crit-brand)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">plan: SAML SSO</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-[11px] h-[11px] text-(--crit-brand)"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                plan: SAML SSO
+              </span>
               <span class="text-[10px] text-(--crit-fg-muted)">9</span>
             </div>
             <div class="flex-1"></div>
@@ -88,49 +144,89 @@
           <%!-- Review body --%>
           <div class="p-[18px] font-mono text-[12px] leading-[1.6] relative overflow-hidden">
             <div class="flex items-center gap-2.5 mb-3.5 font-sans">
-              <span class="text-[13px] font-semibold text-(--crit-fg-primary)">feat: org auto-join via verified domains</span>
-              <span class="inline-flex items-center py-[1px] px-[7px] text-[10px] rounded-full bg-[rgba(255,158,100,0.12)] text-(--crit-orange) font-medium">Round 2</span>
-              <span class="inline-flex items-center py-[1px] px-[7px] text-[10px] rounded-full border border-(--crit-border) text-(--crit-fg-muted) font-medium">14 comments</span>
+              <span class="text-[13px] font-semibold text-(--crit-fg-primary)">
+                feat: org auto-join via verified domains
+              </span>
+              <span class="inline-flex items-center py-[1px] px-[7px] text-[10px] rounded-full bg-[rgba(255,158,100,0.12)] text-(--crit-orange) font-medium">
+                Round 2
+              </span>
+              <span class="inline-flex items-center py-[1px] px-[7px] text-[10px] rounded-full border border-(--crit-border) text-(--crit-fg-muted) font-medium">
+                14 comments
+              </span>
               <div class="ml-auto flex">
                 <span class="border-2 border-(--crit-bg-card) rounded-full">
-                  <span class="w-5 h-5 rounded-full bg-[rgba(187,154,247,0.18)] text-[#bb9af7] text-[8px] font-semibold inline-flex items-center justify-center">M</span>
+                  <span class="w-5 h-5 rounded-full bg-[rgba(187,154,247,0.18)] text-[#bb9af7] text-[8px] font-semibold inline-flex items-center justify-center">
+                    M
+                  </span>
                 </span>
                 <span class="-ml-1.5 border-2 border-(--crit-bg-card) rounded-full">
-                  <span class="w-5 h-5 rounded-full bg-[rgba(158,206,106,0.20)] text-[#9ece6a] text-[8px] font-semibold inline-flex items-center justify-center">S</span>
+                  <span class="w-5 h-5 rounded-full bg-[rgba(158,206,106,0.20)] text-[#9ece6a] text-[8px] font-semibold inline-flex items-center justify-center">
+                    S
+                  </span>
                 </span>
                 <span class="-ml-1.5 border-2 border-(--crit-bg-card) rounded-full">
-                  <span class="w-5 h-5 rounded-full bg-[rgba(255,158,100,0.18)] text-[#ff9e64] text-[8px] font-semibold inline-flex items-center justify-center">T</span>
+                  <span class="w-5 h-5 rounded-full bg-[rgba(255,158,100,0.18)] text-[#ff9e64] text-[8px] font-semibold inline-flex items-center justify-center">
+                    T
+                  </span>
                 </span>
               </div>
             </div>
             <%!-- Code lines --%>
             <div class="grid grid-cols-[36px_1fr] text-(--crit-fg-secondary) rounded-lg overflow-hidden bg-(--crit-bg-page) border border-(--crit-border)">
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">22</div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">
+                22
+              </div>
               <div class="py-[3px] px-2.5" phx-no-curly-interpolation>## Auto-join behavior</div>
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">23</div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">
+                23
+              </div>
               <div class="py-[3px] px-2.5">&nbsp;</div>
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">24</div>
-              <div class="py-[3px] px-2.5">When a user signs in with a verified domain email, we now</div>
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">25</div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">
+                24
+              </div>
+              <div class="py-[3px] px-2.5">
+                When a user signs in with a verified domain email, we now
+              </div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">
+                25
+              </div>
               <div class="py-[3px] px-2.5">add them to the org as a Member by default.</div>
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">26</div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">
+                26
+              </div>
               <div class="py-[3px] px-2.5">&nbsp;</div>
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-[rgba(86,211,100,0.08)] border-r border-(--crit-border)">+</div>
-              <div class="py-[3px] px-2.5 bg-[rgba(86,211,100,0.06)] text-(--crit-green)">+ Skip auto-join if the user already has 5 memberships.</div>
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-[rgba(86,211,100,0.08)] border-r border-(--crit-border)">+</div>
-              <div class="py-[3px] px-2.5 bg-[rgba(86,211,100,0.06)] text-(--crit-green)">+ Allow admins to override the default role per domain.</div>
-              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">29</div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-[rgba(86,211,100,0.08)] border-r border-(--crit-border)">
+                +
+              </div>
+              <div class="py-[3px] px-2.5 bg-[rgba(86,211,100,0.06)] text-(--crit-green)">
+                + Skip auto-join if the user already has 5 memberships.
+              </div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-[rgba(86,211,100,0.08)] border-r border-(--crit-border)">
+                +
+              </div>
+              <div class="py-[3px] px-2.5 bg-[rgba(86,211,100,0.06)] text-(--crit-green)">
+                + Allow admins to override the default role per domain.
+              </div>
+              <div class="py-[3px] px-2 text-right text-(--crit-fg-muted) bg-(--crit-bg-gutter) border-r border-(--crit-border)">
+                29
+              </div>
               <div class="py-[3px] px-2.5">&nbsp;</div>
             </div>
 
             <%!-- Comment thread --%>
             <div class="mt-3.5 p-3 bg-(--crit-comment-bg) border border-(--crit-border-comment) rounded-lg font-sans">
               <div class="flex gap-[9px] items-start">
-                <span class="w-5 h-5 rounded-full bg-[rgba(187,154,247,0.18)] text-[#bb9af7] text-[8px] font-semibold inline-flex items-center justify-center shrink-0">M</span>
+                <span class="w-5 h-5 rounded-full bg-[rgba(187,154,247,0.18)] text-[#bb9af7] text-[8px] font-semibold inline-flex items-center justify-center shrink-0">
+                  M
+                </span>
                 <div class="flex-1">
                   <div class="flex items-baseline gap-2">
-                    <span class="font-semibold text-[12px] text-(--crit-fg-primary)">Mira Patel</span>
-                    <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-(--crit-brand-bg) text-(--crit-brand) font-medium">Admin</span>
+                    <span class="font-semibold text-[12px] text-(--crit-fg-primary)">
+                      Mira Patel
+                    </span>
+                    <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-(--crit-brand-bg) text-(--crit-brand) font-medium">
+                      Admin
+                    </span>
                     <span class="text-[11px] text-(--crit-fg-muted)">commented on line 26</span>
                   </div>
                   <p class="mt-1.5 mb-0 text-[12px] text-(--crit-fg-secondary) leading-[1.5]">
@@ -140,15 +236,26 @@
                 </div>
               </div>
               <div class="flex gap-[9px] items-start mt-3 pt-3 border-t border-dashed border-(--crit-border)">
-                <span class="w-5 h-5 rounded-full bg-[rgba(255,158,100,0.18)] text-[#ff9e64] text-[8px] font-semibold inline-flex items-center justify-center shrink-0">A</span>
+                <span class="w-5 h-5 rounded-full bg-[rgba(255,158,100,0.18)] text-[#ff9e64] text-[8px] font-semibold inline-flex items-center justify-center shrink-0">
+                  A
+                </span>
                 <div class="flex-1">
                   <div class="flex items-baseline gap-2">
                     <span class="font-semibold text-[12px] text-(--crit-fg-primary)">Agent</span>
-                    <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-[rgba(255,158,100,0.12)] text-(--crit-orange) font-medium">Claude Code</span>
+                    <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-[rgba(255,158,100,0.12)] text-(--crit-orange) font-medium">
+                      Claude Code
+                    </span>
                     <span class="text-[11px] text-(--crit-fg-muted)">5s ago</span>
                   </div>
                   <p class="mt-1.5 mb-0 text-[12px] text-(--crit-fg-secondary) leading-[1.5]">
-                    Good catch. Added <code class="bg-(--crit-code-bg) py-0 px-1 rounded-[3px] font-mono text-[11px]" phx-no-curly-interpolation>Webhook.emit(:org_member_added, ...)</code> after the membership insert. Tests added. Pushing for round 3.
+                    Good catch. Added
+                    <code
+                      class="bg-(--crit-code-bg) py-0 px-1 rounded-[3px] font-mono text-[11px]"
+                      phx-no-curly-interpolation
+                    >
+                      Webhook.emit(:org_member_added, ...)
+                    </code>
+                    after the membership insert. Tests added. Pushing for round 3.
                   </p>
                 </div>
               </div>
@@ -160,27 +267,27 @@
   </section>
 
   <%!-- ===== Logos ===== --%>
-  <section class="border-b border-(--crit-border)">
-    <div class="max-w-[1120px] mx-auto py-8 px-20 max-sm:px-4 flex items-center gap-7 flex-wrap">
-      <span class="font-mono text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.18em]">
-        Teams shipping with Crit
-      </span>
-      <div class="flex gap-9 flex-1 justify-between flex-wrap">
-        <span :for={name <- ["Northwind", "Helix Labs", "Pioneer 9", "Linear Studio", "Cartograph", "Riverstone"]} class="font-mono text-[14px] font-medium text-(--crit-fg-muted) tracking-[-0.01em]">
-          {name}
-        </span>
+  <section>
+    <div class="max-w-7xl mx-auto py-8 px-10 max-sm:px-4">
+      <div class="text-sm text-(--crit-fg-muted) text-center mb-6">Teams planning with Crit</div>
+      <div class="flex items-center justify-center gap-16 max-sm:gap-8 max-sm:flex-wrap">
+        <img src="/images/logos/spotify.svg" alt="Spotify" class="w-28 brightness-0 invert opacity-40 hover:opacity-70 transition-opacity duration-300" loading="lazy" />
+        <img src="/images/logos/forter.svg" alt="Forter" class="w-24 brightness-0 invert opacity-40 hover:opacity-70 transition-opacity duration-300" loading="lazy" />
+        <img src="/images/logos/addepar.svg" alt="Addepar" class="w-28 brightness-0 invert opacity-40 hover:opacity-70 transition-opacity duration-300" loading="lazy" />
       </div>
     </div>
   </section>
 
   <%!-- ===== Feature Grid ===== --%>
   <section class="border-b border-(--crit-border)">
-    <div class="max-w-[1120px] mx-auto py-20 px-20 max-sm:px-4">
-      <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-(--crit-fg-muted) mb-3">What&rsquo;s in the box</div>
-      <h2 class="text-[44px] font-extrabold tracking-[-0.03em] text-white max-w-[760px] text-balance mb-[18px] max-sm:text-3xl">
+    <div class="max-w-7xl mx-auto py-24 px-10 max-sm:px-4 max-sm:py-12">
+      <div class="font-mono text-xs uppercase tracking-widest text-(--crit-brand) mb-3">
+        What&rsquo;s in the box
+      </div>
+      <h2 class="text-3xl font-extrabold tracking-tight max-w-[760px] text-balance mb-4 max-sm:text-2xl">
         Built for the way teams actually review AI&nbsp;output<span class="text-(--crit-brand)">.</span>
       </h2>
-      <p class="text-[17px] text-(--crit-fg-secondary) max-w-[640px] leading-[1.55]">
+      <p class="text-lg text-(--crit-fg-secondary) max-w-2xl leading-relaxed max-sm:text-base">
         The same local-first loop you&rsquo;ve used solo &mdash; now with the parts a team needs.
         No new tool to learn, no second login.
       </p>
@@ -188,45 +295,171 @@
       <div class="mt-12 grid grid-cols-3 gap-px bg-(--crit-border) border border-(--crit-border) rounded-xl overflow-hidden max-md:grid-cols-1">
         <div class="p-7 bg-(--crit-bg-page)">
           <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-[17px] h-[17px]"
+            >
+              <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle
+                cx="18"
+                cy="19"
+                r="3"
+              /><line x1="8.6" y1="13.5" x2="15.4" y2="17.5" /><line
+                x1="15.4"
+                y1="6.5"
+                x2="8.6"
+                y2="10.5"
+              />
+            </svg>
           </span>
-          <h3 class="text-[16px] font-semibold tracking-[-0.01em] text-white mb-2">Pool reviews across the team</h3>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] m-0">Anything an org member shares lands in a shared inbox. No more passing /r/ links in Slack.</p>
+          <h3 class="text-lg font-semibold tracking-tight mb-2">
+            Pool reviews across the team
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed m-0">
+            Share reviews into an org-wide inbox. No more passing /r/ links in Slack.
+          </p>
         </div>
         <div class="p-7 bg-(--crit-bg-page)">
           <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.6 8.6 0 0 1-4-1L3 21l2-5.5A8.4 8.4 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-[17px] h-[17px]"
+            >
+              <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.6 8.6 0 0 1-4-1L3 21l2-5.5A8.4 8.4 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z" />
+            </svg>
           </span>
-          <h3 class="text-[16px] font-semibold tracking-[-0.01em] text-white mb-2">Threaded inline comments</h3>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] m-0">Highlight lines, drop comments, @-mention teammates. Agent picks up the round when you hit Finish.</p>
+          <h3 class="text-lg font-semibold tracking-tight mb-2">
+            Threaded inline comments
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed m-0">
+            Highlight lines, drop comments, and reply in threads. Resolve when done.
+          </p>
         </div>
         <div class="p-7 bg-(--crit-bg-page)">
           <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6z"/><polyline points="9 12 11 14 15 10" /></svg>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-[17px] h-[17px]"
+            >
+              <path d="M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6z" /><polyline points="9 12 11 14 15 10" />
+            </svg>
           </span>
-          <h3 class="text-[16px] font-semibold tracking-[-0.01em] text-white mb-2">Scoped to your org</h3>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] m-0">Every review is org-scoped. Cross-org leaks are impossible by design &mdash; verified in our security model.</p>
+          <h3 class="text-lg font-semibold tracking-tight mb-2">
+            Scoped to your org
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed m-0">
+            Every review is org-scoped. Cross-org leaks are impossible by design &mdash; enforced at the schema, query, and authorization layer.
+          </p>
         </div>
         <div class="p-7 bg-(--crit-bg-page)">
           <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-[17px] h-[17px]"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 4l-10 8L2 4" />
+            </svg>
           </span>
-          <h3 class="text-[16px] font-semibold tracking-[-0.01em] text-white mb-2">Domain auto-join + SSO</h3>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] m-0">Verify your domain and everyone on @yourco joins as a Member. SAML/OIDC for the enterprise plan.</p>
+          <h3 class="text-lg font-semibold tracking-tight mb-2">
+            Email invites
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed m-0">
+            Invite teammates by email. They accept with one click and land in the org immediately.
+          </p>
         </div>
         <div class="p-7 bg-(--crit-bg-page)">
           <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" /><circle cx="10" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M17 3.13A4 4 0 0 1 17 11" /></svg>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-[17px] h-[17px]"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" /><circle cx="10" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M17 3.13A4 4 0 0 1 17 11" />
+            </svg>
           </span>
-          <h3 class="text-[16px] font-semibold tracking-[-0.01em] text-white mb-2">Roles that match real teams</h3>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] m-0">Admin + Member today, with finer-grained roles (Guest, Billing) shipping next month.</p>
+          <h3 class="text-lg font-semibold tracking-tight mb-2">
+            Roles that match real teams
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed m-0">
+            Admin + Member roles today. Invite teammates with a link, control who can manage the org.
+          </p>
         </div>
         <div class="p-7 bg-(--crit-bg-page)">
           <span class="w-9 h-9 rounded-[9px] bg-(--crit-brand-bg) text-(--crit-brand) inline-flex items-center justify-center mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]"><path d="M16 3l4 4-4 4"/><path d="M4 7h16"/><path d="M8 21l-4-4 4-4"/><path d="M20 17H4"/></svg>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-[17px] h-[17px]"
+            >
+              <path d="M16 3l4 4-4 4" /><path d="M4 7h16" /><path d="M8 21l-4-4 4-4" /><path d="M20 17H4" />
+            </svg>
           </span>
-          <h3 class="text-[16px] font-semibold tracking-[-0.01em] text-white mb-2">Multi-org switching</h3>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] m-0">Belong to your day-job, your side project, and an open-source crew &mdash; without juggling accounts.</p>
+          <h3 class="text-lg font-semibold tracking-tight mb-2">
+            Multi-org switching
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed m-0">
+            Belong to your day-job, your side project, and an open-source crew &mdash; without juggling accounts.
+          </p>
+        </div>
+      </div>
+      <p class="text-sm text-(--crit-fg-muted) mt-6">
+        Shared inbox, activity feed, and pinned reviews are on the roadmap &mdash; the rest is live today.
+      </p>
+    </div>
+  </section>
+
+  <%!-- ===== Testimonials ===== --%>
+  <section class="border-b border-(--crit-border)">
+    <div class="max-w-7xl mx-auto py-24 px-10 max-sm:px-4 max-sm:py-12">
+      <div class="font-mono text-xs uppercase tracking-widest text-(--crit-brand) mb-3">What people are saying</div>
+      <div class="grid grid-cols-3 gap-8 max-lg:grid-cols-1 max-lg:gap-6">
+        <div class="flex flex-col gap-2">
+          <p class="text-base font-semibold leading-snug">&ldquo;A clean local UI to batch my feedback and iterate.&rdquo;</p>
+          <div class="flex items-center gap-2.5 mt-auto pt-1">
+            <img src="/images/testimonials/omervk.jpg" alt="Omer" class="size-7 rounded-full bg-(--crit-bg-elevated)" loading="lazy" width="28" height="28" />
+            <p class="text-xs text-(--crit-fg-muted)">Omer &middot; Principal Engineer</p>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <p class="text-base font-semibold leading-snug">&ldquo;Like a pull request review but for your plan.&rdquo;</p>
+          <div class="flex items-center gap-2.5 mt-auto pt-1">
+            <img src="/images/testimonials/vineus.jpg" alt="Vincent" class="size-7 rounded-full bg-(--crit-bg-elevated)" loading="lazy" width="28" height="28" />
+            <p class="text-xs text-(--crit-fg-muted)">Vincent &middot; Senior Software Engineer</p>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <p class="text-base font-semibold leading-snug">&ldquo;Genuinely game changing for agentic workflows.&rdquo;</p>
+          <div class="flex items-center gap-2.5 mt-auto pt-1">
+            <img src="/images/testimonials/vereisyaps.png" alt="@vereisyaps" class="size-7 rounded-full bg-(--crit-bg-elevated)" loading="lazy" width="28" height="28" />
+            <p class="text-xs text-(--crit-fg-muted)">@vereisyaps &middot; Tech Lead</p>
+          </div>
         </div>
       </div>
     </div>
@@ -234,91 +467,172 @@
 
   <%!-- ===== Showcase ===== --%>
   <section class="border-b border-(--crit-border)">
-    <div class="max-w-[1120px] mx-auto py-24 px-20 max-sm:px-4 grid grid-cols-2 gap-20 items-center max-lg:grid-cols-1 max-lg:gap-10">
+    <div class="max-w-7xl mx-auto py-24 px-10 max-sm:px-4 max-sm:py-12 grid grid-cols-2 gap-20 items-center max-lg:grid-cols-1 max-lg:gap-10">
       <div>
-        <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-(--crit-fg-muted) mb-3.5">Everything in one place</div>
-        <h2 class="text-[40px] font-extrabold tracking-[-0.03em] text-white text-balance mb-[18px] max-sm:text-3xl">
+        <div class="font-mono text-xs uppercase tracking-widest text-(--crit-brand) mb-3.5">
+          Everything in one place
+        </div>
+        <h2 class="text-3xl font-extrabold tracking-tight text-balance mb-4 max-sm:text-2xl">
           The org overview keeps the whole team oriented.
         </h2>
-        <p class="text-[16px] text-(--crit-fg-secondary) leading-[1.6] mb-6">
+        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed mb-6 max-sm:text-base">
           See what&rsquo;s in flight, who&rsquo;s waiting on whom, and where agents have replied &mdash;
           without context-switching between Slack, the CLI, and three browser tabs.
         </p>
         <ul class="list-none p-0 m-0 flex flex-col gap-3.5">
           <li class="flex gap-3 items-start">
             <span class="text-(--crit-brand) mt-0.5">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11 14 15 10" /></svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-4 h-4"
+              >
+                <circle cx="12" cy="12" r="9" /><polyline points="9 12 11 14 15 10" />
+              </svg>
             </span>
             <div>
-              <div class="text-[14px] font-semibold text-(--crit-fg-primary)">Awaiting-you queue</div>
-              <div class="text-[13px] text-(--crit-fg-secondary) mt-0.5">Filter to just the reviews where the ball is in your court.</div>
+              <div class="text-sm font-semibold text-(--crit-fg-primary)">
+                Awaiting-you queue
+              </div>
+              <div class="text-sm text-(--crit-fg-secondary) mt-0.5">
+                Filter to just the reviews where the ball is in your court.
+              </div>
             </div>
           </li>
           <li class="flex gap-3 items-start">
             <span class="text-(--crit-brand) mt-0.5">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11 14 15 10" /></svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-4 h-4"
+              >
+                <circle cx="12" cy="12" r="9" /><polyline points="9 12 11 14 15 10" />
+              </svg>
             </span>
             <div>
-              <div class="text-[14px] font-semibold text-(--crit-fg-primary)">Live activity rail</div>
-              <div class="text-[13px] text-(--crit-fg-secondary) mt-0.5">Resolutions, new rounds, and joins as they happen.</div>
+              <div class="text-sm font-semibold text-(--crit-fg-primary)">
+                Live activity rail
+              </div>
+              <div class="text-sm text-(--crit-fg-secondary) mt-0.5">
+                Resolutions, new rounds, and joins as they happen.
+              </div>
             </div>
           </li>
           <li class="flex gap-3 items-start">
             <span class="text-(--crit-brand) mt-0.5">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11 14 15 10" /></svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="w-4 h-4"
+              >
+                <circle cx="12" cy="12" r="9" /><polyline points="9 12 11 14 15 10" />
+              </svg>
             </span>
             <div>
-              <div class="text-[14px] font-semibold text-(--crit-fg-primary)">Pinned canonical reviews</div>
-              <div class="text-[13px] text-(--crit-fg-secondary) mt-0.5">Permanent links for things like the team&rsquo;s review process or permissions matrix.</div>
+              <div class="text-sm font-semibold text-(--crit-fg-primary)">
+                Pinned canonical reviews
+              </div>
+              <div class="text-sm text-(--crit-fg-secondary) mt-0.5">
+                Permanent links for things like the team&rsquo;s review process or permissions matrix.
+              </div>
             </div>
           </li>
         </ul>
       </div>
       <%!-- Showcase preview --%>
-      <div class="rounded-xl overflow-hidden border border-(--crit-border-strong) bg-(--crit-bg-card) aspect-[4/3] p-[18px] flex flex-col gap-2.5" style="box-shadow: 0 20px 60px rgba(0,0,0,0.45);">
-        <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Acme &middot; Overview</div>
+      <div
+        class="rounded-xl overflow-hidden border border-(--crit-border-strong) bg-(--crit-bg-card) aspect-[4/3] p-[18px] flex flex-col gap-2.5"
+        style="box-shadow: 0 20px 60px rgba(0,0,0,0.45);"
+      >
+        <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">
+          Acme &middot; Overview
+        </div>
         <div class="grid grid-cols-4 gap-2 max-sm:grid-cols-2">
           <div class="py-2.5 px-3 bg-(--crit-bg-page) border border-(--crit-border) rounded-[7px]">
             <div class="text-[18px] font-bold tracking-[-0.02em] text-(--crit-orange)">3</div>
-            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-[3px]">for you</div>
+            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-1">
+              for you
+            </div>
           </div>
           <div class="py-2.5 px-3 bg-(--crit-bg-page) border border-(--crit-border) rounded-[7px]">
-            <div class="text-[18px] font-bold tracking-[-0.02em] text-(--crit-fg-primary)">218</div>
-            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-[3px]">all-time</div>
+            <div class="text-[18px] font-bold tracking-[-0.02em] text-(--crit-fg-primary)">
+              218
+            </div>
+            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-1">
+              all-time
+            </div>
           </div>
           <div class="py-2.5 px-3 bg-(--crit-bg-page) border border-(--crit-border) rounded-[7px]">
-            <div class="text-[18px] font-bold tracking-[-0.02em] text-(--crit-fg-primary)">14</div>
-            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-[3px]">members</div>
+            <div class="text-[18px] font-bold tracking-[-0.02em] text-(--crit-fg-primary)">
+              14
+            </div>
+            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-1">
+              members
+            </div>
           </div>
           <div class="py-2.5 px-3 bg-(--crit-bg-page) border border-(--crit-border) rounded-[7px]">
-            <div class="text-[18px] font-bold tracking-[-0.02em] text-(--crit-fg-primary)">6.4k</div>
-            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-[3px]">comments</div>
+            <div class="text-[18px] font-bold tracking-[-0.02em] text-(--crit-fg-primary)">
+              6.4k
+            </div>
+            <div class="text-[10px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mt-1">
+              comments
+            </div>
           </div>
         </div>
         <%!-- Review rows --%>
         <div class="flex gap-2.5 py-2 px-2.5 bg-(--crit-bg-page) border border-(--crit-border) rounded-md items-center">
           <span class="w-[5px] h-[22px] rounded-[3px] bg-(--crit-orange)"></span>
-          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">feat: org auto-join via verified domains</span>
-          <span class="w-5 h-5 rounded-full bg-[rgba(187,154,247,0.18)] text-[#bb9af7] text-[8px] font-semibold inline-flex items-center justify-center">M</span>
+          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+            feat: org auto-join via verified domains
+          </span>
+          <span class="w-5 h-5 rounded-full bg-[rgba(187,154,247,0.18)] text-[#bb9af7] text-[8px] font-semibold inline-flex items-center justify-center">
+            M
+          </span>
           <span class="text-[10px] text-(--crit-fg-muted) w-6 text-right">3m</span>
         </div>
         <div class="flex gap-2.5 py-2 px-2.5 bg-(--crit-bg-page) border border-(--crit-border) rounded-md items-center">
           <span class="w-[5px] h-[22px] rounded-[3px] bg-(--crit-green)"></span>
-          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">fix: invite expiry off-by-one + email locale</span>
-          <span class="w-5 h-5 rounded-full bg-[rgba(158,206,106,0.20)] text-[#9ece6a] text-[8px] font-semibold inline-flex items-center justify-center">S</span>
+          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+            fix: invite expiry off-by-one + email locale
+          </span>
+          <span class="w-5 h-5 rounded-full bg-[rgba(158,206,106,0.20)] text-[#9ece6a] text-[8px] font-semibold inline-flex items-center justify-center">
+            S
+          </span>
           <span class="text-[10px] text-(--crit-fg-muted) w-6 text-right">42m</span>
         </div>
         <div class="flex gap-2.5 py-2 px-2.5 bg-(--crit-bg-page) border border-(--crit-border) rounded-md items-center">
           <span class="w-[5px] h-[22px] rounded-[3px] bg-(--crit-brand)"></span>
-          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">refactor: scope checks pulled to plug</span>
-          <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-(--crit-brand-bg) text-(--crit-brand) font-medium">you</span>
-          <span class="w-5 h-5 rounded-full bg-[rgba(255,158,100,0.18)] text-[#ff9e64] text-[8px] font-semibold inline-flex items-center justify-center">T</span>
+          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+            refactor: scope checks pulled to plug
+          </span>
+          <span class="inline-flex items-center py-0 px-[5px] text-[9px] rounded-full bg-(--crit-brand-bg) text-(--crit-brand) font-medium">
+            you
+          </span>
+          <span class="w-5 h-5 rounded-full bg-[rgba(255,158,100,0.18)] text-[#ff9e64] text-[8px] font-semibold inline-flex items-center justify-center">
+            T
+          </span>
           <span class="text-[10px] text-(--crit-fg-muted) w-6 text-right">2h</span>
         </div>
         <div class="flex gap-2.5 py-2 px-2.5 bg-(--crit-bg-page) border border-(--crit-border) rounded-md items-center">
           <span class="w-[5px] h-[22px] rounded-[3px] bg-(--crit-orange)"></span>
-          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">plan: SAML SSO + JIT provisioning</span>
-          <span class="w-5 h-5 rounded-full bg-[rgba(247,118,142,0.18)] text-[#f7768e] text-[8px] font-semibold inline-flex items-center justify-center">A</span>
+          <span class="text-[12px] text-(--crit-fg-primary) font-medium flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+            plan: SAML SSO + JIT provisioning
+          </span>
+          <span class="w-5 h-5 rounded-full bg-[rgba(247,118,142,0.18)] text-[#f7768e] text-[8px] font-semibold inline-flex items-center justify-center">
+            A
+          </span>
           <span class="text-[10px] text-(--crit-fg-muted) w-6 text-right">1d</span>
         </div>
       </div>
@@ -327,32 +641,54 @@
 
   <%!-- ===== Security ===== --%>
   <section class="border-b border-(--crit-border)">
-    <div class="max-w-[1120px] mx-auto py-24 px-20 max-sm:px-4 grid grid-cols-[380px_1fr] gap-20 items-start max-lg:grid-cols-1 max-lg:gap-10">
+    <div class="max-w-7xl mx-auto py-24 px-10 max-sm:px-4 max-sm:py-12 grid grid-cols-2 gap-20 items-start max-lg:grid-cols-1 max-lg:gap-10">
       <div>
-        <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-(--crit-fg-muted) mb-3.5">Security by design</div>
-        <h2 class="text-[36px] font-extrabold tracking-[-0.03em] text-white text-balance mb-[18px] max-sm:text-2xl">
+        <div class="font-mono text-xs uppercase tracking-widest text-(--crit-brand) mb-3.5">
+          Security by design
+        </div>
+        <h2 class="text-3xl font-extrabold tracking-tight text-balance mb-4 max-sm:text-2xl">
           Your code stays local. Your reviews stay scoped.
         </h2>
-        <p class="text-[14px] text-(--crit-fg-secondary) leading-[1.65] mb-[18px]">
-          Org scoping is enforced at every layer &mdash; schema, query, and authorization plug.
-          Cross-org reads simply can&rsquo;t happen.
+        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed mb-4 max-sm:text-base">
+          Crit is open source and self-hostable. Your code never leaves your machine unless you explicitly share a review.
         </p>
-        <a href={~p"/self-hosting"} class="text-[13px] text-(--crit-brand) no-underline hover:underline">Read the security model &rarr;</a>
       </div>
 
-      <div class="font-mono text-[12.5px] leading-[1.7] bg-(--crit-bg-card) border border-(--crit-border) rounded-[10px] p-[22px] text-(--crit-fg-secondary) overflow-hidden">
-        <div class="text-(--crit-fg-muted) mb-2.5" phx-no-curly-interpolation># crit_web/scope.ex — every action passes through this</div>
-        <div phx-no-curly-interpolation><span class="text-(--crit-red)">def</span> <span class="text-(--crit-brand)">authorize</span>(scope, resource) <span class="text-(--crit-red)">do</span></div>
-        <div class="pl-4" phx-no-curly-interpolation><span class="text-(--crit-fg-muted)"># resource is org-scoped; scope.org_id must match</span></div>
-        <div class="pl-4" phx-no-curly-interpolation><span class="text-(--crit-red)">if</span> resource.organization_id == <span class="text-(--crit-brand)">Scope</span>.org_id(scope),</div>
-        <div class="pl-8" phx-no-curly-interpolation><span class="text-(--crit-red)">do</span>: <span class="text-(--crit-green)">:ok</span>,</div>
-        <div class="pl-8" phx-no-curly-interpolation><span class="text-(--crit-red)">else</span>: {<span class="text-(--crit-green)">:error</span>, <span class="text-(--crit-green)">:unauthorized</span>}</div>
-        <div phx-no-curly-interpolation><span class="text-(--crit-red)">end</span></div>
-        <div class="mt-4 flex gap-4 flex-wrap font-sans text-(--crit-fg-muted) text-[12px]">
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[11px] h-[11px] inline align-middle text-(--crit-green)"><polyline points="20 6 9 17 4 12" /></svg>
-            SOC 2 Type II in progress
-          </span>
+      <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[10px] overflow-hidden">
+        <div class="px-[22px] pt-[22px] pb-3">
+          <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em] mb-3">Review visibility</div>
+          <div class="grid grid-cols-[1fr_auto_auto] gap-x-8 text-xs">
+            <%!-- Header --%>
+            <div class="text-(--crit-fg-muted) font-medium pb-2.5">Visibility</div>
+            <div class="text-(--crit-fg-muted) font-medium pb-2.5">Org members</div>
+            <div class="text-(--crit-fg-muted) font-medium pb-2.5">Anyone with link</div>
+            <%!-- Organization --%>
+            <div class="py-2 border-t border-(--crit-border) font-medium text-(--crit-fg-primary)">Organization</div>
+            <div class="py-2 border-t border-(--crit-border)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-green)"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <div class="py-2 border-t border-(--crit-border)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-fg-muted)"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </div>
+            <%!-- Unlisted --%>
+            <div class="py-2 border-t border-(--crit-border) font-medium text-(--crit-fg-primary)">Unlisted</div>
+            <div class="py-2 border-t border-(--crit-border)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-green)"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <div class="py-2 border-t border-(--crit-border)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-fg-muted)"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </div>
+            <%!-- Public --%>
+            <div class="py-2 border-t border-(--crit-border) font-medium text-(--crit-fg-primary)">Public</div>
+            <div class="py-2 border-t border-(--crit-border)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-green)"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <div class="py-2 border-t border-(--crit-border)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-green)"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-4 flex-wrap font-sans text-(--crit-fg-muted) text-[12px] px-[22px] py-3.5 border-t border-(--crit-border) bg-(--crit-bg-page)">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-[11px] h-[11px] inline align-middle text-(--crit-green)"><polyline points="20 6 9 17 4 12" /></svg>
             Self-hostable in Docker
@@ -368,142 +704,308 @@
 
   <%!-- ===== Pricing ===== --%>
   <section class="border-b border-(--crit-border)">
-    <div class="max-w-[1120px] mx-auto py-24 px-20 max-sm:px-4">
+    <div class="max-w-7xl mx-auto py-24 px-10 max-sm:px-4 max-sm:py-12">
       <div class="text-center mb-12">
-        <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-(--crit-fg-muted) mb-3">Pricing</div>
-        <h2 class="text-[44px] font-extrabold tracking-[-0.03em] text-white mb-3.5 max-sm:text-3xl">
-          Priced like a tool, not a platform<span class="text-(--crit-brand)">.</span>
+        <div class="font-mono text-xs uppercase tracking-widest text-(--crit-brand) mb-3">
+          Pricing
+        </div>
+        <h2 class="text-3xl font-extrabold tracking-tight mb-3 max-sm:text-2xl">
+          Simple, honest pricing<span class="text-(--crit-brand)">.</span>
         </h2>
-        <p class="text-[16px] text-(--crit-fg-secondary) max-w-[580px] mx-auto leading-[1.55]">
-          Teams is free for the whole beta &mdash; we&rsquo;ll give 60 days&rsquo; notice before pricing lands, and your org keeps a fair grandfather rate.
+        <p class="text-lg text-(--crit-fg-secondary) max-w-xl mx-auto leading-relaxed max-sm:text-base">
+          Teams is free for the whole beta &mdash; we&rsquo;ll give plenty of notice before pricing lands, and early adopters will get a discount.
         </p>
       </div>
 
-      <div class="grid grid-cols-2 gap-4 max-w-[760px] mx-auto max-sm:grid-cols-1">
+      <div class="grid grid-cols-2 gap-4 max-w-3xl mx-auto max-sm:grid-cols-1">
         <%!-- Solo tier --%>
         <div class="p-8 border border-(--crit-border) rounded-[14px] bg-(--crit-bg-card) relative">
-          <div class="text-[14px] font-semibold text-(--crit-fg-primary) tracking-[-0.005em]">Solo</div>
-          <div class="text-[12px] text-(--crit-fg-muted) mt-[3px]">1 seat</div>
-          <div class="mt-[18px] mb-1.5 flex items-baseline gap-1.5">
-            <span class="text-[44px] font-extrabold tracking-[-0.03em] text-white">Free</span>
+          <div class="text-2xl font-extrabold tracking-tight">
+            Solo
           </div>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] mt-1.5 mb-[22px] min-h-[60px]">For one developer, one machine.</p>
+          <div class="text-xs text-(--crit-fg-muted) mt-1">1 seat</div>
+          <div class="mt-5 mb-1.5 flex items-baseline gap-1.5">
+            <span class="text-5xl font-extrabold tracking-tight">Free</span>
+          </div>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-1.5 mb-6 min-h-[60px]">
+            For one developer, one machine.
+          </p>
           <a
-            href={~p"/getting-started"}
-            class="flex items-center justify-center w-full py-2.5 px-3.5 rounded-lg border border-(--crit-border) bg-(--crit-bg-card) text-(--crit-fg-secondary) text-[13px] font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+            href={~p"/auth/login"}
+            class="flex items-center justify-center w-full py-3 px-7 rounded-lg border border-(--crit-border) text-(--crit-fg-secondary) text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-all"
           >
-            Install the CLI
+            Sign in
           </a>
           <ul class="list-none p-0 mt-6 flex flex-col gap-[11px]">
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               Unlimited local reviews
             </li>
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               Single share-link reviews
             </li>
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
-              Personal review hub at crit.md/me
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              Personal review dashboard
             </li>
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               Community support
             </li>
           </ul>
         </div>
         <%!-- Teams tier --%>
-        <div class="p-8 border border-(--crit-brand) rounded-[14px] bg-(--crit-bg-card) relative">
-          <span class="absolute -top-2.5 left-7 py-[3px] px-2.5 text-[10px] font-medium rounded-full bg-(--crit-brand-bg) text-(--crit-brand)">
-            Free during beta
-          </span>
-          <div class="text-[14px] font-semibold text-(--crit-fg-primary) tracking-[-0.005em]">Teams</div>
-          <div class="text-[12px] text-(--crit-fg-muted) mt-[3px]">Unlimited seats</div>
-          <div class="mt-[18px] mb-1.5 flex items-baseline gap-1.5">
-            <span class="text-[44px] font-extrabold tracking-[-0.03em] text-white">Free</span>
+        <div class="p-8 border border-(--crit-brand) rounded-[14px] bg-(--crit-bg-card)">
+          <div class="text-2xl font-extrabold tracking-tight">
+            Teams
+          </div>
+          <div class="text-xs text-(--crit-fg-muted) mt-1">Unlimited seats during beta</div>
+          <div class="mt-5 mb-1.5 flex items-baseline gap-1.5">
+            <span class="text-5xl font-extrabold tracking-tight">Free</span>
             <span class="text-[13px] text-(--crit-fg-muted)">during beta</span>
           </div>
-          <p class="text-[13.5px] text-(--crit-fg-secondary) leading-[1.6] mt-1.5 mb-[22px] min-h-[60px]">Pool reviews, share inline comments, and keep agent handoffs visible across the whole team.</p>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-1.5 mb-6 min-h-[60px]">
+            Pool reviews, share inline comments, and keep agent handoffs visible across the whole team.
+          </p>
           <a
             href={~p"/orgs/new"}
-            class="flex items-center justify-center gap-2 w-full py-2.5 px-3.5 rounded-lg bg-(--crit-brand) text-(--crit-bg-page) text-[13px] font-semibold no-underline hover:bg-(--crit-brand-hover) transition-colors"
+            class="flex items-center justify-center gap-2 w-full py-3 px-7 rounded-lg bg-(--crit-brand-cta) text-(--crit-fg-on-brand) text-sm font-bold no-underline hover:bg-(--crit-brand-cta-hover) transition-all"
           >
             Create an organization
             <.icon name="hero-arrow-right-mini" class="w-[13px] h-[13px]" />
           </a>
           <ul class="list-none p-0 mt-6 flex flex-col gap-[11px]">
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               Everything in Solo
             </li>
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
-              Organizations + shared inbox
-            </li>
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
-              Domain auto-join
-            </li>
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              Organizations + shared inbox            </li>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              Email invites            </li>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               Roles: Admin &amp; Member
             </li>
-            <li class="flex gap-2.5 items-start text-[13px] text-(--crit-fg-secondary)">
-              <span class="text-(--crit-green) mt-0.5 shrink-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-[13px] h-[13px]"><polyline points="20 6 9 17 4 12" /></svg></span>
+            <li class="flex gap-2.5 items-start text-sm text-(--crit-fg-secondary)">
+              <span class="text-(--crit-green) mt-0.5 shrink-0">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="w-[13px] h-[13px]"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               Self-host on your own infra
             </li>
           </ul>
         </div>
       </div>
 
-      <p class="text-center mt-7 text-[12px] text-(--crit-fg-muted)">
-        Need SAML/OIDC, audit log, or a dedicated tenant? <a href="mailto:hello@crit.md" class="text-(--crit-brand) no-underline hover:underline">Talk to us &rarr;</a>
+      <p class="text-center mt-7 text-xs text-(--crit-fg-muted)">
+        Need SSO, audit logging, or a dedicated instance?
+        <a href="mailto:hello@crit.md" class="text-(--crit-brand) no-underline hover:underline">
+          Talk to us &rarr;
+        </a>
       </p>
     </div>
   </section>
 
   <%!-- ===== FAQ ===== --%>
   <section class="border-b border-(--crit-border)">
-    <div class="max-w-[880px] mx-auto py-24 px-20 max-sm:px-4">
-      <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-(--crit-fg-muted) mb-3 text-center">Common questions</div>
-      <h2 class="text-[36px] font-extrabold tracking-[-0.03em] text-white mb-12 text-center max-sm:text-2xl">
+    <div class="max-w-3xl mx-auto py-24 px-10 max-sm:px-4 max-sm:py-12">
+      <div class="font-mono text-xs uppercase tracking-widest text-(--crit-brand) mb-3 text-center">
+        Common questions
+      </div>
+      <h2 class="text-3xl font-extrabold tracking-tight mb-12 text-center max-sm:text-2xl">
         The bits people ask before they buy.
       </h2>
       <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
         <details open class="border-b border-(--crit-border) group">
           <summary class="list-none cursor-pointer py-5 px-6 flex items-center gap-3 [&::-webkit-details-marker]:hidden">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"><polyline points="6 9 12 15 18 9" /></svg>
-            <span class="text-[14px] font-semibold text-(--crit-fg-primary)">Can I self-host Crit Organizations?</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span class="text-sm font-semibold text-(--crit-fg-primary)">
+              Can I self-host Crit Organizations?
+            </span>
           </summary>
-          <div class="pb-[22px] px-6 pl-[50px] text-[13px] text-(--crit-fg-secondary) leading-[1.65]">
-            Yes. Set <code class="bg-(--crit-code-bg) px-1 rounded-[3px] font-mono text-[12px]">SELFHOSTED=true</code> on the Docker image and you get the full org + sharing experience inside your own VPC. No data ever leaves your infra.
+          <div class="pb-[22px] px-6 pl-12 text-sm text-(--crit-fg-secondary) leading-relaxed">
+            Yes &mdash; organizations are included in every self-hosted deployment. Follow the <a href={~p"/self-hosting"} class="text-(--crit-brand) no-underline hover:underline">self-hosting guide</a> to get started.
           </div>
         </details>
         <details class="border-b border-(--crit-border) group">
           <summary class="list-none cursor-pointer py-5 px-6 flex items-center gap-3 [&::-webkit-details-marker]:hidden">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"><polyline points="6 9 12 15 18 9" /></svg>
-            <span class="text-[14px] font-semibold text-(--crit-fg-primary)">Do I need an account for the CLI to work?</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span class="text-sm font-semibold text-(--crit-fg-primary)">
+              Do I need an account for the CLI to work?
+            </span>
           </summary>
-          <div class="pb-[22px] px-6 pl-[50px] text-[13px] text-(--crit-fg-secondary) leading-[1.65]">
+          <div class="pb-[22px] px-6 pl-12 text-sm text-(--crit-fg-secondary) leading-relaxed">
             No. The CLI is fully local. Sharing &mdash; solo or via an org &mdash; is the only thing that touches a server. Skip sharing and Crit never phones home.
           </div>
         </details>
         <details class="border-b border-(--crit-border) group">
           <summary class="list-none cursor-pointer py-5 px-6 flex items-center gap-3 [&::-webkit-details-marker]:hidden">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"><polyline points="6 9 12 15 18 9" /></svg>
-            <span class="text-[14px] font-semibold text-(--crit-fg-primary)">What happens when someone leaves the org?</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span class="text-sm font-semibold text-(--crit-fg-primary)">
+              What happens when someone leaves the org?
+            </span>
           </summary>
-          <div class="pb-[22px] px-6 pl-[50px] text-[13px] text-(--crit-fg-secondary) leading-[1.65]">
-            Their membership is revoked immediately. Reviews they shared into the org stay with the org. Their personal reviews stay with them.
+          <div class="pb-[22px] px-6 pl-12 text-sm text-(--crit-fg-secondary) leading-relaxed">
+            An admin removes their membership. Reviews they shared into the org stay with the org. Their personal reviews stay with them.
           </div>
         </details>
         <details class="group">
           <summary class="list-none cursor-pointer py-5 px-6 flex items-center gap-3 [&::-webkit-details-marker]:hidden">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"><polyline points="6 9 12 15 18 9" /></svg>
-            <span class="text-[14px] font-semibold text-(--crit-fg-primary)">Is my code ever sent to a server?</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-3.5 h-3.5 text-(--crit-fg-muted) shrink-0 transition-transform group-open:rotate-180"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span class="text-sm font-semibold text-(--crit-fg-primary)">
+              Is my code ever sent to a server?
+            </span>
           </summary>
-          <div class="pb-[22px] px-6 pl-[50px] text-[13px] text-(--crit-fg-secondary) leading-[1.65]">
+          <div class="pb-[22px] px-6 pl-12 text-sm text-(--crit-fg-secondary) leading-relaxed">
             Only the file contents you explicitly include in a shared review. Everything else &mdash; drafts, comments-in-progress, agent context &mdash; stays local.
           </div>
         </details>
@@ -513,49 +1015,36 @@
 
   <%!-- ===== CTA ===== --%>
   <section class="relative overflow-hidden">
-    <div class="relative max-w-[760px] mx-auto py-28 px-20 max-sm:px-4 text-center">
-      <h2 class="text-[56px] font-extrabold tracking-[-0.035em] leading-[1.05] text-white text-balance max-sm:text-4xl">
+    <div class="relative max-w-3xl mx-auto py-28 px-10 max-sm:px-4 max-sm:py-12 text-center">
+      <h2 class="text-5xl font-extrabold tracking-tight leading-tight text-balance max-sm:text-3xl">
         Get the team in the agent loop<span class="text-(--crit-brand)">.</span>
       </h2>
-      <p class="text-[17px] text-(--crit-fg-secondary) leading-[1.55] mt-[22px] mb-9 max-w-[560px] mx-auto">
-        Free during the beta. Set up takes under a minute &mdash; verify your domain, invite teammates, share your first review.
+      <p class="text-lg text-(--crit-fg-secondary) leading-relaxed mt-6 mb-10 max-w-xl mx-auto max-sm:text-base">
+        Free during the beta. Set up takes under a minute &mdash; create an org, invite teammates, share your first review.
       </p>
-      <div class="flex gap-2.5 justify-center flex-wrap">
+      <div class="flex gap-2.5 justify-center flex-wrap max-sm:flex-col max-sm:items-stretch">
         <a
           href={~p"/orgs/new"}
-          class="inline-flex items-center gap-2 py-[13px] px-6 rounded-lg bg-(--crit-brand) text-(--crit-bg-page) text-[14px] font-semibold no-underline hover:bg-(--crit-brand-hover) transition-colors"
+          class="inline-flex items-center justify-center gap-2 px-7 py-3 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-brand-cta-hover) transition-all"
         >
-          Create an organization
-          <.icon name="hero-arrow-right-mini" class="w-3.5 h-3.5" />
+          Create an organization <.icon name="hero-arrow-right-mini" class="w-3.5 h-3.5" />
         </a>
         <a
           href="https://github.com/tomasz-tomczyk/crit"
-          class="inline-flex items-center gap-2 py-[13px] px-6 rounded-lg border border-(--crit-border) bg-(--crit-bg-card) text-(--crit-fg-secondary) text-[14px] font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
+          class="inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-all"
         >
-          <svg viewBox="0 0 24 24" class="w-[13px] h-[13px]" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.92.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.34-1.28-1.7-1.28-1.7-1.05-.71.08-.7.08-.7 1.16.08 1.78 1.2 1.78 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.59.23 2.77.11 3.06.74.81 1.18 1.84 1.18 3.1 0 4.44-2.7 5.41-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.55C20.21 21.38 23.5 17.07 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+          <svg
+            viewBox="0 0 24 24"
+            class="w-[13px] h-[13px]"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.92.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.34-1.28-1.7-1.28-1.7-1.05-.71.08-.7.08-.7 1.16.08 1.78 1.2 1.78 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.59.23 2.77.11 3.06.74.81 1.18 1.84 1.18 3.1 0 4.44-2.7 5.41-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.55C20.21 21.38 23.5 17.07 23.5 12 23.5 5.65 18.35.5 12 .5z" />
+          </svg>
           Star on GitHub
         </a>
       </div>
     </div>
   </section>
 
-  <%!-- ===== Footer ===== --%>
-  <footer class="border-t border-(--crit-border) bg-(--crit-bg-page)">
-    <div class="max-w-[1120px] mx-auto py-10 px-20 max-sm:px-4 flex items-center gap-6 flex-wrap">
-      <a href={~p"/"} class="font-bold text-[18px] text-white tracking-[-0.02em] no-underline">
-        crit<span class="text-(--crit-brand)">.</span>
-      </a>
-      <nav class="flex gap-[22px] text-[13px] text-(--crit-fg-muted)">
-        <a href={~p"/features"} class="no-underline hover:text-(--crit-fg-secondary) transition-colors">Features</a>
-        <a href={~p"/integrations"} class="no-underline hover:text-(--crit-fg-secondary) transition-colors">Integrations</a>
-        <a href={~p"/self-hosting"} class="no-underline hover:text-(--crit-fg-secondary) transition-colors">Self-hosting</a>
-        <a href={~p"/changelog"} class="no-underline hover:text-(--crit-fg-secondary) transition-colors">Changelog</a>
-        <a href={~p"/privacy"} class="no-underline hover:text-(--crit-fg-secondary) transition-colors">Privacy</a>
-        <a href={~p"/terms"} class="no-underline hover:text-(--crit-fg-secondary) transition-colors">Terms</a>
-      </nav>
-      <span class="ml-auto text-[12px] text-(--crit-fg-muted)">
-        &copy; 2026 Crit &middot; MIT licensed &middot; Made by humans + agents
-      </span>
-    </div>
-  </footer>
 </div>

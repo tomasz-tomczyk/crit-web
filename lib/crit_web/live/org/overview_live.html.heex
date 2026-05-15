@@ -22,26 +22,74 @@
     <%!-- Main grid: reviews feed + members sidebar --%>
     <div class={[
       "grid gap-6 items-start",
-      if(length(@members) > 1, do: "grid-cols-[1fr_320px] max-md:grid-cols-1", else: "grid-cols-1 max-w-3xl")
+      if(length(@members) > 1,
+        do: "grid-cols-[1fr_320px] max-md:grid-cols-1",
+        else: "grid-cols-1 max-w-3xl"
+      )
     ]}>
       <%!-- Left: Recent shared reviews --%>
       <div>
         <div class="flex items-center justify-between mb-3.5">
-          <h2 class="text-[15px] font-semibold text-(--crit-fg-primary)">Recent shared reviews</h2>
+          <h2 class="text-[15px] font-semibold text-(--crit-fg-primary)">
+            Recent shared reviews
+          </h2>
         </div>
 
         <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-lg overflow-hidden">
-          <div class="px-6 py-10 text-center">
-            <div class="text-(--crit-fg-muted) mb-1">
-              <.icon name="hero-document-text" class="size-8 mx-auto" />
+          <%= if @reviews == [] do %>
+            <div class="px-6 py-10 text-center">
+              <div class="text-(--crit-fg-muted) mb-1">
+                <.icon name="hero-document-text" class="size-8 mx-auto" />
+              </div>
+              <p class="text-sm text-(--crit-fg-secondary) mt-3">
+                No reviews shared yet.
+              </p>
+              <p class="text-xs text-(--crit-fg-muted) mt-1">
+                Reviews shared to this organization will appear here.
+              </p>
             </div>
-            <p class="text-sm text-(--crit-fg-secondary) mt-3">
-              No reviews shared yet.
-            </p>
-            <p class="text-xs text-(--crit-fg-muted) mt-1">
-              Reviews shared to this organization will appear here.
-            </p>
-          </div>
+          <% else %>
+            <ul class="divide-y divide-(--crit-border)">
+              <li
+                :for={review <- @reviews}
+                class="px-4 py-3 hover:bg-(--crit-bg-hover) transition-colors"
+              >
+                <.link navigate={~p"/r/#{review.token}"} class="block no-underline">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-(--crit-fg-primary) truncate">
+                        {review.first_file_path || "review"}
+                      </p>
+                      <div class="flex items-center gap-3 mt-0.5">
+                        <span :if={review.author_name} class="text-xs text-(--crit-fg-muted)">
+                          {review.author_name}
+                        </span>
+                        <span class="text-xs text-(--crit-fg-muted)">
+                          {review.file_count} {if review.file_count == 1,
+                            do: "file",
+                            else: "files"}
+                        </span>
+                        <span
+                          :if={review.comment_count > 0}
+                          class="text-xs text-(--crit-fg-muted)"
+                        >
+                          {review.comment_count} {if review.comment_count == 1,
+                            do: "comment",
+                            else: "comments"}
+                        </span>
+                      </div>
+                    </div>
+                    <time
+                      class="text-xs text-(--crit-fg-muted) whitespace-nowrap flex-shrink-0"
+                      datetime={DateTime.to_iso8601(review.last_activity_at)}
+                    >
+                      {Calendar.strftime(review.last_activity_at, "%b %-d")}
+                    </time>
+                  </div>
+                </.link>
+              </li>
+            </ul>
+          <% end %>
         </div>
       </div>
 

@@ -28,7 +28,9 @@
         <div class="flex items-baseline gap-2.5">
           <span class="text-[15px] font-semibold">Seats</span>
           <span class="text-[13px] text-(--crit-fg-muted)">
-            <span class="font-mono font-semibold text-(--crit-fg-primary)">{length(@members)}</span>
+            <span class="font-mono font-semibold text-(--crit-fg-primary)">
+              {length(@members)}
+            </span>
             used &middot; unlimited during beta
           </span>
         </div>
@@ -49,7 +51,7 @@
           class="flex gap-2.5 items-start max-sm:flex-col max-sm:items-stretch"
         >
           <div class="flex-1 min-w-0">
-            <label class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+            <label for={@invite_form[:email].id} class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
               Email addresses
             </label>
             <input
@@ -59,10 +61,12 @@
               value={Phoenix.HTML.Form.normalize_value("text", @invite_form[:email].value)}
               placeholder="teammate@example.com, another@example.com..."
               autocomplete="off"
+              aria-describedby="invite-email-errors"
               class="block w-full px-3 py-2.5 text-[14px] bg-(--crit-bg-page) border border-(--crit-border) rounded-md text-(--crit-fg-primary) placeholder:text-(--crit-fg-muted) focus:outline-none focus:border-(--crit-brand) focus:shadow-[0_0_0_3px_var(--crit-brand-subtle)] transition-[border-color] leading-normal"
             />
             <p
               :for={msg <- Enum.map(@invite_form[:email].errors, &translate_error/1)}
+              id="invite-email-errors"
               class="text-xs text-(--crit-red) mt-1.5"
             >
               {msg}
@@ -72,7 +76,7 @@
             </p>
           </div>
           <div class="w-40 max-sm:w-full">
-            <label class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
+            <label for={@invite_form[:role].id} class="block font-mono text-[11px] uppercase tracking-[0.08em] text-(--crit-fg-muted) mb-1.5">
               Role
             </label>
             <select
@@ -93,25 +97,26 @@
             <button
               type="submit"
               phx-disable-with="Sending..."
-              class="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium text-white bg-(--crit-brand) rounded-md hover:opacity-90 transition-opacity whitespace-nowrap"
+              class="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium text-white bg-(--crit-brand) rounded-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
             >
               <.icon name="hero-envelope" class="size-3.5" /> Send invites
             </button>
           </div>
         </.form>
-
       </div>
     </section>
 
     <%!-- Tabs + filters --%>
     <div class="flex items-center justify-between mb-4 gap-3 max-sm:flex-col max-sm:items-stretch">
-      <div class="inline-flex gap-0.5 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[3px]">
+      <div role="tablist" class="inline-flex gap-0.5 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg p-[3px]">
         <button
           type="button"
+          role="tab"
+          aria-selected={to_string(@tab == "active")}
           phx-click="switch_tab"
           phx-value-tab="active"
           class={[
-            "px-3 py-1 text-[13px] font-medium rounded-md transition-colors",
+            "px-3 py-1 text-[13px] font-medium rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1",
             if(@tab == "active",
               do: "bg-(--crit-bg-elevated) text-(--crit-fg-primary)",
               else: "text-(--crit-fg-muted) hover:text-(--crit-fg-primary)"
@@ -122,10 +127,12 @@
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={to_string(@tab == "pending")}
           phx-click="switch_tab"
           phx-value-tab="pending"
           class={[
-            "px-3 py-1 text-[13px] font-medium rounded-md transition-colors",
+            "px-3 py-1 text-[13px] font-medium rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1",
             if(@tab == "pending",
               do: "bg-(--crit-bg-elevated) text-(--crit-fg-primary)",
               else: "text-(--crit-fg-muted) hover:text-(--crit-fg-primary)"
@@ -138,7 +145,7 @@
     </div>
 
     <%!-- Active members table --%>
-    <section :if={@tab == "active"} class="mb-7">
+    <section :if={@tab == "active"} role="tabpanel" class="mb-7">
       <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
         <table class="w-full text-[13px]">
           <thead>
@@ -234,7 +241,7 @@
                       phx-click="remove_member"
                       phx-value-user_id={member.user.id}
                       data-confirm={"Remove #{member.user.name || member.user.email} from this organization?"}
-                      class="text-[12px] font-medium text-(--crit-red) hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                      class="text-[12px] font-medium text-(--crit-red) hover:underline opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
                     >
                       Remove
                     </button>
@@ -248,11 +255,17 @@
     </section>
 
     <%!-- Pending invites tab content --%>
-    <section :if={@tab == "pending"} class="mb-7">
-      <div :if={@invites == []} class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-8 text-center">
+    <section :if={@tab == "pending"} role="tabpanel" class="mb-7">
+      <div
+        :if={@invites == []}
+        class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl p-8 text-center"
+      >
         <p class="text-[14px] text-(--crit-fg-muted)">No pending invitations.</p>
       </div>
-      <div :if={@invites != []} class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden">
+      <div
+        :if={@invites != []}
+        class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden"
+      >
         <table class="w-full text-[13px]">
           <thead>
             <tr class="border-b border-(--crit-border)">
@@ -303,7 +316,7 @@
                   type="button"
                   phx-click="resend_invite"
                   phx-value-id={invite.id}
-                  class="text-[12px] font-medium text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:underline mr-3"
+                  class="text-[12px] font-medium text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:underline mr-3 cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
                 >
                   Resend
                 </button>
@@ -312,7 +325,7 @@
                   phx-click="revoke_invite"
                   phx-value-id={invite.id}
                   data-confirm={"Revoke invite for #{invite.email}?"}
-                  class="text-[12px] font-medium text-(--crit-red) hover:underline"
+                  class="text-[12px] font-medium text-(--crit-red) hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand)"
                 >
                   Revoke
                 </button>

@@ -204,6 +204,7 @@ defmodule CritWeb.Router do
     pipe_through [:auth_api, :noindex]
 
     get "/whoami", AuthApiController, :whoami
+    get "/orgs", AuthApiController, :orgs
     delete "/token", AuthApiController, :revoke
   end
 
@@ -234,6 +235,7 @@ defmodule CritWeb.Router do
       post "/reviews/:token/seed-reply/:comment_id", ApiController, :seed_reply
       post "/reviews/:token/seed-resolve/:comment_id", ApiController, :seed_resolve
       post "/test/seed-user", ApiController, :seed_user
+      post "/test/seed-org", ApiController, :seed_org
     end
   end
 

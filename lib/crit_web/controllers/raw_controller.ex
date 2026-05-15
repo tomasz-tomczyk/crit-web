@@ -9,8 +9,10 @@ defmodule CritWeb.RawController do
   def show(conn, %{"token" => token, "file_path" => path_segments})
       when is_list(path_segments) do
     file_path = Enum.join(path_segments, "/")
+    scope = conn.assigns[:current_scope] || %Crit.Accounts.Scope{}
 
     with %Review{} = review <- Reviews.get_by_token(token),
+         :ok <- Reviews.check_org_access(review, scope),
          %{content: content} = file <-
            Enum.find(review.files, fn f -> f.file_path == file_path end),
          basename when basename != :unsafe <- safe_basename(file.file_path) do

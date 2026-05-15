@@ -58,7 +58,9 @@
             URL slug
           </label>
           <div class="flex items-center gap-0 w-full bg-(--crit-bg-page) border border-(--crit-border) rounded-md focus-within:border-(--crit-brand)">
-            <span class="pl-3 text-sm text-(--crit-fg-muted) select-none shrink-0">{URI.parse(CritWeb.Endpoint.url()).host}/orgs/</span>
+            <span class="pl-3 text-sm text-(--crit-fg-muted) select-none shrink-0">
+              {URI.parse(CritWeb.Endpoint.url()).host}/orgs/
+            </span>
             <input
               type="text"
               name={@form[:slug].name}
@@ -92,7 +94,7 @@
           <button
             type="submit"
             phx-disable-with="Creating..."
-            class="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-(--crit-brand) text-white rounded-md hover:opacity-90 transition-opacity"
+            class="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-(--crit-brand) text-white rounded-md hover:opacity-90 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-(--crit-brand) focus-visible:ring-offset-1"
           >
             Create organization
           </button>

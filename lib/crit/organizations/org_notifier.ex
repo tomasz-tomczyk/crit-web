@@ -22,7 +22,7 @@ defmodule Crit.Organizations.OrgNotifier do
     email =
       new()
       |> to(invite.email)
-      |> from({"Crit", "noreply@crit.md"})
+      |> from({"Crit", Application.fetch_env!(:crit, :smtp_from)})
       |> subject("You've been invited to join #{org.name} on Crit")
       |> text_body("""
       #{inviter_name} has invited you to join #{org.name} on Crit as a #{role_label}.
