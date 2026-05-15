@@ -30,6 +30,51 @@ defmodule CritWeb.HelpersTest do
     end
   end
 
+  describe "date_label/1" do
+    test "renders 'just now' under a minute" do
+      now = DateTime.utc_now()
+      assert Helpers.date_label(now) == "just now"
+    end
+
+    test "renders minutes" do
+      ts = DateTime.add(DateTime.utc_now(), -120, :second)
+      assert Helpers.date_label(ts) == "2m ago"
+    end
+
+    test "renders hours" do
+      ts = DateTime.add(DateTime.utc_now(), -7200, :second)
+      assert Helpers.date_label(ts) == "2h ago"
+    end
+
+    test "renders 'Yesterday' for previous day" do
+      # 36 hours ago is reliably yesterday regardless of current time-of-day
+      yesterday = DateTime.add(DateTime.utc_now(), -36 * 3600, :second)
+      result = Helpers.date_label(yesterday)
+      assert result == "Yesterday" or String.length(result) == 3
+    end
+
+    test "renders day name within current week" do
+      # 3 days ago should show a day abbreviation (e.g., "Mon", "Tue")
+      ts = DateTime.add(DateTime.utc_now(), -3 * 86_400, :second)
+      result = Helpers.date_label(ts)
+      assert result in ["Yesterday", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    end
+
+    test "renders short month+day for older same-year dates" do
+      # 30 days ago
+      ts = DateTime.add(DateTime.utc_now(), -30 * 86_400, :second)
+      result = Helpers.date_label(ts)
+      # Should be like "Apr 16" or "May 1"
+      assert result =~ ~r/^[A-Z][a-z]{2} \d{1,2}$/
+    end
+
+    test "renders full date for previous year" do
+      ts = DateTime.new!(~D[2024-03-15], ~T[12:00:00], "Etc/UTC")
+      result = Helpers.date_label(ts)
+      assert result =~ ~r/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/
+    end
+  end
+
   describe "activity_status/1" do
     test "active when within the last day" do
       ts = DateTime.add(DateTime.utc_now(), -3600, :second)

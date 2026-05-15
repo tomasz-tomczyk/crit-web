@@ -838,6 +838,101 @@ defmodule CritWeb.ApiControllerTest do
     end
   end
 
+  describe "org-scoped review access via API" do
+    setup do
+      {:ok, admin} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "org-api-admin-#{System.unique_integer([:positive])}",
+          "email" => "org-admin-#{System.unique_integer([:positive])}@example.com",
+          "name" => "Org Admin"
+        })
+
+      scope = Scope.for_user(admin)
+      {:ok, org} = Crit.Organizations.create_organization(scope, %{"name" => "API Org", "slug" => "api-org-#{System.unique_integer([:positive])}"})
+
+      {:ok, review} =
+        Reviews.create_review(
+          scope,
+          [%{"path" => "org.md", "content" => "# Org doc"}],
+          0,
+          [],
+          [],
+          org: org.slug,
+          visibility: :organization
+        )
+
+      review = Reviews.get_by_token(review.token)
+
+      %{review: review, admin: admin, org: org}
+    end
+
+    test "document returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+      conn = get(conn, ~p"/api/reviews/#{review.token}/document")
+      assert json_response(conn, 404)
+    end
+
+    test "comments_list returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+      conn = get(conn, ~p"/api/reviews/#{review.token}/comments")
+      assert json_response(conn, 404)
+    end
+
+    test "export_review returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+      conn = get(conn, ~p"/api/export/#{review.token}/review")
+      assert json_response(conn, 404)
+    end
+
+    test "export_comments returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+      conn = get(conn, ~p"/api/export/#{review.token}/comments")
+      assert json_response(conn, 404)
+    end
+
+    test "document succeeds for org member with bearer token", %{conn: conn, review: review, admin: admin} do
+      {:ok, {plaintext, _}} = Crit.Accounts.create_token(admin, "test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> get(~p"/api/reviews/#{review.token}/document")
+
+      assert json_response(conn, 200)["files"]
+    end
+
+    test "create returns 404 when org slug does not exist", %{conn: conn, admin: admin} do
+      {:ok, {plaintext, _}} = Crit.Accounts.create_token(admin, "test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          org: "nonexistent-org"
+        })
+
+      assert json_response(conn, 404)["error"] =~ "not found"
+    end
+
+    test "create returns 403 when user is not a member of the org", %{conn: conn, org: org} do
+      {:ok, outsider} =
+        Crit.Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "outsider-#{System.unique_integer([:positive])}",
+          "email" => "outsider-#{System.unique_integer([:positive])}@example.com",
+          "name" => "Outsider"
+        })
+
+      {:ok, {plaintext, _}} = Crit.Accounts.create_token(outsider, "test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          org: org.slug
+        })
+
+      assert json_response(conn, 403)["error"] =~ "not a member"
+    end
+  end
+
   describe "DELETE /api/reviews" do
     test "deletes review with valid delete_token", %{conn: conn} do
       review = create_review()
