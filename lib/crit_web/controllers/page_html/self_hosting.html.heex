@@ -661,13 +661,17 @@
         <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <span class="font-mono text-xs text-(--crit-fg-muted)">~/.crit.config.json</span>
         </div>
-        <div phx-no-curly-interpolation class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+        <div
+          phx-no-curly-interpolation
+          class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)"
+        >
           <div>{</div>
           <div class="pl-4">
             <span class="text-(--crit-fg-primary)">"share_url"</span>: <span class="text-(--crit-fg-muted)">"https://crit-web.your-company.example"</span>,
           </div>
           <div class="pl-4">
-            <span class="text-(--crit-fg-primary)">"proxy_auth"</span>: <span class="text-(--crit-brand)">true</span>
+            <span class="text-(--crit-fg-primary)">"proxy_auth"</span>:
+            <span class="text-(--crit-brand)">true</span>
           </div>
           <div>}</div>
         </div>
@@ -764,10 +768,13 @@ CRIT_LIVEVIEW_TRANSPORT=longpoll  # optional, only if WebSocket is blocked</code
       </p>
       <ul class="list-disc pl-5 space-y-2 text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed mb-4">
         <li>
-          <strong class="text-(--crit-fg-primary)">Double-encoding</strong> —
+          <strong class="text-(--crit-fg-primary)">Double-encoding</strong>
+          —
           some proxies re-compress responses that are already gzipped, producing
           garbled output. Crit sets
-          <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">Cache-Control: no-transform</code>
+          <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
+            Cache-Control: no-transform
+          </code>
           on every response, which tells conformant proxies to leave the body
           alone.
         </li>
@@ -780,8 +787,7 @@ CRIT_LIVEVIEW_TRANSPORT=longpoll  # optional, only if WebSocket is blocked</code
         </li>
       </ul>
       <p class="text-sm text-(--crit-fg-secondary) max-w-[640px] leading-relaxed">
-        Full backstory and edge cases:
-        <a
+        Full backstory and edge cases: <a
           href="https://github.com/tomasz-tomczyk/crit-web/issues/50"
           class="crit-link"
         >github.com/tomasz-tomczyk/crit-web#50</a>.
