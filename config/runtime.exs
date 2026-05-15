@@ -176,14 +176,25 @@ end
 config :crit, CritWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
+  smtp_host = System.get_env("SMTP_HOST", "localhost")
+
   config :crit, Crit.Mailer,
     adapter: Swoosh.Adapters.SMTP,
-    relay: System.get_env("SMTP_HOST", "localhost"),
+    relay: smtp_host,
     port: String.to_integer(System.get_env("SMTP_PORT", "587")),
     username: System.get_env("SMTP_USERNAME"),
     password: System.get_env("SMTP_PASSWORD"),
     tls: :if_available,
-    auth: :if_available
+    auth: :if_available,
+    tls_options: [
+      verify: :verify_peer,
+      cacerts: :public_key.cacerts_get(),
+      server_name_indication: String.to_charlist(smtp_host),
+      customize_hostname_check: [
+        match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+      ],
+      depth: 3
+    ]
 
   if from = System.get_env("SMTP_FROM") do
     config :crit, :smtp_from, from
