@@ -848,7 +848,12 @@ defmodule CritWeb.ApiControllerTest do
         })
 
       scope = Scope.for_user(admin)
-      {:ok, org} = Crit.Organizations.create_organization(scope, %{"name" => "API Org", "slug" => "api-org-#{System.unique_integer([:positive])}"})
+
+      {:ok, org} =
+        Crit.Organizations.create_organization(scope, %{
+          "name" => "API Org",
+          "slug" => "api-org-#{System.unique_integer([:positive])}"
+        })
 
       {:ok, review} =
         Reviews.create_review(
@@ -866,27 +871,43 @@ defmodule CritWeb.ApiControllerTest do
       %{review: review, admin: admin, org: org}
     end
 
-    test "document returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+    test "document returns 404 for org review when requester is not a member", %{
+      conn: conn,
+      review: review
+    } do
       conn = get(conn, ~p"/api/reviews/#{review.token}/document")
       assert json_response(conn, 404)
     end
 
-    test "comments_list returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+    test "comments_list returns 404 for org review when requester is not a member", %{
+      conn: conn,
+      review: review
+    } do
       conn = get(conn, ~p"/api/reviews/#{review.token}/comments")
       assert json_response(conn, 404)
     end
 
-    test "export_review returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+    test "export_review returns 404 for org review when requester is not a member", %{
+      conn: conn,
+      review: review
+    } do
       conn = get(conn, ~p"/api/export/#{review.token}/review")
       assert json_response(conn, 404)
     end
 
-    test "export_comments returns 404 for org review when requester is not a member", %{conn: conn, review: review} do
+    test "export_comments returns 404 for org review when requester is not a member", %{
+      conn: conn,
+      review: review
+    } do
       conn = get(conn, ~p"/api/export/#{review.token}/comments")
       assert json_response(conn, 404)
     end
 
-    test "document succeeds for org member with bearer token", %{conn: conn, review: review, admin: admin} do
+    test "document succeeds for org member with bearer token", %{
+      conn: conn,
+      review: review,
+      admin: admin
+    } do
       {:ok, {plaintext, _}} = Crit.Accounts.create_token(admin, "test")
 
       conn =

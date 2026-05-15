@@ -160,7 +160,11 @@ defmodule CritWeb.Org.MembersLiveTest do
       {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
 
       # Trigger validate event
-      html = render_click(view, "validate_invite", %{"invite" => %{"email" => "test@", "role" => "member"}})
+      html =
+        render_click(view, "validate_invite", %{
+          "invite" => %{"email" => "test@", "role" => "member"}
+        })
+
       assert html
     end
 
