@@ -640,7 +640,9 @@
             <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
             <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
           </div>
-          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">~/.config/crit/crit.json</span>
+          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">
+            ~/.config/crit/crit.json
+          </span>
         </div>
         <div
           phx-no-curly-interpolation
@@ -700,14 +702,18 @@
         </div>
         <div class="divide-y divide-(--crit-border)">
           <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <code class="text-sm font-mono text-(--crit-fg-primary) break-all">CRIT_TRUSTED_PROXY_USER_HEADER</code>
+            <code class="text-sm font-mono text-(--crit-fg-primary) break-all">
+              CRIT_TRUSTED_PROXY_USER_HEADER
+            </code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Request header containing the authenticated user's email.
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
           <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
-            <code class="text-sm font-mono text-(--crit-fg-primary) break-all">CRIT_TRUSTED_PROXY_CIDRS</code>
+            <code class="text-sm font-mono text-(--crit-fg-primary) break-all">
+              CRIT_TRUSTED_PROXY_CIDRS
+            </code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               Comma-separated CIDR ranges your proxy forwards from, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">10.0.0.0/8,172.16.0.0/12</code>.
               <strong class="text-(--crit-fg-primary)">Mandatory</strong> — Crit refuses to start if the header is set without CIDRs.
@@ -716,7 +722,9 @@
           </div>
           <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
-              <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_LIVEVIEW_TRANSPORT</code>
+              <code class="text-sm font-mono text-(--crit-fg-primary)">
+                CRIT_LIVEVIEW_TRANSPORT
+              </code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">websocket</span>
             </div>
             <p class="text-sm text-(--crit-fg-secondary)">
@@ -728,7 +736,10 @@
         </div>
       </div>
 
-      <div phx-no-format class="mt-5 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3">
+      <div
+        phx-no-format
+        class="mt-5 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3"
+      >
         <h3 class="text-base font-semibold tracking-tight text-(--crit-fg-primary)">Common header names</h3>
         <p>
           <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Auth-Request-Email</code> (oauth2-proxy),
@@ -748,7 +759,10 @@
         </p>
       </div>
 
-      <div phx-no-format class="mt-8 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3">
+      <div
+        phx-no-format
+        class="mt-8 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3"
+      >
         <h3 class="text-base font-semibold tracking-tight text-(--crit-fg-primary)">Known proxy behaviors</h3>
         <p>Two common proxy quirks are handled automatically:</p>
         <ul class="list-disc pl-5 space-y-1">
