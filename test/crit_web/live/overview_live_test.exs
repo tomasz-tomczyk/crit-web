@@ -12,9 +12,8 @@ defmodule CritWeb.OverviewLiveTest do
       Application.delete_env(:crit, :selfhosted)
     end)
 
-    # /overview only renders the review list for authenticated users in
-    # selfhost+local-auth mode. Sign in for tests that exercise that surface.
     user = user_fixture()
+    user = Ecto.Changeset.change(user, role: :admin) |> Crit.Repo.update!()
     {:ok, conn: log_in_user(conn, user), user: user}
   end
 
@@ -77,6 +76,21 @@ defmodule CritWeb.OverviewLiveTest do
       {:ok, view, _html} = live(conn, ~p"/overview")
 
       assert page_title(view) =~ "Overview - Crit"
+    end
+  end
+
+  describe "non-admin visibility" do
+    setup :without_oauth
+
+    test "non-admin user does not see other users' reviews", %{conn: conn} do
+      review = review_fixture()
+
+      non_admin = user_fixture()
+      non_admin_conn = log_in_user(conn, non_admin)
+
+      {:ok, _view, html} = live(non_admin_conn, ~p"/overview")
+
+      refute html =~ hd(review.files).file_path
     end
   end
 

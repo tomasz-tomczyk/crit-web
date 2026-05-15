@@ -142,7 +142,10 @@ defmodule Crit.Reviews do
         {:error, :not_found}
 
       %Comment{} = comment ->
-        if comment_owned_by?(scope, comment) or Scope.admin?(scope) do
+        comment = Repo.preload(comment, :review)
+
+        if comment_owned_by?(scope, comment) or Scope.admin?(scope) or
+             org_admin_of_review?(scope, comment.review) do
           Repo.delete(comment)
         else
           {:error, :unauthorized}

@@ -2,6 +2,7 @@ defmodule CritWeb.OverviewLive do
   use CritWeb, :live_view
 
   alias Crit.{Reviews, Statistics}
+  alias Crit.Accounts.Scope
 
   import CritWeb.Components.ReviewSnippet
   import CritWeb.Components.ReviewListingHeader
@@ -25,7 +26,11 @@ defmodule CritWeb.OverviewLive do
     socket =
       if authenticated do
         scope = socket.assigns.current_scope
-        reviews = Reviews.list_visible_reviews_with_counts(scope)
+
+        reviews =
+          if Scope.admin?(scope),
+            do: Reviews.list_reviews_with_counts(),
+            else: Reviews.list_visible_reviews_with_counts(scope)
 
         socket
         |> stream(:reviews, reviews)
