@@ -14,7 +14,7 @@ the gate.
 ## Prerequisites
 
 - crit-web running locally: `mise run up` (server on `:4000`).
-- crit local binary built from the matching branch with `share_flow=popup`
+- crit local binary built from the matching branch with `proxy_auth=true`
   configured.
 - Browser: latest Chromium AND latest Safari (popup-blocker behavior
   diverges).

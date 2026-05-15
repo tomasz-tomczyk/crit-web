@@ -630,7 +630,7 @@
         </code>
         from the terminal — the proxy redirects to a login page. Set
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
-          share_flow: "popup"
+          proxy_auth: true
         </code>
         in your
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
@@ -659,7 +659,7 @@
       </p>
       <p class="text-sm text-(--crit-fg-secondary) mb-4 max-w-[640px] leading-relaxed">
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
-          share_flow
+          proxy_auth
         </code>
         must be set on the <strong>CLI</strong>
         side, not on this hosted instance.
@@ -735,7 +735,7 @@ CRIT_TRUSTED_PROXY_CIDRS=10.0.0.0/8,172.16.0.0/12</code></pre>
         </code>
         — use
         <code class="font-mono text-xs bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">
-          share_flow: "popup"
+          proxy_auth: true
         </code>
         on the CLI side if the proxy blocks direct API access.
       </p>
