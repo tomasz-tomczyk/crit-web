@@ -877,30 +877,45 @@ defmodule Crit.Reviews do
   end
 
   defp count_reviews(filter) do
-    base = from(r in Review, as: :review)
+    from(r in Review, as: :review)
+    |> apply_review_filter(filter)
+    |> Repo.aggregate(:count)
+  end
 
-    query =
-      case filter do
-        :all -> base
-        {:user, user_id} -> from(r in base, where: r.user_id == ^user_id)
-        {:org, org_id} ->
-          from(r in base,
-            where: r.organization_id == ^org_id and r.visibility in [:organization, :public]
-          )
+  defp apply_review_filter(query, :all), do: query
 
-        {:visible_to, user_id} ->
-          user_org_ids =
-            from(m in Crit.Organizations.OrganizationMembership,
-              where: m.user_id == ^user_id,
-              select: m.organization_id
-            )
+  defp apply_review_filter(query, {:user, user_id}) do
+    user_org_ids =
+      from(m in Crit.Organizations.OrganizationMembership,
+        where: m.user_id == ^user_id,
+        select: m.organization_id
+      )
 
-          from(r in base,
-            where: is_nil(r.organization_id) or r.organization_id in subquery(user_org_ids)
-          )
-      end
+    from(r in query,
+      where:
+        r.user_id == ^user_id and
+          (is_nil(r.organization_id) or r.organization_id in subquery(user_org_ids))
+    )
+  end
 
-    Repo.aggregate(query, :count)
+  defp apply_review_filter(query, {:org, org_id}) do
+    from(r in query,
+      where: r.organization_id == ^org_id and r.visibility in [:organization, :public]
+    )
+  end
+
+  defp apply_review_filter(query, {:visible_to, user_id}) do
+    user_org_ids =
+      from(m in Crit.Organizations.OrganizationMembership,
+        where: m.user_id == ^user_id,
+        select: m.organization_id
+      )
+
+    from(r in query,
+      where:
+        (is_nil(r.organization_id) and r.user_id == ^user_id) or
+          r.organization_id in subquery(user_org_ids)
+    )
   end
 
   defp reviews_with_counts_query(filter) do
@@ -915,7 +930,9 @@ defmodule Crit.Reviews do
     base =
       from(r in Review, as: :review)
       |> join(:left, [r], c in Comment, on: c.review_id == r.id)
-      |> join(:left, [r, _c], rf in ReviewRoundSnapshot, on: rf.review_id == r.id)
+      |> join(:left, [r, _c], rf in ReviewRoundSnapshot,
+        on: rf.review_id == r.id and rf.round_number == r.review_round
+      )
       |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
       |> join(:left, [r, _c, _rf, _fp], u in User, on: u.id == r.user_id)
       |> join(:left, [r, _c, _rf, _fp, _u], o in Crit.Organizations.Organization,
@@ -957,25 +974,7 @@ defmodule Crit.Reviews do
       })
       |> order_by([r], desc: r.last_activity_at)
 
-    case filter do
-      :all -> base
-      {:user, user_id} -> from [r, _c, _rf, _fp, _u, _o] in base, where: r.user_id == ^user_id
-      {:org, org_id} ->
-        from [r, _c, _rf, _fp, _u, _o] in base,
-          where: r.organization_id == ^org_id and r.visibility in [:organization, :public]
-
-      {:visible_to, user_id} ->
-        user_org_ids =
-          from(m in Crit.Organizations.OrganizationMembership,
-            where: m.user_id == ^user_id,
-            select: m.organization_id
-          )
-
-        from [r, _c, _rf, _fp, _u, _o] in base,
-          where:
-            is_nil(r.organization_id) or
-              r.organization_id in subquery(user_org_ids)
-    end
+    apply_review_filter(base, filter)
   end
 
   @doc """

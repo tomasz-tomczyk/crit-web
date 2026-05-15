@@ -30,7 +30,10 @@ defmodule CritWeb.Org.ReviewsLive do
 
   @impl true
   def handle_event("change_page", %{"page" => page}, socket) do
-    page = String.to_integer(page)
+    page = case Integer.parse(page) do
+      {n, ""} -> n
+      _ -> socket.assigns.page
+    end
     total_pages = max(1, ceil(socket.assigns.review_count / @per_page))
     page = max(1, min(page, total_pages))
 

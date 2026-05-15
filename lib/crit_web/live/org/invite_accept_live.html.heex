@@ -13,23 +13,23 @@
       <% :ok -> %>
         <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
           <%!-- Banner --%>
-          <div class="h-20 relative overflow-hidden bg-(--crit-bg-page) border-b border-(--crit-border)">
-            <div class="absolute top-4 left-5 flex items-center gap-2 text-[12px] text-(--crit-fg-muted)">
+          <div class="px-10 pt-5 pb-4 bg-(--crit-bg-page) border-b border-(--crit-border) max-sm:px-5">
+            <div class="flex items-center gap-2 text-[12px] text-(--crit-fg-muted)">
               <.icon name="hero-envelope" class="size-3.5" /> Organization invitation
             </div>
           </div>
 
-          <div class="px-10 pb-9 -mt-5 max-sm:px-5">
-            <%!-- Org avatar overlapping the banner --%>
+          <div class="px-10 pb-9 pt-6 max-sm:px-5">
+            <%!-- Org avatar --%>
             <span
-              class="inline-flex items-center justify-center w-[72px] h-[72px] rounded-2xl text-[28px] font-semibold border-4 border-(--crit-bg-card)"
+              class="inline-flex items-center justify-center w-14 h-14 rounded-xl text-[22px] font-semibold"
               style="background: rgba(158,206,106,0.20); color: #9ece6a;"
             >
               {String.first(@invite.organization.name) |> String.upcase()}
             </span>
 
             <%!-- Heading --%>
-            <h1 class="text-[28px] font-bold tracking-[-0.02em] mt-5 mb-1.5">
+            <h1 class="text-[24px] font-bold tracking-[-0.02em] mt-4 mb-1.5">
               You're invited to join
               <span class="text-(--crit-brand)">{@invite.organization.name}</span>
             </h1>
@@ -48,7 +48,7 @@
             </p>
 
             <%!-- CTAs --%>
-            <div class="mt-7 flex items-center gap-2.5 flex-wrap">
+            <div class="mt-6 flex items-center gap-2.5 flex-wrap">
               <.form
                 for={%{}}
                 as={:invite}
@@ -68,18 +68,18 @@
               >
                 Decline
               </.link>
-              <% days_remaining =
-                max(
-                  0,
-                  Crit.Organizations.OrganizationInvite.ttl_days() -
-                    div(DateTime.diff(DateTime.utc_now(), @invite.inserted_at, :second), 86400)
-                ) %>
-              <span class="ml-auto flex items-center gap-1.5 text-[11px] text-(--crit-fg-muted) max-sm:ml-0 max-sm:mt-1">
-                <.icon name="hero-clock" class="size-3" />
-                Invite expires in {days_remaining} {if days_remaining == 1,
-                  do: "day",
-                  else: "days"}
-              </span>
+            </div>
+            <% days_remaining =
+              max(
+                0,
+                Crit.Organizations.OrganizationInvite.ttl_days() -
+                  div(DateTime.diff(DateTime.utc_now(), @invite.inserted_at, :second), 86400)
+              ) %>
+            <div class="mt-4 flex items-center gap-1.5 text-[11px] text-(--crit-fg-muted)">
+              <.icon name="hero-clock" class="size-3" />
+              Invite expires in {days_remaining} {if days_remaining == 1,
+                do: "day",
+                else: "days"}
             </div>
           </div>
         </div>
@@ -107,8 +107,8 @@
               This invite is for someone else
             </h1>
             <p class="text-[14px] text-(--crit-fg-muted) mb-6">
-              This invitation was sent to <span class="font-mono text-(--crit-fg-secondary)">{@invite.email}</span>.
-              Sign in with that account to accept it.
+              This invitation was sent to a different email address.
+              Sign in with the correct account to accept it.
             </p>
             <.link
               navigate={~p"/orgs"}

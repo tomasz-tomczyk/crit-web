@@ -39,42 +39,28 @@
 
     <%= if @review_count == 0 and @orgs == [] do %>
       <%!-- ═══════════════ ONBOARDING EMPTY STATE ═══════════════ --%>
-      <div id="empty-state" phx-hook=".EmptyState" phx-update="ignore">
-        <script :type={Phoenix.LiveView.ColocatedHook} name=".EmptyState">
+      <div id="empty-state" phx-hook=".OnboardingTabs" phx-update="ignore">
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".OnboardingTabs">
+          function switchTab(container, tabSelector, panelSelector, tab, prefix) {
+            const target = tab.dataset.target
+            container.querySelectorAll(tabSelector).forEach(t => {
+              t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
+              t.classList.add("border-transparent", "text-(--crit-fg-muted)")
+            })
+            tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
+            tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
+            container.querySelectorAll(panelSelector).forEach(p => p.classList.add("hidden"))
+            const panel = container.querySelector("#" + prefix + target)
+            if (panel) panel.classList.remove("hidden")
+          }
           export default {
             mounted() {
+              const prefix = this.el.dataset.panelPrefix || ""
               this.el.addEventListener("click", (e) => {
-                // Install tab switching
                 const installTab = e.target.closest(".install-tab")
-                if (installTab) {
-                  const target = installTab.dataset.target
-                  this.el.querySelectorAll(".install-tab").forEach(t => {
-                    t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
-                    t.classList.add("border-transparent", "text-(--crit-fg-muted)")
-                  })
-                  installTab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
-                  installTab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
-                  this.el.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"))
-                  const panel = this.el.querySelector("#" + target)
-                  if (panel) panel.classList.remove("hidden")
-                }
-
-                // Agent tab switching
+                if (installTab) switchTab(this.el, ".install-tab", ".install-panel", installTab, prefix)
                 const agentTab = e.target.closest(".agent-tab")
-                if (agentTab) {
-                  const target = agentTab.dataset.target
-                  this.el.querySelectorAll(".agent-tab").forEach(t => {
-                    t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
-                    t.classList.add("border-transparent", "text-(--crit-fg-muted)")
-                  })
-                  agentTab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
-                  agentTab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
-                  this.el.querySelectorAll(".agent-panel").forEach(p => p.classList.add("hidden"))
-                  const panel = this.el.querySelector("#" + target)
-                  if (panel) panel.classList.remove("hidden")
-                }
-
-                // Copy buttons (both install + agent)
+                if (agentTab) switchTab(this.el, ".agent-tab", ".agent-panel", agentTab, prefix)
                 const copyBtn = e.target.closest(".copy-btn, .agent-copy-btn")
                 if (copyBtn) {
                   let text
@@ -350,10 +336,12 @@
       </div>
     <% else %>
       <%!-- ═══════════════ TWO-COLUMN DASHBOARD ═══════════════ --%>
-      <div class="grid grid-cols-[1.55fr_1fr] gap-[18px] items-start max-lg:grid-cols-1">
+      <div class={[
+        "grid gap-[18px] items-start",
+        if(@orgs != [], do: "grid-cols-[1.55fr_1fr] max-lg:grid-cols-1", else: "grid-cols-1 max-w-2xl")
+      ]}>
         <%!-- ─── Left column: Organization cards ─── --%>
-        <div class="flex flex-col gap-3.5">
-          <%= if @orgs != [] do %>
+        <div :if={@orgs != []} class="flex flex-col gap-3.5">
             <.link
               :for={org <- @orgs}
               navigate={~p"/orgs/#{org.slug}"}
@@ -420,7 +408,6 @@
                 No recent activity
               </div>
             </.link>
-          <% end %>
         </div>
 
         <%!-- ─── Right column: Personal reviews ─── --%>
@@ -498,63 +485,7 @@
 
       <%!-- Onboarding steps (shown when no personal reviews) --%>
       <%= if @review_count == 0 do %>
-        <div id="onboarding-steps" phx-hook=".OnboardingSteps" phx-update="ignore" class="mt-8">
-          <script :type={Phoenix.LiveView.ColocatedHook} name=".OnboardingSteps">
-            export default {
-              mounted() {
-                this.el.addEventListener("click", (e) => {
-                  const installTab = e.target.closest(".install-tab")
-                  if (installTab) {
-                    const target = installTab.dataset.target
-                    this.el.querySelectorAll(".install-tab").forEach(t => {
-                      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
-                      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
-                    })
-                    installTab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
-                    installTab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
-                    this.el.querySelectorAll(".install-panel").forEach(p => p.classList.add("hidden"))
-                    const panel = this.el.querySelector("#ob-" + target)
-                    if (panel) panel.classList.remove("hidden")
-                  }
-                  const agentTab = e.target.closest(".agent-tab")
-                  if (agentTab) {
-                    const target = agentTab.dataset.target
-                    this.el.querySelectorAll(".agent-tab").forEach(t => {
-                      t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
-                      t.classList.add("border-transparent", "text-(--crit-fg-muted)")
-                    })
-                    agentTab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
-                    agentTab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
-                    this.el.querySelectorAll(".agent-panel").forEach(p => p.classList.add("hidden"))
-                    const panel = this.el.querySelector("#ob-" + target)
-                    if (panel) panel.classList.remove("hidden")
-                  }
-                  const copyBtn = e.target.closest(".copy-btn, .agent-copy-btn")
-                  if (copyBtn) {
-                    let text
-                    if (copyBtn.dataset.copy) {
-                      text = copyBtn.dataset.copy
-                    } else {
-                      const pre = copyBtn.closest("div")?.querySelector("pre")
-                      if (pre) text = pre.textContent.replace(/^\$ /, "").replace(/ or .*$/, "").split("\n")[0].trim()
-                    }
-                    if (text) {
-                      navigator.clipboard.writeText(text).then(() => {
-                        const defaultIcon = copyBtn.querySelector(".icon-default")
-                        const copiedIcon = copyBtn.querySelector(".icon-copied")
-                        if (defaultIcon) defaultIcon.classList.add("hidden")
-                        if (copiedIcon) copiedIcon.classList.remove("hidden")
-                        setTimeout(() => {
-                          if (defaultIcon) defaultIcon.classList.remove("hidden")
-                          if (copiedIcon) copiedIcon.classList.add("hidden")
-                        }, 2000)
-                      }).catch(() => {})
-                    }
-                  }
-                })
-              }
-            }
-          </script>
+        <div id="onboarding-steps" phx-hook=".OnboardingTabs" data-panel-prefix="ob-" phx-update="ignore" class="mt-8">
 
           <div class="max-w-[640px] mx-auto">
             <div class="text-center mb-12">
