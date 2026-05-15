@@ -179,7 +179,7 @@
       </div>
 
       <%!-- Table column headers --%>
-      <div class="hidden sm:grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 px-4 pb-2 text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
+      <div class="hidden sm:grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 px-4 pb-2 text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
         <span>Variable</span>
         <span>Description</span>
         <span class="text-right">Required</span>
@@ -201,7 +201,7 @@
           </p>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DATABASE_URL</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               PostgreSQL connection URL, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">ecto://user:pass@host/db</code>. Use this
@@ -212,7 +212,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_HOST</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Database host — alternative to
@@ -220,22 +220,22 @@
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_USER</code>
             <p class="text-sm text-(--crit-fg-secondary)">Database user</p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_PASSWORD</code>
             <p class="text-sm text-(--crit-fg-secondary)">Database password</p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_NAME</code>
             <p class="text-sm text-(--crit-fg-secondary)">Database name</p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">DB_PORT</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">5432</span>
@@ -243,7 +243,7 @@
             <p class="text-sm text-(--crit-fg-secondary)">Database port</p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">DB_SSL</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">false</span>
@@ -254,7 +254,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_SSL_CA_CERT</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Path to a CA certificate file. When set alongside <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DB_SSL=true</code>, enables full
@@ -263,7 +263,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">POOL_SIZE</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">10</span>
@@ -282,14 +282,14 @@
           </span>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">SECRET_KEY_BASE</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               64+ byte secret for signing cookies. Generate with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">openssl rand -base64 64</code>
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">PHX_HOST</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Hostname where crit-web is served, e.g.
@@ -297,7 +297,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">PHX_SERVER</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code>
@@ -305,7 +305,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">SELFHOSTED</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code>
@@ -346,38 +346,38 @@
           </span>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">GITHUB_CLIENT_ID</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               GitHub OAuth App client ID. Set alongside <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_SECRET</code> to enable GitHub login.
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">GITHUB_CLIENT_SECRET</code>
             <p class="text-sm text-(--crit-fg-secondary)">GitHub OAuth App client secret</p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_CLIENT_ID</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               Generic OIDC/OAuth2 client ID. Use with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_SECRET</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code>. Mutually exclusive with <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code>.
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_CLIENT_SECRET</code>
             <p class="text-sm text-(--crit-fg-secondary)">Generic OAuth2 client secret</p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">OAUTH_BASE_URL</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               OIDC discovery base URL, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">https://accounts.google.com</code>
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">
                 LOCAL_REGISTRATION_ENABLED
@@ -389,7 +389,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">ADMIN_EMAILS</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               Comma-separated list of admin email addresses. Users with these emails are auto-promoted to admin on every login and on app boot, gaining access to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/admin/users</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/admin/settings</code> plus moderation powers (delete any review or comment). Removing an email and restarting demotes that user back to a regular user.
@@ -407,7 +407,7 @@
           </span>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">PORT</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">4000</span>
@@ -415,7 +415,7 @@
             <p class="text-sm text-(--crit-fg-secondary)">HTTP port the server listens on</p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">PHX_SCHEME</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">https</span>
@@ -423,7 +423,7 @@
             <p class="text-sm text-(--crit-fg-secondary)">URL scheme used in generated links</p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">FORCE_SSL</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">false</span>
@@ -452,7 +452,7 @@
           </p>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_DSN</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Backend <a href="https://sentry.io" class="crit-link">Sentry</a>
@@ -461,7 +461,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_FRONTEND_DSN</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Browser SDK DSN. The
@@ -471,7 +471,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_ENV</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">prod</span>
@@ -481,7 +481,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">SENTRY_RELEASE</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">app version</span>
@@ -699,14 +699,14 @@
           </span>
         </div>
         <div class="divide-y divide-(--crit-border)">
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary) break-all">CRIT_TRUSTED_PROXY_USER_HEADER</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Request header containing the authenticated user's email.
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary) break-all">CRIT_TRUSTED_PROXY_CIDRS</code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               Comma-separated CIDR ranges your proxy forwards from, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">10.0.0.0/8,172.16.0.0/12</code>.
@@ -714,7 +714,7 @@
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <div>
               <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_LIVEVIEW_TRANSPORT</code>
               <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">websocket</span>
