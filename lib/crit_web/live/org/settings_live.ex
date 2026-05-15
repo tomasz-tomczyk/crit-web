@@ -1,4 +1,4 @@
-defmodule CritWeb.OrgSettingsLive do
+defmodule CritWeb.Org.SettingsLive do
   use CritWeb, :live_view
 
   alias Crit.Organizations

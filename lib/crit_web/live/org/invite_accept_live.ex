@@ -1,4 +1,4 @@
-defmodule CritWeb.InviteAcceptLive do
+defmodule CritWeb.Org.InviteAcceptLive do
   use CritWeb, :live_view
 
   alias Crit.Organizations

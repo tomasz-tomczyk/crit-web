@@ -376,12 +376,14 @@ defmodule CritWeb.Layouts do
         Application.get_env(:crit, :selfhosted) == true
 
     current_org = assigns.current_scope && assigns.current_scope.organization
+    is_org_admin = Crit.Accounts.Scope.org_admin?(assigns.current_scope)
 
     assigns =
       assigns
       |> assign(:host, host)
       |> assign(:current_user, current_user)
       |> assign(:is_admin, is_admin)
+      |> assign(:is_org_admin, is_org_admin)
       |> assign(:current_org, current_org)
       |> assign(:user_initial, user_initial(current_user))
 
@@ -473,12 +475,14 @@ defmodule CritWeb.Layouts do
               >
                 Members
               </.nav_link>
-              <.nav_link
-                navigate={~p"/orgs/#{@current_org.slug}/settings"}
-                active={@current_page == :org_settings}
-              >
-                Settings
-              </.nav_link>
+              <%= if @is_org_admin do %>
+                <.nav_link
+                  navigate={~p"/orgs/#{@current_org.slug}/settings"}
+                  active={@current_page == :org_settings}
+                >
+                  Settings
+                </.nav_link>
+              <% end %>
             <% else %>
               <.nav_link href={~p"/dashboard"} active={@current_page == :dashboard}>
                 Dashboard
@@ -750,12 +754,14 @@ defmodule CritWeb.Layouts do
               >
                 Members
               </.nav_mobile_link>
-              <.nav_mobile_link
-                navigate={~p"/orgs/#{@current_org.slug}/settings"}
-                active={@current_page == :org_settings}
-              >
-                Settings
-              </.nav_mobile_link>
+              <%= if @is_org_admin do %>
+                <.nav_mobile_link
+                  navigate={~p"/orgs/#{@current_org.slug}/settings"}
+                  active={@current_page == :org_settings}
+                >
+                  Settings
+                </.nav_mobile_link>
+              <% end %>
             <% else %>
               <.nav_mobile_link href={~p"/dashboard"} active={@current_page == :dashboard}>
                 Dashboard

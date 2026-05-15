@@ -9,6 +9,7 @@
 if Mix.env() in [:dev, :test] do
   import Ecto.Query
   alias Crit.{Repo, User, Review, Comment, ReviewRoundSnapshot}
+  alias Crit.Organizations.{Organization, OrganizationMembership}
 
   now = DateTime.utc_now() |> DateTime.truncate(:second)
   now_naive = DateTime.to_naive(now)
@@ -998,6 +999,76 @@ if Mix.env() in [:dev, :test] do
     ]
   })
 
+  # ════════════════════════════════════════════════════════════════════════
+  # ORGANIZATIONS — Acme org with email/password members for manual testing
+  #
+  # Your GitHub user (Tomasz) is the admin. Two local-auth users let you
+  # log in as a regular member to verify permission boundaries.
+  #
+  #   alice@example.com / password1234  (member)
+  #   bob@example.com   / password1234  (member)
+  # ════════════════════════════════════════════════════════════════════════
+
+  seed_org_user_id_alice = "00000000-0000-0000-0000-000000000010"
+  seed_org_user_id_bob = "00000000-0000-0000-0000-000000000011"
+  seed_org_id = "00000000-0000-0000-0000-000000000100"
+
+  seed_local_user = fn id, name, email ->
+    case Repo.get(User, id) do
+      nil ->
+        %User{}
+        |> User.registration_changeset(%{
+          "email" => email,
+          "password" => "password1234",
+          "name" => name
+        })
+        |> Ecto.Changeset.put_change(:id, id)
+        |> Ecto.Changeset.put_change(:inserted_at, last_week)
+        |> Ecto.Changeset.put_change(:updated_at, now)
+        |> Repo.insert!()
+
+      existing ->
+        existing
+    end
+  end
+
+  alice = seed_local_user.(seed_org_user_id_alice, "Alice Johnson", "alice@example.com")
+  bob = seed_local_user.(seed_org_user_id_bob, "Bob Smith", "bob@example.com")
+
+  acme =
+    case Repo.get(Organization, seed_org_id) do
+      nil ->
+        Repo.insert!(%Organization{
+          id: seed_org_id,
+          name: "Acme",
+          slug: "acme",
+          inserted_at: last_week,
+          updated_at: now
+        })
+
+      existing ->
+        existing
+    end
+
+  seed_membership = fn org, member_user, role ->
+    unless Repo.exists?(
+             from m in OrganizationMembership,
+               where: m.organization_id == ^org.id and m.user_id == ^member_user.id
+           ) do
+      Repo.insert!(%OrganizationMembership{
+        organization_id: org.id,
+        user_id: member_user.id,
+        role: role,
+        inserted_at: last_week,
+        updated_at: now
+      })
+    end
+  end
+
+  seed_membership.(acme, user, "admin")
+  seed_membership.(acme, alice, "member")
+  seed_membership.(acme, bob, "member")
+
   # ── Summary ────────────────────────────────────────────────────────────
 
   reviews = [
@@ -1020,4 +1091,9 @@ if Mix.env() in [:dev, :test] do
 
   IO.puts("  Dashboard: http://localhost:4000/dashboard")
   IO.puts("  (Log in with GitHub to see all reviews)\n")
+
+  IO.puts("  Organization: Acme (http://localhost:4000/orgs/acme/members)")
+  IO.puts("    admin:  #{user.name} (GitHub login)")
+  IO.puts("    member: alice@example.com / password1234")
+  IO.puts("    member: bob@example.com   / password1234\n")
 end

@@ -1,0 +1,155 @@
+defmodule CritWeb.Org.MembersLiveTest do
+  use CritWeb.ConnCase, async: false
+
+  import Phoenix.LiveViewTest
+  import Crit.AccountsFixtures
+  import Crit.OrganizationsFixtures
+
+  defp login(conn, user) do
+    init_test_session(conn, %{user_id: user.id})
+  end
+
+  describe "unauthenticated" do
+    test "redirects to login when not authenticated", %{conn: conn} do
+      assert {:error, {:redirect, %{to: "/auth/login" <> _}}} =
+               live(conn, ~p"/orgs/some-org/members")
+    end
+  end
+
+  describe "non-member" do
+    test "redirects to /orgs when not a member", %{conn: conn} do
+      admin = oauth_user_fixture()
+      org = organization_fixture(admin, %{"slug" => "private-org"})
+
+      non_member = oauth_user_fixture()
+      conn = login(conn, non_member)
+
+      assert {:error, {:redirect, %{to: "/orgs"}}} =
+               live(conn, ~p"/orgs/#{org.slug}/members")
+    end
+  end
+
+  describe "members list" do
+    test "shows active members", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Admin Person"})
+      member = oauth_user_fixture(%{"name" => "Member Person"})
+      org = organization_fixture(admin, %{"slug" => "test-org"})
+      _membership = membership_fixture(org, member, "member")
+
+      conn = login(conn, admin)
+      {:ok, _view, html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      assert html =~ "Admin Person"
+      assert html =~ "Member Person"
+    end
+  end
+
+  describe "admin role management" do
+    test "admin can change member role", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Admin"})
+      member = oauth_user_fixture(%{"name" => "Member"})
+      org = organization_fixture(admin, %{"slug" => "role-org"})
+      _membership = membership_fixture(org, member, "member")
+
+      conn = login(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      html =
+        render_click(view, "change_role", %{"user_id" => member.id, "role" => "admin"})
+
+      # Page should reload members - no error flash
+      refute html =~ "Not authorized"
+    end
+
+    test "cannot demote last admin", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Solo Admin"})
+      org = organization_fixture(admin, %{"slug" => "solo-org"})
+
+      conn = login(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      html =
+        render_click(view, "change_role", %{"user_id" => admin.id, "role" => "member"})
+
+      assert html =~ "Cannot demote the last admin"
+    end
+
+    test "admin can remove member", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Admin"})
+      member = oauth_user_fixture(%{"name" => "ToRemove"})
+      org = organization_fixture(admin, %{"slug" => "remove-org"})
+      _membership = membership_fixture(org, member, "member")
+
+      conn = login(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      html =
+        render_click(view, "remove_member", %{"user_id" => member.id})
+
+      # Member should be gone from the list
+      refute html =~ "ToRemove"
+    end
+
+    test "cannot remove last admin", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Solo Admin"})
+      org = organization_fixture(admin, %{"slug" => "cant-remove-org"})
+
+      conn = login(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      html = render_click(view, "remove_member", %{"user_id" => admin.id})
+
+      assert html =~ "Cannot remove the last admin"
+    end
+  end
+
+  describe "invites (admin)" do
+    test "admin can send invite", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Admin"})
+      org = organization_fixture(admin, %{"slug" => "invite-org"})
+
+      conn = login(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      html =
+        view
+        |> form("#send_invite_form", invite: %{email: "new@example.com", role: "member"})
+        |> render_submit()
+
+      assert html =~ "Invited new@example.com"
+    end
+
+    test "admin can revoke invite", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Admin"})
+      org = organization_fixture(admin, %{"slug" => "revoke-org"})
+      scope = org_scope(admin, org)
+      {_raw_token, invite} = invite_fixture(scope, org, "revoke-me@example.com")
+
+      conn = login(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      # Switch to pending tab to see invites
+      render_click(view, "switch_tab", %{"tab" => "pending"})
+
+      html = render_click(view, "revoke_invite", %{"id" => invite.id})
+
+      # Invite should be removed - check the invite email is gone
+      refute html =~ "revoke-me@example.com"
+    end
+
+    test "admin can resend invite", %{conn: conn} do
+      admin = oauth_user_fixture(%{"name" => "Admin"})
+      org = organization_fixture(admin, %{"slug" => "resend-org"})
+      scope = org_scope(admin, org)
+      {_raw_token, invite} = invite_fixture(scope, org, "resend-me@example.com")
+
+      conn = login(conn, admin)
+      {:ok, view, _html} = live(conn, ~p"/orgs/#{org.slug}/members")
+
+      html = render_click(view, "resend_invite", %{"id" => invite.id})
+
+      assert html =~ "Invite resent"
+    end
+  end
+
+end

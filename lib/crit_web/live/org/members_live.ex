@@ -1,4 +1,4 @@
-defmodule CritWeb.OrgMembersLive do
+defmodule CritWeb.Org.MembersLive do
   use CritWeb, :live_view
 
   alias Crit.Accounts
@@ -83,28 +83,6 @@ defmodule CritWeb.OrgMembersLive do
   end
 
   @impl true
-  def handle_event("leave", _params, socket) do
-    case Organizations.leave_organization(
-           socket.assigns.current_scope,
-           socket.assigns.org
-         ) do
-      {:ok, _} ->
-        {:noreply, push_navigate(socket, to: ~p"/orgs")}
-
-      {:error, :last_admin} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "You are the last admin. Transfer admin role before leaving."
-         )}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Could not leave organization.")}
-    end
-  end
-
-  @impl true
   def handle_event("validate_invite", %{"invite" => params}, socket) do
     {:noreply, assign(socket, :invite_form, to_form(params, as: "invite"))}
   end
@@ -122,8 +100,13 @@ defmodule CritWeb.OrgMembersLive do
 
     case emails do
       [] ->
-        changeset = Organizations.invite_changeset_error(:email, "can't be blank")
-        {:noreply, assign(socket, :invite_form, to_form(changeset, as: "invite"))}
+        case Organizations.create_invite(scope, org, %{"email" => "", "role" => role}) do
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply, assign(socket, :invite_form, to_form(changeset, as: "invite"))}
+
+          _ ->
+            {:noreply, socket}
+        end
 
       _ ->
         {sent, errors} =

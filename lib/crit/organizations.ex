@@ -39,7 +39,8 @@ defmodule Crit.Organizations do
   end
 
   def update_organization(%Scope{} = scope, %Organization{} = org, attrs) do
-    with :ok <- check_org_admin(scope) do
+    with :ok <- check_org_admin(scope),
+         :ok <- check_org_matches_scope(scope, org) do
       org
       |> Organization.changeset(attrs)
       |> Repo.update()
@@ -61,7 +62,8 @@ defmodule Crit.Organizations do
   end
 
   def delete_organization(%Scope{} = scope, %Organization{} = org) do
-    with :ok <- check_org_admin(scope) do
+    with :ok <- check_org_admin(scope),
+         :ok <- check_org_matches_scope(scope, org) do
       Repo.delete(org)
     end
   end
@@ -80,13 +82,27 @@ defmodule Crit.Organizations do
       join: o in assoc(m, :organization),
       left_join: m2 in OrganizationMembership,
       on: m2.organization_id == o.id,
+      left_join: u2 in assoc(m2, :user),
       group_by: [o.id, m.id],
-      select: %{membership: m, organization: o, member_count: count(m2.id)},
+      select: %{
+        membership: m,
+        organization: o,
+        member_count: count(m2.id),
+        member_names: fragment("array_agg(? ORDER BY ? ASC NULLS LAST)", u2.name, u2.name)
+      },
       order_by: [asc: o.name]
     )
     |> Repo.all()
-    |> Enum.map(fn %{membership: m, organization: org, member_count: count} ->
-      %{org | member_count: count, role: m.role}
+    # Populate virtual fields on Organization — Ecto can't select into virtuals
+    # directly, so we map over the joined result and set them from the membership.
+    |> Enum.map(fn %{membership: m, organization: org, member_count: count, member_names: names} ->
+      initials =
+        (names || [])
+        |> Enum.reject(&is_nil/1)
+        |> Enum.map(&String.first/1)
+        |> Enum.uniq()
+
+      %{org | member_count: count, role: m.role, member_initials: initials}
     end)
   end
 
@@ -115,6 +131,7 @@ defmodule Crit.Organizations do
 
   def update_membership_role(%Scope{} = scope, %OrganizationMembership{} = membership, role) do
     with :ok <- check_org_admin(scope),
+         :ok <- check_membership_in_scope(scope, membership),
          :ok <- check_demote_last_admin(membership, role) do
       membership
       |> OrganizationMembership.changeset(%{role: role})
@@ -136,6 +153,7 @@ defmodule Crit.Organizations do
 
   def remove_member(%Scope{} = scope, %Organization{} = org, %User{} = user) do
     with :ok <- check_org_admin(scope),
+         :ok <- check_org_matches_scope(scope, org),
          :ok <- check_not_last_admin(org, user),
          {:ok, membership} <- get_membership_for_user(org.id, user.id) do
       Repo.delete(membership)
@@ -151,15 +169,23 @@ defmodule Crit.Organizations do
   end
 
   defp check_not_last_admin(org, user) do
-    admin_memberships =
+    admin_count =
       from(m in OrganizationMembership,
         where: m.organization_id == ^org.id and m.role == "admin"
       )
-      |> Repo.all()
+      |> Repo.aggregate(:count)
 
     cond do
-      length(admin_memberships) > 1 -> :ok
-      length(admin_memberships) == 1 and hd(admin_memberships).user_id != user.id -> :ok
+      admin_count > 1 -> :ok
+      admin_count == 1 ->
+        case Repo.get_by(OrganizationMembership,
+               organization_id: org.id,
+               user_id: user.id,
+               role: "admin"
+             ) do
+          nil -> :ok
+          _ -> {:error, :last_admin}
+        end
       true -> {:error, :last_admin}
     end
   end
@@ -168,12 +194,21 @@ defmodule Crit.Organizations do
     if Scope.org_admin?(scope), do: :ok, else: {:error, :unauthorized}
   end
 
+  defp check_org_matches_scope(%Scope{} = scope, %Organization{id: id}) do
+    if Scope.org_id(scope) == id, do: :ok, else: {:error, :unauthorized}
+  end
+
+  defp check_membership_in_scope(%Scope{} = scope, %OrganizationMembership{} = m) do
+    if m.organization_id == Scope.org_id(scope), do: :ok, else: {:error, :unauthorized}
+  end
+
   # ---------------------------------------------------------------------------
   # Invites
   # ---------------------------------------------------------------------------
 
   def create_invite(%Scope{user: %User{} = inviter} = scope, %Organization{} = org, attrs) do
-    with :ok <- check_org_admin(scope) do
+    with :ok <- check_org_admin(scope),
+         :ok <- check_org_matches_scope(scope, org) do
       email = String.downcase(Map.get(attrs, "email") || Map.get(attrs, :email) || "")
       role = Map.get(attrs, "role") || Map.get(attrs, :role) || "member"
 
@@ -207,7 +242,7 @@ defmodule Crit.Organizations do
     end
   end
 
-  def invite_changeset_error(field, msg) do
+  defp invite_changeset_error(field, msg) do
     %OrganizationInvite{}
     |> Ecto.Changeset.change(%{})
     |> Ecto.Changeset.add_error(field, msg)
@@ -270,24 +305,7 @@ defmodule Crit.Organizations do
          :ok <- check_email_match(invite, user),
          :ok <- check_not_expired(invite),
          :ok <- check_not_already_member_by_user(invite.organization_id, user.id) do
-      Repo.transaction(fn ->
-        membership_cs =
-          OrganizationMembership.changeset(%OrganizationMembership{}, %{
-            organization_id: invite.organization_id,
-            user_id: user.id,
-            role: invite.role
-          })
-
-        case Repo.insert(membership_cs) do
-          {:ok, membership} ->
-            {:ok, _} = Repo.delete(invite)
-            {:ok, org} = get_organization(invite.organization_id)
-            {org, membership}
-
-          {:error, cs} ->
-            Repo.rollback(cs)
-        end
-      end)
+      do_accept_invite(invite, user)
     else
       :error -> {:error, :invalid_token}
       other -> other
@@ -295,6 +313,27 @@ defmodule Crit.Organizations do
   end
 
   def accept_invite(_scope, _token), do: {:error, :unauthenticated}
+
+  defp do_accept_invite(invite, user) do
+    Repo.transaction(fn ->
+      membership_cs =
+        OrganizationMembership.changeset(%OrganizationMembership{}, %{
+          organization_id: invite.organization_id,
+          user_id: user.id,
+          role: invite.role
+        })
+
+      case Repo.insert(membership_cs) do
+        {:ok, membership} ->
+          {:ok, _} = Repo.delete(invite)
+          org = invite.organization
+          {org, membership}
+
+        {:error, cs} ->
+          Repo.rollback(cs)
+      end
+    end)
+  end
 
   defp find_invite_by_token(token_hash) do
     case Repo.get_by(OrganizationInvite, token: token_hash) do
@@ -389,23 +428,7 @@ defmodule Crit.Organizations do
         with :ok <- check_email_match(invite, user),
              :ok <- check_not_expired(invite),
              :ok <- check_not_already_member_by_user(invite.organization_id, user.id) do
-          Repo.transaction(fn ->
-            membership_cs =
-              OrganizationMembership.changeset(%OrganizationMembership{}, %{
-                organization_id: invite.organization_id,
-                user_id: user.id,
-                role: invite.role
-              })
-
-            case Repo.insert(membership_cs) do
-              {:ok, membership} ->
-                {:ok, _} = Repo.delete(invite)
-                {invite.organization, membership}
-
-              {:error, cs} ->
-                Repo.rollback(cs)
-            end
-          end)
+          do_accept_invite(invite, user)
         end
     end
   end

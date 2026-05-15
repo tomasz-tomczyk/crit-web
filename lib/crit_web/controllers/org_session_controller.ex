@@ -11,9 +11,6 @@ defmodule CritWeb.OrgSessionController do
     scope = conn.assigns.current_scope
 
     case Organizations.accept_invite(scope, raw_token) do
-      {:ok, {:ok, {_org, _membership}}} ->
-        finalize_accept(conn)
-
       {:ok, {_org, _membership}} ->
         finalize_accept(conn)
 
@@ -53,9 +50,6 @@ defmodule CritWeb.OrgSessionController do
     scope = conn.assigns.current_scope
 
     case Organizations.accept_invite_by_id(scope, invite_id) do
-      {:ok, {:ok, {_org, _membership}}} ->
-        finalize_accept(conn)
-
       {:ok, {_org, _membership}} ->
         finalize_accept(conn)
 

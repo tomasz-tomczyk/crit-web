@@ -13,6 +13,12 @@ defmodule Crit.Organizations.OrgNotifier do
     inviter_name = invited_by.name || invited_by.email || "Someone"
     ttl = OrganizationInvite.ttl_days()
 
+    # HTML-escape user-provided values to prevent XSS in email clients
+    h = fn s -> s |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string() end
+    safe_org_name = h.(org.name)
+    safe_inviter = h.(inviter_name)
+    safe_url = h.(url)
+
     email =
       new()
       |> to(invite.email)
@@ -33,10 +39,10 @@ defmodule Crit.Organizations.OrgNotifier do
       <!DOCTYPE html>
       <html>
       <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2>You've been invited to join #{org.name} on Crit</h2>
-        <p>#{inviter_name} has invited you to join <strong>#{org.name}</strong> on Crit as a <strong>#{role_label}</strong>.</p>
+        <h2>You've been invited to join #{safe_org_name} on Crit</h2>
+        <p>#{safe_inviter} has invited you to join <strong>#{safe_org_name}</strong> on Crit as a <strong>#{role_label}</strong>.</p>
         <p>
-          <a href="#{url}" style="display: inline-block; padding: 10px 20px; background: #0f172a; color: white; text-decoration: none; border-radius: 6px;">
+          <a href="#{safe_url}" style="display: inline-block; padding: 10px 20px; background: #0f172a; color: white; text-decoration: none; border-radius: 6px;">
             Accept invitation
           </a>
         </p>

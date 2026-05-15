@@ -228,28 +228,16 @@
 
                 <%!-- Actions --%>
                 <td class="pr-[18px] py-3 text-right">
-                  <%= cond do %>
-                    <% member.user.id == @current_user_id -> %>
-                      <button
-                        type="button"
-                        phx-click="leave"
-                        data-confirm="Leave this organization?"
-                        class="text-[12px] font-medium text-(--crit-red) hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        Leave
-                      </button>
-                    <% @is_admin -> %>
-                      <button
-                        type="button"
-                        phx-click="remove_member"
-                        phx-value-user_id={member.user.id}
-                        data-confirm={"Remove #{member.user.name || member.user.email} from this organization?"}
-                        class="text-[12px] font-medium text-(--crit-red) hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        Remove
-                      </button>
-                    <% true -> %>
-                      <span></span>
+                  <%= if @is_admin and member.user.id != @current_user_id do %>
+                    <button
+                      type="button"
+                      phx-click="remove_member"
+                      phx-value-user_id={member.user.id}
+                      data-confirm={"Remove #{member.user.name || member.user.email} from this organization?"}
+                      class="text-[12px] font-medium text-(--crit-red) hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      Remove
+                    </button>
                   <% end %>
                 </td>
               </tr>
@@ -308,7 +296,7 @@
                 {invite.invited_by.name || invite.invited_by.email}
               </td>
               <td class="px-4 py-3 text-[12px] text-(--crit-fg-secondary)">
-                {CritWeb.OrgMembersLive.expires_label(invite)}
+                {CritWeb.Org.MembersLive.expires_label(invite)}
               </td>
               <td class="px-4 py-3 text-right">
                 <button

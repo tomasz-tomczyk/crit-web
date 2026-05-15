@@ -1,4 +1,4 @@
-defmodule CritWeb.OrgNewLive do
+defmodule CritWeb.Org.NewLive do
   use CritWeb, :live_view
 
   alias Crit.Organizations
@@ -45,12 +45,6 @@ defmodule CritWeb.OrgNewLive do
   @impl true
   def handle_event("save", %{"org" => params}, socket) do
     case Organizations.create_organization(socket.assigns.current_scope, params) do
-      {:ok, {:ok, org}} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Organization created.")
-         |> push_navigate(to: ~p"/orgs/#{org.slug}/settings")}
-
       {:ok, %Organization{} = org} ->
         {:noreply,
          socket

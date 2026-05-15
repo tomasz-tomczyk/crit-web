@@ -1,4 +1,4 @@
-defmodule CritWeb.OrgOverviewLive do
+defmodule CritWeb.Org.OverviewLive do
   use CritWeb, :live_view
 
   alias Crit.Accounts.Scope

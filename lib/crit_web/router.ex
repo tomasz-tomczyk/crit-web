@@ -104,9 +104,9 @@ defmodule CritWeb.Router do
       session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
       live "/dashboard", DashboardLive, :index
       live "/settings", SettingsLive, :index
-      live "/orgs", OrgSelectLive, :index
-      live "/orgs/new", OrgNewLive, :index
-      live "/invites/:token", InviteAcceptLive, :index
+      live "/orgs", Org.SelectLive, :index
+      live "/orgs/new", Org.NewLive, :index
+      live "/invites/:token", Org.InviteAcceptLive, :index
     end
 
     live_session :org,
@@ -115,9 +115,18 @@ defmodule CritWeb.Router do
         {CritWeb.UserAuth, :ensure_org}
       ],
       session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
-      live "/orgs/:org_slug", OrgOverviewLive, :index
-      live "/orgs/:org_slug/settings", OrgSettingsLive, :index
-      live "/orgs/:org_slug/members", OrgMembersLive, :index
+      live "/orgs/:org_slug", Org.OverviewLive, :index
+      live "/orgs/:org_slug/members", Org.MembersLive, :index
+    end
+
+    live_session :org_admin,
+      on_mount: [
+        {CritWeb.UserAuth, :require_authenticated_user},
+        {CritWeb.UserAuth, :ensure_org},
+        {CritWeb.UserAuth, :require_org_admin}
+      ],
+      session: {CritWeb.Live.SessionHelper, :user_session_opts, []} do
+      live "/orgs/:org_slug/settings", Org.SettingsLive, :index
     end
 
     post "/invites/:token/accept", OrgSessionController, :accept_invite

@@ -37,7 +37,7 @@
             <%!-- Invited by line --%>
             <p class="text-[15px] text-(--crit-fg-secondary) leading-relaxed">
               <strong class="text-(--crit-fg-primary) font-semibold">
-                {@invite.invited_by.name || @invite.invited_by.email}
+                {@invite.invited_by.name || "a team admin"}
               </strong>
               invited you as
               <span class="inline-flex items-center gap-1 px-2 py-0.5 mx-1 rounded-full text-[12px] font-medium bg-(--crit-brand-bg) text-(--crit-brand)">
@@ -46,88 +46,6 @@
               </span>
               on {Calendar.strftime(@invite.inserted_at, "%b %-d")}.
             </p>
-
-            <%!-- Stats preview --%>
-            <div class="mt-7 p-[18px_20px] bg-(--crit-bg-page) border border-(--crit-border) rounded-[10px]">
-              <div class="grid grid-cols-3">
-                <%!-- Members column --%>
-                <div class="border-r border-(--crit-border) pr-4">
-                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Members</div>
-                  <div class="mt-2 flex items-center gap-2">
-                    <div class="flex">
-                      <span
-                        class="w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
-                        style="background: rgba(122,162,247,0.18); color: #7aa2f7;"
-                      >
-                        T
-                      </span>
-                      <span
-                        class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
-                        style="background: rgba(187,154,247,0.18); color: #bb9af7;"
-                      >
-                        M
-                      </span>
-                      <span
-                        class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
-                        style="background: rgba(158,206,106,0.20); color: #9ece6a;"
-                      >
-                        S
-                      </span>
-                      <span
-                        class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page)"
-                        style="background: rgba(247,118,142,0.18); color: #f7768e;"
-                      >
-                        J
-                      </span>
-                      <span class="-ml-2 w-[22px] h-[22px] rounded-full inline-flex items-center justify-center text-[9px] font-semibold border-2 border-(--crit-bg-page) bg-(--crit-bg-elevated) text-(--crit-fg-secondary)">
-                        +3
-                      </span>
-                    </div>
-                    <span class="text-[13px] font-semibold">8 people</span>
-                  </div>
-                </div>
-
-                <%!-- Reviews column --%>
-                <div class="border-r border-(--crit-border) px-4">
-                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Shared reviews</div>
-                  <div class="mt-2 text-[18px] font-bold text-(--crit-fg-primary)">142</div>
-                </div>
-
-                <%!-- Sharing column --%>
-                <div class="pl-4">
-                  <div class="text-[11px] text-(--crit-fg-muted) uppercase tracking-[0.08em]">Sharing</div>
-                  <div class="mt-2 text-[13px] font-semibold flex items-center gap-1.5">
-                    <.icon name="hero-lock-closed" class="size-3" /> Members only
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <%!-- Permission bullets --%>
-            <ul class="mt-5.5 flex flex-col gap-2 list-none p-0 m-0">
-              <li class="flex items-start gap-2.5 text-[13px] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-green) mt-0.5 shrink-0">
-                  <.icon name="hero-check" class="size-3.5" />
-                </span>
-                View every review the team has shared, including drafts.
-              </li>
-              <li class="flex items-start gap-2.5 text-[13px] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-green) mt-0.5 shrink-0">
-                  <.icon name="hero-check" class="size-3.5" />
-                </span>
-                Comment, resolve threads, and request follow-up rounds.
-              </li>
-              <li class="flex items-start gap-2.5 text-[13px] text-(--crit-fg-secondary)">
-                <span class="text-(--crit-green) mt-0.5 shrink-0">
-                  <.icon name="hero-check" class="size-3.5" />
-                </span>
-                <%= if @invite.role == "admin" do %>
-                  Invite teammates and configure organization settings (you're an admin).
-                <% else %>
-                  View team members and access shared organization resources.
-                <% end %>
-              </li>
-            </ul>
 
             <%!-- CTAs --%>
             <div class="mt-7 flex items-center gap-2.5 flex-wrap">
