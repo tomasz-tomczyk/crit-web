@@ -618,7 +618,7 @@
 
     <%!-- Behind an SSO reverse proxy --%>
     <section class="mb-16 max-sm:mb-12">
-      <div phx-no-format class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+      <div phx-no-format class="mb-5 border-t border-(--crit-border) pt-10">
         <h2 class="text-2xl font-extrabold tracking-tight mb-2">Behind an SSO reverse proxy<span class="text-(--crit-brand)">?</span></h2>
         <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
           If your Crit instance sits behind an SSO reverse proxy (Cloudflare Access,
@@ -681,81 +681,68 @@
 
     <%!-- Trusted proxy header --%>
     <section class="mb-16 max-sm:mb-12">
-      <div phx-no-format class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
+      <div phx-no-format class="mb-5 border-t border-(--crit-border) pt-10">
         <h2 class="text-2xl font-extrabold tracking-tight mb-2">Trusted proxy header</h2>
         <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
           If your proxy already authenticates users (oauth2-proxy, Cloudflare
           Access, Google IAP, Pomerium, Authelia), you can have Crit pick up the
           signed-in user's email from a request header instead of running its
-          own OAuth. Set both env vars below.
+          own OAuth.
         </p>
       </div>
 
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
-          <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-          </div>
-          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">.env</span>
+      <%!-- Env var table --%>
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden mb-3">
+        <div class="px-4 py-2 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <span class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted)">
+            Reverse Proxy
+          </span>
         </div>
-        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
-          <div>
-            <span class="text-(--crit-fg-primary)">CRIT_TRUSTED_PROXY_USER_HEADER=X-Auth-Request-Email</span>
+        <div class="divide-y divide-(--crit-border)">
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_TRUSTED_PROXY_USER_HEADER</code>
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              Request header containing the authenticated user's email. Common values:
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Auth-Request-Email</code> (oauth2-proxy),
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Cf-Access-Authenticated-User-Email</code> (Cloudflare Access),
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Goog-Authenticated-User-Email</code> (Google IAP),
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Pomerium-Claim-Email</code> (Pomerium),
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Remote-Email</code> (Authelia).
+            </p>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div>
-            <span class="text-(--crit-fg-primary)">CRIT_TRUSTED_PROXY_CIDRS=10.0.0.0/8,172.16.0.0/12</span>
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_TRUSTED_PROXY_CIDRS</code>
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              Comma-separated CIDR ranges your proxy forwards from, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">10.0.0.0/8,172.16.0.0/12</code>.
+              The header is only trusted when the request originates from these ranges. <strong class="text-(--crit-fg-primary)">Mandatory</strong> — Crit refuses to start if the header is set without CIDRs.
+            </p>
+            <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
-          <div class="mt-3 text-(--crit-fg-muted) text-xs select-none">
-            # optional, only if WebSocket is blocked
-          </div>
-          <div>
-            <span class="text-(--crit-fg-primary)">CRIT_LIVEVIEW_TRANSPORT=longpoll</span>
+          <div class="grid grid-cols-[minmax(160px,220px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <div>
+              <code class="text-sm font-mono text-(--crit-fg-primary)">CRIT_LIVEVIEW_TRANSPORT</code>
+              <span class="ml-2 text-xs font-mono text-(--crit-fg-muted)">websocket</span>
+            </div>
+            <p class="text-sm text-(--crit-fg-secondary)">
+              Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">longpoll</code>
+              if your proxy strips or rewrites WebSocket upgrades. Default falls back automatically after 2.5s.
+            </p>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
           </div>
         </div>
-      </div>
-
-      <div phx-no-format class="max-w-[640px] mt-8 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3">
-        <h3 class="text-base font-semibold tracking-tight text-(--crit-fg-primary)">Common header names</h3>
-        <p>
-          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Auth-Request-Email</code> (oauth2-proxy),
-          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Cf-Access-Authenticated-User-Email</code> (Cloudflare Access),
-          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Goog-Authenticated-User-Email</code> (Google IAP),
-          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">X-Pomerium-Claim-Email</code> (Pomerium),
-          <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Remote-Email</code> (Authelia).
-        </p>
       </div>
 
       <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-4 py-3 flex items-start gap-3 mb-5">
         <span class="text-(--crit-brand) text-sm leading-none mt-0.5 select-none">&#9432;</span>
-        <div phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3">
-          <p>
-            <strong class="text-(--crit-fg-primary)">The CIDR list is mandatory.</strong>
-            Without it, anyone who can reach the app directly (bypassing the
-            proxy) could spoof the header and impersonate any user. Crit refuses
-            to start if the header is set without CIDRs. Set the CIDRs to cover
-            only the IP range your proxy uses to forward requests.
-          </p>
-          <p>
-            Your proxy must <strong class="text-(--crit-fg-primary)">overwrite</strong>
-            the header on every request, not append to incoming values. Most SSO
-            proxies do this by default — verify yours does before enabling.
-          </p>
-          <p>
-            This authenticates browser-driven flows only (review pages, dashboard,
-            the in-browser Share popup). The local CLI's direct
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/api/reviews</code>
-            uploads still require a bearer token from
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">crit auth</code>
-            — use
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">proxy_auth: true</code>
-            on the CLI side if the proxy blocks direct API access.
-          </p>
-        </div>
+        <p phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Your proxy must <strong class="text-(--crit-fg-primary)">overwrite</strong> the header on every request, not append to incoming values.
+          This authenticates browser-driven flows only (review pages, dashboard, the in-browser Share popup).
+          The CLI's direct <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/api/reviews</code> uploads still require a bearer token from <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">crit auth</code> — use <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">proxy_auth: true</code> on the CLI side if the proxy blocks direct API access.
+        </p>
       </div>
 
-      <div phx-no-format class="max-w-[640px] mt-8 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3">
+      <div phx-no-format class="mt-8 mb-5 text-sm text-(--crit-fg-secondary) leading-relaxed space-y-3">
         <h3 class="text-base font-semibold tracking-tight text-(--crit-fg-primary)">Known proxy behaviors</h3>
         <p>Two common proxy quirks are handled automatically:</p>
         <ul class="list-disc pl-5 space-y-1">
@@ -764,8 +751,7 @@
             some proxies re-compress responses that are already gzipped, producing
             garbled output. Crit sets
             <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Cache-Control: no-transform</code>
-            on every response, which tells conformant proxies to leave the body
-            alone.
+            on every response, which tells conformant proxies to leave the body alone.
           </li>
           <li>
             <strong class="text-(--crit-fg-primary)">Redirect-collapse loops</strong> —
