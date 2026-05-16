@@ -141,6 +141,38 @@ defmodule Crit.Integrations do
       components: [:crit_command, :crit_cli_skill]
     },
     %{
+      id: "pi",
+      name: "Pi",
+      tagline: "Crit as a Pi skill",
+      logo: %{
+        light: "/images/integrations/pi-light.svg",
+        dark: "/images/integrations/pi-dark.svg"
+      },
+      page_title: "Crit + Pi — review AI plans inline",
+      meta:
+        "Install crit's Pi integration. Drops skills into .pi/skills/ (project) or ~/.pi/agent/skills/ (global) so Pi auto-discovers the review workflow.",
+      intro:
+        "Pi auto-discovers skills from .pi/skills/ (project) and ~/.pi/agent/skills/ (global). The global path differs from the project path, and `crit install pi` handles both cases automatically.",
+      command: "crit install pi",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
+      id: "grok",
+      name: "Grok",
+      tagline: "Crit as a Grok skill",
+      logo: %{
+        light: "/images/integrations/grok-light.svg",
+        dark: "/images/integrations/grok-dark.svg"
+      },
+      page_title: "Crit + Grok — review AI plans inline",
+      meta:
+        "Install crit's Grok skill. Drops .grok/skills/crit/ and .grok/skills/crit-cli/ so Grok auto-loads the review workflow.",
+      intro:
+        "Grok auto-discovers skills from .grok/skills/ (project) and ~/.grok/skills/ (global). The crit skill activates whenever Grok plans or reviews code.",
+      command: "crit install grok",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
       id: "windsurf",
       name: "Windsurf",
       tagline: "A Windsurf rule for Crit",
@@ -161,7 +193,10 @@ defmodule Crit.Integrations do
       id: "cline",
       name: "Cline",
       tagline: "A Cline rule for Crit",
-      logo: nil,
+      logo: %{
+        light: "/images/integrations/cline-light.svg",
+        dark: "/images/integrations/cline-dark.svg"
+      },
       page_title: "Crit + Cline — review plans before coding",
       meta:
         "Install crit's Cline rule. Drops .clinerules/crit.md so Cline follows the plan-first review loop with inline feedback before any code change.",

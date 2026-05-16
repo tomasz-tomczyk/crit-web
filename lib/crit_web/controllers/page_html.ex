@@ -257,6 +257,26 @@ defmodule CritWeb.PageHTML do
       ]
     },
     %{
+      id: "pi",
+      name: "Pi",
+      copy: "crit install pi",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install pi"},
+        %{type: :output, text: "Installed: .pi/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .pi/skills/crit-cli/SKILL.md"}
+      ]
+    },
+    %{
+      id: "grok",
+      name: "Grok",
+      copy: "crit install grok",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install grok"},
+        %{type: :output, text: "Installed: .grok/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .grok/skills/crit-cli/SKILL.md"}
+      ]
+    },
+    %{
       id: "windsurf",
       name: "Windsurf",
       copy: "crit install windsurf",
