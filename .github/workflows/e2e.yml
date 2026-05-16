@@ -60,7 +60,6 @@ jobs:
         with:
           path: _build/test
           key: ${{ runner.os }}-build-test-e2e-${{ hashFiles('**/mix.lock') }}
-          restore-keys: ${{ runner.os }}-build-test-e2e-
 
       - name: Install Elixir dependencies
         run: mix deps.get
