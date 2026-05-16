@@ -78,6 +78,8 @@ function initSentry(liveSocket) {
       let lastOpenAt = Date.now()
 
       socket.onError(err => {
+        const msg = String(err?.message ?? err)
+        if (msg === "410") return
         consecutiveErrors += 1
         if (firstErrorAt === null) firstErrorAt = Date.now()
         if (pendingTimer !== null) return
