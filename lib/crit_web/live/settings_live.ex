@@ -6,6 +6,7 @@ defmodule CritWeb.SettingsLive do
   alias Crit.Organizations
 
   import CritWeb.Helpers, only: [time_ago: 1]
+  import CritWeb.Components.MarketingToggle
 
   @impl true
   def mount(_params, _session, socket) do

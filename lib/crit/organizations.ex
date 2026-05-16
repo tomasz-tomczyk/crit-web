@@ -270,7 +270,6 @@ defmodule Crit.Organizations do
             changeset =
               invite_struct
               |> Ecto.Changeset.change(%{})
-              |> Ecto.Changeset.validate_inclusion(:role, ~w(admin member))
               |> Ecto.Changeset.validate_format(:email, ~r/^[^\s]+@[^\s]+$/,
                 message: "must be a valid email"
               )

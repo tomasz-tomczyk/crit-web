@@ -10,7 +10,7 @@ defmodule CritWeb.Plugs.SecurityHeaders do
     "magnetometer=()",
     "payment=()",
     "usb=()",
-    "interest-cohort=()"
+    "browsing-topics=()"
   ]
 
   def init(opts), do: opts
