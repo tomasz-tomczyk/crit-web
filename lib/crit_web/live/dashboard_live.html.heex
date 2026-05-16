@@ -48,7 +48,10 @@
 
       <%!-- Marketing opt-in (outside phx-update="ignore" so it re-renders on toggle) --%>
       <div :if={!@selfhosted} class="mt-10 flex justify-center">
-        <.marketing_toggle id="dashboard-marketing-opt-in" marketing_opted_in={@marketing_opted_in} />
+        <.marketing_toggle
+          id="dashboard-marketing-opt-in"
+          marketing_opted_in={@marketing_opted_in}
+        />
       </div>
 
       <%!-- Footer --%>
