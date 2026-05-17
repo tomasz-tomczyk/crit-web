@@ -339,11 +339,21 @@ function renderSuggestionDiff(suggestionContent, originalLines) {
   }
 })()
 
+function ensureToastHost() {
+  let host = document.querySelector('.mini-toast-host')
+  if (host) return host
+  host = document.createElement('div')
+  host.className = 'mini-toast-host'
+  document.body.appendChild(host)
+  return host
+}
+
 function showToast(message, duration = 3000) {
+  const host = ensureToastHost()
   const toast = document.createElement('div')
   toast.className = 'mini-toast'
   toast.textContent = message
-  document.body.appendChild(toast)
+  host.appendChild(toast)
   requestAnimationFrame(() => toast.classList.add('mini-toast-visible'))
   trackedSetTimeout(__activeCtx, () => {
     toast.classList.remove('mini-toast-visible')
