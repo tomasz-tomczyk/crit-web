@@ -244,11 +244,13 @@ document.addEventListener("click", e => {
 // and reveals the panel referenced by data-target, hiding sibling panels.
 // Sibling tabs/panels are scoped by the shared class (install-* / agent-*).
 function activateTab(tab, tabClass, panelClass) {
-  document.querySelectorAll(`.${tabClass}`).forEach(t => {
+  const section = tab.closest("section") || tab.closest("div.max-w-md") || tab.parentElement?.parentElement
+  const scope = section || document
+  scope.querySelectorAll(`.${tabClass}`).forEach(t => {
     t.classList.remove("border-(--crit-brand)", "text-(--crit-brand)")
     t.classList.add("border-transparent", "text-(--crit-fg-muted)")
   })
-  document.querySelectorAll(`.${panelClass}`).forEach(p => p.classList.add("hidden"))
+  scope.querySelectorAll(`.${panelClass}`).forEach(p => p.classList.add("hidden"))
   tab.classList.add("border-(--crit-brand)", "text-(--crit-brand)")
   tab.classList.remove("border-transparent", "text-(--crit-fg-muted)")
   const panel = document.getElementById(tab.dataset.target)
