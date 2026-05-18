@@ -109,357 +109,222 @@
       </div>
     </div>
   </section>
-  
-<!-- ===== Install ===== -->
-  <section class="max-w-7xl mx-auto mt-16 px-10 max-sm:px-4 w-full" id="install">
-    <div class="flex gap-14 items-start max-lg:flex-col max-lg:gap-6">
-      <div class="w-[300px] shrink-0 max-lg:w-full">
-        <h2 class="text-2xl font-extrabold tracking-tight mb-3">Install</h2>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-          Single binary. Reviews stay on your machine - sharing is opt-in.
+
+  <%!-- ===== Four Modes ===== --%>
+  <section id="modes" class="py-24 max-sm:py-14">
+    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
+      <div class="max-w-2xl mb-16 max-sm:mb-10">
+        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
+          Four surfaces
         </p>
+        <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
+          Whatever your agent produces, crit has a surface for it.
+        </h2>
       </div>
-      <div class="flex-1 min-w-0 max-lg:w-full">
-        <CritWeb.PageHTML.install_widget />
-      </div>
-    </div>
-  </section>
-  
-<!-- ===== Agent Setup ===== -->
-  <section class="max-w-7xl mx-auto mt-8 px-10 max-sm:px-4 w-full" id="agent-setup">
-    <div class="flex gap-14 items-start max-lg:flex-col max-lg:gap-6">
-      <div class="w-[300px] shrink-0 max-lg:w-full">
-        <h2 class="text-2xl font-extrabold tracking-tight mb-3">Connect your agent</h2>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-          Add skills to teach your agent how to use Crit.
-        </p>
-      </div>
-      <div class="flex-1 min-w-0 max-lg:w-full">
-        <CritWeb.PageHTML.agent_setup_widget />
-      </div>
-    </div>
-  </section>
 
-  <%!-- ===== Primary feature: AI review loop ===== --%>
-  <section
-    class="max-w-7xl mx-auto mt-32 px-10 max-sm:px-4 max-sm:mt-16 w-full"
-    id="features"
-  >
-    <div class="max-w-[640px] mb-8 max-sm:mb-6">
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
-        The core loop
-      </p>
-      <h3 class="text-3xl font-extrabold tracking-tight mb-3 max-sm:text-2xl text-balance">
-        Comment in. Agent updates. Diff out.
-      </h3>
-      <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-sm:text-base">
-        Drag across a range of lines, leave comments, hit <strong class="text-(--crit-fg-primary) font-semibold">Finish Review</strong>.
-        Your agent picks up the feedback, edits the file, and Crit reloads with a diff so
-        you can keep iterating without losing context. Previous comments stay visible - resolve only when you're satisfied.
-      </p>
-    </div>
-    <figure class="not-prose">
-      <img
-        src="/images/screenshots/ai-loop-dark@1x.png"
-        srcset="/images/screenshots/ai-loop-dark@1x.png 1x, /images/screenshots/ai-loop-dark@2x.png 2x"
-        alt="Crit reviewing a plan: inline comments, agent replies, and round-2 diff"
-        class="logo-dark w-full rounded-xl border border-(--crit-border)"
-        loading="lazy"
-        width="1200"
-        height="675"
-      />
-      <img
-        src="/images/screenshots/ai-loop-light@1x.png"
-        srcset="/images/screenshots/ai-loop-light@1x.png 1x, /images/screenshots/ai-loop-light@2x.png 2x"
-        alt="Crit reviewing a plan: inline comments, agent replies, and round-2 diff"
-        class="logo-light w-full rounded-xl border border-(--crit-border)"
-        loading="lazy"
-        width="1200"
-        height="675"
-      />
-    </figure>
-  </section>
-
-  <%!-- ===== Primary feature: Plans + code ===== --%>
-  <section class="max-w-7xl mx-auto mt-16 px-10 max-sm:px-4 max-sm:mt-16 w-full">
-    <div class="max-w-[640px] mb-8 max-sm:mb-6">
-      <h3 class="text-3xl font-extrabold tracking-tight mb-3 max-sm:text-2xl text-balance">
-        Works great for plans and code.
-      </h3>
-      <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-sm:text-base">
-        Beautifully rendered markdown. Source files render with syntax highlighting. Same review UI for both - you don't switch tools mid-feature.
-      </p>
-    </div>
-    <div class="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-      <figure class="not-prose">
-        <img
-          src="/images/screenshots/plan-dark@1x.png"
-          srcset="/images/screenshots/plan-dark@1x.png 1x, /images/screenshots/plan-dark@2x.png 2x"
-          alt="Reviewing a Markdown plan in Crit"
-          class="logo-dark w-full rounded-xl border border-(--crit-border)"
-          loading="lazy"
-          width="590"
-          height="787"
-        />
-        <img
-          src="/images/screenshots/plan-light@1x.png"
-          srcset="/images/screenshots/plan-light@1x.png 1x, /images/screenshots/plan-light@2x.png 2x"
-          alt="Reviewing a Markdown plan in Crit"
-          class="logo-light w-full rounded-xl border border-(--crit-border)"
-          loading="lazy"
-          width="590"
-          height="787"
-        />
-      </figure>
-      <figure class="not-prose">
-        <img
-          src="/images/screenshots/code-dark@1x.png"
-          srcset="/images/screenshots/code-dark@1x.png 1x, /images/screenshots/code-dark@2x.png 2x"
-          alt="Reviewing a syntax-highlighted source file in Crit"
-          class="logo-dark w-full rounded-xl border border-(--crit-border)"
-          loading="lazy"
-          width="590"
-          height="787"
-        />
-        <img
-          src="/images/screenshots/code-light@1x.png"
-          srcset="/images/screenshots/code-light@1x.png 1x, /images/screenshots/code-light@2x.png 2x"
-          alt="Reviewing a syntax-highlighted source file in Crit"
-          class="logo-light w-full rounded-xl border border-(--crit-border)"
-          loading="lazy"
-          width="590"
-          height="787"
-        />
-      </figure>
-    </div>
-  </section>
-
-  <%!-- ===== Primary feature: Share reviews ===== --%>
-  <section class="max-w-7xl mx-auto mt-16 px-10 max-sm:px-4 max-sm:mt-16 w-full">
-    <div class="max-w-[640px] mb-8 max-sm:mb-6">
-      <h3 class="text-3xl font-extrabold tracking-tight mb-3 max-sm:text-2xl text-balance">
-        Share reviews for a second opinion.
-      </h3>
-      <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-sm:text-base">
-        One click generates a public link &mdash; no install, no login on the other end.
-        When finished, continue locally with your agent.
-        <a href={~p"/features/share-reviews"} class="crit-link">Read more &rarr;</a>
-      </p>
-    </div>
-    <figure class="not-prose">
-      <img
-        src="/images/screenshots/share-dark@1x.png"
-        srcset="/images/screenshots/share-dark@1x.png 1x, /images/screenshots/share-dark@2x.png 2x"
-        alt="A shared Crit review with multi-author comment threads"
-        class="logo-dark w-full rounded-xl border border-(--crit-border)"
-        loading="lazy"
-        width="1200"
-        height="675"
-      />
-      <img
-        src="/images/screenshots/share-light@1x.png"
-        srcset="/images/screenshots/share-light@1x.png 1x, /images/screenshots/share-light@2x.png 2x"
-        alt="A shared Crit review with multi-author comment threads"
-        class="logo-light w-full rounded-xl border border-(--crit-border)"
-        loading="lazy"
-        width="1200"
-        height="675"
-      />
-    </figure>
-  </section>
-
-  <%!-- ===== Secondary features: 3-up ===== --%>
-  <section class="max-w-7xl mx-auto mt-16 px-10 max-sm:px-4 max-sm:mt-16 w-full">
-    <div class="grid grid-cols-3 gap-5 max-md:grid-cols-1">
-      <div class="relative overflow-hidden border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-3">
+      <div class="flex flex-col gap-20">
         <div
-          class="pointer-events-none absolute -top-4 -right-4 w-44 h-44 opacity-15 grayscale"
-          aria-hidden="true"
+          :for={{mode, idx} <- Enum.with_index(CritWeb.PageHTML.modes())}
+          class="grid grid-cols-2 gap-12 items-center max-md:grid-cols-1"
         >
-          <%= for {file, top, left, size, rot} <- [
-            {"claude-code", "8px", "92px", "44px", "-12deg"},
-            {"cursor", "44px", "44px", "36px", "8deg"},
-            {"github-copilot", "12px", "32px", "32px", "16deg"},
-            {"codex", "76px", "92px", "32px", "-6deg"},
-            {"windsurf", "80px", "20px", "28px", "20deg"},
-            {"opencode", "112px", "60px", "30px", "-18deg"}
-          ] do %>
-            <img
-              src={"/images/integrations/#{file}-dark.svg"}
-              alt=""
-              class="logo-dark absolute object-contain"
-              style={"top: #{top}; left: #{left}; width: #{size}; height: #{size}; transform: rotate(#{rot});"}
-              loading="lazy"
-            />
-            <img
-              src={"/images/integrations/#{file}-light.svg"}
-              alt=""
-              class="logo-light absolute object-contain"
-              style={"top: #{top}; left: #{left}; width: #{size}; height: #{size}; transform: rotate(#{rot});"}
-              loading="lazy"
-            />
-          <% end %>
+          <div class={["max-md:order-none", rem(idx, 2) == 1 && "order-2"]}>
+            <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-3">
+              {String.upcase(mode.cmd)}
+            </p>
+            <h3 class="text-2xl font-bold tracking-tight mb-3">{mode.label}</h3>
+            <p class="text-(--crit-fg-secondary) leading-relaxed mb-5">{mode.blurb}</p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span
+                :for={bullet <- mode.bullets}
+                class="bg-(--crit-bg-elevated) border border-(--crit-border) rounded-full px-3 py-1 text-xs text-(--crit-fg-secondary)"
+              >
+                {bullet}
+              </span>
+            </div>
+            <a
+              href={"/modes/#{mode.slug}"}
+              class="text-sm font-semibold text-(--crit-brand) no-underline hover:underline"
+            >
+              Learn more &rarr;
+            </a>
+          </div>
+          <div class={["max-md:order-none", rem(idx, 2) == 1 && "order-1"]}>
+            <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{mode.slug}"}>
+              <CritWeb.PageHTML.browser_chrome_placeholder label={mode.label} />
+            </CritWeb.PageHTML.browser_chrome>
+          </div>
         </div>
-        <h4 class="relative text-base font-semibold tracking-tight">Works with every agent</h4>
-        <p class="relative text-sm text-(--crit-fg-secondary) leading-relaxed flex-1">
-          Claude Code, Cursor, Copilot, Codex, Gemini, Qwen, Aider, Cline, Windsurf, or anything that reads
-          files. One command sets up the skill so it can launch Crit and listen for
-          feedback.
-        </p>
-        <a
-          href={~p"/integrations"}
-          class="relative text-xs text-(--crit-brand) mt-1 no-underline hover:underline"
-        >
-          Browse integrations &rarr;
-        </a>
-      </div>
-      <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-3">
-        <h4 class="text-base font-semibold tracking-tight">Multi-round &amp; concurrent</h4>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed flex-1">
-          Iterate over multiple rounds of feedback per file. Run several reviews in
-          parallel without them stepping on each other &mdash; useful when you're juggling
-          a few agents at once.
-        </p>
-      </div>
-      <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6 flex flex-col gap-3">
-        <h4 class="text-base font-semibold tracking-tight">Local-first, optionally shared</h4>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed flex-1">
-          Reviews live on your machine until you choose to share. Skip sharing entirely or
-          self-host the share target on your own infra. No account required.
-        </p>
-        <a
-          href={~p"/self-hosting"}
-          class="text-xs text-(--crit-brand) mt-1 no-underline hover:underline"
-        >
-          Self-host crit-web &rarr;
-        </a>
       </div>
     </div>
   </section>
 
-  <section class="max-w-7xl mx-auto my-12 px-10 max-sm:px-4 w-full">
-    <h4 class="text-xs font-mono tracking-widest uppercase text-(--crit-fg-muted) mb-5">
-      Plus the small stuff that adds up
-    </h4>
-    <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
-      <li class="feat-pill">Vim keybindings</li>
-      <li class="feat-pill">Git diffs (split &amp; unified)</li>
-      <li class="feat-pill">Round-over-round diffs</li>
-      <li class="feat-pill">Syntax highlighting (190+ langs)</li>
-      <li class="feat-pill">Mermaid diagrams</li>
-      <li class="feat-pill">Table of contents</li>
-      <li class="feat-pill">Dark &amp; light themes</li>
-      <li class="feat-pill">Draft autosave</li>
-      <li class="feat-pill">Insert suggestions</li>
-      <li class="feat-pill">Single binary install</li>
-    </ul>
-  </section>
-
-  <%!-- ===== Founder ===== --%>
-  <section
-    class="max-w-3xl mx-auto mt-12 px-10 max-sm:px-4 w-full"
-    id="built-by"
-  >
-    <h2 class="text-3xl font-extrabold tracking-tight mb-8 max-sm:text-2xl text-balance">
-      Built by people who review <span class="text-(--crit-brand)">a lot</span>
-      of AI output<span class="text-(--crit-brand)">.</span>
-    </h2>
-    <div class="flex gap-8 items-start max-sm:flex-col max-sm:gap-5">
-      <img
-        src="/images/founder/photo@1x.webp"
-        srcset="/images/founder/photo@1x.webp 1x, /images/founder/photo@2x.webp 2x"
-        alt="Tomasz's photo"
-        class="size-32 shrink-0 rounded-full object-cover bg-(--crit-bg-card)"
-        loading="lazy"
-        width="128"
-        height="128"
-      />
-      <div class="flex-1 min-w-0">
-        <h3 class="text-base font-semibold tracking-tight mb-2">
-          Hey, I'm <span class="text-(--crit-brand)">Tomasz</span>!
-        </h3>
-        <p class="leading-relaxed mb-3">
-          I've been building software for over 25 years. AI changed what it means to write code, but reviewing the output is harder than writing it yourself - agents produce plausible-looking diffs faster than you can read them carefully.
+  <%!-- ===== Integrations ===== --%>
+  <section id="integrations" class="py-24 max-sm:py-14">
+    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
+      <div class="max-w-2xl mb-12 max-sm:mb-8">
+        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
+          Works with any agent
         </p>
-        <p class="leading-relaxed mb-3">
-          I built <strong>Crit</strong>
-          to make careful review the easy path again. It now improves every week from the feedback of engineers who live in this loop.
+        <h2 class="text-4xl font-extrabold tracking-tight mb-4 max-sm:text-3xl text-balance">
+          One <code class="font-mono text-(--crit-brand)">/crit</code> slash-command. Ten+ integrations.
+        </h2>
+        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-sm:text-base">
+          Drop-in plugin configs for the agents you already use. One install command, then your agent knows how to launch reviews and listen for feedback.
         </p>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed"></p>
-        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 text-xs text-(--crit-fg-muted)">
-          <a
-            href="https://github.com/tomasz-tomczyk"
-            class="crit-link no-underline hover:underline"
-          >
-            GitHub
-          </a>
-          <a href="https://x.com/tomasztomczyk" class="crit-link no-underline hover:underline">
-            Twitter
-          </a>
-        </div>
       </div>
+
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 mb-8">
+        <a
+          :for={id <- ~w(claude-code cursor github-copilot opencode codex gemini qwen windsurf cline grok pi)}
+          href={"/integrations/#{id}"}
+          class="flex items-center gap-3 px-4 py-3 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg no-underline hover:border-(--crit-fg-muted) hover:bg-(--crit-bg-elevated) transition-all group"
+        >
+          <img
+            src={"/images/integrations/#{id}-dark.svg"}
+            alt=""
+            class="logo-dark size-7 object-contain shrink-0"
+            loading="lazy"
+          />
+          <img
+            src={"/images/integrations/#{id}-light.svg"}
+            alt=""
+            class="logo-light size-7 object-contain shrink-0"
+            loading="lazy"
+          />
+          <span class="text-sm font-medium text-(--crit-fg-primary) flex-1">
+            {id |> String.replace("-", " ") |> String.split() |> Enum.map(&String.capitalize/1) |> Enum.join(" ")}
+          </span>
+          <svg
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="size-4 text-(--crit-fg-muted) group-hover:text-(--crit-fg-secondary) transition-colors shrink-0"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M5 10a.75.75 0 01.75-.75h6.638L10.23 7.29a.75.75 0 111.04-1.08l3.5 3.25a.75.75 0 010 1.08l-3.5 3.25a.75.75 0 11-1.04-1.08l2.158-1.96H5.75A.75.75 0 015 10z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </a>
+      </div>
+
+      <p class="text-sm text-(--crit-fg-muted)">
+        Don't see your agent? Anything that can read a file and execute a shell command can drive crit.
+      </p>
     </div>
   </section>
 
   <%!-- ===== Testimonials ===== --%>
-  <section class="max-w-7xl mx-auto mt-28 mb-20 px-10 max-sm:px-4 max-sm:mt-16 w-full">
-    <div class="grid grid-cols-2 gap-8 max-sm:grid-cols-1 max-sm:gap-6" id="testimonials-grid">
-      <div
-        :for={testimonial <- @testimonials}
-        data-reveal
-        class="opacity-0 translate-y-4 transition-[opacity,transform] duration-500 ease-out data-[revealed]:opacity-100 data-[revealed]:translate-y-0"
-      >
-        <p class="text-lg font-semibold leading-snug text-(--crit-fg-primary) mb-4">
-          {testimonial.highlight}
+  <section id="testimonials" class="py-24 max-sm:py-14">
+    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
+      <div class="max-w-2xl mb-12 max-sm:mb-8">
+        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
+          What engineers say
         </p>
-        <div class="space-y-2 mb-4">
-          <p
-            :for={paragraph <- testimonial.body}
-            class="leading-relaxed text-(--crit-fg-secondary)"
-          >
-            {paragraph}
+        <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
+          The reviews from engineers who live in this loop.
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-2 gap-8 max-sm:grid-cols-1 max-sm:gap-6">
+        <div
+          :for={testimonial <- @testimonials}
+          data-reveal
+          class="opacity-0 translate-y-4 transition-[opacity,transform] duration-500 ease-out data-[revealed]:opacity-100 data-[revealed]:translate-y-0"
+        >
+          <p class="text-lg font-semibold leading-snug text-(--crit-fg-primary) mb-4">
+            {testimonial.highlight}
           </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <img
-            src={testimonial.avatar}
-            alt={testimonial.author}
-            class="size-9 rounded-full bg-(--crit-bg-elevated) shrink-0"
-            loading="lazy"
-            width="36"
-            height="36"
-          />
-          <p class="font-mono text-xs text-(--crit-fg-muted) leading-snug min-w-0">
-            <a
-              href={testimonial.link}
-              class="text-(--crit-fg-secondary) hover:text-(--crit-brand) transition-colors no-underline"
-              target="_blank"
-              rel="noopener noreferrer"
+          <div class="space-y-2 mb-4">
+            <p
+              :for={paragraph <- testimonial.body}
+              class="leading-relaxed text-(--crit-fg-secondary)"
             >
-              {testimonial.author}
-            </a>
-            <br />{testimonial.role}
+              {paragraph}
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <img
+              src={testimonial.avatar}
+              alt={testimonial.author}
+              class="size-9 rounded-full bg-(--crit-bg-elevated) shrink-0"
+              loading="lazy"
+              width="36"
+              height="36"
+            />
+            <p class="font-mono text-xs text-(--crit-fg-muted) leading-snug min-w-0">
+              <a
+                href={testimonial.link}
+                class="text-(--crit-fg-secondary) hover:text-(--crit-brand) transition-colors no-underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {testimonial.author}
+              </a>
+              <br />{testimonial.role}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ===== FAQ ===== --%>
+  <section id="faq" class="py-24 max-sm:py-14">
+    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
+      <div class="max-w-2xl mb-12 max-sm:mb-8">
+        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
+          FAQ
+        </p>
+        <h2 class="text-4xl font-extrabold tracking-tight mb-4 max-sm:text-3xl text-balance">
+          The honest version of "why crit".
+        </h2>
+        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-sm:text-base">
+          The questions people actually ask. Plain answers.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-8 max-md:grid-cols-1 max-md:gap-6">
+        <div :for={item <- @faq} class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6">
+          <h3 class="text-base font-bold tracking-tight mb-3 text-(--crit-fg-primary)">
+            {item.q}
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+            {item.a}
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <%!-- ===== Platform Stats ===== --%>
-  <section
-    class="max-w-7xl mx-auto w-full px-10 py-16 border-t border-(--crit-border) max-sm:px-4 max-sm:py-12"
-    id="platform-stats"
-  >
-    <div class="max-w-2xl mx-auto text-center">
-      <p class="font-mono text-xs uppercase tracking-[0.18em] text-(--crit-fg-muted) mb-5 flex items-center justify-center gap-3">
-        <span class="inline-flex items-center gap-1.5">
-          Shared to {CritWeb.Endpoint.host()}
-        </span>
+  <%!-- ===== Install ===== --%>
+  <section id="install" class="py-24 max-sm:py-14">
+    <div class="max-w-[880px] mx-auto px-10 max-sm:px-4 w-full">
+      <div class="text-center mb-10 max-sm:mb-8">
+        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
+          Install
+        </p>
+        <h2 class="text-5xl font-extrabold tracking-tight mb-4 max-sm:text-4xl">
+          Get it.
+        </h2>
+        <p class="text-lg text-(--crit-fg-secondary) max-sm:text-base">
+          Single binary. Local by default. No login.
+        </p>
+      </div>
+
+      <CritWeb.PageHTML.install_widget />
+
+      <p class="text-sm text-(--crit-fg-muted) text-center mt-6">
+        Or grab a pre-built binary from
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/releases"
+          class="crit-link"
+        >
+          GitHub Releases
+        </a>.
       </p>
-      <p
-        phx-no-format
-        class="stats-paragraph text-lg leading-relaxed text-(--crit-fg-primary) text-balance max-sm:text-base"
-      >So far, <span class="stat-num font-mono font-semibold text-(--crit-brand) tabular-nums" data-count-to={@stats.reviews_created}>{format_stat(@stats.reviews_created)}</span> shared reviews with <span class="stat-num font-mono font-semibold text-(--crit-brand) tabular-nums" data-count-to={@stats.comments_created}>{format_stat(@stats.comments_created)}</span> inline comments across <span class="stat-num font-mono font-semibold text-(--crit-brand) tabular-nums" data-count-to={@stats.lines_reviewed}>{format_stat(@stats.lines_reviewed)}</span> lines of code &mdash; roughly <span class="stat-num font-mono font-semibold text-(--crit-brand) tabular-nums" data-count-bytes={@stats.bytes_stored}>{format_bytes(@stats.bytes_stored)}</span> of plans, diffs, and prose.</p>
     </div>
   </section>
+
 </div>

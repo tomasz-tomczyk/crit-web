@@ -139,6 +139,39 @@ defmodule CritWeb.PageController do
 
   @feature_order ~w(inline-comments split-unified-diff ai-review-loop vim-keybindings share-reviews syntax-highlighting mermaid-diagrams)
 
+  @faq [
+    %{
+      q: "Why this over just asking the agent to review?",
+      a:
+        "Because the agent reviewing its own output is the thing you're trying to escape. Crit puts you back in the loop. You see the lines, you point at them, the agent responds to specific feedback — not your fuzzy recollection of what you wanted."
+    },
+    %{
+      q: "Why this over a /review slash command?",
+      a:
+        "Slash commands review once and dump prose. Crit gives you a persistent surface: comments stay attached to lines across rounds, round-to-round diffs show what actually changed, and unresolved threads stay unresolved until you say so."
+    },
+    %{
+      q: "Why a browser at all? I'm already in the terminal.",
+      a:
+        "Because line-precise feedback on a 600-line plan is miserable in a terminal. Markdown rendering. Syntax highlighting. Click-and-drag selection. Same shape as a GitHub PR, no GitHub round-trip."
+    },
+    %{
+      q: "Why not just write a better prompt up front?",
+      a:
+        "You will. You'll still want to push back on the result. The first prompt rarely lands; the second one — informed by what the agent actually produced — usually does."
+    },
+    %{
+      q: "Does anything leave my machine?",
+      a:
+        "No, unless you click Share. Server binds to 127.0.0.1. Zero telemetry. Sharing uploads explicitly, to crit.live or your own self-hosted crit-web."
+    },
+    %{
+      q: "Does it work with my agent?",
+      a:
+        "If your agent can read a file and execute a shell command, yes. Crit ships first-class plugins for Claude Code, Cursor, Copilot, Codex, OpenCode, Aider, Cline, Windsurf, Gemini and Qwen."
+    }
+  ]
+
   @testimonials [
     %{
       highlight: "A clean local UI to batch my feedback and iterate.",
@@ -194,6 +227,7 @@ defmodule CritWeb.PageController do
       render(conn, :home,
         demo_token: Application.get_env(:crit, :demo_review_token),
         testimonials: @testimonials,
+        faq: @faq,
         stats: Crit.Statistics.totals(),
         canonical_url: canonical_url(conn),
         page_title: "Crit - Your feedback loop with the agent",
