@@ -438,7 +438,7 @@ defmodule CritWeb.PageController do
     %{
       q: "Does anything leave my machine?",
       a:
-        "No, unless you click Share. Server binds to 127.0.0.1. Zero telemetry. Sharing uploads explicitly, to crit.live or your own self-hosted crit-web."
+        "No, unless you click Share. Server binds to 127.0.0.1. Zero telemetry. Sharing uploads explicitly, to crit.md or your own self-hosted crit-web."
     },
     %{
       q: "Does it work with my agent?",
