@@ -15,9 +15,10 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review plans & docs",
       cmd: "files / markdown",
       screenshot: "plan",
+      video: "https://assets.crit.md/plan-mode.mp4",
       blurb:
         "Your agent drafted a 300-line plan. In the terminal it's a wall of markdown. Crit renders it in the browser — comment on the section that's wrong, not the whole document.",
-      bullets: ["Markdown render", "Per-line comments", "Code-fence ranges", "Mermaid diagrams"]
+      bullets: ["Markdown render", "Per-line comments", "Diff every round"]
     },
     %{
       slug: "code",
@@ -25,6 +26,7 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review code diffs",
       cmd: "branch / pr changes",
       screenshot: "diff",
+      video: "https://assets.crit.md/diff-mode.mp4",
       blurb:
         "Your agent touched 14 files across your branch. Crit auto-detects the changes, shows syntax-highlighted diffs, and lets you comment on any line — like a PR review, but instant and local.",
       bullets: ["Syntax highlighting", "Stacked PRs", "Git, jj, sapling"]
@@ -35,6 +37,7 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review running apps",
       cmd: "running app / dev server",
       screenshot: "live",
+      video: "https://assets.crit.md/live-mode.mp4",
       blurb:
         "Your agent built a frontend and it's running on localhost. Crit proxies the page into a review surface — click the button that's misaligned, pin a comment to it.",
       bullets: ["Comment on DOM", "Automatic reload", "Interactive browser"]
@@ -45,12 +48,12 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review HTML artifacts",
       cmd: "static html artifact",
       screenshot: "preview",
+      video: "https://assets.crit.md/preview-mode.mp4",
       blurb:
         "Your agent generated a landing page as a static HTML file. Crit renders it in an iframe so you can click elements and comment.",
       bullets: [
         "Static HTML iframe",
         "Asset siblings served",
-        "Pin to elements",
         "No dev server needed"
       ]
     }
@@ -153,7 +156,7 @@ defmodule CritWeb.PageHTML do
       <div class="max-w-[880px] mx-auto px-10 max-sm:px-4 w-full">
         <div class="text-center mb-10 max-sm:mb-8">
           <h2 class="text-5xl font-extrabold tracking-tight mb-4 max-sm:text-4xl">
-            30-second install<span class="text-(--crit-brand)">.</span>
+            5-second install<span class="text-(--crit-brand)">.</span>
           </h2>
           <p class="text-lg text-(--crit-fg-secondary) max-sm:text-base">
             Single binary. No account, no config, no dependencies.

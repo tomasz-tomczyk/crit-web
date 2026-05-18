@@ -11,7 +11,7 @@
     <h1 class="text-5xl font-extrabold leading-tight tracking-tight mb-5 max-lg:text-4xl max-sm:text-3xl text-balance">
       {@mode.title}
     </h1>
-    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px] mb-8 max-sm:text-base">
+    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px] mb-8 max-sm:text-base text-balance">
       {@mode.lead}
     </p>
     <div class="flex flex-wrap gap-2 mb-12">
@@ -22,30 +22,44 @@
         {tag}
       </span>
     </div>
-    <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{@mode.label}"}>
-      <%= if @mode.screenshot do %>
-        <img
-          src={"/images/screenshots/#{@mode.screenshot}-dark@1x.png"}
-          srcset={"/images/screenshots/#{@mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{@mode.screenshot}-dark@2x.png 2x"}
-          alt={"Crit #{@mode.label} mode"}
-          class="logo-dark w-full"
-          loading="eager"
-          width="1200"
-          height="675"
-        />
-        <img
-          src={"/images/screenshots/#{@mode.screenshot}-light@1x.png"}
-          srcset={"/images/screenshots/#{@mode.screenshot}-light@1x.png 1x, /images/screenshots/#{@mode.screenshot}-light@2x.png 2x"}
-          alt={"Crit #{@mode.label} mode"}
-          class="logo-light w-full"
-          loading="eager"
-          width="1200"
-          height="675"
-        />
-      <% else %>
-        <CritWeb.PageHTML.browser_chrome_placeholder label={@mode.label} />
-      <% end %>
-    </CritWeb.PageHTML.browser_chrome>
+    <%= if @mode[:video] do %>
+      <div class="rounded-xl overflow-hidden shadow-lg">
+        <video
+          autoplay
+          loop
+          muted
+          playsinline
+          class="w-full"
+          src={@mode.video}
+        >
+        </video>
+      </div>
+    <% else %>
+      <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{@mode.label}"}>
+        <%= if @mode.screenshot do %>
+          <img
+            src={"/images/screenshots/#{@mode.screenshot}-dark@1x.png"}
+            srcset={"/images/screenshots/#{@mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{@mode.screenshot}-dark@2x.png 2x"}
+            alt={"Crit #{@mode.label} mode"}
+            class="logo-dark w-full"
+            loading="eager"
+            width="1200"
+            height="675"
+          />
+          <img
+            src={"/images/screenshots/#{@mode.screenshot}-light@1x.png"}
+            srcset={"/images/screenshots/#{@mode.screenshot}-light@1x.png 1x, /images/screenshots/#{@mode.screenshot}-light@2x.png 2x"}
+            alt={"Crit #{@mode.label} mode"}
+            class="logo-light w-full"
+            loading="eager"
+            width="1200"
+            height="675"
+          />
+        <% else %>
+          <CritWeb.PageHTML.browser_chrome_placeholder label={@mode.label} />
+        <% end %>
+      </CritWeb.PageHTML.browser_chrome>
+    <% end %>
   </section>
 
   <%!-- The loop steps --%>
@@ -59,7 +73,7 @@
           Step {String.pad_leading(Integer.to_string(idx + 1), 2, "0")}
         </div>
         <h3 class="text-lg font-bold tracking-tight">{step.h}</h3>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">{step.p}</p>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">{Phoenix.HTML.raw(step.p)}</p>
       </div>
     </div>
   </section>

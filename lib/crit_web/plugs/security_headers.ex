@@ -44,8 +44,9 @@ defmodule CritWeb.Plugs.SecurityHeaders do
       "'sha256-wm8xHXfA9tIFK/7McvhnPMGVuF/ErxqxEM1Clij75ec=' " <>
       "'sha256-5M5rMNBzgt7ZyJO3HUsytrd8A0xED8wq015qtyeaFrw='; " <>
       "style-src 'self' 'unsafe-inline'; " <>
-      "img-src 'self' data: blob: https://i.ytimg.com https://avatars.githubusercontent.com; " <>
+      "img-src 'self' data: blob: https://i.ytimg.com https://avatars.githubusercontent.com https://assets.crit.md; " <>
       "font-src 'self'; " <>
+      "media-src 'self' https://assets.crit.md; " <>
       "connect-src 'self'#{sentry_origin}; " <>
       "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " <>
       "object-src 'none'"

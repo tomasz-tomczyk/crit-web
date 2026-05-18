@@ -61,26 +61,18 @@
       </div>
     </div>
 
-    <CritWeb.PageHTML.browser_chrome url="localhost:4923/plan.md">
-      <img
-        src="/images/screenshots/ai-loop-dark@1x.png"
-        srcset="/images/screenshots/ai-loop-dark@1x.png 1x, /images/screenshots/ai-loop-dark@2x.png 2x"
-        alt="Crit reviewing a markdown plan with inline threaded comments"
-        class="logo-dark w-full"
-        loading="eager"
-        width="1200"
-        height="675"
-      />
-      <img
-        src="/images/screenshots/ai-loop-light@1x.png"
-        srcset="/images/screenshots/ai-loop-light@1x.png 1x, /images/screenshots/ai-loop-light@2x.png 2x"
-        alt="Crit reviewing a markdown plan with inline threaded comments"
-        class="logo-light w-full"
-        loading="eager"
-        width="1200"
-        height="675"
-      />
-    </CritWeb.PageHTML.browser_chrome>
+    <div class="rounded-xl overflow-hidden shadow-lg">
+      <video
+        autoplay
+        loop
+        muted
+        playsinline
+        class="w-full"
+        poster="https://assets.crit.md/crit-demo-poster.png"
+        src="https://assets.crit.md/crit-demo.mp4"
+      >
+      </video>
+    </div>
 
     <%!-- YouTube video modal --%>
     <div
@@ -117,7 +109,7 @@
     <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
       <div class="max-w-2xl mb-16 max-sm:mb-10">
         <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
-          Four surfaces
+          Four review modes
         </p>
         <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
           Agents don't just write code<span class="text-(--crit-brand)">.</span>
@@ -130,9 +122,12 @@
       <div class="flex flex-col gap-20">
         <div
           :for={{mode, idx} <- Enum.with_index(CritWeb.PageHTML.modes())}
-          class="grid grid-cols-2 gap-12 items-center max-md:grid-cols-1"
+          class="grid grid-cols-5 gap-12 items-center max-md:grid-cols-1"
         >
-          <div class={["max-md:order-none", rem(idx, 2) == 1 && "order-2"]}>
+          <div class={[
+            "col-span-2 max-md:col-span-1 max-md:order-none",
+            rem(idx, 2) == 1 && "order-2"
+          ]}>
             <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-3">
               {String.upcase(mode.cmd)}
             </p>
@@ -153,31 +148,49 @@
               {mode.nav_label} &rarr;
             </a>
           </div>
-          <div class={["max-md:order-none", rem(idx, 2) == 1 && "order-1"]}>
-            <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{mode.slug}"}>
-              <%= if mode.screenshot do %>
-                <img
-                  src={"/images/screenshots/#{mode.screenshot}-dark@1x.png"}
-                  srcset={"/images/screenshots/#{mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{mode.screenshot}-dark@2x.png 2x"}
-                  alt={"Crit #{mode.label} mode"}
-                  class="logo-dark w-full"
-                  loading="lazy"
-                  width="1200"
-                  height="675"
-                />
-                <img
-                  src={"/images/screenshots/#{mode.screenshot}-light@1x.png"}
-                  srcset={"/images/screenshots/#{mode.screenshot}-light@1x.png 1x, /images/screenshots/#{mode.screenshot}-light@2x.png 2x"}
-                  alt={"Crit #{mode.label} mode"}
-                  class="logo-light w-full"
-                  loading="lazy"
-                  width="1200"
-                  height="675"
-                />
-              <% else %>
-                <CritWeb.PageHTML.browser_chrome_placeholder label={mode.label} />
-              <% end %>
-            </CritWeb.PageHTML.browser_chrome>
+          <div class={[
+            "col-span-3 max-md:col-span-1 max-md:order-none",
+            rem(idx, 2) == 1 && "order-1"
+          ]}>
+            <%= if mode[:video] do %>
+              <div class="rounded-xl overflow-hidden shadow-lg">
+                <video
+                  autoplay
+                  loop
+                  muted
+                  playsinline
+                  preload="none"
+                  class="w-full"
+                  data-lazy-src={mode.video}
+                >
+                </video>
+              </div>
+            <% else %>
+              <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{mode.slug}"}>
+                <%= if mode.screenshot do %>
+                  <img
+                    src={"/images/screenshots/#{mode.screenshot}-dark@1x.png"}
+                    srcset={"/images/screenshots/#{mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{mode.screenshot}-dark@2x.png 2x"}
+                    alt={"Crit #{mode.label} mode"}
+                    class="logo-dark w-full"
+                    loading="lazy"
+                    width="1200"
+                    height="675"
+                  />
+                  <img
+                    src={"/images/screenshots/#{mode.screenshot}-light@1x.png"}
+                    srcset={"/images/screenshots/#{mode.screenshot}-light@1x.png 1x, /images/screenshots/#{mode.screenshot}-light@2x.png 2x"}
+                    alt={"Crit #{mode.label} mode"}
+                    class="logo-light w-full"
+                    loading="lazy"
+                    width="1200"
+                    height="675"
+                  />
+                <% else %>
+                  <CritWeb.PageHTML.browser_chrome_placeholder label={mode.label} />
+                <% end %>
+              </CritWeb.PageHTML.browser_chrome>
+            <% end %>
           </div>
         </div>
       </div>

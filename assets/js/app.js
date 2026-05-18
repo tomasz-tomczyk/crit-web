@@ -393,3 +393,11 @@ if (process.env.NODE_ENV === "development") {
   })
 }
 
+document.querySelectorAll("video[data-lazy-src]").forEach(video => {
+  new IntersectionObserver(([entry], obs) => {
+    if (!entry.isIntersecting) return
+    video.src = video.dataset.lazySrc
+    obs.disconnect()
+  }, {rootMargin: "200px"}).observe(video)
+})
+

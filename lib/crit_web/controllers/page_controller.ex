@@ -141,10 +141,11 @@ defmodule CritWeb.PageController do
     "plans-docs" => %{
       label: "Plans & docs",
       screenshot: "plan",
+      video: "https://assets.crit.md/plan-mode.mp4",
       eyebrow: "Mode · plans & docs",
       title: "Review the plan before the agent writes the code.",
       lead:
-        "Pass crit a markdown file, a source file, a docs page. It renders in the browser with the same inline-comment surface you'd use on a GitHub PR.",
+        "Pass crit a markdown file, a source file, or a docs page. It renders in the browser with the same inline-comment surface you'd use on a GitHub PR.",
       tags: [
         "Markdown render",
         "Syntax highlighting",
@@ -156,7 +157,7 @@ defmodule CritWeb.PageController do
         %{
           h: "Agent writes a plan",
           p:
-            "Tell your agent to draft a plan or spec. Run crit on the resulting file — the agent waits for your review."
+            "Tell your agent to draft a plan or spec. Run <code class=\"font-bold text-(--crit-brand)\">/crit</code> on the resulting file — the agent waits for your review."
         },
         %{
           h: "Crit renders it",
@@ -181,14 +182,14 @@ defmodule CritWeb.PageController do
             "Headings, tables, lists, blockquotes — all rendered. No more reading raw markdown to figure out the structure."
         },
         %{
-          h: "Suggestions, not paragraphs",
-          p:
-            "Select lines → Insert suggestion. The comment pre-fills with the original text. Edit to show the agent the exact replacement."
-        },
-        %{
           h: "Round-to-round diff",
           p:
             "When the agent edits the file, Crit shows a split or unified diff. Your previous comments stay attached to the right lines so you can verify they were addressed."
+        },
+        %{
+          h: "Suggestions, not paragraphs",
+          p:
+            "Select lines → Insert suggestion. The comment pre-fills with the original text. Edit to show the agent the exact replacement."
         },
         %{
           h: "Multiple files at once",
@@ -210,6 +211,7 @@ defmodule CritWeb.PageController do
     "code" => %{
       label: "Code",
       screenshot: "diff",
+      video: "https://assets.crit.md/diff-mode.mp4",
       eyebrow: "Mode · code",
       title: "Review the diff before you merge.",
       lead:
@@ -217,7 +219,6 @@ defmodule CritWeb.PageController do
       tags: [
         "Split / unified diff",
         "File tree",
-        "Comment counts",
         "Round-to-round diff",
         "PR sync"
       ],
@@ -225,7 +226,7 @@ defmodule CritWeb.PageController do
         %{
           h: "Agent makes changes",
           p:
-            "Your agent edits files across a branch. Run crit (no args) or crit --pr <number> to review."
+            "Your agent edits files across a branch. Run <code class=\"font-bold text-(--crit-brand)\">/crit</code> or <code class=\"font-bold text-(--crit-brand)\">/crit --pr &lt;number&gt;</code> to review."
         },
         %{
           h: "Crit shows the diff",
@@ -279,6 +280,7 @@ defmodule CritWeb.PageController do
     "live" => %{
       label: "Live",
       screenshot: "live",
+      video: "https://assets.crit.md/live-mode.mp4",
       eyebrow: "Mode · live",
       title: "Review the running app, not a screenshot.",
       lead:
@@ -286,8 +288,7 @@ defmodule CritWeb.PageController do
       tags: [
         "Click-to-pin DOM",
         "Selector anchoring",
-        "Live reload",
-        "Round comparisons"
+        "Live reload"
       ],
       steps: [
         %{
@@ -323,11 +324,6 @@ defmodule CritWeb.PageController do
             "Comments are anchored by CSS selector, not coordinates. Minor layout shifts don't break your feedback."
         },
         %{
-          h: "Round comparisons",
-          p:
-            "See how the page changed between rounds. Previous comments stay attached to their elements across reloads."
-        },
-        %{
           h: "Works with any dev server",
           p:
             "Vite, Next.js, Phoenix, Rails — anything serving HTTP on localhost. Crit proxies it transparently."
@@ -342,6 +338,7 @@ defmodule CritWeb.PageController do
     "preview" => %{
       label: "Preview",
       screenshot: "preview",
+      video: "https://assets.crit.md/preview-mode.mp4",
       eyebrow: "Mode · preview",
       title: "Review the HTML your agent generated.",
       lead:
@@ -350,8 +347,7 @@ defmodule CritWeb.PageController do
         "Static HTML iframe",
         "Click-to-comment",
         "Asset siblings served",
-        "No dev server",
-        "Round comparisons"
+        "No dev server"
       ],
       steps: [
         %{
@@ -390,11 +386,6 @@ defmodule CritWeb.PageController do
           h: "No server, no build step",
           p:
             "Point crit at an HTML file and it works. No dev server to start, no dependencies to install, no build pipeline."
-        },
-        %{
-          h: "Round comparisons",
-          p:
-            "When the agent regenerates the HTML, Crit shows what changed. Your previous comments stay attached to their elements."
         },
         %{
           h: "Works with any HTML artifact",
