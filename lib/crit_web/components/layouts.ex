@@ -203,7 +203,7 @@ defmodule CritWeb.Layouts do
         <div class="flex items-center gap-1.5">
           <span
             aria-hidden="true"
-            class="w-px h-4 bg-(--crit-border-strong) mx-1.5 max-sm:hidden"
+            class="w-px h-4 bg-(--crit-border-strong) mx-0.5 max-sm:hidden"
           >
           </span>
 

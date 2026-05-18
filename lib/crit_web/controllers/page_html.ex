@@ -64,7 +64,7 @@ defmodule CritWeb.PageHTML do
           <span class="w-3 h-3 rounded-full" style="background: #56d364;"></span>
         </div>
         <div class="flex-1 flex justify-center px-4">
-          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-full px-4 py-1 font-mono text-xs text-(--crit-fg-muted)">
+          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-full px-4 py-1 font-mono text-xs text-(--crit-fg-muted) truncate max-w-[90%]">
             {@url}
           </div>
         </div>
@@ -238,23 +238,6 @@ defmodule CritWeb.PageHTML do
         <code class="font-mono">amd64</code>
         for <code class="font-mono">arm64</code>. WSL users: use the Linux binary instead.
       </p>
-    </div>
-
-    <div class="mt-3 flex items-center gap-4">
-      <div class="font-mono text-xs text-(--crit-fg-muted) w-[70px] shrink-0 text-right">
-        then run
-      </div>
-      <div class="flex-1 flex items-center border border-(--crit-border) rounded-md overflow-hidden bg-(--crit-code-bg)">
-        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>crit<span class="text-(--crit-fg-muted)"> or </span>crit plan.md</pre>
-        <button
-          class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"
-          aria-label="Copy to clipboard"
-          data-copy="crit"
-        >
-          <.icon name="hero-clipboard" class="size-4 icon-default" />
-          <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
-        </button>
-      </div>
     </div>
 
     <p class="text-sm text-(--crit-fg-secondary) mt-3">

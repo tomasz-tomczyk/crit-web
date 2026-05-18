@@ -5,9 +5,6 @@
 
   <section class="max-w-7xl mx-auto pt-24 pb-16 px-10 w-full max-sm:px-4 max-sm:pt-14 max-sm:pb-10">
     <div class="max-w-3xl mb-14 max-sm:mb-10">
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-5 max-sm:tracking-wider">
-        Local-first · No login · Works with any agent
-      </p>
       <h1 class="text-7xl font-extrabold leading-none tracking-tight mb-7 max-lg:text-6xl max-sm:text-5xl">
         Your feedback loop with the
         <span class="whitespace-nowrap">
@@ -24,10 +21,10 @@
       <div class="max-w-md mb-8">
         <CritWeb.PageHTML.install_widget />
       </div>
-      <div class="flex gap-3 flex-wrap items-center">
+      <div class="flex flex-col gap-3">
         <a
           href="https://github.com/tomasz-tomczyk/crit"
-          class="group/star inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all"
+          class="group/star inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all max-sm:w-full"
         >
           <svg
             viewBox="0 0 16 16"
@@ -38,26 +35,28 @@
           </svg>
           Star on GitHub
         </a>
-        <a
-          href="#"
-          onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
-          class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
-        >
-          ▶ Watch 2-min video
-        </a>
-        <%= if @demo_token do %>
-          <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+        <div class="flex items-center gap-3">
           <a
-            href={~p"/r/#{@demo_token}"}
+            href="#"
+            onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
             class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
           >
-            See demo
+            ▶ Watch 2-min video
           </a>
-        <% end %>
+          <%= if @demo_token do %>
+            <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+            <a
+              href={~p"/r/#{@demo_token}"}
+              class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+            >
+              See demo
+            </a>
+          <% end %>
+        </div>
       </div>
     </div>
 
-    <CritWeb.PageHTML.browser_chrome url="localhost:4923/review/notification-plan.md">
+    <CritWeb.PageHTML.browser_chrome url="localhost:4923/plan.md">
       <img
         src="/images/screenshots/ai-loop-dark@1x.png"
         srcset="/images/screenshots/ai-loop-dark@1x.png 1x, /images/screenshots/ai-loop-dark@2x.png 2x"
