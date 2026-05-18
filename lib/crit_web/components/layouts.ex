@@ -1218,7 +1218,7 @@ defmodule CritWeb.Layouts do
         </div>
 
         <%!-- Colophon --%>
-        <div class="border-t border-(--crit-border) mt-10 pt-6 flex items-center justify-between gap-4 text-sm text-(--crit-fg-muted) max-sm:flex-col max-sm:items-start max-sm:gap-2">
+        <div class="border-t border-(--crit-border) mt-10 pt-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-(--crit-fg-muted)">
           <span>
             Created by
             <a
@@ -1226,12 +1226,11 @@ defmodule CritWeb.Layouts do
               target="_blank"
               rel="noopener"
               class="text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-            >
-              Tomasz Tomczyk
-            </a>
+            >Tomasz Tomczyk</a>
           </span>
-          <span class="flex gap-3">
+          <span class="flex items-center gap-1.5">
             <a href={~p"/terms"} class="hover:text-(--crit-fg-primary) no-underline">Terms</a>
+            <span aria-hidden="true">·</span>
             <a href={~p"/privacy"} class="hover:text-(--crit-fg-primary) no-underline">Privacy</a>
           </span>
         </div>
