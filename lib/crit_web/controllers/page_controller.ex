@@ -140,10 +140,11 @@ defmodule CritWeb.PageController do
   @modes_data %{
     "plans-docs" => %{
       label: "Plans & docs",
+      screenshot: "plan",
       eyebrow: "Mode · plans & docs",
       title: "Review the plan before the agent writes the code.",
       lead:
-        "Pass crit a markdown file, a source file, a docs page — anything text. It renders in the browser with the same inline-comment surface you'd use on a GitHub PR.",
+        "Pass crit a markdown file, a source file, a docs page. It renders in the browser with the same inline-comment surface you'd use on a GitHub PR.",
       tags: [
         "Markdown render",
         "Syntax highlighting",
@@ -155,7 +156,7 @@ defmodule CritWeb.PageController do
         %{
           h: "Agent writes a plan",
           p:
-            "Tell your agent to draft a plan or spec. /crit runs Crit on the resulting file and waits for your review."
+            "Tell your agent to draft a plan or spec. Run crit on the resulting file — the agent waits for your review."
         },
         %{
           h: "Crit renders it",
@@ -208,6 +209,7 @@ defmodule CritWeb.PageController do
     },
     "code" => %{
       label: "Code",
+      screenshot: "diff",
       eyebrow: "Mode · code",
       title: "Review the diff before you merge.",
       lead:
@@ -276,13 +278,13 @@ defmodule CritWeb.PageController do
     },
     "live" => %{
       label: "Live",
+      screenshot: "live",
       eyebrow: "Mode · live",
       title: "Review the running app, not a screenshot.",
       lead:
         "Crit reverse-proxies your dev server into an iframe. Click any DOM element to pin a comment to it. Your agent reads the feedback and iterates — the page reloads live.",
       tags: [
         "Click-to-pin DOM",
-        "Drift detection",
         "Selector anchoring",
         "Live reload",
         "Round comparisons"
@@ -316,11 +318,6 @@ defmodule CritWeb.PageController do
             "Click any element in the page to start a comment. Crit highlights the element and generates a stable CSS selector as the anchor."
         },
         %{
-          h: "Drift detection",
-          p:
-            "If the agent's changes move or remove a pinned element, Crit marks the comment as drifted so you know to re-check it."
-        },
-        %{
           h: "Selector anchoring",
           p:
             "Comments are anchored by CSS selector, not coordinates. Minor layout shifts don't break your feedback."
@@ -338,20 +335,21 @@ defmodule CritWeb.PageController do
         %{
           h: "No browser extension needed",
           p:
-            "Pure reverse proxy approach. No extension to install, no injected scripts that break your app."
+            "Pure reverse proxy approach. No extension to install — Crit injects its script through the proxy so your app code stays untouched."
         }
       ]
     },
     "preview" => %{
       label: "Preview",
+      screenshot: "preview",
       eyebrow: "Mode · preview",
-      title: "Review the artifact before it ships.",
+      title: "Review the HTML your agent generated.",
       lead:
-        "For static HTML files agents produce — landing pages, dashboards, mockups, email templates. Same pin-to-element commenting as live mode, no dev server required.",
+        "Your agent produced a landing page, a dashboard, or a mockup as a static HTML file. Crit renders it in a browser and lets you click any element to leave a comment — no dev server, no build step.",
       tags: [
         "Static HTML iframe",
+        "Click-to-comment",
         "Asset siblings served",
-        "Pin to elements",
         "No dev server",
         "Round comparisons"
       ],
@@ -359,54 +357,49 @@ defmodule CritWeb.PageController do
         %{
           h: "Agent generates HTML",
           p:
-            "Your agent produces an HTML file — a landing page, a dashboard, a mockup. /crit opens it in preview mode."
+            "Your agent produces an HTML file — a landing page, a dashboard, a mockup. Run crit on the file to open it in preview mode."
         },
         %{
           h: "Crit renders the file",
           p:
-            "The HTML renders in an iframe with sibling assets (CSS, images, JS) served from the same directory."
+            "The HTML renders in an iframe with sibling assets (CSS, images, JS) served from the same directory. It looks exactly as intended."
         },
         %{
           h: "You click elements to comment",
           p:
-            "Same pin-to-element interaction as live mode. Click an element, leave a comment, move on."
+            "Click any element in the page to pin a comment to it. Crit anchors it by CSS selector so it survives when the agent regenerates the file."
         },
         %{
           h: "Hit Finish",
           p:
-            "The agent gets the feedback, regenerates the file, and Crit reloads with the updated preview."
+            "The agent gets element-specific feedback, regenerates the file, and Crit reloads with the updated preview."
         }
       ],
       features: [
         %{
-          h: "Static HTML iframe",
+          h: "Rendered, not raw",
           p:
-            "The HTML file renders in a sandboxed iframe. No server needed — crit serves the file and its siblings directly."
+            "The HTML file renders in an iframe — you see the page as a user would, not the source code. Crit serves sibling CSS, images, and JS automatically."
         },
         %{
-          h: "Asset siblings served",
+          h: "Click any element to comment",
           p:
-            "CSS, images, and JS files in the same directory are served alongside the HTML. Your preview looks exactly as intended."
+            "Click a button, a heading, an image — Crit highlights it and anchors your comment by CSS selector. Minor layout changes don't break your feedback."
         },
         %{
-          h: "Pin to elements",
+          h: "No server, no build step",
           p:
-            "Click any DOM element to anchor a comment. Same selector-based anchoring as live mode."
-        },
-        %{
-          h: "No dev server needed",
-          p:
-            "Unlike live mode, preview works on static files. No build step, no server startup, no dependencies."
+            "Point crit at an HTML file and it works. No dev server to start, no dependencies to install, no build pipeline."
         },
         %{
           h: "Round comparisons",
           p:
-            "When the agent regenerates the HTML, see exactly what changed. Comments persist across rounds."
+            "When the agent regenerates the HTML, Crit shows what changed. Your previous comments stay attached to their elements."
         },
         %{
           h: "Works with any HTML artifact",
           p:
-            "Landing pages, email templates, generated dashboards, design mockups — any self-contained HTML."
+            "Landing pages, email templates, generated dashboards, design mockups — anything self-contained as HTML."
         }
       ]
     }
@@ -505,9 +498,9 @@ defmodule CritWeb.PageController do
         faq: @faq,
         stats: Crit.Statistics.totals(),
         canonical_url: canonical_url(conn),
-        page_title: "Crit - Your feedback loop with the agent",
+        page_title: "Crit - Point at the line. Tell the agent.",
         meta_description:
-          "Your feedback loop with the agent. Review plans and code changes with inline comments, multi-round diffs, and structured output any AI coding agent can consume. Single binary, works locally.",
+          "Review your AI agent's code changes in a browser with inline comments and round-to-round diffs. Comment on specific lines, the agent fixes them. Single binary, works locally, any agent.",
         json_ld: %{
           "@context" => "https://schema.org",
           "@type" => "SoftwareApplication",
@@ -515,7 +508,7 @@ defmodule CritWeb.PageController do
           "applicationCategory" => "DeveloperApplication",
           "operatingSystem" => "macOS, Linux, Windows",
           "description" =>
-            "Your feedback loop with the agent. Review plans and code changes with inline comments, multi-round diffs, and structured output for any AI coding agent.",
+            "Review your AI agent's code changes in a browser with inline comments and round-to-round diffs. Comment on specific lines, the agent fixes them.",
           "url" => "https://crit.md",
           "offers" => %{
             "@type" => "Offer",
@@ -589,7 +582,26 @@ defmodule CritWeb.PageController do
       canonical_url: canonical_url(conn),
       page_title: "Build Your Own Integration - Crit",
       meta_description:
-        "Create a Crit integration for any AI coding agent. Learn the protocol, file format, and slash command patterns."
+        "Create a Crit integration for any AI coding agent. Learn the protocol, file format, and slash command patterns.",
+      json_ld: %{
+        "@context" => "https://schema.org",
+        "@type" => "BreadcrumbList",
+        "itemListElement" => [
+          %{"@type" => "ListItem", "position" => 1, "name" => "Home", "item" => "https://crit.md/"},
+          %{
+            "@type" => "ListItem",
+            "position" => 2,
+            "name" => "Integrations",
+            "item" => "https://crit.md/integrations"
+          },
+          %{
+            "@type" => "ListItem",
+            "position" => 3,
+            "name" => "Build Your Own",
+            "item" => "https://crit.md/integrations/build-your-own"
+          }
+        ]
+      }
     )
   end
 
@@ -598,7 +610,20 @@ defmodule CritWeb.PageController do
       canonical_url: canonical_url(conn),
       page_title: "Integrations - Crit",
       meta_description:
-        "Set up Crit with Claude Code, Cursor, GitHub Copilot, Windsurf, Aider, or Cline. Drop-in config files for each agent."
+        "Set up Crit with Claude Code, Cursor, GitHub Copilot, Windsurf, Aider, or Cline. Drop-in config files for each agent.",
+      json_ld: %{
+        "@context" => "https://schema.org",
+        "@type" => "BreadcrumbList",
+        "itemListElement" => [
+          %{"@type" => "ListItem", "position" => 1, "name" => "Home", "item" => "https://crit.md/"},
+          %{
+            "@type" => "ListItem",
+            "position" => 2,
+            "name" => "Integrations",
+            "item" => "https://crit.md/integrations"
+          }
+        ]
+      }
     )
   end
 
@@ -609,7 +634,31 @@ defmodule CritWeb.PageController do
           tool: tool,
           canonical_url: canonical_url(conn),
           page_title: tool.page_title,
-          meta_description: tool.meta
+          meta_description: tool.meta,
+          json_ld: %{
+            "@context" => "https://schema.org",
+            "@type" => "BreadcrumbList",
+            "itemListElement" => [
+              %{
+                "@type" => "ListItem",
+                "position" => 1,
+                "name" => "Home",
+                "item" => "https://crit.md/"
+              },
+              %{
+                "@type" => "ListItem",
+                "position" => 2,
+                "name" => "Integrations",
+                "item" => "https://crit.md/integrations"
+              },
+              %{
+                "@type" => "ListItem",
+                "position" => 3,
+                "name" => tool.name,
+                "item" => "https://crit.md/integrations/#{tool_id}"
+              }
+            ]
+          }
         )
 
       :error ->
@@ -663,7 +712,26 @@ defmodule CritWeb.PageController do
           mode: mode,
           canonical_url: canonical_url(conn),
           page_title: "#{mode.label} Mode - Crit",
-          meta_description: mode.lead
+          meta_description: mode.lead,
+          og_image: "https://crit.md/images/screenshots/#{mode.screenshot}-dark@2x.png",
+          json_ld: %{
+            "@context" => "https://schema.org",
+            "@type" => "BreadcrumbList",
+            "itemListElement" => [
+              %{
+                "@type" => "ListItem",
+                "position" => 1,
+                "name" => "Home",
+                "item" => "https://crit.md/"
+              },
+              %{
+                "@type" => "ListItem",
+                "position" => 2,
+                "name" => "#{mode.label} Mode",
+                "item" => "https://crit.md/modes/#{slug}"
+              }
+            ]
+          }
         )
 
       :error ->

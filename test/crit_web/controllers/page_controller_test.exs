@@ -24,8 +24,8 @@ defmodule CritWeb.PageControllerTest do
   test "GET / shows homepage sections", %{conn: conn} do
     conn = get(conn, ~p"/")
     html = html_response(conn, 200)
-    assert html =~ "Whatever your agent produces"
-    assert html =~ "Works with any agent"
+    assert html =~ "Point at the line."
+    assert html =~ "Every agent reads files"
     assert html =~ "Frequently asked questions"
   end
 
@@ -80,8 +80,8 @@ defmodule CritWeb.PageControllerTest do
       test "renders the #{slug} mode page", %{conn: conn} do
         conn = get(conn, "/modes/#{@slug}")
         html = html_response(conn, 200)
-        assert html =~ "The loop."
-        assert html =~ "Built for the loop."
+        assert html =~ "How it works."
+        assert html =~ "What you get."
       end
     end
 

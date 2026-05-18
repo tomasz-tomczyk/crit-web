@@ -120,8 +120,11 @@
           Four surfaces
         </p>
         <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
-          Whatever your agent produces, crit has a surface for it.
+          Agents don't just write code<span class="text-(--crit-brand)">.</span>
         </h2>
+        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed mt-4">
+          They write plans, generate HTML pages, modify running apps. Each output needs a different review surface &mdash; and terminal diffs work for none of them.
+        </p>
       </div>
 
       <div class="flex flex-col gap-20">
@@ -147,12 +150,33 @@
               href={"/modes/#{mode.slug}"}
               class="text-sm font-semibold text-(--crit-brand) no-underline hover:underline"
             >
-              Learn more &rarr;
+              {mode.nav_label} &rarr;
             </a>
           </div>
           <div class={["max-md:order-none", rem(idx, 2) == 1 && "order-1"]}>
             <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{mode.slug}"}>
-              <CritWeb.PageHTML.browser_chrome_placeholder label={mode.label} />
+              <%= if mode.screenshot do %>
+                <img
+                  src={"/images/screenshots/#{mode.screenshot}-dark@1x.png"}
+                  srcset={"/images/screenshots/#{mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{mode.screenshot}-dark@2x.png 2x"}
+                  alt={"Crit #{mode.label} mode"}
+                  class="logo-dark w-full"
+                  loading="lazy"
+                  width="1200"
+                  height="675"
+                />
+                <img
+                  src={"/images/screenshots/#{mode.screenshot}-light@1x.png"}
+                  srcset={"/images/screenshots/#{mode.screenshot}-light@1x.png 1x, /images/screenshots/#{mode.screenshot}-light@2x.png 2x"}
+                  alt={"Crit #{mode.label} mode"}
+                  class="logo-light w-full"
+                  loading="lazy"
+                  width="1200"
+                  height="675"
+                />
+              <% else %>
+                <CritWeb.PageHTML.browser_chrome_placeholder label={mode.label} />
+              <% end %>
             </CritWeb.PageHTML.browser_chrome>
           </div>
         </div>
@@ -165,15 +189,18 @@
     <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
       <div class="max-w-2xl mb-12 max-sm:mb-8">
         <h2 class="text-4xl font-extrabold tracking-tight mb-4 max-sm:text-3xl text-balance">
-          One command to remember. Works with any agent.
+          Every agent reads files. That's the whole protocol<span class="text-(--crit-brand)">.</span>
         </h2>
+        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed">
+          Crit writes a structured review file. Any agent that can read a file and run a command can use it &mdash; no API, no plugin framework, no vendor lock.
+        </p>
       </div>
 
       <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 mb-8">
         <a
           :for={
             id <-
-              ~w(claude-code cursor github-copilot opencode codex gemini qwen windsurf cline grok pi)
+              ~w(claude-code cursor github-copilot opencode codex gemini qwen hermes windsurf cline grok aider pi)
           }
           href={"/integrations/#{id}"}
           class="flex items-center gap-3 px-4 py-3 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg no-underline hover:border-(--crit-fg-muted) hover:bg-(--crit-bg-elevated) transition-all group"
@@ -212,14 +239,51 @@
         </a>
       </div>
 
-      <p class="text-sm text-(--crit-fg-muted) mt-4">
-        Don't see yours?
-        <a href={~p"/integrations/build-your-own"} class="crit-link">Build your own integration &rarr;</a>
-      </p>
-
       <div class="mt-10">
         <h3 class="text-lg font-bold tracking-tight mb-4">Connect your agent</h3>
         <CritWeb.PageHTML.agent_setup_widget />
+      </div>
+    </div>
+  </section>
+
+  <%!-- ===== Founder ===== --%>
+  <section id="built-by" class="py-16 max-sm:py-10">
+    <div class="max-w-3xl mx-auto px-10 max-sm:px-4 w-full">
+      <h2 class="text-3xl font-extrabold tracking-tight mb-8 max-sm:text-2xl">
+        I review <span class="text-(--crit-brand)">a lot</span> of agent output<span class="text-(--crit-brand)">.</span>
+      </h2>
+      <div class="flex gap-8 items-start max-sm:flex-col max-sm:gap-5">
+        <img
+          src="/images/founder/photo@1x.webp"
+          srcset="/images/founder/photo@1x.webp 1x, /images/founder/photo@2x.webp 2x"
+          alt="Tomasz's photo"
+          class="size-32 shrink-0 rounded-full object-cover bg-(--crit-bg-card)"
+          loading="lazy"
+          width="128"
+          height="128"
+        />
+        <div class="flex-1 min-w-0">
+          <h3 class="text-base font-semibold tracking-tight mb-2">
+            Hey, I'm <span class="text-(--crit-brand)">Tomasz</span>!
+          </h3>
+          <p class="leading-relaxed mb-3 text-(--crit-fg-secondary)">
+            Staff engineer, 25 years of shipping code. When I started using AI agents full-time, the code generation was impressive &mdash; but I was spending more time re-reading terminal diffs than the agent spent writing the code. I kept missing things that a proper review surface would have caught in seconds.
+          </p>
+          <p class="leading-relaxed mb-3 text-(--crit-fg-secondary)">
+            So I built <strong>Crit</strong>. I use it on every feature I ship. It gets a new release every week based on feedback from engineers who live in this same loop.
+          </p>
+          <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 text-xs text-(--crit-fg-muted)">
+            <a
+              href="https://github.com/tomasz-tomczyk"
+              class="crit-link no-underline hover:underline"
+            >
+              GitHub
+            </a>
+            <a href="https://x.com/tomasztomczyk" class="crit-link no-underline hover:underline">
+              Twitter
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -232,7 +296,7 @@
           What engineers say
         </p>
         <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
-          The reviews from engineers who live in this loop.
+          The reviews from engineers who live in this loop<span class="text-(--crit-brand)">.</span>
         </h2>
       </div>
 

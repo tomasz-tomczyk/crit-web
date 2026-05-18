@@ -12,33 +12,41 @@ defmodule CritWeb.PageHTML do
     %{
       slug: "plans-docs",
       label: "Plans & docs",
-      cmd: "files / markdown / source",
+      nav_label: "Review plans & docs",
+      cmd: "files / markdown",
+      screenshot: "plan",
       blurb:
-        "Markdown plans and source files render in the browser. Comment on lines, ranges, code blocks inside fences.",
+        "Your agent drafted a 300-line plan. In the terminal it's a wall of markdown. Crit renders it in the browser — comment on the section that's wrong, not the whole document.",
       bullets: ["Markdown render", "Per-line comments", "Code-fence ranges", "Mermaid diagrams"]
     },
     %{
       slug: "code",
       label: "Code",
+      nav_label: "Review code diffs",
       cmd: "branch / pr changes",
+      screenshot: "diff",
       blurb:
-        "Auto-detects changed files in your repo. Split or unified diff, file tree with status & comment counts.",
+        "Your agent touched 14 files across your branch. Crit auto-detects the changes, shows syntax-highlighted diffs, and lets you comment on any line — like a PR review, but instant and local.",
       bullets: ["Syntax highlighting", "Stacked PRs", "Git, jj, sapling"]
     },
     %{
       slug: "live",
       label: "Live",
+      nav_label: "Review running apps",
       cmd: "running app / dev server",
+      screenshot: "live",
       blurb:
-        "Reverse-proxies your dev server into an iframe. Click any DOM element to pin a comment to it. Selectors survive minor drift.",
+        "Your agent built a frontend and it's running on localhost. Crit proxies the page into a review surface — click the button that's misaligned, pin a comment to it.",
       bullets: ["Comment on DOM", "Automatic reload", "Interactive browser"]
     },
     %{
       slug: "preview",
       label: "Preview",
+      nav_label: "Review HTML artifacts",
       cmd: "static html artifact",
+      screenshot: "preview",
       blurb:
-        "For static HTML artifacts agents emit — landing pages, mockups, generated dashboards. Same pin commenting as live mode.",
+        "Your agent generated a landing page as a static HTML file. Crit renders it in an iframe so you can click elements and comment.",
       bullets: [
         "Static HTML iframe",
         "Asset siblings served",
@@ -144,14 +152,11 @@ defmodule CritWeb.PageHTML do
     <section id="install" class="py-16 max-sm:py-10">
       <div class="max-w-[880px] mx-auto px-10 max-sm:px-4 w-full">
         <div class="text-center mb-10 max-sm:mb-8">
-          <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
-            Install
-          </p>
           <h2 class="text-5xl font-extrabold tracking-tight mb-4 max-sm:text-4xl">
-            Get it.
+            30-second install<span class="text-(--crit-brand)">.</span>
           </h2>
           <p class="text-lg text-(--crit-fg-secondary) max-sm:text-base">
-            Single binary. Local by default. No login.
+            Single binary. No account, no config, no dependencies.
           </p>
         </div>
 
@@ -452,11 +457,14 @@ defmodule CritWeb.PageHTML do
       </div>
     </div>
 
-    <p class="text-sm text-(--crit-fg-muted) mt-3">
+    <div class="flex gap-6 text-sm text-(--crit-fg-muted) mt-3">
       <a href="/integrations" class="crit-link">
         Full setup docs &rarr;
       </a>
-    </p>
+      <a href="/integrations/build-your-own" class="crit-link">
+        Build your own &rarr;
+      </a>
+    </div>
     """
   end
 end

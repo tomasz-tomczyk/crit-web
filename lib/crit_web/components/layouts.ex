@@ -198,12 +198,6 @@ defmodule CritWeb.Layouts do
         <div class="flex-1" />
 
         <div class="flex items-center gap-1.5">
-          <span
-            aria-hidden="true"
-            class="w-px h-4 bg-(--crit-border-strong) mx-0.5 max-sm:hidden"
-          >
-          </span>
-
           <%= if @current_user do %>
             <div>
               <.nav_link href={~p"/dashboard"}>Dashboard</.nav_link>
@@ -334,10 +328,10 @@ defmodule CritWeb.Layouts do
           <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
             Modes
           </div>
-          <.nav_mobile_link href="/modes/plans-docs">Plans & docs</.nav_mobile_link>
-          <.nav_mobile_link href="/modes/code">Code</.nav_mobile_link>
-          <.nav_mobile_link href="/modes/live">Live</.nav_mobile_link>
-          <.nav_mobile_link href="/modes/preview">Preview</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/plans-docs">Review plans & docs</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/code">Review code diffs</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/live">Review running apps</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/preview">Review HTML artifacts</.nav_mobile_link>
 
           <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
             Site
@@ -1125,25 +1119,25 @@ defmodule CritWeb.Layouts do
                 href="/modes/plans-docs"
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
-                Plans & docs
+                Review plans & docs
               </a>
               <a
                 href="/modes/code"
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
-                Code
+                Review code diffs
               </a>
               <a
                 href="/modes/live"
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
-                Live
+                Review running apps
               </a>
               <a
                 href="/modes/preview"
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
-                Preview
+                Review HTML artifacts
               </a>
             </div>
           </div>
