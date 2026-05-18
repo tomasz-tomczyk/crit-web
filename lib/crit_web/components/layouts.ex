@@ -128,7 +128,12 @@ defmodule CritWeb.Layouts do
               class="inline-flex items-center gap-1 h-[30px] px-2.5 rounded-md text-sm font-medium tracking-tight text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
             >
               Modes
-              <svg class="size-3 opacity-60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg
+                class="size-3 opacity-60"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
                 <path
                   fill-rule="evenodd"
                   d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
@@ -1089,15 +1094,6 @@ defmodule CritWeb.Layouts do
     """
   end
 
-  @doc """
-  Provides dark vs light theme toggle based on themes defined in app.css.
-
-  See <head> in root.html.heex which applies the theme before page load.
-  """
-  @doc """
-  Global site footer with brand info, navigation columns, and colophon.
-  Used on all public marketing pages.
-  """
   def site_footer(assigns) do
     ~H"""
     <footer class="border-t border-(--crit-border) py-14 mt-14">
@@ -1122,16 +1118,28 @@ defmodule CritWeb.Layouts do
               Modes
             </h4>
             <div class="flex flex-col gap-2">
-              <a href="/modes/plans-docs" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="/modes/plans-docs"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 Plans & docs
               </a>
-              <a href="/modes/code" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="/modes/code"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 Code
               </a>
-              <a href="/modes/live" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="/modes/live"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 Live
               </a>
-              <a href="/modes/preview" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="/modes/preview"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 Preview
               </a>
             </div>
@@ -1143,16 +1151,36 @@ defmodule CritWeb.Layouts do
               Project
             </h4>
             <div class="flex flex-col gap-2">
-              <a href="https://github.com/tomasz-tomczyk/crit" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="https://github.com/tomasz-tomczyk/crit"
+                target="_blank"
+                rel="noopener"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 GitHub
               </a>
-              <a href="https://github.com/tomasz-tomczyk/crit-web" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="https://github.com/tomasz-tomczyk/crit-web"
+                target="_blank"
+                rel="noopener"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 crit-web
               </a>
-              <a href="https://github.com/tomasz-tomczyk/crit/releases" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="https://github.com/tomasz-tomczyk/crit/releases"
+                target="_blank"
+                rel="noopener"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 Releases
               </a>
-              <a href="https://github.com/tomasz-tomczyk/crit/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="https://github.com/tomasz-tomczyk/crit/blob/main/CONTRIBUTING.md"
+                target="_blank"
+                rel="noopener"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 Contributing
               </a>
             </div>
@@ -1164,10 +1192,18 @@ defmodule CritWeb.Layouts do
               Share
             </h4>
             <div class="flex flex-col gap-2">
-              <a href="https://crit.live" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href="https://crit.live"
+                target="_blank"
+                rel="noopener"
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 crit.live (hosted)
               </a>
-              <a href={~p"/self-hosting"} class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+              <a
+                href={~p"/self-hosting"}
+                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+              >
                 Self-host
               </a>
             </div>
