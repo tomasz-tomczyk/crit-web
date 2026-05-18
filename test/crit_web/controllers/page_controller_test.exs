@@ -3,7 +3,12 @@ defmodule CritWeb.PageControllerTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Your feedback loop"
+    assert html_response(conn, 200) =~ "Point at the line."
+  end
+
+  test "GET /integrations/build-your-own", %{conn: conn} do
+    conn = get(conn, ~p"/integrations/build-your-own")
+    assert html_response(conn, 200) =~ "Build Your Own"
   end
 
   test "GET /terms", %{conn: conn} do

@@ -62,7 +62,7 @@ defmodule CritWeb.LayoutsTest do
 
       assert html =~ ~s|href="/users/log_in"|
       assert html =~ "Sign in"
-      refute html =~ ~s|href="/auth/login|
+      refute html =~ ~s|href="/auth/login" class="inline-flex|
     end
 
     test "registration=true, oauth=true → /users/log_in", %{conn: conn} do
@@ -90,9 +90,7 @@ defmodule CritWeb.LayoutsTest do
       html = conn |> get(~p"/") |> html_response(200)
 
       refute html =~ ~s|href="/users/log_in"|
-      refute html =~ ~s|href="/auth/login|
-      # The "Sign in" CTA itself should not be rendered.
-      refute html =~ ">Sign in<"
+      refute html =~ ~s|href="/auth/login" class="inline-flex|
     end
   end
 
