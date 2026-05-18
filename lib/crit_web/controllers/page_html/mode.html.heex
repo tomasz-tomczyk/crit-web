@@ -73,7 +73,9 @@
           Step {String.pad_leading(Integer.to_string(idx + 1), 2, "0")}
         </div>
         <h3 class="text-lg font-bold tracking-tight">{step.h}</h3>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">{Phoenix.HTML.raw(step.p)}</p>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          {Phoenix.HTML.raw(step.p)}
+        </p>
       </div>
     </div>
   </section>
