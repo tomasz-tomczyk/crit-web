@@ -269,15 +269,32 @@ document.addEventListener("click", e => {
   }
 })
 
-// Home page: close video modal on Escape
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    const modal = document.getElementById("video-modal")
-    if (modal && !modal.hidden) {
-      modal.hidden = true
-      document.getElementById("video-iframe").src = ""
-    }
+// Home page: video modal (open, close, backdrop-click, Escape)
+function closeVideoModal() {
+  const modal = document.getElementById("video-modal")
+  if (modal && !modal.hidden) {
+    modal.hidden = true
+    document.getElementById("video-iframe").src = ""
   }
+}
+
+document.addEventListener("click", (e) => {
+  const openBtn = e.target.closest("[data-video-open]")
+  if (openBtn) {
+    e.preventDefault()
+    const modal = document.getElementById("video-modal")
+    if (modal) {
+      modal.hidden = false
+      document.getElementById("video-iframe").src = openBtn.dataset.videoSrc
+    }
+    return
+  }
+  if (e.target.closest("[data-video-close]")) return closeVideoModal()
+  if (e.target.matches("[data-video-backdrop]")) closeVideoModal()
+})
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeVideoModal()
 })
 
 // Home page: testimonials scroll-triggered reveal.

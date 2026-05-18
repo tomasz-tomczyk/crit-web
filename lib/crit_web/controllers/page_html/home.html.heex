@@ -39,13 +39,14 @@
             Star on GitHub
           </a>
           <div class="flex items-center gap-3 max-sm:justify-center">
-            <a
-              href="#"
-              onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
-              class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+            <button
+              type="button"
+              data-video-open
+              data-video-src="https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0"
+              class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors cursor-pointer"
             >
               ▶ Watch 2-min video
-            </a>
+            </button>
             <%= if @demo_token do %>
               <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
               <a
@@ -85,8 +86,8 @@
     <div
       id="video-modal"
       hidden
+      data-video-backdrop
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-      onclick="if(event.target===this){document.getElementById('video-modal').hidden=true;document.getElementById('video-iframe').src='';}"
     >
       <div class="relative w-full max-w-[960px] mx-4" style="aspect-ratio: 16/9;">
         <iframe
@@ -101,7 +102,7 @@
         </iframe>
         <button
           type="button"
-          onclick="document.getElementById('video-modal').hidden=true;document.getElementById('video-iframe').src='';"
+          data-video-close
           class="absolute -top-10 right-0 text-white/70 hover:text-white text-2xl font-bold cursor-pointer"
           aria-label="Close video"
         >
