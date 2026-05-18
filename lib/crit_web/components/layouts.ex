@@ -1102,7 +1102,7 @@ defmodule CritWeb.Layouts do
 
   def site_footer(assigns) do
     ~H"""
-    <footer class="border-t border-(--crit-border) py-14 mt-14">
+    <footer class="border-t border-(--crit-border) py-14 mt-14 max-sm:py-8 max-sm:mt-8">
       <div class="max-w-7xl mx-auto px-8 max-sm:px-4">
         <div class="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-8 max-md:grid-cols-2 max-sm:grid-cols-1">
           <%!-- Brand --%>
@@ -1230,7 +1230,10 @@ defmodule CritWeb.Layouts do
               Tomasz Tomczyk
             </a>
           </span>
-          <span>MIT-licensed · single binary · zero telemetry</span>
+          <span class="flex gap-3">
+            <a href={~p"/terms"} class="hover:text-(--crit-fg-primary) no-underline">Terms</a>
+            <a href={~p"/privacy"} class="hover:text-(--crit-fg-primary) no-underline">Privacy</a>
+          </span>
         </div>
       </div>
     </footer>
