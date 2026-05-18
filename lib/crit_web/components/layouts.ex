@@ -1218,7 +1218,9 @@ defmodule CritWeb.Layouts do
               target="_blank"
               rel="noopener"
               class="text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-            >Tomasz Tomczyk</a>
+            >
+              Tomasz Tomczyk
+            </a>
           </span>
           <span class="flex items-center gap-1.5">
             <a href={~p"/terms"} class="hover:text-(--crit-fg-primary) no-underline">Terms</a>

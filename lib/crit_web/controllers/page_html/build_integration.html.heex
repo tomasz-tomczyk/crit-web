@@ -32,8 +32,7 @@
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
               Launch crit, block until the user finishes reviewing, read the
               review JSON, address comments, re-run crit for the next round.
-              This is the skill that powers
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">/crit</code>.
+              This is the skill that powers <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">/crit</code>.
             </p>
           </div>
         </div>
@@ -43,10 +42,7 @@
           <div>
             <p class="text-sm font-semibold mb-1">Headless CLI commands</p>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-              Teaches the agent about
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit comment</code>,
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit share</code>,
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit pull</code>/<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">push</code>,
+              Teaches the agent about <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit comment</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit share</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit pull</code>/<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">push</code>,
               the review file format, and comment resolution workflow.
               Auto-activates when the agent works with review files or crit commands.
             </p>
@@ -78,11 +74,12 @@
             <h3 class="text-base font-semibold tracking-tight mb-1">Run crit</h3>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
               The agent runs
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit &lt;file&gt;</code>
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+                crit &lt;file&gt;
+              </code>
               or bare
               <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit</code>
-              for a branch diff. The CLI auto-detects the review mode. It spawns a daemon, opens the browser, and
-              <strong>blocks until the user clicks Finish Review</strong>.
+              for a branch diff. The CLI auto-detects the review mode. It spawns a daemon, opens the browser, and <strong>blocks until the user clicks Finish Review</strong>.
               There is no separate listen or wait command &mdash; the crit process itself is the blocking gate.
             </p>
           </div>
@@ -98,8 +95,7 @@
               When crit exits, it prints the path to a JSON review file. The agent
               reads it and finds three types of comments: review-level
               (<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">r_</code>-prefixed),
-              file-level, and line-level (with
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">start_line</code>/<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">end_line</code>).
+              file-level, and line-level (with <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">start_line</code>/<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">end_line</code>).
               Each comment may have a
               <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">quote</code>
               (selected text) and an
@@ -114,7 +110,9 @@
             3
           </span>
           <div>
-            <h3 class="text-base font-semibold tracking-tight mb-1">Address comments and reply</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">
+              Address comments and reply
+            </h3>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
               For each unresolved comment, the agent makes the requested change, then replies:
             </p>
@@ -136,7 +134,9 @@
             4
           </span>
           <div>
-            <h3 class="text-base font-semibold tracking-tight mb-1">Re-run the same crit command</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">
+              Re-run the same crit command
+            </h3>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
               The agent runs the <strong>exact same</strong>
               <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit</code>
@@ -161,21 +161,26 @@
         <a
           href="https://github.com/tomasz-tomczyk/crit"
           class="text-(--crit-brand) hover:underline"
-        >crit</a>
+        >
+          crit
+        </a>
         repo. Here's what a PR looks like:
       </p>
 
       <div class="space-y-6">
         <div>
           <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">1</span>
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">
+              1
+            </span>
             Write the skill files
           </h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
             Copy from an existing simple integration (like
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/qwen/</code>
-            or
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/grok/</code>)
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              integrations/qwen/
+            </code>
+            or <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/grok/</code>)
             and change the
             <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">--author</code>
             name. Keep the protocol identical &mdash; only adjust if your agent's
@@ -185,17 +190,25 @@
 
         <div>
           <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">2</span>
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">
+              2
+            </span>
             Add routing in
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">cli_install.go</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              cli_install.go
+            </code>
           </h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
             Add an entry to
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrationMap</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              integrationMap
+            </code>
             mapping your agent name to file destinations:
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">source</code> (path in the embedded
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/</code> dir),
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">dest</code> (project install path),
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">source</code>
+            (path in the embedded
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/</code>
+            dir), <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">dest</code>
+            (project install path),
             and optionally
             <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">globalDest</code>
             if your agent's global config lives somewhere different.
@@ -204,29 +217,38 @@
 
         <div>
           <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">3</span>
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">
+              3
+            </span>
             Regenerate hashes and update tests
           </h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
             Run
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">go generate ./...</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              go generate ./...
+            </code>
             to update
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integration_hashes_gen.go</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              integration_hashes_gen.go
+            </code>
             (used by
             <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit check</code>
-            for staleness detection). Update the snapshot test in
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integration_routing_test.go</code>.
+            for staleness detection). Update the snapshot test in <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integration_routing_test.go</code>.
           </p>
         </div>
 
         <div>
           <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">4</span>
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">
+              4
+            </span>
             Update the README
           </h3>
           <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
             Add your agent to the table in
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/README.md</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              integrations/README.md
+            </code>
             with install command, project path, and global path.
           </p>
         </div>
@@ -244,9 +266,12 @@
       <div class="space-y-3">
         <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
           <p class="text-sm leading-relaxed">
-            <strong>Different global path</strong> &mdash;
+            <strong>Different global path</strong>
+            &mdash;
             e.g. Pi uses
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">~/.pi/agent/skills/</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              ~/.pi/agent/skills/
+            </code>
             for global installs vs
             <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.pi/skills/</code>
             for project. Set
@@ -257,7 +282,8 @@
 
         <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
           <p class="text-sm leading-relaxed">
-            <strong>Custom commands or hooks</strong> &mdash;
+            <strong>Custom commands or hooks</strong>
+            &mdash;
             Gemini CLI needs a
             <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.toml</code>
             command file, a policy file, and a settings merge for hooks. These
@@ -267,11 +293,16 @@
 
         <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
           <p class="text-sm leading-relaxed">
-            <strong>Plugin registration</strong> &mdash;
+            <strong>Plugin registration</strong>
+            &mdash;
             OpenCode needs a TypeScript plugin and a
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">opencode.jsonc</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              opencode.jsonc
+            </code>
             entry. Aider needs a
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.aider.conf.yml</code>
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+              .aider.conf.yml
+            </code>
             entry. These have custom install logic.
           </p>
         </div>
@@ -279,8 +310,7 @@
         <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
           <p class="text-sm leading-relaxed">
             <strong>No global install</strong> &mdash;
-            Windsurf only supports a single shared
-            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">global_rules.md</code>,
+            Windsurf only supports a single shared <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">global_rules.md</code>,
             so global install is rejected with a clear error.
           </p>
         </div>
@@ -303,7 +333,9 @@
           href="https://github.com/tomasz-tomczyk/crit/pull/544"
           class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
         >
-          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#544</span>
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">
+            #544
+          </span>
           <div>
             <p class="text-sm font-semibold mb-1">Grok Build</p>
             <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
@@ -317,7 +349,9 @@
           href="https://github.com/tomasz-tomczyk/crit/pull/500"
           class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
         >
-          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#500</span>
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">
+            #500
+          </span>
           <div>
             <p class="text-sm font-semibold mb-1">Qwen Code</p>
             <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
@@ -330,14 +364,14 @@
           href="https://github.com/tomasz-tomczyk/crit/pull/520"
           class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
         >
-          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#520</span>
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">
+            #520
+          </span>
           <div>
             <p class="text-sm font-semibold mb-1">Pi Coding Agent</p>
             <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
               Medium &mdash; different global path
-              (<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">~/.pi/agent/skills/</code>
-              vs project
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.pi/skills/</code>).
+              (<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">~/.pi/agent/skills/</code> vs project <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.pi/skills/</code>).
             </p>
           </div>
         </a>
@@ -346,7 +380,9 @@
           href="https://github.com/tomasz-tomczyk/crit/pull/488"
           class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
         >
-          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#488</span>
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">
+            #488
+          </span>
           <div>
             <p class="text-sm font-semibold mb-1">Gemini CLI</p>
             <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
