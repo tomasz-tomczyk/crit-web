@@ -8,6 +8,103 @@ defmodule CritWeb.PageHTML do
 
   embed_templates "page_html/*"
 
+  @modes [
+    %{
+      slug: "plans-docs",
+      label: "Plans & docs",
+      cmd: "files / markdown / source",
+      blurb:
+        "Markdown plans and source files render in the browser. Comment on lines, ranges, code blocks inside fences.",
+      bullets: ["Markdown render", "Per-line comments", "Code-fence ranges", "Mermaid diagrams"]
+    },
+    %{
+      slug: "code",
+      label: "Code",
+      cmd: "branch / pr changes",
+      blurb:
+        "Auto-detects changed files in your repo. Split or unified diff, file tree with status & comment counts.",
+      bullets: [
+        "Auto file detection",
+        "Split / unified",
+        "Round-to-round diff",
+        "PR sync (push/pull)"
+      ]
+    },
+    %{
+      slug: "live",
+      label: "Live",
+      cmd: "running app / dev server",
+      blurb:
+        "Reverse-proxies your dev server into an iframe. Click any DOM element to pin a comment to it. Selectors survive minor drift.",
+      bullets: ["Click-to-pin DOM", "Drift detection", "Threading", "Round comparisons"]
+    },
+    %{
+      slug: "preview",
+      label: "Preview",
+      cmd: "static html artifact",
+      blurb:
+        "For static HTML artifacts agents emit — landing pages, mockups, generated dashboards. Same pin commenting as live mode.",
+      bullets: [
+        "Static HTML iframe",
+        "Asset siblings served",
+        "Pin to elements",
+        "No dev server needed"
+      ]
+    }
+  ]
+
+  def modes, do: @modes
+
+  slot :inner_block, required: true
+  attr :url, :string, required: true
+  attr :tag, :string, default: nil
+
+  def browser_chrome(assigns) do
+    ~H"""
+    <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden shadow-lg relative">
+      <div class="flex items-center px-4 py-3 bg-(--crit-bg-card) border-b border-(--crit-border)">
+        <div class="flex gap-2">
+          <span class="w-3 h-3 rounded-full" style="background: #f7768e;"></span>
+          <span class="w-3 h-3 rounded-full" style="background: #e0af68;"></span>
+          <span class="w-3 h-3 rounded-full" style="background: #56d364;"></span>
+        </div>
+        <div class="flex-1 flex justify-center px-4">
+          <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-full px-4 py-1 font-mono text-xs text-(--crit-fg-muted)">
+            {@url}
+          </div>
+        </div>
+        <div class="flex gap-1">
+          <span class="w-1 h-1 rounded-full bg-(--crit-fg-muted)"></span>
+          <span class="w-1 h-1 rounded-full bg-(--crit-fg-muted)"></span>
+          <span class="w-1 h-1 rounded-full bg-(--crit-fg-muted)"></span>
+        </div>
+      </div>
+      <div>
+        {render_slot(@inner_block)}
+      </div>
+      <span
+        :if={@tag}
+        class="absolute top-12 right-3 font-mono text-xs uppercase bg-(--crit-bg-elevated) text-(--crit-fg-muted) px-2 py-0.5 rounded"
+      >
+        {@tag}
+      </span>
+    </div>
+    """
+  end
+
+  attr :label, :string, required: true
+
+  def browser_chrome_placeholder(assigns) do
+    ~H"""
+    <div
+      class="flex items-center justify-center aspect-video"
+      style="background: repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(128,128,128,0.07) 10px, rgba(128,128,128,0.07) 20px);"
+    >
+      <span class="font-mono text-sm text-(--crit-fg-muted)">{@label}</span>
+    </div>
+    """
+  end
+
   @doc "Converts `backtick` spans in plain text to styled <code> elements."
   def inline_code(text) do
     Regex.split(~r/`([^`]+)`/, text, include_captures: true)
