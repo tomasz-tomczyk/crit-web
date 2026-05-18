@@ -18,40 +18,42 @@
         Review plans before your agent writes code. Review code before you ship it.
         Leave comments, click Finish Review, and your agent acts on the feedback automatically. Repeat as needed. Local by default.
       </p>
-      <div class="max-w-md mb-8">
-        <CritWeb.PageHTML.install_widget />
-      </div>
-      <div class="flex gap-3 flex-wrap items-center max-sm:flex-col max-sm:items-stretch">
-        <a
-          href="https://github.com/tomasz-tomczyk/crit"
-          class="group/star inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all max-sm:w-full"
-        >
-          <svg
-            viewBox="0 0 16 16"
-            class="size-4 fill-current opacity-60 group-hover/star:opacity-100 group-hover/star:text-(--crit-yellow) group-hover/star:scale-110 transition-all duration-200"
-            aria-hidden="true"
-          >
-            <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
-          </svg>
-          Star on GitHub
-        </a>
-        <div class="flex items-center gap-3">
+      <div class="flex gap-6 items-start max-sm:flex-col max-sm:gap-4">
+        <div class="max-w-md flex-1 min-w-0">
+          <CritWeb.PageHTML.install_widget />
+        </div>
+        <div class="flex flex-col gap-3 shrink-0 max-sm:items-center max-sm:w-full">
           <a
-            href="#"
-            onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
-            class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+            href="https://github.com/tomasz-tomczyk/crit"
+            class="group/star inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all max-sm:w-full"
           >
-            ▶ Watch 2-min video
+            <svg
+              viewBox="0 0 16 16"
+              class="size-4 fill-current opacity-60 group-hover/star:opacity-100 group-hover/star:text-(--crit-yellow) group-hover/star:scale-110 transition-all duration-200"
+              aria-hidden="true"
+            >
+              <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
+            </svg>
+            Star on GitHub
           </a>
-          <%= if @demo_token do %>
-            <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+          <div class="flex items-center gap-3 max-sm:justify-center">
             <a
-              href={~p"/r/#{@demo_token}"}
+              href="#"
+              onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
               class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
             >
-              See demo
+              ▶ Watch 2-min video
             </a>
-          <% end %>
+            <%= if @demo_token do %>
+              <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+              <a
+                href={~p"/r/#{@demo_token}"}
+                class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+              >
+                See demo
+              </a>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>
@@ -206,6 +208,11 @@
           </svg>
         </a>
       </div>
+
+      <p class="text-sm text-(--crit-fg-muted) mt-4">
+        Don't see yours?
+        <a href={~p"/integrations/build-your-own"} class="crit-link">Build your own integration &rarr;</a>
+      </p>
 
       <div class="mt-10">
         <h3 class="text-lg font-bold tracking-tight mb-4">Connect your agent</h3>
