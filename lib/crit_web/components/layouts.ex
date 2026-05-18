@@ -71,7 +71,7 @@ defmodule CritWeb.Layouts do
 
   attr :current_page, :atom,
     default: nil,
-    doc: "one of :features, :getting_started, :self_hosting, :changelog, :integrations"
+    doc: "one of :features, :changelog, :integrations"
 
   def site_header(assigns) do
     current_user = assigns.current_scope && assigns.current_scope.user
@@ -120,31 +120,76 @@ defmodule CritWeb.Layouts do
           </svg>
         </a>
 
-        <div class="flex items-center gap-1.5">
-          <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
-            <.nav_link href={~p"/features"} active={@current_page == :features}>
-              Features
-            </.nav_link>
-            <.nav_link href={~p"/getting-started"} active={@current_page == :getting_started}>
-              Get Started
-            </.nav_link>
-            <.nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
-              Self-Hosting
-            </.nav_link>
-            <.nav_link href={~p"/changelog"} active={@current_page == :changelog}>
-              Changelog
-            </.nav_link>
-            <a
-              href="https://github.com/tomasz-tomczyk/crit"
-              class="inline-flex items-center gap-1.5 h-[30px] px-2.5 rounded-md text-sm font-medium tracking-tight no-underline text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+        <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
+          <%!-- Modes dropdown --%>
+          <div class="relative group">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 h-[30px] px-2.5 rounded-md text-sm font-medium tracking-tight text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
             >
-              <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
-                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+              Modes
+              <svg class="size-3 opacity-60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fill-rule="evenodd"
+                  d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                  clip-rule="evenodd"
+                />
               </svg>
-              GitHub
-            </a>
-          </nav>
+            </button>
+            <div class="absolute left-0 top-full pt-1.5 min-w-[280px] opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity z-40">
+              <div class="bg-(--crit-bg-card) border border-(--crit-border-strong) rounded-lg shadow-lg p-1.5">
+                <a
+                  href="/modes/plans-docs"
+                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+                >
+                  <span class="font-medium">Plans & docs</span>
+                  <span class="font-mono text-xs text-(--crit-fg-muted)">files</span>
+                </a>
+                <a
+                  href="/modes/code"
+                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+                >
+                  <span class="font-medium">Code</span>
+                  <span class="font-mono text-xs text-(--crit-fg-muted)">branch / pr</span>
+                </a>
+                <a
+                  href="/modes/live"
+                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+                >
+                  <span class="font-medium">Live</span>
+                  <span class="font-mono text-xs text-(--crit-fg-muted)">running app</span>
+                </a>
+                <a
+                  href="/modes/preview"
+                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+                >
+                  <span class="font-medium">Preview</span>
+                  <span class="font-mono text-xs text-(--crit-fg-muted)">static html</span>
+                </a>
+              </div>
+            </div>
+          </div>
 
+          <.nav_link href={~p"/features"} active={@current_page == :features}>
+            Features
+          </.nav_link>
+          <.nav_link href={~p"/changelog"} active={@current_page == :changelog}>
+            Changelog
+          </.nav_link>
+          <a
+            href="https://github.com/tomasz-tomczyk/crit"
+            class="inline-flex items-center gap-1.5 h-[30px] px-2.5 rounded-md text-sm font-medium tracking-tight no-underline text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+          >
+            <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            GitHub
+          </a>
+        </nav>
+
+        <div class="flex-1" />
+
+        <div class="flex items-center gap-1.5">
           <span
             aria-hidden="true"
             class="w-px h-4 bg-(--crit-border-strong) mx-1.5 max-sm:hidden"
@@ -279,19 +324,18 @@ defmodule CritWeb.Layouts do
       >
         <div class="flex flex-col gap-px px-3 pt-2 pb-3.5">
           <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
+            Modes
+          </div>
+          <.nav_mobile_link href="/modes/plans-docs">Plans & docs</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/code">Code</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/live">Live</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/preview">Preview</.nav_mobile_link>
+
+          <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
             Site
           </div>
           <.nav_mobile_link href={~p"/features"} active={@current_page == :features}>
             Features
-          </.nav_mobile_link>
-          <.nav_mobile_link
-            href={~p"/getting-started"}
-            active={@current_page == :getting_started}
-          >
-            Get Started
-          </.nav_mobile_link>
-          <.nav_mobile_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
-            Self-Hosting
           </.nav_mobile_link>
           <.nav_mobile_link href={~p"/changelog"} active={@current_page == :changelog}>
             Changelog
