@@ -1,0 +1,208 @@
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
+  <Layouts.site_header current_scope={@current_scope} />
+  <div class="max-w-3xl mx-auto px-10 pb-20 max-sm:px-4 max-sm:pb-12">
+    <%!-- Hero --%>
+    <section class="mt-16 mb-14 max-sm:mt-10 max-sm:mb-10">
+      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
+        Integrations
+      </p>
+      <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
+        Create a Crit integration for your agent<span class="text-(--crit-brand)">.</span>
+      </h1>
+      <p class="text-xl leading-relaxed text-(--crit-fg-secondary)">
+        Any agent that can read a file and execute a shell command can drive crit.
+        Here's how to build your own integration.
+      </p>
+    </section>
+
+    <%!-- The protocol --%>
+    <section class="mb-16 max-sm:mb-12">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">The protocol</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-6">
+        The review loop is four steps. Your agent repeats them until the user is satisfied.
+      </p>
+
+      <div class="space-y-4">
+        <div class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5">
+          <span class="text-(--crit-brand) font-mono text-sm font-bold mt-0.5 shrink-0 select-none">
+            1
+          </span>
+          <div>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Open the file for review</h3>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+              The agent runs
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+                crit &lt;file&gt;
+              </code>
+              — this opens the file in the browser for the user to review.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5">
+          <span class="text-(--crit-brand) font-mono text-sm font-bold mt-0.5 shrink-0 select-none">
+            2
+          </span>
+          <div>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Wait for the review</h3>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+              The agent runs
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit listen</code>
+              — this blocks until the user clicks Finish Review in the browser.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5">
+          <span class="text-(--crit-brand) font-mono text-sm font-bold mt-0.5 shrink-0 select-none">
+            3
+          </span>
+          <div>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Read the review file</h3>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+              The agent reads the review file (JSON) containing structured comments
+              with line numbers, then addresses each comment.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5">
+          <span class="text-(--crit-brand) font-mono text-sm font-bold mt-0.5 shrink-0 select-none">
+            4
+          </span>
+          <div>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Trigger the next round</h3>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+              The agent runs
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
+                crit go &lt;port&gt;
+              </code>
+              to signal it's done. Crit reloads with a diff of what changed, and the user reviews again.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Skill file --%>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Skill file</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-4">
+        Integrations are just a skill file (SKILL.md or equivalent) that teaches
+        the agent how to use crit. The skill file tells the agent:
+      </p>
+
+      <ul class="list-disc pl-5 space-y-2 text-sm text-(--crit-fg-secondary) leading-relaxed mb-6">
+        <li>When to launch crit (e.g., after writing a plan, before committing)</li>
+        <li>How to read the review JSON</li>
+        <li>How to reply to comments</li>
+        <li>How to signal completion</li>
+      </ul>
+
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+        See the existing integrations for examples:
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/tree/main/integrations"
+          class="text-(--crit-brand) hover:underline"
+        >
+          github.com/tomasz-tomczyk/crit/tree/main/integrations
+        </a>
+      </p>
+    </section>
+
+    <%!-- Install command --%>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Install command</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
+        For supported agents, the CLI generates the skill files automatically.
+        If your agent isn't supported yet, you can write the skill file manually.
+      </p>
+
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <div class="flex gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+          </div>
+          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit install &lt;agent-name&gt;</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Review file format --%>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Review file format</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
+        When the user finishes a review, crit writes a JSON file your agent reads.
+        Here's the structure:
+      </p>
+
+      <div class="space-y-3 mb-6">
+        <div class="flex items-start gap-3 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
+          <code class="text-sm font-mono text-(--crit-brand) shrink-0">files</code>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+            Map of file paths to file data. Each file contains metadata and a comments array.
+          </p>
+        </div>
+
+        <div class="flex items-start gap-3 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
+          <code class="text-sm font-mono text-(--crit-brand) shrink-0">comments</code>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+            Array of comment objects on each file. Each comment has <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">id</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">start_line</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">end_line</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">body</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">scope</code>, and <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">resolved</code>.
+          </p>
+        </div>
+      </div>
+
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
+        To reply to a comment from the agent, use the CLI:
+      </p>
+
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <div class="flex gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+          </div>
+          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit comment --reply-to &lt;id&gt; --author 'Agent' 'Fixed the error handling.'</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- CTA --%>
+    <section class="border-t border-(--crit-border) pt-12">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-2">
+        Need help<span class="text-(--crit-brand)">?</span>
+      </h2>
+      <p class="text-sm text-(--crit-fg-secondary) mb-6 leading-relaxed">
+        If your agent isn't supported yet or you run into issues building an integration,
+        open an issue and we'll help you get it working.
+      </p>
+      <a
+        href="https://github.com/tomasz-tomczyk/crit/issues"
+        class="inline-flex items-center gap-2 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-3 text-sm font-semibold no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
+      >
+        <svg
+          viewBox="0 0 16 16"
+          fill="currentColor"
+          class="w-4 h-4 shrink-0 text-(--crit-fg-secondary)"
+        >
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+        </svg>
+        Open an issue on GitHub
+      </a>
+    </section>
+  </div>
+  <Layouts.site_footer />
+</div>

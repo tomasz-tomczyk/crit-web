@@ -584,6 +584,15 @@ defmodule CritWeb.PageController do
     end
   end
 
+  def build_integration(conn, _params) do
+    render(conn, :build_integration,
+      canonical_url: canonical_url(conn),
+      page_title: "Build Your Own Integration - Crit",
+      meta_description:
+        "Create a Crit integration for any AI coding agent. Learn the protocol, file format, and slash command patterns."
+    )
+  end
+
   def integrations(conn, _params) do
     render(conn, :integrations,
       canonical_url: canonical_url(conn),
@@ -707,6 +716,7 @@ defmodule CritWeb.PageController do
     {"/integrations/windsurf", "monthly", "0.8"},
     {"/integrations/cline", "monthly", "0.8"},
     {"/integrations/aider", "monthly", "0.8"},
+    {"/integrations/build-your-own", "monthly", "0.7"},
     {"/modes/plans-docs", "monthly", "0.8"},
     {"/modes/code", "monthly", "0.8"},
     {"/modes/live", "monthly", "0.8"},
