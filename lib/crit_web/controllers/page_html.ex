@@ -171,11 +171,11 @@ defmodule CritWeb.PageHTML do
       class="install-panel border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
       <div
-        class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer"
+        class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)"
         data-copy="brew install crit"
       >
         <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>brew install crit</pre>
-        <div class="shrink-0 p-3 text-(--crit-fg-muted)">
+        <div class="shrink-0 p-3">
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
         </div>
@@ -186,9 +186,9 @@ defmodule CritWeb.PageHTML do
       id="tab-go"
       class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
-      <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer" data-copy="go install github.com/tomasz-tomczyk/crit@latest">
+      <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)" data-copy="go install github.com/tomasz-tomczyk/crit@latest">
         <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>go install github.com/tomasz-tomczyk/crit@latest</pre>
-        <div class="shrink-0 p-3 text-(--crit-fg-muted)">
+        <div class="shrink-0 p-3">
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
         </div>
@@ -199,9 +199,9 @@ defmodule CritWeb.PageHTML do
       id="tab-nix"
       class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
-      <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer" data-copy="nix profile install github:tomasz-tomczyk/crit">
+      <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)" data-copy="nix profile install github:tomasz-tomczyk/crit">
         <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>nix profile install github:tomasz-tomczyk/crit</pre>
-        <div class="shrink-0 p-3 text-(--crit-fg-muted)">
+        <div class="shrink-0 p-3">
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
         </div>
@@ -212,9 +212,9 @@ defmodule CritWeb.PageHTML do
       id="tab-windows"
       class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
-      <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer" data-copy="iwr https://github.com/tomasz-tomczyk/crit/releases/latest/download/crit-windows-amd64.exe -OutFile crit.exe">
+      <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)" data-copy="iwr https://github.com/tomasz-tomczyk/crit/releases/latest/download/crit-windows-amd64.exe -OutFile crit.exe">
         <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">PS&gt; </span>iwr https://github.com/tomasz-tomczyk/crit/releases/latest/download/crit-windows-amd64.exe -OutFile crit.exe</pre>
-        <div class="shrink-0 p-3 text-(--crit-fg-muted)">
+        <div class="shrink-0 p-3">
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
         </div>
