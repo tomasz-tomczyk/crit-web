@@ -1,25 +1,72 @@
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
   <Layouts.site_header current_scope={@current_scope} />
-  <div class="max-w-3xl mx-auto px-10 pb-20 max-sm:px-4 max-sm:pb-12">
+  <div class="max-w-7xl mx-auto px-10 pb-20 max-sm:px-4 max-sm:pb-12">
     <%!-- Hero --%>
     <section class="mt-16 mb-14 max-sm:mt-10 max-sm:mb-10">
       <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
         Integrations
       </p>
       <h1 class="text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl">
-        Create a Crit integration for your agent<span class="text-(--crit-brand)">.</span>
+        Build a crit integration<span class="text-(--crit-brand)">.</span>
       </h1>
       <p class="text-xl leading-relaxed text-(--crit-fg-secondary)">
-        Any agent that can read a file and execute a shell command can drive crit.
-        Here's how to build your own integration.
+        Any agent that can run a shell command and read a file can use crit.
+        All integrations follow the same pattern &mdash; only deviate when
+        your agent has a specific quirk that requires it.
       </p>
     </section>
 
-    <%!-- The protocol --%>
+    <%!-- What an integration is --%>
     <section class="mb-16 max-sm:mb-12">
-      <h2 class="text-2xl font-extrabold tracking-tight mb-4">The protocol</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">What an integration is</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
+        An integration is a set of skill files that teach your agent how to drive crit.
+        Every integration ships two skills:
+      </p>
+
+      <div class="space-y-3 mb-6">
+        <div class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5">
+          <code class="text-sm font-mono text-(--crit-brand) shrink-0 mt-0.5">crit</code>
+          <div>
+            <p class="text-sm font-semibold mb-1">The review loop</p>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+              Launch crit, block until the user finishes reviewing, read the
+              review JSON, address comments, re-run crit for the next round.
+              This is the skill that powers
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">/crit</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5">
+          <code class="text-sm font-mono text-(--crit-brand) shrink-0 mt-0.5">crit-cli</code>
+          <div>
+            <p class="text-sm font-semibold mb-1">Headless CLI commands</p>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+              Teaches the agent about
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit comment</code>,
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit share</code>,
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit pull</code>/<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">push</code>,
+              the review file format, and comment resolution workflow.
+              Auto-activates when the agent works with review files or crit commands.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+        Some agents need additional files &mdash; hooks, policies, commands, or plugins &mdash;
+        but the two skills are the foundation. Keep them consistent with the existing
+        integrations unless your agent genuinely requires something different.
+      </p>
+    </section>
+
+    <%!-- The review loop --%>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">The review loop</h2>
       <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-6">
-        The review loop is four steps. Your agent repeats them until the user is satisfied.
+        This is the core protocol every integration teaches. Your agent repeats
+        these steps until the reviewer approves with zero comments.
       </p>
 
       <div class="space-y-4">
@@ -28,13 +75,15 @@
             1
           </span>
           <div>
-            <h3 class="text-base font-semibold tracking-tight mb-1">Open the file for review</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Run crit</h3>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
               The agent runs
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
-                crit &lt;file&gt;
-              </code>
-              — this opens the file in the browser for the user to review.
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit &lt;file&gt;</code>
+              or bare
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit</code>
+              for a branch diff. The CLI auto-detects the review mode. It spawns a daemon, opens the browser, and
+              <strong>blocks until the user clicks Finish Review</strong>.
+              There is no separate listen or wait command &mdash; the crit process itself is the blocking gate.
             </p>
           </div>
         </div>
@@ -44,11 +93,18 @@
             2
           </span>
           <div>
-            <h3 class="text-base font-semibold tracking-tight mb-1">Wait for the review</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Read the review file</h3>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-              The agent runs
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit listen</code>
-              — this blocks until the user clicks Finish Review in the browser.
+              When crit exits, it prints the path to a JSON review file. The agent
+              reads it and finds three types of comments: review-level
+              (<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">r_</code>-prefixed),
+              file-level, and line-level (with
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">start_line</code>/<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">end_line</code>).
+              Each comment may have a
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">quote</code>
+              (selected text) and an
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">anchor</code>
+              for locating content after edits.
             </p>
           </div>
         </div>
@@ -58,10 +114,19 @@
             3
           </span>
           <div>
-            <h3 class="text-base font-semibold tracking-tight mb-1">Read the review file</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Address comments and reply</h3>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-              The agent reads the review file (JSON) containing structured comments
-              with line numbers, then addresses each comment.
+              For each unresolved comment, the agent makes the requested change, then replies:
+            </p>
+            <div class="mt-3 bg-(--crit-code-bg) rounded px-4 py-3 font-mono text-xs text-(--crit-fg-secondary) overflow-x-auto">
+              crit comment --reply-to &lt;id&gt; --author 'AgentName' 'Fixed.'
+            </div>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3">
+              For multiple replies, use
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">--json</code>
+              for a single bulk call. The agent never passes
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">--resolve</code>
+              &mdash; resolving is the reviewer's call.
             </p>
           </div>
         </div>
@@ -71,54 +136,238 @@
             4
           </span>
           <div>
-            <h3 class="text-base font-semibold tracking-tight mb-1">Trigger the next round</h3>
+            <h3 class="text-base font-semibold tracking-tight mb-1">Re-run the same crit command</h3>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-              The agent runs
-              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">
-                crit go &lt;port&gt;
-              </code>
-              to signal it's done. Crit reloads with a diff of what changed, and the user reviews again.
+              The agent runs the <strong>exact same</strong>
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit</code>
+              command from step 1. The daemon is keyed by arguments &mdash; mismatched args
+              spawn a new daemon instead of reconnecting. Crit signals round-complete,
+              reloads with a diff of what changed, and blocks again. Repeat from step 2.
             </p>
           </div>
         </div>
       </div>
+
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-5">
+        Zero unresolved comments = approved. The agent stops the loop and proceeds with implementation.
+      </p>
     </section>
 
-    <%!-- Skill file --%>
+    <%!-- How to build one --%>
     <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
-      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Skill file</h2>
-      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-4">
-        Integrations are just a skill file (SKILL.md or equivalent) that teaches
-        the agent how to use crit. The skill file tells the agent:
-      </p>
-
-      <ul class="list-disc pl-5 space-y-2 text-sm text-(--crit-fg-secondary) leading-relaxed mb-6">
-        <li>When to launch crit (e.g., after writing a plan, before committing)</li>
-        <li>How to read the review JSON</li>
-        <li>How to reply to comments</li>
-        <li>How to signal completion</li>
-      </ul>
-
-      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-        See the existing integrations for examples:
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Building your integration</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-6">
+        All changes go in the
         <a
-          href="https://github.com/tomasz-tomczyk/crit/tree/main/integrations"
+          href="https://github.com/tomasz-tomczyk/crit"
           class="text-(--crit-brand) hover:underline"
-        >
-          github.com/tomasz-tomczyk/crit/tree/main/integrations
-        </a>
+        >crit</a>
+        repo. Here's what a PR looks like:
       </p>
+
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">1</span>
+            Write the skill files
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
+            Copy from an existing simple integration (like
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/qwen/</code>
+            or
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/grok/</code>)
+            and change the
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">--author</code>
+            name. Keep the protocol identical &mdash; only adjust if your agent's
+            skill discovery format or execution model genuinely requires it.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">2</span>
+            Add routing in
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">cli_install.go</code>
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
+            Add an entry to
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrationMap</code>
+            mapping your agent name to file destinations:
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">source</code> (path in the embedded
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/</code> dir),
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">dest</code> (project install path),
+            and optionally
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">globalDest</code>
+            if your agent's global config lives somewhere different.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">3</span>
+            Regenerate hashes and update tests
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
+            Run
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">go generate ./...</code>
+            to update
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integration_hashes_gen.go</code>
+            (used by
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit check</code>
+            for staleness detection). Update the snapshot test in
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integration_routing_test.go</code>.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-(--crit-brand) text-white text-xs font-bold shrink-0">4</span>
+            Update the README
+          </h3>
+          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed pl-7">
+            Add your agent to the table in
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">integrations/README.md</code>
+            with install command, project path, and global path.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Agent-specific quirks --%>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">When to deviate</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
+        Most agents only need the two skill files. Some need more because of how they
+        discover and load configuration. Only add extra files when your agent requires them:
+      </p>
+
+      <div class="space-y-3">
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
+          <p class="text-sm leading-relaxed">
+            <strong>Different global path</strong> &mdash;
+            e.g. Pi uses
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">~/.pi/agent/skills/</code>
+            for global installs vs
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.pi/skills/</code>
+            for project. Set
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">globalDest</code>
+            in the routing table.
+          </p>
+        </div>
+
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
+          <p class="text-sm leading-relaxed">
+            <strong>Custom commands or hooks</strong> &mdash;
+            Gemini CLI needs a
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.toml</code>
+            command file, a policy file, and a settings merge for hooks. These
+            are unique to Gemini's plugin system.
+          </p>
+        </div>
+
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
+          <p class="text-sm leading-relaxed">
+            <strong>Plugin registration</strong> &mdash;
+            OpenCode needs a TypeScript plugin and a
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">opencode.jsonc</code>
+            entry. Aider needs a
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.aider.conf.yml</code>
+            entry. These have custom install logic.
+          </p>
+        </div>
+
+        <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
+          <p class="text-sm leading-relaxed">
+            <strong>No global install</strong> &mdash;
+            Windsurf only supports a single shared
+            <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">global_rules.md</code>,
+            so global install is rejected with a clear error.
+          </p>
+        </div>
+      </div>
+
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-5">
+        If none of these apply, keep it simple: two skill files and standard routing.
+      </p>
+    </section>
+
+    <%!-- Example PRs --%>
+    <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Example PRs</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
+        Real PRs in order of complexity. Start with a simple one as your template.
+      </p>
+
+      <div class="space-y-3">
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/pull/544"
+          class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
+        >
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#544</span>
+          <div>
+            <p class="text-sm font-semibold mb-1">Grok Build</p>
+            <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
+              Simple &mdash; two skill files, standard paths, no special config.
+              Best starting template.
+            </p>
+          </div>
+        </a>
+
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/pull/500"
+          class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
+        >
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#500</span>
+          <div>
+            <p class="text-sm font-semibold mb-1">Qwen Code</p>
+            <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
+              Simple &mdash; same pattern as Grok. Good second reference.
+            </p>
+          </div>
+        </a>
+
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/pull/520"
+          class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
+        >
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#520</span>
+          <div>
+            <p class="text-sm font-semibold mb-1">Pi Coding Agent</p>
+            <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
+              Medium &mdash; different global path
+              (<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">~/.pi/agent/skills/</code>
+              vs project
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.pi/skills/</code>).
+            </p>
+          </div>
+        </a>
+
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/pull/488"
+          class="flex items-start gap-4 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-5 no-underline text-inherit hover:border-(--crit-fg-muted) transition-[border-color] duration-150"
+        >
+          <span class="font-mono text-xs text-(--crit-brand) font-bold mt-0.5 shrink-0">#488</span>
+          <div>
+            <p class="text-sm font-semibold mb-1">Gemini CLI</p>
+            <p class="text-xs text-(--crit-fg-secondary) leading-relaxed">
+              Complex &mdash; skills + command file + policy + hook settings merge.
+              Only needed because of Gemini's TOML-based plugin system.
+            </p>
+          </div>
+        </a>
+      </div>
     </section>
 
     <%!-- Install command --%>
     <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
-      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Install command</h2>
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">How install works</h2>
       <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
-        For supported agents, the CLI generates the skill files automatically.
-        If your agent isn't supported yet, you can write the skill file manually.
+        Once your integration is merged,
+        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit install</code>
+        copies the embedded skill files to the right place. Two modes:
       </p>
 
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden mb-5">
         <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
           <div class="flex gap-1.5">
             <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
@@ -128,55 +377,56 @@
           <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
         </div>
         <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div class="mb-1">
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit install &lt;agent&gt;</span>
+            <span class="text-(--crit-fg-muted) ml-4"># project install</span>
+          </div>
+          <div class="mb-1">
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">cd ~ && crit install &lt;agent&gt;</span>
+            <span class="text-(--crit-fg-muted) ml-4"># global install</span>
+          </div>
           <div>
-            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit install &lt;agent-name&gt;</span>
+            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit install all</span>
+            <span class="text-(--crit-fg-muted) ml-4"># install all supported agents</span>
           </div>
         </div>
       </div>
+
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+        Safe to re-run. Existing files are skipped unless
+        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">--force</code>
+        is passed.
+        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit check</code>
+        detects stale integrations by comparing installed file hashes against the
+        manifest baked into the binary.
+      </p>
     </section>
 
-    <%!-- Review file format --%>
+    <%!-- Source link --%>
     <section class="mb-16 max-sm:mb-12 border-t border-(--crit-border) pt-10">
-      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Review file format</h2>
-      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
-        When the user finishes a review, crit writes a JSON file your agent reads.
-        Here's the structure:
+      <h2 class="text-2xl font-extrabold tracking-tight mb-4">Source</h2>
+      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-4">
+        All integration files live in the crit repo:
       </p>
-
-      <div class="space-y-3 mb-6">
-        <div class="flex items-start gap-3 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
-          <code class="text-sm font-mono text-(--crit-brand) shrink-0">files</code>
-          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-            Map of file paths to file data. Each file contains metadata and a comments array.
-          </p>
-        </div>
-
-        <div class="flex items-start gap-3 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-5 py-4">
-          <code class="text-sm font-mono text-(--crit-brand) shrink-0">comments</code>
-          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-            Array of comment objects on each file. Each comment has <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">id</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">start_line</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">end_line</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">body</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">scope</code>, and <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">resolved</code>.
-          </p>
-        </div>
-      </div>
-
-      <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-5">
-        To reply to a comment from the agent, use the CLI:
-      </p>
-
-      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
-          <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
-          </div>
-          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">Terminal</span>
-        </div>
-        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
-          <div>
-            <span class="text-(--crit-fg-muted) select-none">$ </span><span class="text-(--crit-fg-primary)">crit comment --reply-to &lt;id&gt; --author 'Agent' 'Fixed the error handling.'</span>
-          </div>
-        </div>
+      <div class="space-y-2">
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/tree/main/integrations"
+          class="flex items-center gap-2 text-sm text-(--crit-brand) hover:underline"
+        >
+          <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 shrink-0">
+            <path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-6a1 1 0 00-1 1v6.708A2.486 2.486 0 017.5 9h5V1.5z" />
+          </svg>
+          integrations/ &mdash; skill files for every supported agent
+        </a>
+        <a
+          href="https://github.com/tomasz-tomczyk/crit/blob/main/cli_install.go"
+          class="flex items-center gap-2 text-sm text-(--crit-brand) hover:underline"
+        >
+          <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 shrink-0">
+            <path d="M4.72 3.22a.75.75 0 011.06 1.06L2.06 8l3.72 3.72a.75.75 0 11-1.06 1.06L.47 8.53a.75.75 0 010-1.06l4.25-4.25zm6.56 0a.75.75 0 10-1.06 1.06L13.94 8l-3.72 3.72a.75.75 0 101.06 1.06l4.25-4.25a.75.75 0 000-1.06l-4.25-4.25z" />
+          </svg>
+          cli_install.go &mdash; routing table and install logic
+        </a>
       </div>
     </section>
 

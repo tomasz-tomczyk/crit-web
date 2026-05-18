@@ -137,37 +137,39 @@ defmodule CritWeb.PageHTML do
     end
   end
 
+  attr :id, :string, default: "install"
+
   def install_widget(assigns) do
     ~H"""
     <div class="flex gap-0 border-b border-(--crit-border)">
       <button
         class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-(--crit-brand) text-(--crit-brand) transition-colors cursor-pointer bg-transparent"
-        data-target="tab-brew"
+        data-target={"#{@id}-brew"}
       >
         Homebrew
       </button>
       <button
         class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
-        data-target="tab-go"
+        data-target={"#{@id}-go"}
       >
         Go
       </button>
       <button
         class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
-        data-target="tab-nix"
+        data-target={"#{@id}-nix"}
       >
         Nix
       </button>
       <button
         class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
-        data-target="tab-windows"
+        data-target={"#{@id}-windows"}
       >
         Windows
       </button>
     </div>
 
     <div
-      id="tab-brew"
+      id={"#{@id}-brew"}
       class="install-panel border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
       <div
@@ -183,7 +185,7 @@ defmodule CritWeb.PageHTML do
     </div>
 
     <div
-      id="tab-go"
+      id={"#{@id}-go"}
       class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
       <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)" data-copy="go install github.com/tomasz-tomczyk/crit@latest">
@@ -196,7 +198,7 @@ defmodule CritWeb.PageHTML do
     </div>
 
     <div
-      id="tab-nix"
+      id={"#{@id}-nix"}
       class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
       <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)" data-copy="nix profile install github:tomasz-tomczyk/crit">
@@ -209,7 +211,7 @@ defmodule CritWeb.PageHTML do
     </div>
 
     <div
-      id="tab-windows"
+      id={"#{@id}-windows"}
       class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
       <div class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)" data-copy="iwr https://github.com/tomasz-tomczyk/crit/releases/latest/download/crit-windows-amd64.exe -OutFile crit.exe">
