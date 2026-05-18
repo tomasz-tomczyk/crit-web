@@ -170,7 +170,10 @@ defmodule CritWeb.PageHTML do
       id="tab-brew"
       class="install-panel border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
     >
-      <div class="flex items-center bg-(--crit-code-bg)">
+      <div
+        class="flex items-center bg-(--crit-code-bg) cursor-pointer"
+        onclick="this.querySelector('.copy-btn').click()"
+      >
         <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>brew install crit</pre>
         <button
           class="copy-btn shrink-0 p-3 cursor-pointer text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors"

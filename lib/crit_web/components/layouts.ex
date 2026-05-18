@@ -184,9 +184,6 @@ defmodule CritWeb.Layouts do
           <.nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
             Self-Hosting
           </.nav_link>
-          <.nav_link href={~p"/changelog"} active={@current_page == :changelog}>
-            Changelog
-          </.nav_link>
           <a
             href="https://github.com/tomasz-tomczyk/crit"
             class="inline-flex items-center gap-1.5 h-[30px] px-2 rounded-md text-sm font-medium tracking-tight no-underline text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
@@ -353,9 +350,6 @@ defmodule CritWeb.Layouts do
           </.nav_mobile_link>
           <.nav_mobile_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
             Self-Hosting
-          </.nav_mobile_link>
-          <.nav_mobile_link href={~p"/changelog"} active={@current_page == :changelog}>
-            Changelog
           </.nav_mobile_link>
           <a
             href="https://github.com/tomasz-tomczyk/crit"
