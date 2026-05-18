@@ -137,6 +137,30 @@ defmodule CritWeb.PageHTML do
     end
   end
 
+  attr :id, :string, default: "install-section"
+
+  def install_section(assigns) do
+    ~H"""
+    <section id="install" class="py-16 max-sm:py-10">
+      <div class="max-w-[880px] mx-auto px-10 max-sm:px-4 w-full">
+        <div class="text-center mb-10 max-sm:mb-8">
+          <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
+            Install
+          </p>
+          <h2 class="text-5xl font-extrabold tracking-tight mb-4 max-sm:text-4xl">
+            Get it.
+          </h2>
+          <p class="text-lg text-(--crit-fg-secondary) max-sm:text-base">
+            Single binary. Local by default. No login.
+          </p>
+        </div>
+
+        <.install_widget id={@id} />
+      </div>
+    </section>
+    """
+  end
+
   attr :id, :string, default: "install"
 
   def install_widget(assigns) do
