@@ -1094,6 +1094,101 @@ defmodule CritWeb.Layouts do
 
   See <head> in root.html.heex which applies the theme before page load.
   """
+  @doc """
+  Global site footer with brand info, navigation columns, and colophon.
+  Used on all public marketing pages.
+  """
+  def site_footer(assigns) do
+    ~H"""
+    <footer class="border-t border-(--crit-border) py-14 mt-14">
+      <div class="max-w-7xl mx-auto px-8 max-sm:px-4">
+        <div class="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-8 max-md:grid-cols-2 max-sm:grid-cols-1">
+          <%!-- Brand --%>
+          <div>
+            <span class="text-lg font-extrabold tracking-tight">
+              Crit<span class="text-(--crit-brand)">.</span>
+            </span>
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3 mb-2">
+              A local-first review tool for the loop between you and your coding agent.
+            </p>
+            <p class="text-xs text-(--crit-fg-muted)">
+              MIT-licensed · single binary · zero telemetry
+            </p>
+          </div>
+
+          <%!-- Modes --%>
+          <div>
+            <h4 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+              Modes
+            </h4>
+            <div class="flex flex-col gap-2">
+              <a href="/modes/plans-docs" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                Plans & docs
+              </a>
+              <a href="/modes/code" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                Code
+              </a>
+              <a href="/modes/live" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                Live
+              </a>
+              <a href="/modes/preview" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                Preview
+              </a>
+            </div>
+          </div>
+
+          <%!-- Project --%>
+          <div>
+            <h4 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+              Project
+            </h4>
+            <div class="flex flex-col gap-2">
+              <a href="https://github.com/tomasz-tomczyk/crit" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                GitHub
+              </a>
+              <a href="https://github.com/tomasz-tomczyk/crit-web" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                crit-web
+              </a>
+              <a href="https://github.com/tomasz-tomczyk/crit/releases" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                Releases
+              </a>
+              <a href="https://github.com/tomasz-tomczyk/crit/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                Contributing
+              </a>
+            </div>
+          </div>
+
+          <%!-- Share --%>
+          <div>
+            <h4 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+              Share
+            </h4>
+            <div class="flex flex-col gap-2">
+              <a href="https://crit.live" target="_blank" rel="noopener" class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                crit.live (hosted)
+              </a>
+              <a href={~p"/self-hosting"} class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline">
+                Self-host
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Colophon --%>
+        <div class="border-t border-(--crit-border) mt-10 pt-6 flex items-center justify-between gap-4 text-sm text-(--crit-fg-muted) max-sm:flex-col max-sm:items-start max-sm:gap-2">
+          <span>© Tomasz Tomczyk · Built in the open.</span>
+          <span>Made for engineers who'd rather review than retype.</span>
+        </div>
+      </div>
+    </footer>
+    """
+  end
+
+  @doc """
+  Provides dark vs light theme toggle based on themes defined in app.css.
+
+  See <head> in root.html.heex which applies the theme before page load.
+  """
   def theme_toggle(assigns) do
     ~H"""
     <div
