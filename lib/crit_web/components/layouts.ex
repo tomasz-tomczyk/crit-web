@@ -1200,7 +1200,7 @@ defmodule CritWeb.Layouts do
             </h4>
             <div class="flex flex-col gap-2">
               <a
-                href="https://crit.live"
+                href="https://crit.md"
                 target="_blank"
                 rel="noopener"
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
