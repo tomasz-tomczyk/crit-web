@@ -267,23 +267,16 @@ document.addEventListener("click", e => {
   }
 })
 
-// Home page: YouTube lite facade — load iframe on click
-const ytFacade = document.getElementById("yt-facade")
-if (ytFacade) {
-  const activate = () => {
-    const iframe = document.createElement("iframe")
-    iframe.src = "https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1"
-    iframe.title = "Crit demo"
-    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    iframe.allowFullscreen = true
-    iframe.className = "absolute inset-0 w-full h-full"
-    iframe.style.border = "0"
-    ytFacade.replaceChildren(iframe)
-    ytFacade.classList.remove("cursor-pointer", "group")
+// Home page: close video modal on Escape
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("video-modal")
+    if (modal && !modal.hidden) {
+      modal.hidden = true
+      document.getElementById("video-iframe").src = ""
+    }
   }
-  ytFacade.addEventListener("click", activate)
-  ytFacade.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate() }})
-}
+})
 
 // Home page: testimonials scroll-triggered reveal.
 // Cards start at opacity-0/translate-y-4 (Tailwind) and the data-revealed

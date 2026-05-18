@@ -50,33 +50,62 @@
           Star on GitHub
         </a>
       </div>
+      <a
+        href="#"
+        onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
+        class="inline-flex items-center gap-2 mt-5 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+      >
+        ▶ Watch 2-min demo
+      </a>
     </div>
 
-    <div
-      class="relative w-full rounded-xl overflow-hidden border border-(--crit-border) cursor-pointer group"
-      style="aspect-ratio: 16/9;"
-      id="yt-facade"
-      aria-label="Play Crit demo video"
-      role="button"
-      tabindex="0"
-    >
+    <CritWeb.PageHTML.browser_chrome url="localhost:4923/review/notification-plan.md" tag="LOCAL">
       <img
-        src="/images/video-thumbnail@1x.webp"
-        srcset="/images/video-thumbnail@1x.webp 1x, /images/video-thumbnail@2x.webp 2x"
-        alt="Crit demo video thumbnail"
-        class="absolute inset-0 w-full h-full object-cover"
-        fetchpriority="high"
-        width="1280"
-        height="720"
+        src="/images/screenshots/ai-loop-dark@1x.png"
+        srcset="/images/screenshots/ai-loop-dark@1x.png 1x, /images/screenshots/ai-loop-dark@2x.png 2x"
+        alt="Crit reviewing a markdown plan with inline threaded comments"
+        class="logo-dark w-full"
+        loading="eager"
+        width="1200"
+        height="675"
       />
-      <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-        <svg viewBox="0 0 68 48" class="w-[68px] h-[48px] drop-shadow-lg" aria-hidden="true">
-          <path
-            d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
-            fill="#f00"
-          />
-          <path d="M45 24 27 14v20" fill="#fff" />
-        </svg>
+      <img
+        src="/images/screenshots/ai-loop-light@1x.png"
+        srcset="/images/screenshots/ai-loop-light@1x.png 1x, /images/screenshots/ai-loop-light@2x.png 2x"
+        alt="Crit reviewing a markdown plan with inline threaded comments"
+        class="logo-light w-full"
+        loading="eager"
+        width="1200"
+        height="675"
+      />
+    </CritWeb.PageHTML.browser_chrome>
+
+    <%!-- YouTube video modal --%>
+    <div
+      id="video-modal"
+      hidden
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      onclick="if(event.target===this){document.getElementById('video-modal').hidden=true;document.getElementById('video-iframe').src='';}"
+    >
+      <div class="relative w-full max-w-[960px] mx-4" style="aspect-ratio: 16/9;">
+        <iframe
+          id="video-iframe"
+          src=""
+          title="Crit demo"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          class="absolute inset-0 w-full h-full rounded-xl"
+          style="border: 0;"
+        >
+        </iframe>
+        <button
+          type="button"
+          onclick="document.getElementById('video-modal').hidden=true;document.getElementById('video-iframe').src='';"
+          class="absolute -top-10 right-0 text-white/70 hover:text-white text-2xl font-bold cursor-pointer"
+          aria-label="Close video"
+        >
+          ✕
+        </button>
       </div>
     </div>
   </section>
