@@ -137,6 +137,281 @@ defmodule CritWeb.PageController do
     }
   }
 
+  @modes_data %{
+    "plans-docs" => %{
+      label: "Plans & docs",
+      eyebrow: "Mode · plans & docs",
+      title: "Review the plan before the agent writes the code.",
+      lead:
+        "Pass crit a markdown file, a source file, a docs page — anything text. It renders in the browser with the same inline-comment surface you'd use on a GitHub PR.",
+      tags: [
+        "Markdown render",
+        "Syntax highlighting",
+        "Code-fence ranges",
+        "Mermaid diagrams",
+        "Per-branch isolation"
+      ],
+      steps: [
+        %{
+          h: "Agent writes a plan",
+          p:
+            "Tell your agent to draft a plan or spec. /crit runs Crit on the resulting file and waits for your review."
+        },
+        %{
+          h: "Crit renders it",
+          p:
+            "Markdown rendered. Code fences syntax-highlighted. Mermaid diagrams drawn inline. Tables, lists, headings — all real."
+        },
+        %{
+          h: "You comment",
+          p:
+            "Click a line number to comment. Drag to select a range. Insert a suggestion to show the agent the exact replacement you want."
+        },
+        %{
+          h: "Hit Finish",
+          p:
+            "Comments are bundled into a structured prompt. Your agent picks them up, edits the file, and Crit reloads with a round-to-round diff."
+        }
+      ],
+      features: [
+        %{
+          h: "Markdown that doesn't lie",
+          p:
+            "Headings, tables, lists, blockquotes — all rendered. No more reading raw markdown to figure out the structure."
+        },
+        %{
+          h: "Suggestions, not paragraphs",
+          p:
+            "Select lines → Insert suggestion. The comment pre-fills with the original text. Edit to show the agent the exact replacement."
+        },
+        %{
+          h: "Round-to-round diff",
+          p:
+            "When the agent edits the file, Crit shows a split or unified diff. Your previous comments stay attached to the right lines so you can verify they were addressed."
+        },
+        %{
+          h: "Multiple files at once",
+          p:
+            "crit plan.md api-spec.md opens both in a single review. File tree on the left, comments per file, single Finish at the end."
+        },
+        %{
+          h: "Mermaid diagrams render",
+          p:
+            "Architecture diagrams in mermaid blocks draw inline. Comment on the diagram source like any other block."
+        },
+        %{
+          h: "Per-branch review state",
+          p:
+            "Switch git branches and Crit picks up where you left off on that branch. Review state lives outside your repo."
+        }
+      ]
+    },
+    "code" => %{
+      label: "Code",
+      eyebrow: "Mode · code",
+      title: "Review the diff before you merge.",
+      lead:
+        "Point crit at a branch or PR. It auto-detects changed files, renders diffs with syntax highlighting, and lets you comment on any line — just like a PR review, but local and instant.",
+      tags: [
+        "Split / unified diff",
+        "File tree",
+        "Comment counts",
+        "Round-to-round diff",
+        "PR sync"
+      ],
+      steps: [
+        %{
+          h: "Agent makes changes",
+          p:
+            "Your agent edits files across a branch. Run crit (no args) or crit --pr <number> to review."
+        },
+        %{
+          h: "Crit shows the diff",
+          p:
+            "Changed files in a tree with status badges and comment counts. Split or unified view. Colored additions and deletions."
+        },
+        %{
+          h: "You comment on lines",
+          p:
+            "Same inline commenting as file mode — click, drag, type. Comments attach to specific diff lines."
+        },
+        %{
+          h: "Hit Finish",
+          p:
+            "Structured feedback goes to the agent. It makes edits, and Crit shows what changed between rounds."
+        }
+      ],
+      features: [
+        %{
+          h: "Auto file detection",
+          p:
+            "No arguments needed — crit detects changed files from your branch's diff against the base."
+        },
+        %{
+          h: "Split and unified views",
+          p:
+            "Toggle between side-by-side and inline diff with one click. Preference persists across rounds."
+        },
+        %{
+          h: "Round-to-round diff",
+          p:
+            "See exactly what your agent changed between review rounds. Previous comments stay visible on the updated lines."
+        },
+        %{
+          h: "PR sync",
+          p:
+            "crit push sends local comments to a GitHub PR. crit pull fetches PR comments back. Review locally, sync when ready."
+        },
+        %{
+          h: "File tree with status",
+          p:
+            "Added, modified, deleted — color-coded badges. Comment counts per file so you know what's been reviewed."
+        },
+        %{
+          h: "Expandable context",
+          p:
+            "Collapsed unchanged lines expand on click. See the full file without leaving the diff view."
+        }
+      ]
+    },
+    "live" => %{
+      label: "Live",
+      eyebrow: "Mode · live",
+      title: "Review the running app, not a screenshot.",
+      lead:
+        "Crit reverse-proxies your dev server into an iframe. Click any DOM element to pin a comment to it. Your agent reads the feedback and iterates — the page reloads live.",
+      tags: [
+        "Click-to-pin DOM",
+        "Drift detection",
+        "Selector anchoring",
+        "Live reload",
+        "Round comparisons"
+      ],
+      steps: [
+        %{
+          h: "Agent builds a page",
+          p:
+            "Your agent writes frontend code and starts a dev server. /crit launches crit in live mode pointed at localhost."
+        },
+        %{
+          h: "Crit proxies the page",
+          p:
+            "Your running app appears inside Crit's review surface. It's the real page — interactive, scrollable, live."
+        },
+        %{
+          h: "You click elements to comment",
+          p:
+            "Click any DOM element to pin a comment. Crit anchors it by CSS selector so it survives minor layout changes."
+        },
+        %{
+          h: "Hit Finish",
+          p:
+            "The agent gets element-specific feedback. It edits the code, the dev server reloads, and you review the updated page."
+        }
+      ],
+      features: [
+        %{
+          h: "Click-to-pin DOM",
+          p:
+            "Click any element in the page to start a comment. Crit highlights the element and generates a stable CSS selector as the anchor."
+        },
+        %{
+          h: "Drift detection",
+          p:
+            "If the agent's changes move or remove a pinned element, Crit marks the comment as drifted so you know to re-check it."
+        },
+        %{
+          h: "Selector anchoring",
+          p:
+            "Comments are anchored by CSS selector, not coordinates. Minor layout shifts don't break your feedback."
+        },
+        %{
+          h: "Round comparisons",
+          p:
+            "See how the page changed between rounds. Previous comments stay attached to their elements across reloads."
+        },
+        %{
+          h: "Works with any dev server",
+          p:
+            "Vite, Next.js, Phoenix, Rails — anything serving HTTP on localhost. Crit proxies it transparently."
+        },
+        %{
+          h: "No browser extension needed",
+          p:
+            "Pure reverse proxy approach. No extension to install, no injected scripts that break your app."
+        }
+      ]
+    },
+    "preview" => %{
+      label: "Preview",
+      eyebrow: "Mode · preview",
+      title: "Review the artifact before it ships.",
+      lead:
+        "For static HTML files agents produce — landing pages, dashboards, mockups, email templates. Same pin-to-element commenting as live mode, no dev server required.",
+      tags: [
+        "Static HTML iframe",
+        "Asset siblings served",
+        "Pin to elements",
+        "No dev server",
+        "Round comparisons"
+      ],
+      steps: [
+        %{
+          h: "Agent generates HTML",
+          p:
+            "Your agent produces an HTML file — a landing page, a dashboard, a mockup. /crit opens it in preview mode."
+        },
+        %{
+          h: "Crit renders the file",
+          p:
+            "The HTML renders in an iframe with sibling assets (CSS, images, JS) served from the same directory."
+        },
+        %{
+          h: "You click elements to comment",
+          p:
+            "Same pin-to-element interaction as live mode. Click an element, leave a comment, move on."
+        },
+        %{
+          h: "Hit Finish",
+          p:
+            "The agent gets the feedback, regenerates the file, and Crit reloads with the updated preview."
+        }
+      ],
+      features: [
+        %{
+          h: "Static HTML iframe",
+          p:
+            "The HTML file renders in a sandboxed iframe. No server needed — crit serves the file and its siblings directly."
+        },
+        %{
+          h: "Asset siblings served",
+          p:
+            "CSS, images, and JS files in the same directory are served alongside the HTML. Your preview looks exactly as intended."
+        },
+        %{
+          h: "Pin to elements",
+          p:
+            "Click any DOM element to anchor a comment. Same selector-based anchoring as live mode."
+        },
+        %{
+          h: "No dev server needed",
+          p:
+            "Unlike live mode, preview works on static files. No build step, no server startup, no dependencies."
+        },
+        %{
+          h: "Round comparisons",
+          p:
+            "When the agent regenerates the HTML, see exactly what changed. Comments persist across rounds."
+        },
+        %{
+          h: "Works with any HTML artifact",
+          p:
+            "Landing pages, email templates, generated dashboards, design mockups — any self-contained HTML."
+        }
+      ]
+    }
+  }
+
   @feature_order ~w(inline-comments split-unified-diff ai-review-loop vim-keybindings share-reviews syntax-highlighting mermaid-diagrams)
 
   @faq [
@@ -372,6 +647,24 @@ defmodule CritWeb.PageController do
     )
   end
 
+  def mode(conn, %{"mode" => slug}) do
+    case Map.fetch(@modes_data, slug) do
+      {:ok, mode} ->
+        render(conn, :mode,
+          mode: mode,
+          canonical_url: canonical_url(conn),
+          page_title: "#{mode.label} Mode - Crit",
+          meta_description: mode.lead
+        )
+
+      :error ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(CritWeb.ErrorHTML)
+        |> render(:"404")
+    end
+  end
+
   def changelog(conn, _params) do
     releases = Crit.Changelog.list_releases()
     cli_releases = Enum.filter(releases, &(&1.source == :cli))
@@ -414,6 +707,10 @@ defmodule CritWeb.PageController do
     {"/integrations/windsurf", "monthly", "0.8"},
     {"/integrations/cline", "monthly", "0.8"},
     {"/integrations/aider", "monthly", "0.8"},
+    {"/modes/plans-docs", "monthly", "0.8"},
+    {"/modes/code", "monthly", "0.8"},
+    {"/modes/live", "monthly", "0.8"},
+    {"/modes/preview", "monthly", "0.8"},
     {"/getting-started", "monthly", "0.9"},
     {"/self-hosting", "monthly", "0.7"},
     {"/changelog", "daily", "0.7"},

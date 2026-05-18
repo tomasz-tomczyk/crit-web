@@ -1,0 +1,74 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.site_header current_scope={@current_scope} />
+
+  <%!-- Hero --%>
+  <section class="max-w-7xl mx-auto w-full px-10 pt-20 pb-16 max-sm:px-4 max-sm:pt-12">
+    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-4">
+      {@mode.eyebrow}
+    </p>
+    <h1 class="text-5xl font-extrabold leading-tight tracking-tight mb-5 max-lg:text-4xl max-sm:text-3xl text-balance">
+      {@mode.title}
+    </h1>
+    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px] mb-8 max-sm:text-base">
+      {@mode.lead}
+    </p>
+    <div class="flex flex-wrap gap-2 mb-12">
+      <span
+        :for={tag <- @mode.tags}
+        class="inline-flex items-center gap-1.5 px-3 py-1 bg-(--crit-bg-elevated) border border-(--crit-border) rounded-full text-xs text-(--crit-fg-secondary)"
+      >
+        {tag}
+      </span>
+    </div>
+    <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{@mode.label}"}>
+      <CritWeb.PageHTML.browser_chrome_placeholder label={@mode.label} />
+    </CritWeb.PageHTML.browser_chrome>
+  </section>
+
+  <%!-- The loop steps --%>
+  <section class="max-w-7xl mx-auto w-full px-10 py-20 max-sm:px-4 max-sm:py-12">
+    <h2 class="text-3xl font-extrabold tracking-tight mb-12 max-sm:text-2xl">
+      The loop.
+    </h2>
+    <div class="grid grid-cols-4 gap-6 max-md:grid-cols-2 max-sm:grid-cols-1">
+      <div :for={{step, idx} <- Enum.with_index(@mode.steps)} class="flex flex-col gap-3">
+        <div class="font-mono text-xs tracking-widest uppercase text-(--crit-brand)">
+          Step {String.pad_leading(Integer.to_string(idx + 1), 2, "0")}
+        </div>
+        <h3 class="text-lg font-bold tracking-tight">{step.h}</h3>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">{step.p}</p>
+      </div>
+    </div>
+  </section>
+
+  <%!-- Features --%>
+  <section class="max-w-7xl mx-auto w-full px-10 py-20 max-sm:px-4 max-sm:py-12">
+    <h2 class="text-3xl font-extrabold tracking-tight mb-12 max-sm:text-2xl">
+      Built for the loop.
+    </h2>
+    <div class="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+      <div
+        :for={feature <- @mode.features}
+        class="border border-(--crit-border) bg-(--crit-bg-card) rounded-lg p-6 flex flex-col gap-2"
+      >
+        <h3 class="text-base font-semibold tracking-tight">{feature.h}</h3>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">{feature.p}</p>
+      </div>
+    </div>
+  </section>
+
+  <%!-- Install CTA --%>
+  <section class="max-w-3xl mx-auto w-full px-10 py-20 text-center max-sm:px-4 max-sm:py-12">
+    <h2 class="text-3xl font-extrabold tracking-tight mb-4 max-sm:text-2xl">
+      Try it now.
+    </h2>
+    <p class="text-lg text-(--crit-fg-secondary) mb-8">
+      Single binary. Local by default. No login.
+    </p>
+    <div class="max-w-md mx-auto">
+      <CritWeb.PageHTML.install_widget />
+    </div>
+  </section>
+</div>
