@@ -1104,11 +1104,8 @@ defmodule CritWeb.Layouts do
             <span class="text-lg font-extrabold tracking-tight">
               Crit<span class="text-(--crit-brand)">.</span>
             </span>
-            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3 mb-2">
+            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3">
               A local-first review tool for the loop between you and your coding agent.
-            </p>
-            <p class="text-xs text-(--crit-fg-muted)">
-              MIT-licensed · single binary · zero telemetry
             </p>
           </div>
 
@@ -1120,25 +1117,25 @@ defmodule CritWeb.Layouts do
             <div class="flex flex-col gap-2">
               <a
                 href="/modes/plans-docs"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
                 Plans & docs
               </a>
               <a
                 href="/modes/code"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
                 Code
               </a>
               <a
                 href="/modes/live"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
                 Live
               </a>
               <a
                 href="/modes/preview"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
                 Preview
               </a>
@@ -1155,33 +1152,37 @@ defmodule CritWeb.Layouts do
                 href="https://github.com/tomasz-tomczyk/crit"
                 target="_blank"
                 rel="noopener"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="inline-flex items-center gap-1.5 text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
-                GitHub
+                <svg viewBox="0 0 16 16" class="size-3.5 fill-current shrink-0" aria-hidden="true">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                crit (local CLI)
               </a>
               <a
                 href="https://github.com/tomasz-tomczyk/crit-web"
                 target="_blank"
                 rel="noopener"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="inline-flex items-center gap-1.5 text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
-                crit-web
+                <svg viewBox="0 0 16 16" class="size-3.5 fill-current shrink-0" aria-hidden="true">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                crit-web (optional server)
               </a>
               <a
                 href="https://github.com/tomasz-tomczyk/crit/releases"
                 target="_blank"
                 rel="noopener"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
                 Releases
               </a>
               <a
-                href="https://github.com/tomasz-tomczyk/crit/blob/main/CONTRIBUTING.md"
-                target="_blank"
-                rel="noopener"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                href={~p"/changelog"}
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
-                Contributing
+                Changelog
               </a>
             </div>
           </div>
@@ -1196,13 +1197,13 @@ defmodule CritWeb.Layouts do
                 href="https://crit.live"
                 target="_blank"
                 rel="noopener"
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
-                crit.live (hosted)
+                Sign in
               </a>
               <a
                 href={~p"/self-hosting"}
-                class="text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) no-underline"
+                class="text-sm text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
               >
                 Self-host
               </a>
@@ -1212,8 +1213,18 @@ defmodule CritWeb.Layouts do
 
         <%!-- Colophon --%>
         <div class="border-t border-(--crit-border) mt-10 pt-6 flex items-center justify-between gap-4 text-sm text-(--crit-fg-muted) max-sm:flex-col max-sm:items-start max-sm:gap-2">
-          <span>© Tomasz Tomczyk · Built in the open.</span>
-          <span>Made for engineers who'd rather review than retype.</span>
+          <span>
+            Created by
+            <a
+              href="https://github.com/tomasz-tomczyk"
+              target="_blank"
+              rel="noopener"
+              class="text-(--crit-brand) hover:text-(--crit-brand-hover) no-underline"
+            >
+              Tomasz Tomczyk
+            </a>
+          </span>
+          <span>MIT-licensed · single binary · zero telemetry</span>
         </div>
       </div>
     </footer>

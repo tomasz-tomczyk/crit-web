@@ -23,12 +23,7 @@ defmodule CritWeb.PageHTML do
       cmd: "branch / pr changes",
       blurb:
         "Auto-detects changed files in your repo. Split or unified diff, file tree with status & comment counts.",
-      bullets: [
-        "Auto file detection",
-        "Split / unified",
-        "Round-to-round diff",
-        "PR sync (push/pull)"
-      ]
+      bullets: ["Syntax highlighting", "Stacked PRs", "Git, jj, sapling"]
     },
     %{
       slug: "live",
@@ -36,7 +31,7 @@ defmodule CritWeb.PageHTML do
       cmd: "running app / dev server",
       blurb:
         "Reverse-proxies your dev server into an iframe. Click any DOM element to pin a comment to it. Selectors survive minor drift.",
-      bullets: ["Click-to-pin DOM", "Drift detection", "Threading", "Round comparisons"]
+      bullets: ["Comment on DOM", "Automatic reload", "Interactive browser"]
     },
     %{
       slug: "preview",
@@ -62,7 +57,7 @@ defmodule CritWeb.PageHTML do
   def browser_chrome(assigns) do
     ~H"""
     <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-xl overflow-hidden shadow-lg relative">
-      <div class="flex items-center px-4 py-3 bg-(--crit-bg-card) border-b border-(--crit-border)">
+      <div class="flex items-center px-4 py-3 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
         <div class="flex gap-2">
           <span class="w-3 h-3 rounded-full" style="background: #f7768e;"></span>
           <span class="w-3 h-3 rounded-full" style="background: #e0af68;"></span>

@@ -26,7 +26,7 @@ defmodule CritWeb.PageControllerTest do
     html = html_response(conn, 200)
     assert html =~ "Whatever your agent produces"
     assert html =~ "Works with any agent"
-    assert html =~ "The honest version"
+    assert html =~ "Frequently asked questions"
   end
 
   describe "GET /integrations" do

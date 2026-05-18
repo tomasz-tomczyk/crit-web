@@ -21,24 +21,22 @@
         Review plans before your agent writes code. Review code before you ship it.
         Leave comments, click Finish Review, and your agent acts on the feedback automatically. Repeat as needed. Local by default.
       </p>
-      <div class="flex gap-3 flex-wrap max-sm:grid max-sm:grid-cols-2">
-        <a
-          href={~p"/getting-started"}
-          class="inline-flex items-center justify-center px-7 py-3 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-brand-cta-hover) transition-all"
-        >
-          Get started
-        </a>
-        <%= if @demo_token do %>
-          <a
-            href={~p"/r/#{@demo_token}"}
-            class="inline-flex items-center justify-center px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-all"
+      <div class="flex gap-3 flex-wrap items-center">
+        <div class="inline-flex items-center gap-3 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) px-4 py-2.5 font-mono text-sm">
+          <span class="text-(--crit-fg-muted) select-none">$</span>
+          <span class="text-(--crit-fg-primary)">brew install crit</span>
+          <button
+            class="copy-btn text-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-colors cursor-pointer bg-transparent border-none p-0"
+            aria-label="Copy to clipboard"
+            data-copy="brew install crit"
           >
-            See demo
-          </a>
-        <% end %>
+            <.icon name="hero-clipboard" class="size-4 icon-default" />
+            <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+          </button>
+        </div>
         <a
           href="https://github.com/tomasz-tomczyk/crit"
-          class="group/star inline-flex items-center justify-center gap-2 px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all max-sm:col-span-2"
+          class="group/star inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all"
         >
           <svg
             viewBox="0 0 16 16"
@@ -49,14 +47,23 @@
           </svg>
           Star on GitHub
         </a>
+        <a
+          href="#"
+          onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
+          class="inline-flex items-center gap-2 ml-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+        >
+          ▶ Watch 2-min video
+        </a>
+        <%= if @demo_token do %>
+          <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+          <a
+            href={~p"/r/#{@demo_token}"}
+            class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
+          >
+            See demo
+          </a>
+        <% end %>
       </div>
-      <a
-        href="#"
-        onclick="document.getElementById('video-modal').hidden=false;document.getElementById('video-iframe').src='https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0';return false;"
-        class="inline-flex items-center gap-2 mt-5 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
-      >
-        ▶ Watch 2-min demo
-      </a>
     </div>
 
     <CritWeb.PageHTML.browser_chrome url="localhost:4923/review/notification-plan.md" tag="LOCAL">
@@ -111,7 +118,7 @@
   </section>
 
   <%!-- ===== Four Modes ===== --%>
-  <section id="modes" class="py-24 max-sm:py-14">
+  <section id="modes" class="py-16 max-sm:py-10">
     <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
       <div class="max-w-2xl mb-16 max-sm:mb-10">
         <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
@@ -159,23 +166,20 @@
   </section>
 
   <%!-- ===== Integrations ===== --%>
-  <section id="integrations" class="py-24 max-sm:py-14">
+  <section id="integrations" class="py-16 max-sm:py-10">
     <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
       <div class="max-w-2xl mb-12 max-sm:mb-8">
-        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
-          Works with any agent
-        </p>
         <h2 class="text-4xl font-extrabold tracking-tight mb-4 max-sm:text-3xl text-balance">
-          One <code class="font-mono text-(--crit-brand)">/crit</code> slash-command. Ten+ integrations.
+          One command to remember. Works with any agent.
         </h2>
-        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-sm:text-base">
-          Drop-in plugin configs for the agents you already use. One install command, then your agent knows how to launch reviews and listen for feedback.
-        </p>
       </div>
 
       <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 mb-8">
         <a
-          :for={id <- ~w(claude-code cursor github-copilot opencode codex gemini qwen windsurf cline grok pi)}
+          :for={
+            id <-
+              ~w(claude-code cursor github-copilot opencode codex gemini qwen windsurf cline grok pi)
+          }
           href={"/integrations/#{id}"}
           class="flex items-center gap-3 px-4 py-3 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg no-underline hover:border-(--crit-fg-muted) hover:bg-(--crit-bg-elevated) transition-all group"
         >
@@ -192,7 +196,11 @@
             loading="lazy"
           />
           <span class="text-sm font-medium text-(--crit-fg-primary) flex-1">
-            {id |> String.replace("-", " ") |> String.split() |> Enum.map(&String.capitalize/1) |> Enum.join(" ")}
+            {id
+            |> String.replace("-", " ")
+            |> String.split()
+            |> Enum.map(&String.capitalize/1)
+            |> Enum.join(" ")}
           </span>
           <svg
             viewBox="0 0 20 20"
@@ -209,14 +217,15 @@
         </a>
       </div>
 
-      <p class="text-sm text-(--crit-fg-muted)">
-        Don't see your agent? Anything that can read a file and execute a shell command can drive crit.
-      </p>
+      <div class="mt-10">
+        <h3 class="text-lg font-bold tracking-tight mb-4">Connect your agent</h3>
+        <CritWeb.PageHTML.agent_setup_widget />
+      </div>
     </div>
   </section>
 
   <%!-- ===== Testimonials ===== --%>
-  <section id="testimonials" class="py-24 max-sm:py-14">
+  <section id="testimonials" class="py-16 max-sm:py-10">
     <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
       <div class="max-w-2xl mb-12 max-sm:mb-8">
         <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
@@ -228,11 +237,7 @@
       </div>
 
       <div class="grid grid-cols-2 gap-8 max-sm:grid-cols-1 max-sm:gap-6">
-        <div
-          :for={testimonial <- @testimonials}
-          data-reveal
-          class="opacity-0 translate-y-4 transition-[opacity,transform] duration-500 ease-out data-[revealed]:opacity-100 data-[revealed]:translate-y-0"
-        >
+        <div :for={testimonial <- @testimonials}>
           <p class="text-lg font-semibold leading-snug text-(--crit-fg-primary) mb-4">
             {testimonial.highlight}
           </p>
@@ -271,22 +276,19 @@
   </section>
 
   <%!-- ===== FAQ ===== --%>
-  <section id="faq" class="py-24 max-sm:py-14">
+  <section id="faq" class="py-16 max-sm:py-10">
     <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
       <div class="max-w-2xl mb-12 max-sm:mb-8">
-        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
-          FAQ
-        </p>
-        <h2 class="text-4xl font-extrabold tracking-tight mb-4 max-sm:text-3xl text-balance">
-          The honest version of "why crit".
+        <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
+          Frequently asked questions
         </h2>
-        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed max-sm:text-base">
-          The questions people actually ask. Plain answers.
-        </p>
       </div>
 
       <div class="grid grid-cols-2 gap-8 max-md:grid-cols-1 max-md:gap-6">
-        <div :for={item <- @faq} class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6">
+        <div
+          :for={item <- @faq}
+          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6"
+        >
           <h3 class="text-base font-bold tracking-tight mb-3 text-(--crit-fg-primary)">
             {item.q}
           </h3>
@@ -299,7 +301,7 @@
   </section>
 
   <%!-- ===== Install ===== --%>
-  <section id="install" class="py-24 max-sm:py-14">
+  <section id="install" class="py-16 max-sm:py-10">
     <div class="max-w-[880px] mx-auto px-10 max-sm:px-4 w-full">
       <div class="text-center mb-10 max-sm:mb-8">
         <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
@@ -314,16 +316,6 @@
       </div>
 
       <CritWeb.PageHTML.install_widget />
-
-      <p class="text-sm text-(--crit-fg-muted) text-center mt-6">
-        Or grab a pre-built binary from
-        <a
-          href="https://github.com/tomasz-tomczyk/crit/releases"
-          class="crit-link"
-        >
-          GitHub Releases
-        </a>.
-      </p>
     </div>
   </section>
 
