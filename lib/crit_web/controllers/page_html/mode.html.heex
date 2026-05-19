@@ -29,7 +29,11 @@
           loop
           muted
           playsinline
-          class="w-full"
+          controls
+          width="1920"
+          height="1080"
+          class="w-full h-auto"
+          poster={@mode[:poster]}
           src={@mode.video}
         >
         </video>

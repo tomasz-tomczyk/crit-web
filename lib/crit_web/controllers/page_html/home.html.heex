@@ -67,7 +67,10 @@
         loop
         muted
         playsinline
-        class="w-full"
+        controls
+        width="1920"
+        height="1080"
+        class="w-full h-auto"
         poster="https://assets.crit.md/crit-demo-poster.png"
         src="https://assets.crit.md/crit-demo.mp4"
       >
@@ -160,7 +163,10 @@
                   muted
                   playsinline
                   preload="none"
-                  class="w-full"
+                  width="1920"
+                  height="1080"
+                  class="w-full h-auto"
+                  poster={mode[:poster]}
                   data-lazy-src={mode.video}
                 >
                 </video>

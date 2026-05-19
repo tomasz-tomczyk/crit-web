@@ -16,6 +16,7 @@ defmodule CritWeb.PageHTML do
       cmd: "files / markdown",
       screenshot: "plan",
       video: "https://assets.crit.md/plan-mode.mp4",
+      poster: "https://assets.crit.md/plan-mode-poster.webp",
       blurb:
         "Your agent drafted a 300-line plan. In the terminal it's a wall of markdown. Crit renders it in the browser — comment on the section that's wrong, not the whole document.",
       bullets: ["Markdown render", "Per-line comments", "Diff every round"]
@@ -27,6 +28,7 @@ defmodule CritWeb.PageHTML do
       cmd: "branch / pr changes",
       screenshot: "diff",
       video: "https://assets.crit.md/diff-mode.mp4",
+      poster: "https://assets.crit.md/diff-mode-poster.webp",
       blurb:
         "Your agent touched 14 files across your branch. Crit auto-detects the changes, shows syntax-highlighted diffs, and lets you comment on any line — like a PR review, but instant and local.",
       bullets: ["Syntax highlighting", "Stacked PRs", "Git, jj, sapling"]
@@ -38,6 +40,7 @@ defmodule CritWeb.PageHTML do
       cmd: "running app / dev server",
       screenshot: "live",
       video: "https://assets.crit.md/live-mode.mp4",
+      poster: "https://assets.crit.md/live-mode-poster.webp",
       blurb:
         "Your agent built a frontend and it's running on localhost. Crit proxies the page into a review surface — click the button that's misaligned, pin a comment to it.",
       bullets: ["Comment on DOM", "Automatic reload", "Interactive browser"]
@@ -49,6 +52,7 @@ defmodule CritWeb.PageHTML do
       cmd: "static html artifact",
       screenshot: "preview",
       video: "https://assets.crit.md/preview-mode.mp4",
+      poster: "https://assets.crit.md/preview-mode-poster.webp",
       blurb:
         "Your agent generated a landing page as a static HTML file. Crit renders it in an iframe so you can click elements and comment.",
       bullets: [

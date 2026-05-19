@@ -393,11 +393,26 @@ if (process.env.NODE_ENV === "development") {
   })
 }
 
-document.querySelectorAll("video[data-lazy-src]").forEach(video => {
-  new IntersectionObserver(([entry], obs) => {
-    if (!entry.isIntersecting) return
-    video.src = video.dataset.lazySrc
-    obs.disconnect()
-  }, {rootMargin: "200px"}).observe(video)
-})
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+// Lazily load decorative videos as they scroll into view. Skipped under
+// reduced-motion — the poster stays visible and nothing autoplays.
+if (!prefersReducedMotion) {
+  document.querySelectorAll("video[data-lazy-src]").forEach(video => {
+    new IntersectionObserver(([entry], obs) => {
+      if (!entry.isIntersecting) return
+      video.src = video.dataset.lazySrc
+      obs.disconnect()
+    }, {rootMargin: "200px"}).observe(video)
+  })
+}
+
+// Under reduced-motion, pause autoplaying videos so only the poster shows.
+// The hero keeps its `controls`, so users can still play it on demand.
+if (prefersReducedMotion) {
+  document.querySelectorAll("video[autoplay]").forEach(video => {
+    video.removeAttribute("autoplay")
+    video.pause()
+  })
+}
 

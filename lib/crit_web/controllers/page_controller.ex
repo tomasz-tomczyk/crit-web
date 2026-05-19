@@ -142,6 +142,7 @@ defmodule CritWeb.PageController do
       label: "Plans & docs",
       screenshot: "plan",
       video: "https://assets.crit.md/plan-mode.mp4",
+      poster: "https://assets.crit.md/plan-mode-poster.webp",
       eyebrow: "Mode · plans & docs",
       title: "Review the plan before the agent writes the code.",
       lead:
@@ -212,6 +213,7 @@ defmodule CritWeb.PageController do
       label: "Code",
       screenshot: "diff",
       video: "https://assets.crit.md/diff-mode.mp4",
+      poster: "https://assets.crit.md/diff-mode-poster.webp",
       eyebrow: "Mode · code",
       title: "Review the diff before you merge.",
       lead:
@@ -281,6 +283,7 @@ defmodule CritWeb.PageController do
       label: "Live",
       screenshot: "live",
       video: "https://assets.crit.md/live-mode.mp4",
+      poster: "https://assets.crit.md/live-mode-poster.webp",
       eyebrow: "Mode · live",
       title: "Review the running app, not a screenshot.",
       lead:
@@ -339,6 +342,7 @@ defmodule CritWeb.PageController do
       label: "Preview",
       screenshot: "preview",
       video: "https://assets.crit.md/preview-mode.mp4",
+      poster: "https://assets.crit.md/preview-mode-poster.webp",
       eyebrow: "Mode · preview",
       title: "Review the HTML your agent generated.",
       lead:
