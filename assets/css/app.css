@@ -932,12 +932,27 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   overflow-wrap: break-word;
 }
 .line-content h1,.line-content h2,.line-content h3,.line-content h4,.line-content h5,.line-content h6 {
-  color: var(--crit-editor-fg); font-weight: 600; line-height: 1.3; margin-top: 8px;
+  color: var(--crit-editor-fg); font-weight: 600; line-height: 1.3; margin-top: 8px; position: relative;
 }
 .line-content h1 { font-size: 1.8rem; padding-bottom: 8px; border-bottom: 1px solid var(--crit-border); margin-bottom: 4px; }
 .line-content h2 { font-size: 1.45rem; padding-bottom: 6px; border-bottom: 1px solid var(--crit-border); margin-bottom: 4px; }
 .line-content h3 { font-size: 1.2rem; }
 .line-content h4 { font-size: 1.05rem; }
+.line-content .heading-anchor {
+  opacity: 0; margin-left: 6px;
+  color: var(--crit-editor-fg-secondary); text-decoration: none;
+  border: none !important; border-bottom: none !important;
+  transition: opacity 0.15s;
+}
+.line-content .heading-anchor:hover { color: var(--crit-brand); }
+.line-content h1:hover .heading-anchor,
+.line-content h2:hover .heading-anchor,
+.line-content h3:hover .heading-anchor,
+.line-content h4:hover .heading-anchor,
+.line-content h5:hover .heading-anchor,
+.line-content h6:hover .heading-anchor { opacity: 1; }
+.heading-anchor-icon { display: inline-block; fill: currentColor; }
+.heading-anchor-copied { opacity: 1; color: var(--crit-green); }
 .line-content p { margin: 4px 0; }
 .line-content a { color: var(--crit-brand); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
 .line-content a:hover { border-bottom-color: var(--crit-brand); }
