@@ -3696,6 +3696,13 @@ body.sidebar-resizing * {
   .comments-panel { display: none !important; }
   .crit-diff-mode-toggle { display: none !important; }
 
+  /* Compact review meta: hide less-essential items to save vertical space */
+  .crit-review-meta-inner { padding: 8px 14px; }
+  .crit-vis-badge,
+  .crit-vis-status,
+  .crit-delete-btn,
+  .crit-round-diff-btn { display: none; }
+
   /* Chrome on mobile computes viewport width from getBoundingClientRect() of
      all descendants, including those inside overflow:clip containers. A
      wrapping inline <span> (e.g. hljs-string) has a bounding rect that is
@@ -3746,7 +3753,6 @@ body.sidebar-resizing * {
     position: sticky;
     top: var(--crit-header-height);
     z-index: 90;
-    border-top: 1px solid var(--crit-border);
   }
   .mobile-file-picker-label {
     font-size: 12px;
