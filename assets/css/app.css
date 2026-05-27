@@ -3687,6 +3687,9 @@ body.sidebar-resizing * {
 
 /* ===== Mobile / Touch ===== */
 
+/* Hidden on desktop; shown only inside the 768px breakpoint below */
+.mobile-file-picker-bar { display: none; }
+
 @media (max-width: 768px) {
   .tree-panel { display: none !important; }
   .sidebar-resize-handle { display: none !important; }
@@ -3712,18 +3715,17 @@ body.sidebar-resizing * {
   .diff-comment-block { padding-left: 0 !important; width: 100% !important; }
 
   /* Mobile file picker */
-  .mobile-file-picker-bar {
+  .mobile-file-picker-bar:not(.mobile-file-picker-hidden) {
     display: flex;
-    position: sticky;
-    top: 0;
-    z-index: 100;
     align-items: center;
     gap: 8px;
-    padding: 6px 12px;
+    padding: 8px 14px;
     background: var(--crit-bg);
     border-bottom: 1px solid var(--crit-border);
+    position: sticky;
+    top: var(--crit-header-height, 53px);
+    z-index: 90;
   }
-  .mobile-file-picker-hidden { display: none !important; }
   .mobile-file-picker-label {
     font-size: 13px;
     font-weight: 600;
