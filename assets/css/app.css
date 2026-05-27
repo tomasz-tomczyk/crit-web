@@ -876,9 +876,11 @@ body.visual-mode .line-block.focused {
   align-items: flex-start;
   justify-content: flex-end;
 }
-.line-gutter:hover .line-add { display: flex; }
+@media (pointer: fine) {
+  .line-gutter:hover .line-add { display: flex; }
+  body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; }
+}
 body.dragging { user-select: none; cursor: grabbing; }
-body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; }
 /* Document-path comment gutter: overlay column between line numbers and content */
 .line-gutter > .line-comment-gutter {
   position: absolute;
@@ -1447,9 +1449,11 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
 .line-comment-gutter.diff-no-comment {
   cursor: default;
 }
-.line-comment-gutter.diff-no-comment:hover .line-add {
-  opacity: 0;
-  pointer-events: none;
+@media (pointer: fine) {
+  .line-comment-gutter.diff-no-comment:hover .line-add {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 .diff-view .line-block.diff-added .line-content {
   background: var(--crit-diff-add-bg);
@@ -2599,11 +2603,21 @@ body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; 
   font-weight: 500;
   color: var(--crit-editor-fg);
   flex: 1;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
-.file-header-name .dir { color: var(--crit-editor-fg-muted); }
+.file-header-name .dir { color: var(--crit-editor-fg-muted); flex-shrink: 2; }
+.file-header-name .filename { flex-shrink: 1; }
+.file-header-name .dir,
+.file-header-name .filename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
 
 .file-header-badge {
   font-size: 10px;
