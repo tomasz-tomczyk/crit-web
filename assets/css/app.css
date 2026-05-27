@@ -3749,3 +3749,47 @@ body.sidebar-resizing * {
   }
 }
 
+@media (pointer: coarse) {
+  .reply-actions {
+    opacity: 1;
+  }
+
+  .comment-nav-btn {
+    padding: 12px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .comment-count-btn {
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .file-comment-btn {
+    padding: 12px 10px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .reply-actions button {
+    padding: 10px 8px;
+    min-height: 44px;
+  }
+  .crit-toc-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .comment-form textarea,
+  .reply-input {
+    font-size: 16px;
+  }
+
+  .file-header-copy-path {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px;
+  }
+}
+
