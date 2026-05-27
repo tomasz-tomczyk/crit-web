@@ -3746,6 +3746,7 @@ body.sidebar-resizing * {
     position: sticky;
     top: var(--crit-header-height);
     z-index: 90;
+    border-top: 1px solid var(--crit-border);
   }
   .mobile-file-picker-label {
     font-size: 12px;

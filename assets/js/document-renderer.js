@@ -1513,11 +1513,12 @@ function renderMobileFilePicker(ctx) {
   }
   bar.classList.remove('mobile-file-picker-hidden')
 
-  // Set sticky top to the actual header height so the bar sits flush
-  const header = document.querySelector('.crit-header')
-  if (header) {
-    bar.style.top = header.offsetHeight + 'px'
-  }
+  // Sticky top is set via CSS: top: var(--crit-header-height).
+  // The CSS variable is maintained by updateHeaderHeight() in renderMultiFile,
+  // which also handles resize events. Do NOT set bar.style.top here — an
+  // inline style would override the CSS variable and go stale on resize /
+  // orientation change / mobile-browser-chrome toggle, causing the bar to
+  // slip under the header.
 
   const currentValue = select.value
   select.innerHTML = ''
