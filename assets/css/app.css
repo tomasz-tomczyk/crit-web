@@ -3791,5 +3791,26 @@ body.sidebar-resizing * {
     min-height: 44px;
     padding: 12px;
   }
+
+  /* F3: touch add-comment affordance — ::before + prefix on line numbers */
+  .line-num::before {
+    content: '+';
+    display: inline-block;
+    width: 1.2ch;
+    text-align: center;
+    color: var(--crit-brand);
+    font-weight: 700;
+  }
+  /* Suppress on non-commentable lines */
+  .line-num.line-no-comment::before {
+    content: '';
+    width: 1.2ch;
+    display: inline-block;
+  }
+  /* Disable browser scroll/zoom on gutter cells for reliable pointerdown */
+  .line-num,
+  .line-comment-gutter {
+    touch-action: none;
+  }
 }
 

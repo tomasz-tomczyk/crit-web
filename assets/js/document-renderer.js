@@ -1692,6 +1692,9 @@ function renderMultiFile(ctx) {
 
   container.appendChild(filesContainer)
 
+  // Attach touch handler for mobile comment initiation
+  attachGutterTouchHandler(filesContainer, ctx)
+
   // Update comment count
   updateCommentCount(ctx)
   // Update file tree
@@ -1913,7 +1916,7 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
   const gutter = document.createElement('div')
   gutter.className = 'line-gutter'
   const lineNum = document.createElement('span')
-  lineNum.className = 'line-num'
+  lineNum.className = 'line-num' + (commentable ? '' : ' line-no-comment')
   lineNum.textContent = block.startLine
   gutter.appendChild(lineNum)
   lineBlockEl.insertBefore(gutter, lineBlockEl.firstChild)
@@ -2488,7 +2491,7 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
   gutter.dataset.endLine = block.endLine
 
   const lineNum = document.createElement("span")
-  lineNum.className = "line-num"
+  lineNum.className = "line-num" + (ctx.canComment === false ? " line-no-comment" : "")
   lineNum.textContent = block.startLine === block.endLine ? block.startLine : String(block.startLine)
 
   const commentGutter = document.createElement("div")
@@ -2575,6 +2578,9 @@ function renderDocument(ctx) {
     container.appendChild(renderBlock(ctx, block, bi, commentsMap, commentedLineSet, ctx.singleFilePath || null))
   }
 
+  // Attach touch handler for mobile comment initiation
+  attachGutterTouchHandler(container, ctx)
+
   renderMermaidBlocks(container)
   replaceBrokenImages(container)
   highlightQuotesInSection(container, { path: ctx.singleFilePath, comments: ctx.comments }, ctx.activeForms)
@@ -2652,6 +2658,10 @@ function handleGutterMouseDown(e, ctx) {
     return
   }
 
+  beginGutterDrag(ctx, startLine, endLine, blockIndex, filePath)
+}
+
+function beginGutterDrag(ctx, startLine, endLine, blockIndex, filePath) {
   ctx.dragState = {
     anchorStartLine: startLine,
     anchorEndLine: endLine,
@@ -2672,6 +2682,8 @@ function handleGutterMouseDown(e, ctx) {
   const onUp = (_e) => handleDragEnd(_e, ctx, onMove, onUp)
   document.addEventListener("mousemove", onMove)
   document.addEventListener("mouseup", onUp)
+  document.addEventListener("pointermove", onMove)
+  document.addEventListener("pointerup", onUp)
 }
 
 function handleDragMove(e, ctx) {
@@ -2697,6 +2709,8 @@ function handleDragMove(e, ctx) {
 function handleDragEnd(_e, ctx, onMove, onUp) {
   document.removeEventListener("mousemove", onMove)
   document.removeEventListener("mouseup", onUp)
+  document.removeEventListener("pointermove", onMove)
+  document.removeEventListener("pointerup", onUp)
   document.body.classList.remove("dragging")
 
   if (!ctx.dragState) return
@@ -2715,6 +2729,28 @@ function handleDragEnd(_e, ctx, onMove, onUp) {
 
   ctx.dragState = null
   openForm(ctx, { afterBlockIndex: lastBlockIndex, startLine: rangeStart, endLine: rangeEnd, editingId: null, filePath: filePath })
+}
+
+// ---- Touch comment handler --------------------------------------------------
+
+function attachGutterTouchHandler(container, ctx) {
+  container.addEventListener('pointerdown', function(e) {
+    if (e.pointerType !== 'touch') return
+    const num = e.target.closest('.line-num')
+    if (!num) return
+    const lineBlock = num.closest('.line-block')
+    if (!lineBlock) return
+    // Only trigger on commentable gutters
+    const gutter = lineBlock.querySelector('.line-comment-gutter:not(.diff-no-comment)')
+    if (!gutter) return
+    e.preventDefault()
+    e.stopPropagation()
+    const startLine = parseInt(gutter.dataset.startLine || lineBlock.dataset.startLine)
+    const endLine = parseInt(gutter.dataset.endLine || lineBlock.dataset.endLine)
+    const blockIndex = parseInt(lineBlock.dataset.blockIndex)
+    const filePath = lineBlock.dataset.filePath || null
+    beginGutterDrag(ctx, startLine, endLine, blockIndex, filePath)
+  })
 }
 
 // ---- Comment elements -------------------------------------------------------
