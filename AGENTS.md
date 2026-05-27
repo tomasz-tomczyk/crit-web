@@ -159,6 +159,12 @@ Don't:
 - Add `.home-*` or `.legal-*` CSS classes to `app.css` — use Tailwind in templates
 - Use `@apply` when writing raw CSS
 
+Responsive & Touch rules for review page CSS:
+- Mobile layout rules go inside `@media (max-width: 768px)`. Touch affordances go inside `@media (pointer: coarse)`. Desktop-only hover interactions go inside `@media (pointer: fine)`.
+- Hover-only interactive elements (`.line-add`, `.diff-comment-btn`) must be `display: none` by default and `display: flex` inside `@media (pointer: fine)`. This prevents flash-on-tap on touch devices where `.drag-endpoint` briefly applies.
+- Touch targets must be ≥ 44×44px under `@media (pointer: coarse)` (WCAG 2.5.5).
+- Comment textarea and reply input must be `font-size: 16px` under mobile to suppress iOS Safari focus-zoom.
+
 See `../CLAUDE.md` for the full parity contract between crit local and crit-web.
 </important>
 
