@@ -3696,10 +3696,26 @@ body.sidebar-resizing * {
   .comments-panel { display: none !important; }
   .crit-diff-mode-toggle { display: none !important; }
 
+  /* Chrome on mobile computes viewport width from getBoundingClientRect() of
+     all descendants, including those inside overflow:clip containers. A
+     wrapping inline <span> (e.g. hljs-string) has a bounding rect that is
+     the union of all its line boxes. Converting these spans to inline-block +
+     max-width:100% + overflow:hidden constrains each span's bounding rect to
+     its container, which stops Chrome from expanding the scrollable viewport. */
+  .diff-container,
+  .diff-view,
+  .diff-view-unified { overflow-x: auto; }
+
+  /* File header on mobile: two-row layout.
+     Row 1: [chevron] [icon] [name ………………] [comment-btn]
+     Row 2:           [toggle] ……………… [badge] [+/- stats] */
   .file-header { flex-wrap: wrap; row-gap: 2px; }
   .file-header-viewed { display: none; }
+
+  /* Row 1: push the comment button to the right edge */
   .file-comment-btn { margin-left: auto; }
 
+  /* Force a row break before row 2's items */
   .file-header::after {
     content: '';
     flex-basis: 100%;
@@ -3707,6 +3723,11 @@ body.sidebar-resizing * {
     height: 0;
     order: 5;
   }
+
+  /* Row 2 items — assign explicit order so they all land after the break.
+     Row 1 items keep default order (0); the comment button stays on row 1
+     because order:0 < 5 < 10. */
+  .file-header-badge  { order: 20; margin-left: auto; }
 
   /* Inline comment forms / comment blocks: zero the desktop gutter padding */
   .inline-comment-form,
@@ -3720,16 +3741,17 @@ body.sidebar-resizing * {
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
-    background: var(--crit-bg);
+    background: var(--crit-bg-card);
     border-bottom: 1px solid var(--crit-border);
     position: sticky;
-    top: var(--crit-header-height, 53px);
+    top: var(--crit-header-height);
     z-index: 90;
   }
   .mobile-file-picker-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--crit-fg-muted);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--crit-editor-fg-muted);
+    white-space: nowrap;
     flex-shrink: 0;
   }
   .mobile-file-picker-select {
@@ -3751,6 +3773,10 @@ body.sidebar-resizing * {
   }
 }
 
+/* Touch-specific affordances and target sizing.
+   Reply actions are hover-revealed on desktop — on touch there's no hover,
+   so always show. All interactive header buttons get >=44x44 (WCAG 2.5.5).
+   Textareas use 16px font-size to prevent iOS Safari focus-zoom. */
 @media (pointer: coarse) {
   .reply-actions {
     opacity: 1;
@@ -3763,6 +3789,11 @@ body.sidebar-resizing * {
   }
   .comment-count-btn {
     padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .crit-toc-toggle {
+    padding: 12px;
     min-width: 44px;
     min-height: 44px;
   }
@@ -3783,36 +3814,51 @@ body.sidebar-resizing * {
     justify-content: center;
   }
 
+  /* iOS Safari zooms any focused input below 16px. */
   .comment-form textarea,
   .reply-input {
     font-size: 16px;
   }
 
+  /* Tiny header-row affordances: copy-path icon in .file-header-name and
+     the diff hunk-expand button. Both render in the file body on mobile so
+     they need real touch targets. */
   .file-header-copy-path {
     min-width: 44px;
     min-height: 44px;
     padding: 12px;
   }
+}
 
-  /* F3: touch add-comment affordance — ::before + prefix on line numbers */
+/* F3: add-comment affordance for touch.
+   On desktop the affordance is the blue `+` button (.line-add)
+   revealed on row hover. Touch devices never fire hover, so users need
+   an always-visible cue. We render a `+` prefix as an inline ::before
+   pseudo-element on .line-num. display:inline-block + width:1.2ch
+   reserves a fixed-width slot at the start of each cell, so the glyph
+   sits flush before the digit inside the cell's right-aligned text. */
+@media (pointer: coarse) {
   .line-num::before {
     content: '+';
     display: inline-block;
     width: 1.2ch;
-    text-align: center;
-    color: var(--crit-brand);
+    color: var(--crit-editor-fg-muted);
+    opacity: 0.6;
     font-weight: 700;
+    pointer-events: none;
   }
-  /* Suppress on non-commentable lines */
+  /* Read-only line-number cells must not advertise commentability.
+     - Document view: a .line-block whose .line-comment-gutter has the
+       .diff-no-comment class shows a number but isn't tappable.
+     - Direct class on .line-num for non-commentable lines. */
+  .line-block:has(.line-comment-gutter.diff-no-comment) .line-num::before,
   .line-num.line-no-comment::before {
-    content: '';
-    width: 1.2ch;
-    display: inline-block;
+    display: none;
   }
-  /* Disable browser scroll/zoom on gutter cells for reliable pointerdown */
-  .line-num,
-  .line-comment-gutter {
-    touch-action: none;
-  }
+
+  /* F4 reliability: disable the browser's scroll/zoom gesture recognizer
+     on tap targets so it cannot race the pointerdown handler and fire
+     pointercancel before pointerup. */
+  .line-comment-gutter { touch-action: none; }
 }
 

@@ -1513,6 +1513,12 @@ function renderMobileFilePicker(ctx) {
   }
   bar.classList.remove('mobile-file-picker-hidden')
 
+  // Set sticky top to the actual header height so the bar sits flush
+  const header = document.querySelector('.crit-header')
+  if (header) {
+    bar.style.top = header.offsetHeight + 'px'
+  }
+
   const currentValue = select.value
   select.innerHTML = ''
   for (let i = 0; i < ctx.files.length; i++) {
