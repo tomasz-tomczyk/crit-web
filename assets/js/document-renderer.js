@@ -1502,6 +1502,42 @@ function renderTreeNode(ctx, container, node, depth, pathPrefix) {
   }
 }
 
+function renderMobileFilePicker(ctx) {
+  const bar = document.getElementById('mobileFilePickerBar')
+  const select = document.getElementById('mobileFilePicker')
+  if (!bar || !select) return
+
+  if (ctx.files.length <= 1) {
+    bar.classList.add('mobile-file-picker-hidden')
+    return
+  }
+  bar.classList.remove('mobile-file-picker-hidden')
+
+  const currentValue = select.value
+  select.innerHTML = ''
+  for (let i = 0; i < ctx.files.length; i++) {
+    const opt = document.createElement('option')
+    opt.value = ctx.files[i].path
+    opt.textContent = ctx.files[i].path
+    select.appendChild(opt)
+  }
+
+  if (currentValue && ctx.files.some(function(f) { return f.path === currentValue })) {
+    select.value = currentValue
+  }
+
+  if (!select._mobilePickerBound) {
+    select._mobilePickerBound = true
+    select.addEventListener('change', function() {
+      const sectionEl = document.getElementById('file-section-' + CSS.escape(select.value))
+      if (sectionEl) {
+        if (!sectionEl.open) sectionEl.open = true
+        sectionEl.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      }
+    })
+  }
+}
+
 function renderFileTree(ctx) {
   const panel = document.getElementById('fileTreePanel')
   if (!panel || !ctx.multiFile) return
@@ -1660,6 +1696,8 @@ function renderMultiFile(ctx) {
   updateCommentCount(ctx)
   // Update file tree
   renderFileTree(ctx)
+  // Update mobile file picker
+  renderMobileFilePicker(ctx)
   // Render mermaid
   renderMermaidBlocks(container)
   // Hide TOC only in multi-file mode (file tree replaces it)
@@ -4817,6 +4855,20 @@ export const DocumentRenderer = {
     ctx.prevRoundSnapshots = {}
     ctx.showRoundDiff = false
     ctx.diffMode = 'split'
+    const mobileDiffQuery = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null
+    if (mobileDiffQuery && mobileDiffQuery.matches) {
+      ctx.diffMode = 'unified'
+    }
+    if (mobileDiffQuery) {
+      mobileDiffQuery.addEventListener('change', function(ev) {
+        if (ev.matches) {
+          ctx.diffMode = 'unified'
+        } else {
+          ctx.diffMode = 'split'
+        }
+        render(ctx)
+      })
+    }
     ctx._navCommentId = null
     ctx._hideResolved = readHideResolved()
     ctx._timers = new Set()
