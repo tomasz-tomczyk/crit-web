@@ -74,7 +74,7 @@ test.describe("Multi-File Review", () => {
     // The corresponding file section should be scrolled into view.
     // Use the file-header-name that contains the filename text.
     const readmeSection = page.locator(
-      'details.file-section:has(.file-header-name:text("README.md"))'
+      'details.file-section:has(.file-header-name:has-text("README.md"))'
     );
     await expect(readmeSection).toBeVisible();
   });
