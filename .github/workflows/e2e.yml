@@ -47,6 +47,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "22"
+          cache: "npm"
 
       - name: Restore Elixir dependencies cache
         uses: actions/cache@v5
@@ -72,8 +73,20 @@ jobs:
       - name: Install Playwright dependencies
         run: npm ci
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright browser OS deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Install asset dependencies
         run: npm install --prefix assets
