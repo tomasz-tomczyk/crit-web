@@ -308,11 +308,15 @@ export const PreviewMode = {
     this.isAdmin = !!payload.is_admin
     if (typeof payload.can_comment === "boolean") this.canComment = payload.can_comment
 
-    // iframe src = <base>/r/<token>/raw/<firstHtmlFile|index.html>, matching the
-    // raw_controller route that injects the agent into preview HTML.
+    // iframe src is ROOT-RELATIVE so the iframe is always same-origin as the
+    // parent page. An absolute Endpoint.url() (data-base-url, e.g.
+    // http://localhost:4000) makes the iframe cross-origin when the page is
+    // browsed via a different host alias (e.g. http://127.0.0.1:4000); the
+    // agent<->hook postMessage channel enforces an exact origin match on both
+    // ends, so a mismatch silently blocks selection, the composer, and comments.
     const firstHtml = this.files.find((f) => /\.html?$/i.test(f.path || ""))
     this.htmlFile = (firstHtml && firstHtml.path) || "index.html"
-    this.iframe.src = this.baseUrl + "/r/" + encodeURIComponent(this.token) + "/raw/" + this.htmlFile
+    this.iframe.src = "/r/" + encodeURIComponent(this.token) + "/raw/" + this.htmlFile
 
     this.applyViewport(this.viewport)
     this.afterCommentsChanged()
@@ -390,12 +394,15 @@ export const PreviewMode = {
   handleSelection(anchor) {
     if (!anchor || !anchor.css_selector) return
     if (!this.canComment) return
-    this.pendingAnchor = anchor
     this.openComposer(anchor)
   },
 
   openComposer(anchor) {
+    // closeComposer() nulls pendingAnchor, so set it AFTER closing any prior
+    // composer — otherwise submitComposer sees a null anchor and silently
+    // drops the comment (no pushEvent, nothing reaches the server).
     this.closeComposer()
+    this.pendingAnchor = anchor
     const el = document.createElement("div")
     el.className = "crit-preview-composer"
     el.setAttribute("role", "dialog")
@@ -441,12 +448,19 @@ export const PreviewMode = {
       textarea.focus()
       return
     }
-    if (!this.pendingAnchor) return
+    // Capture the anchor before closeComposer() (below) nulls it.
+    const anchor = this.pendingAnchor
+    if (!anchor) return
+    // start_line/end_line: ReviewLive's add_comment handler reads these (files
+    // mode is line-anchored). DOM-anchored preview comments have no line, so
+    // send 0/0 — the changeset only enforces > 0 when scope === "line".
     this.pushEvent("add_comment", {
       body,
       scope: "file",
       file_path: this.htmlFile,
-      dom_anchor: this.pendingAnchor,
+      start_line: 0,
+      end_line: 0,
+      dom_anchor: anchor,
     })
     // The new comment arrives back via the comment_added push event, which
     // re-renders the panel and re-pushes pins. Just close the composer.

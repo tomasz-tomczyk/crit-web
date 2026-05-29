@@ -22,6 +22,25 @@ defmodule CritWeb.RawController do
     "crit-agent.js"
   ]
 
+  # Marker overlay CSS, inlined into preview HTML. crit local serves this at
+  # `/agent-marker.css` and the vendored crit-agent.js fetches it from there —
+  # but the preview sandbox CSP sets `connect-src 'none'` (and crit-web serves
+  # it under /preview-agent/, not root), so that fetch fails. Inlining it as a
+  # `<style>` makes the agent's failed fetch harmless and the markers styled.
+  # Read at compile time; `@external_resource` triggers a recompile on change.
+  @marker_css_path Path.join([
+                     __DIR__,
+                     "..",
+                     "..",
+                     "..",
+                     "priv",
+                     "static",
+                     "preview-agent",
+                     "agent-marker.css"
+                   ])
+  @external_resource @marker_css_path
+  @marker_css File.read!(@marker_css_path)
+
   # Restrictive sandbox CSP for preview HTML rendered inside the same-origin
   # iframe. No external origins, no network egress (`connect-src 'none'`), and
   # the preview itself cannot frame anything (`frame-src 'none'`). Inline
@@ -88,12 +107,14 @@ defmodule CritWeb.RawController do
   # `servePreviewHTML`: insert before the last `</body>`, falling back to an
   # append when no closing body tag exists.
   defp maybe_inject_agent_scripts(content, true, "text/html") do
+    marker_style = ~s(<style data-crit-marker-css="1">#{@marker_css}</style>)
+
     scripts =
       Enum.map_join(@agent_script_files, fn name ->
         ~s(<script src="/preview-agent/#{name}"></script>)
       end)
 
-    inject_before_body_close(content, scripts)
+    inject_before_body_close(content, marker_style <> scripts)
   end
 
   defp maybe_inject_agent_scripts(content, _preview?, _content_type), do: content

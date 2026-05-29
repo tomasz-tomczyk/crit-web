@@ -227,17 +227,11 @@ test.describe("Preview mode", () => {
     await expect(afterReload).toHaveAttribute("data-resolved", "true");
   });
 
-  // FIXME (Task C1/C2 follow-up): the in-iframe agent never reaches agent-ready,
-  // so the Pin button stays disabled and the cross-frame create flow can't run.
-  // Verified root cause: the 7 vendored agent scripts are injected as
-  // <script src="/preview-agent/...">, but "preview-agent" is not in
-  // CritWeb.static_paths(), so Plug.Static returns 404 for every one of them and
-  // the agent code never executes. (The files exist in priv/static/preview-agent/;
-  // they're simply not in the static allow-list.) Once /preview-agent/* is served
-  // (add "preview-agent" to static_paths and confirm the agent posts agent-ready),
-  // remove `.fixme` — this test already drives the real cross-frame path end to
-  // end (Pin enable -> in-frame click -> selection -> composer -> save -> card).
-  test.fixme("pin mode: clicking an element in the iframe creates a comment", async ({
+  // End-to-end cross-frame create flow: the vendored agent (served from
+  // /preview-agent/* via static_paths) boots inside the same-origin iframe,
+  // posts agent-ready (enabling Pin), and on an in-frame click posts a selection
+  // that opens the host composer; saving persists a DOM-anchored comment.
+  test("pin mode: clicking an element in the iframe creates a comment", async ({
     page,
     request,
   }) => {
