@@ -4,6 +4,13 @@
 // same origin as crit-web. Handlers are exported individually so they can be
 // unit-tested with a mocked global fetch.
 
+// Relays a share payload to the same /api/reviews endpoint the CLI's direct
+// transport hits — there is NO relay-specific endpoint. The payload is
+// forwarded VERBATIM: do not whitelist or strip fields here. This is what lets
+// preview-mode shares work over proxy auth: the preview payload (review_type:
+// "preview" plus files carrying `encoding: "base64"` for binary assets) passes
+// through untouched, identical in shape to a files-mode payload. Any
+// field-filtering added here would silently break preview relay.
 export async function share(msg) {
   return await jsonOp('POST', '/api/reviews', msg.payload);
 }
