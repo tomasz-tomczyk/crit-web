@@ -86,7 +86,7 @@ mix test path/to/test.exs:42  # One test by line
 mix precommit             # compile --warnings-as-errors, deps.unlock --unused, format, sobelow --skip, deps.audit, test
 ```
 
-Tests use `DataCase` (database) or `ConnCase` (HTTP). Test database: `crit_test`. Local Postgres listens on **5433** (host) → 5432 (container) — pass `DB_PORT=5433` for `mix test` / `mix precommit` (see `../CLAUDE.md`). Always run `mix precommit` when done with a change.
+Tests use `DataCase` (database) or `ConnCase` (HTTP). Test database: `crit_test`. Local Postgres listens on **5433** (host) → 5432 (container); `DB_PORT` defaults to 5433 via `mise.toml` and `.envrc`, so `mise exec -- mix test` / `mise run test` just work (an explicit `DB_PORT` still overrides). Start the DB first with `mise run db:start` (idempotent). Always run `mix precommit` when done with a change.
 
 CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, Elixir 1.19 / OTP 28), with `mix coveralls.json` instead of plain `mix test` for Codecov upload.
 </important>
