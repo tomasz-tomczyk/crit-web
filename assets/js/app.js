@@ -124,6 +124,12 @@ const isReviewPage = window.location.pathname.startsWith('/r/')
 const DocumentRendererHook = isReviewPage
   ? (await import("./document-renderer")).DocumentRenderer
   : { mounted() {} }
+// PreviewMode chrome — only the preview branch of the review page uses it, but
+// it's lazily loaded on any /r/ page (same gate as DocumentRenderer) since the
+// review type isn't known client-side until the LiveView mounts.
+const PreviewModeHook = isReviewPage
+  ? (await import("./preview-mode")).PreviewMode
+  : { mounted() {} }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
@@ -137,7 +143,11 @@ const transportOpts = transportMeta === "longpoll" ? {transport: LongPoll} : {}
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, "CritWeb.ReviewLive.DocumentRenderer": DocumentRendererHook},
+  hooks: {
+    ...colocatedHooks,
+    "CritWeb.ReviewLive.DocumentRenderer": DocumentRendererHook,
+    "PreviewMode": PreviewModeHook,
+  },
   ...transportOpts,
 })
 

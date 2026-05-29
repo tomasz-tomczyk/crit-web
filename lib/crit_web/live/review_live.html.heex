@@ -155,7 +155,11 @@
             id="comment-count"
             title="Toggle comments panel"
             aria-label="Toggle comments panel"
-            phx-click={JS.dispatch("crit:toggle-comments", to: "#document-renderer")}
+            phx-click={
+              JS.dispatch("crit:toggle-comments",
+                to: if(@preview?, do: "#crit-preview-layout", else: "#document-renderer")
+              )
+            }
           >
             <svg
               class="comment-count-icon"
@@ -572,38 +576,50 @@
     >
     </select>
   </div>
-  <div id="crit-main-layout" class="crit-main-layout" phx-update="ignore">
-    <div id="fileTreePanel" class="tree-panel" style="display:none">
-      <div id="treeConversationSection" class="tree-section--conversation"></div>
-      <div class="tree-header">
-        <span class="tree-title">Files</span>
-        <span id="fileTreeStats" class="tree-stats"></span>
-      </div>
-      <div id="fileTreeBody" class="tree-body"></div>
-    </div>
+  <%= if @preview? do %>
     <div
-      id="fileTreeResizer"
-      class="sidebar-resize-handle"
-      role="separator"
-      tabindex="0"
-      aria-orientation="vertical"
-      aria-label="Resize file tree"
+      id="crit-preview-layout"
+      class="crit-preview-container"
+      phx-hook="PreviewMode"
+      phx-update="ignore"
+      data-token={@review.token}
+      data-base-url={CritWeb.Endpoint.url()}
     >
     </div>
-
-    <div class="crit-main-content">
-      <div id="reviewConversation" class="review-conversation" hidden></div>
+  <% else %>
+    <div id="crit-main-layout" class="crit-main-layout" phx-update="ignore">
+      <div id="fileTreePanel" class="tree-panel" style="display:none">
+        <div id="treeConversationSection" class="tree-section--conversation"></div>
+        <div class="tree-header">
+          <span class="tree-title">Files</span>
+          <span id="fileTreeStats" class="tree-stats"></span>
+        </div>
+        <div id="fileTreeBody" class="tree-body"></div>
+      </div>
       <div
-        id="document-renderer"
-        phx-hook=".DocumentRenderer"
-        phx-update="ignore"
-        data-identity={@current_scope.identity}
-        data-user-id={Crit.Accounts.Scope.user_id(@current_scope)}
-        data-review-owner-id={@review.user_id}
-        data-review-round={@review.review_round || 0}
+        id="fileTreeResizer"
+        class="sidebar-resize-handle"
+        role="separator"
+        tabindex="0"
+        aria-orientation="vertical"
+        aria-label="Resize file tree"
       >
-        <div class="crit-loading">Loading document...</div>
+      </div>
+
+      <div class="crit-main-content">
+        <div id="reviewConversation" class="review-conversation" hidden></div>
+        <div
+          id="document-renderer"
+          phx-hook=".DocumentRenderer"
+          phx-update="ignore"
+          data-identity={@current_scope.identity}
+          data-user-id={Crit.Accounts.Scope.user_id(@current_scope)}
+          data-review-owner-id={@review.user_id}
+          data-review-round={@review.review_round || 0}
+        >
+          <div class="crit-loading">Loading document...</div>
+        </div>
       </div>
     </div>
-  </div>
+  <% end %>
 </div>

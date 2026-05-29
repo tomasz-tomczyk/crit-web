@@ -41,6 +41,8 @@ defmodule CritWeb.ReviewLive do
         canonical_url =
           if public?, do: CritWeb.Endpoint.url() <> "/r/#{review.token}", else: nil
 
+        preview? = review.review_type == :preview
+
         files_data =
           Enum.map(review.files, fn f ->
             %{
@@ -48,7 +50,8 @@ defmodule CritWeb.ReviewLive do
               content: f.content,
               position: f.position,
               status: f.status,
-              generated: f.generated
+              generated: f.generated,
+              encoding: f.encoding
             }
           end)
 
@@ -66,7 +69,8 @@ defmodule CritWeb.ReviewLive do
               display_name: display_name,
               files: files_data,
               can_comment: can_comment?(scope, review),
-              is_admin: Crit.Authorization.admin?(scope)
+              is_admin: Crit.Authorization.admin?(scope),
+              review_type: to_string(review.review_type)
             })
           else
             socket
@@ -107,6 +111,7 @@ defmodule CritWeb.ReviewLive do
          |> assign(:oauth_configured, Crit.Config.oauth_configured?())
          |> assign(:auth_required, auth_required)
          |> assign(:demo?, demo?)
+         |> assign(:preview?, preview?)
          |> assign(:local_prompt_text, local_prompt_text)
          |> assign(:full_export_prompt_text, full_export_prompt_text)
          |> assign(:prompt_mode, "local")
@@ -258,6 +263,9 @@ defmodule CritWeb.ReviewLive do
       }
       |> then(fn a ->
         if q = params["quote"], do: Map.put(a, "quote", q), else: a
+      end)
+      |> then(fn a ->
+        if da = params["dom_anchor"], do: Map.put(a, "dom_anchor", da), else: a
       end)
 
     case Reviews.create_comment(scope, review, attrs, file_path: file_path) do

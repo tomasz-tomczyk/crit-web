@@ -41,6 +41,45 @@ defmodule CritWeb.ReviewLiveTest do
       assert html =~ ~s(name="robots" content="noindex, nofollow")
       assert html =~ ~s(name="referrer" content="no-referrer")
     end
+
+    test "files review renders #crit-main-layout, not #crit-preview-layout", %{
+      conn: conn,
+      review: review
+    } do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      assert has_element?(view, "#crit-main-layout")
+      refute has_element?(view, "#crit-preview-layout")
+    end
+  end
+
+  describe "preview mount" do
+    setup do
+      review =
+        review_fixture(
+          files: [%{"path" => "index.html", "content" => "<h1>Hi</h1>"}],
+          review_type: :preview
+        )
+
+      %{preview_review: review}
+    end
+
+    test "renders #crit-preview-layout PreviewMode container, not #crit-main-layout", %{
+      conn: conn,
+      preview_review: review
+    } do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      assert has_element?(view, ~s(#crit-preview-layout[phx-hook="PreviewMode"]))
+      assert has_element?(view, ~s(#crit-preview-layout[data-token="#{review.token}"]))
+      refute has_element?(view, "#crit-main-layout")
+    end
+
+    test "init push_event carries review_type \"preview\"", %{conn: conn, preview_review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      assert_push_event view, "init", %{review_type: "preview"}
+    end
   end
 
   describe "mount with multi-file review" do
