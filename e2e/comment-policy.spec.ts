@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createReview, deleteReview, loadReview } from "./helpers";
 
-const BASE_URL = `http://localhost:${process.env.CRIT_WEB_TEST_PORT || "4003"}`;
+const BASE_URL = `http://127.0.0.1:${process.env.CRIT_WEB_TEST_PORT || "4003"}`;
 
 /**
  * Set comment_policy via the API. We can't fully simulate owner-driven UI

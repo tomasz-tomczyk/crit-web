@@ -1,6 +1,9 @@
 import { type Page, type APIRequestContext, type Locator, expect } from "@playwright/test";
 
-const BASE_URL = `http://localhost:${process.env.CRIT_WEB_TEST_PORT || "4003"}`;
+// 127.0.0.1, not "localhost": macOS resolves localhost to IPv6 ::1 first, but
+// the Phoenix/Bandit test server binds IPv4 only, so API calls to localhost get
+// ECONNREFUSED. 127.0.0.1 works on macOS and CI (Linux) alike.
+const BASE_URL = `http://127.0.0.1:${process.env.CRIT_WEB_TEST_PORT || "4003"}`;
 
 /**
  * Create a review via the API and return { token, url, deleteToken }.
