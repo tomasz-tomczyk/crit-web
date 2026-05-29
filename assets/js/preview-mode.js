@@ -1,27 +1,23 @@
 // PreviewMode hook — host chrome for shareable preview reviews.
 //
-// Faithful port of crit local's live-mode chrome (crit/frontend/live-mode.js +
-// its .toggle / .queue / .dispatch / .composer / .panel-render sub-modules) into
-// a single Phoenix hook, the same way document-renderer.js ports crit's code-
-// review app.js. The agent (vendored verbatim into priv/static/preview-agent/)
-// is injected into the iframe HTML by raw_controller and speaks the postMessage
-// protocol defined in crit/frontend/agent-protocol.js — message-type strings
-// here are copied EXACTLY from that file (do not invent names).
+// Ports crit local's live-mode chrome (iframe pane, viewport presets,
+// Navigate/Pin toggle, agent postMessage bridge) into a single Phoenix hook.
+// The comment SIDE PANEL — panel shell, cards, replies, resolve/reply, resolved
+// styling — is NOT rebuilt here: it reuses the SAME shared module files mode
+// uses (comments-panel.js + the .comments-panel CSS). This hook only supplies
+// the iframe/agent machinery and a preview adapter that feeds DOM-anchored pins
+// into the shared card renderer.
 //
-// What is ported vs simplified, relative to crit live-mode:
-//   PORTED  — iframe pane, viewport presets (Mobile/Tablet/Desktop/Fit) + set-
-//             viewport dispatch, Navigate/Pin mode toggle gated on agent-ready
-//             + set-mode dispatch, batched pin sender (queue until agent-ready),
-//             selection → composer → create comment, pin-clicked → scroll panel
-//             card, persistent side panel of pin cards (number badge, body,
-//             author, resolve, reply), keep/clear-highlight + flash-marker on
-//             card click, re-push set-pins on every comment change.
-//   SIMPLIFIED / OUT OF SCOPE (crit has these; this task does not need them) —
-//             reanchoring / drift recovery (pin-resolution-result, enter-
-//             reanchor-mode), ancestor-selection menu, route changes / multi-
-//             page proxy navigation (preview is a single static page), round
-//             tooltips, SSE (LiveView pushes deltas instead), drag-resize of the
-//             iframe, settings overlay. These are deliberate omissions.
+// Header parity with crit local: the viewport + mode toggles are injected into
+// the existing right-aligned header (#crit-preview-controls, gated @preview?),
+// before #settingsToggle — mirroring crit live-mode.js — instead of a separate
+// left chrome bar. The comments panel is toggled by the header comment-count
+// button via the crit:toggle-comments dispatch (same as files mode).
+//
+// The agent (vendored verbatim into priv/static/preview-agent/) is injected into
+// the iframe HTML by raw_controller and speaks the postMessage protocol defined
+// in crit/frontend/agent-protocol.js — message-type strings here are copied
+// EXACTLY from that file (do not invent names).
 //
 // TRANSPORT — crit uses REST /api/comments + SSE. crit-web uses LiveView:
 //   receive: this.handleEvent("init" | "comment_added" | "comment_resolved" |
@@ -30,6 +26,19 @@
 //   send:    this.pushEvent("add_comment", {body, scope:"file", dom_anchor,
 //            file_path}), this.pushEvent("resolve_comment", {id, resolved}),
 //            this.pushEvent("add_reply", {comment_id, body}).
+
+import { renderCommentCard, attachSidebarResizeHandle, escapeHtml, startInlineBodyEdit } from "./comments-panel"
+import { createSettingsPanel } from "./settings-panel"
+
+// Preview-mode keyboard shortcuts (the shared settings overlay's Shortcuts tab).
+// Preview's interaction model is the Navigate/Pin header toggle + composer, so
+// the list is short and honest (no vim keys like files mode).
+const PREVIEW_SHORTCUT_GROUPS = [
+  { label: "Commenting", shortcuts: [
+    { key: "<kbd>Ctrl</kbd>+<kbd>Enter</kbd>", action: "Submit the open comment or reply" },
+    { key: "<kbd>Esc</kbd>", action: "Cancel the open composer or reply" },
+  ]},
+]
 
 // Chrome → Agent message types (copied verbatim from agent-protocol.js C2A).
 const C2A = {
@@ -58,22 +67,6 @@ const VIEWPORTS = [
   { key: "desktop", label: "Desktop", w: 1280, h: 800 },
   { key: "fit", label: "Fit", w: 0, h: 0 },
 ]
-
-function escapeHTML(str) {
-  return String(str == null ? "" : str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-}
-
-function formatTime(iso) {
-  if (!iso) return ""
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return ""
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-}
 
 // Batched pin sender — port of crit live-mode.queue.js makeAgentSender. Holds
 // messages until the agent reports ready, then flushes in order. set-pins is
@@ -105,6 +98,11 @@ export const PreviewMode = {
     this.token = this.el.dataset.token
     this.baseUrl = (this.el.dataset.baseUrl || "").replace(/\/$/, "")
     this.canComment = this.el.dataset.canComment === "true"
+    // Viewer identity (server-rendered, same as files mode's #document-renderer)
+    // so the panel can gate edit/delete/resolve to the comment's author.
+    this.identity = this.el.dataset.identity || ""
+    this.userId = this.el.dataset.userId || ""
+    this.reviewOwnerId = this.el.dataset.reviewOwnerId || ""
 
     // State — mirrors window.crit.live state in crit live-mode.
     this.comments = []
@@ -116,8 +114,23 @@ export const PreviewMode = {
     this.htmlFile = "index.html"
     this.composerEl = null
     this.pendingAnchor = null
+    // Per-comment collapse state + pin-number lookup, consumed by the shared
+    // card renderer via the preview adapter.
+    this.collapseOverrides = {}
+    this.pinNumbers = new Map()
+    this.activeFilter = "all" // all | open | resolved (panel filter pills)
 
     this.buildShell()
+    this.buildHeaderControls()
+
+    // Shared settings overlay (gear in the header) — theme + about, plus a
+    // preview-specific shortcuts tab. Content-width and hide-resolved are
+    // files-mode concerns, so preview omits them.
+    this.settings = createSettingsPanel({
+      showWidth: false,
+      showHideResolved: false,
+      shortcutGroups: PREVIEW_SHORTCUT_GROUPS,
+    })
 
     // Agent bridge. The agent posts from the iframe's content window; we only
     // accept messages whose source is our iframe and whose origin is ours
@@ -125,6 +138,11 @@ export const PreviewMode = {
     this.sender = makeAgentSender((msg) => this.postToAgent(msg))
     this.onMessage = (event) => this.handleAgentMessage(event)
     window.addEventListener("message", this.onMessage)
+
+    // Header comment-count button toggles the panel via JS.dispatch (survives
+    // LiveView patches), same contract as files mode.
+    this.onToggleComments = () => this.togglePanel()
+    this.el.addEventListener("crit:toggle-comments", this.onToggleComments)
 
     // LiveView → client transport. init carries review_type + files + comments;
     // the delta events mirror ReviewLive's push_event names exactly.
@@ -148,73 +166,148 @@ export const PreviewMode = {
 
   destroyed() {
     if (this.onMessage) window.removeEventListener("message", this.onMessage)
+    if (this.onResize) window.removeEventListener("resize", this.onResize)
+    if (this.onToggleComments) this.el.removeEventListener("crit:toggle-comments", this.onToggleComments)
+    if (this.settings) this.settings.destroy()
+    if (this._highlightTimer) { clearTimeout(this._highlightTimer); this._highlightTimer = null }
+    const controls = document.getElementById("crit-preview-controls")
+    if (controls) controls.innerHTML = ""
     this.closeComposer()
   },
 
-  // ---- Shell construction (port of live-mode.js buildShell) ----------------
+  // ---- Shell construction --------------------------------------------------
+  // iframe pane + the SHARED toggle-able comments panel (same .comments-panel
+  // markup/CSS files mode uses), laid out as a flex row. The panel is hidden
+  // until the header comment-count button opens it (crit:toggle-comments).
 
   buildShell() {
     this.el.classList.add("crit-preview-container")
     this.el.innerHTML = [
-      '<div class="crit-preview-chrome">',
-      '  <div class="crit-preview-toggle-group" id="critPreviewViewport" role="group" aria-label="Viewport size"></div>',
-      '  <div class="crit-preview-toggle-group" id="critPreviewMode" role="group" aria-label="Interaction mode"></div>',
-      "</div>",
       '<div class="crit-preview-body">',
       '  <div class="crit-preview-iframe-pane">',
       '    <div class="crit-preview-iframe-frame" id="critPreviewFrame">',
       '      <iframe id="critPreviewIframe" title="Preview" referrerpolicy="no-referrer"></iframe>',
       "    </div>",
       "  </div>",
-      '  <aside class="crit-preview-panel comments-panel" id="critPreviewPanel" aria-label="Comments">',
-      '    <div class="crit-preview-panel-header">',
-      '      <span class="crit-preview-panel-title">Comments</span>',
-      '      <span class="crit-preview-panel-badge" id="critPreviewBadge">0</span>',
+      '  <div class="sidebar-resize-handle" id="commentsPanelResizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize comments panel"></div>',
+      '  <aside class="comments-panel" id="commentsPanel" aria-label="Comments">',
+      '    <div class="comments-panel-header">',
+      '      <div class="comments-panel-header-row1">',
+      '        <div class="comments-panel-header-left">',
+      '          <span class="comments-panel-title">Comments</span>',
+      '          <span class="comments-panel-count-badge" id="commentsPanelCountBadge">0</span>',
+      "        </div>",
+      '        <div class="comments-panel-header-actions">',
+      '          <button class="comments-panel-close" title="Close comments panel" aria-label="Close comments panel">&#x2715;</button>',
+      "        </div>",
+      "      </div>",
+      '      <div class="comments-panel-header-row2">',
+      '        <div class="comments-filter-toggle crit-diff-mode-toggle" id="commentsFilterPill" role="radiogroup" aria-label="Filter comments">',
+      '          <button class="crit-toggle-btn crit-toggle-btn--active" data-filter="all" role="radio" aria-checked="true" tabindex="0">All <span class="filter-count">0</span></button>',
+      '          <button class="crit-toggle-btn" data-filter="open" role="radio" aria-checked="false" tabindex="-1">Open <span class="filter-count">0</span></button>',
+      '          <button class="crit-toggle-btn" data-filter="resolved" role="radio" aria-checked="false" tabindex="-1">Resolved <span class="filter-count">0</span></button>',
+      "        </div>",
+      '        <button class="comments-panel-expand-all" id="commentsPanelExpandAll">Expand all</button>',
+      "      </div>",
       "    </div>",
-      '    <div class="crit-preview-panel-body comments-panel-body" id="critPreviewPanelBody"></div>',
+      '    <div class="comments-panel-body" id="critPreviewPanelBody"></div>',
       "  </aside>",
       "</div>",
     ].join("")
 
-    this.viewportToggle = this.el.querySelector("#critPreviewViewport")
-    this.modeToggle = this.el.querySelector("#critPreviewMode")
     this.frame = this.el.querySelector("#critPreviewFrame")
     this.iframe = this.el.querySelector("#critPreviewIframe")
     this.iframePane = this.el.querySelector(".crit-preview-iframe-pane")
+    this.panel = this.el.querySelector("#commentsPanel")
     this.panelBody = this.el.querySelector("#critPreviewPanelBody")
-    this.badge = this.el.querySelector("#critPreviewBadge")
+    this.countBadge = this.el.querySelector("#commentsPanelCountBadge")
+    this.resizer = this.el.querySelector("#commentsPanelResizer")
 
+    this.panel.querySelector(".comments-panel-close").addEventListener("click", () => this.closePanel())
+
+    // Filter pills (All / Open / Resolved) — radiogroup with roving tabindex,
+    // mirroring files mode's panel header. Counts update on every render.
+    this.filterPill = this.panel.querySelector("#commentsFilterPill")
+    this.filterPill.addEventListener("click", (e) => {
+      const btn = e.target.closest(".crit-toggle-btn")
+      if (btn) this.applyFilter(btn, false)
+    })
+    this.filterPill.addEventListener("keydown", (e) => {
+      const btns = Array.from(this.filterPill.querySelectorAll(".crit-toggle-btn"))
+      const i = btns.findIndex((b) => b === document.activeElement)
+      if (i === -1) return
+      let next = null
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (i + 1) % btns.length
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (i - 1 + btns.length) % btns.length
+      else if (e.key === "Home") next = 0
+      else if (e.key === "End") next = btns.length - 1
+      else return
+      e.preventDefault()
+      this.applyFilter(btns[next], true)
+    })
+
+    // Expand all / Collapse all.
+    this.expandAllBtn = this.panel.querySelector("#commentsPanelExpandAll")
+    this.expandAllBtn.addEventListener("click", () => this.toggleExpandAll())
+
+    // Drag-to-resize the panel — same shared handle files mode uses.
+    const savedWidth = parseInt(localStorage.getItem("crit-comments-panel-width") || "", 10)
+    if (Number.isFinite(savedWidth) && savedWidth >= 300) this.panel.style.width = savedWidth + "px"
+    attachSidebarResizeHandle(this.resizer, this.panel, {
+      storageKey: "crit-comments-panel-width", min: 300, edge: "left", step: 16,
+    })
+
+    this.renderPanel()
+    // Comments are the point of a shared preview, so the panel starts open
+    // (the header comment-count button still toggles it closed/open).
+    this.openPanel()
+  },
+
+  // Inject viewport + mode toggles into the right-aligned header, mirroring
+  // crit local's live-mode.js (which inserts them before #settingsToggle). The
+  // server renders an empty #crit-preview-controls (phx-update=ignore) so these
+  // hook-built toggles survive LiveView patches.
+  buildHeaderControls() {
+    const controls = document.getElementById("crit-preview-controls")
+    if (!controls) return
+    controls.innerHTML = [
+      '<div class="crit-diff-mode-toggle" id="critPreviewViewport" role="group" aria-label="Viewport size"></div>',
+      '<div class="crit-diff-mode-toggle" id="critPreviewMode" role="group" aria-label="Interaction mode"></div>',
+    ].join("")
+    this.viewportToggle = controls.querySelector("#critPreviewViewport")
+    this.modeToggle = controls.querySelector("#critPreviewMode")
     this.buildViewportToggle()
     this.buildModeToggle()
-    this.renderPanel()
   },
 
   buildViewportToggle() {
     this.viewportToggle.innerHTML = VIEWPORTS.map((v) => {
       const active = v.key === this.viewport.key
       return (
-        '<button type="button" class="crit-preview-toggle-btn' +
-        (active ? " active" : "") +
-        '" data-viewport="' +
-        v.key +
-        '" aria-pressed="' +
-        (active ? "true" : "false") +
-        '">' +
-        escapeHTML(v.label) +
+        '<button type="button" class="crit-toggle-btn' +
+        (active ? " crit-toggle-btn--active" : "") +
+        '" data-viewport="' + v.key +
+        '" aria-pressed="' + (active ? "true" : "false") +
+        '" title="' + escapeHtml(v.label) + '">' +
+        escapeHtml(v.label) +
         "</button>"
       )
     }).join("")
 
     this.viewportToggle.addEventListener("click", (e) => {
-      const btn = e.target.closest(".crit-preview-toggle-btn")
+      const btn = e.target.closest(".crit-toggle-btn")
       if (!btn) return
       const vp = VIEWPORTS.find((v) => v.key === btn.dataset.viewport)
       if (vp) this.applyViewport(vp)
     })
 
-    window.addEventListener("resize", () => {
+    // Stored so destroyed() can remove it — the hook is re-mountable (navigating
+    // between two preview reviews), and an anonymous listener would leak a stale
+    // `this` on every remount. Mirrors document-renderer.js's resize cleanup.
+    this.onResize = () => {
       if (this.viewport.key === "fit") this.applyViewport(VIEWPORTS.find((v) => v.key === "fit"))
-    })
+    }
+    window.addEventListener("resize", this.onResize)
   },
 
   applyViewport(vp) {
@@ -231,11 +324,13 @@ export const PreviewMode = {
     this.frame.style.width = w + "px"
     this.frame.style.height = h + "px"
 
-    this.viewportToggle.querySelectorAll(".crit-preview-toggle-btn").forEach((b) => {
-      const on = b.dataset.viewport === vp.key
-      b.classList.toggle("active", on)
-      b.setAttribute("aria-pressed", on ? "true" : "false")
-    })
+    if (this.viewportToggle) {
+      this.viewportToggle.querySelectorAll(".crit-toggle-btn").forEach((b) => {
+        const on = b.dataset.viewport === vp.key
+        b.classList.toggle("crit-toggle-btn--active", on)
+        b.setAttribute("aria-pressed", on ? "true" : "false")
+      })
+    }
 
     if (w > 0 && h > 0) this.sender.send({ type: C2A.SET_VIEWPORT, width: w, height: h })
   },
@@ -251,23 +346,18 @@ export const PreviewMode = {
         // installMode: a Pin click must never race the iframe→agent boot.
         const disabled = m.key === "pin"
         return (
-          '<button type="button" class="crit-preview-toggle-btn' +
-          (active ? " active" : "") +
-          '" data-mode="' +
-          m.key +
-          '" aria-pressed="' +
-          (active ? "true" : "false") +
-          '"' +
+          '<button type="button" class="crit-toggle-btn' +
+          (active ? " crit-toggle-btn--active" : "") +
+          '" data-mode="' + m.key +
+          '" aria-pressed="' + (active ? "true" : "false") + '"' +
           (disabled ? ' disabled aria-disabled="true" title="Loading…"' : "") +
-          ">" +
-          escapeHTML(m.label) +
-          "</button>"
+          ">" + escapeHtml(m.label) + "</button>"
         )
       })
       .join("")
 
     this.modeToggle.addEventListener("click", (e) => {
-      const btn = e.target.closest(".crit-preview-toggle-btn")
+      const btn = e.target.closest(".crit-toggle-btn")
       if (!btn || btn.hasAttribute("disabled")) return
       const key = btn.dataset.mode
       if (key !== "navigate" && key !== "pin") return
@@ -283,20 +373,86 @@ export const PreviewMode = {
     // Tab doesn't jump into the iframe while pinning.
     this.sender.send({ type: C2A.SET_MODE, value: next })
     this.sender.send({ type: C2A.SET_MARKER_TABINDEX, value: next === "pin" ? -1 : 0 })
-    this.modeToggle.querySelectorAll(".crit-preview-toggle-btn").forEach((b) => {
-      const on = b.dataset.mode === next
-      b.classList.toggle("active", on)
-      b.setAttribute("aria-pressed", on ? "true" : "false")
-    })
+    if (this.modeToggle) {
+      this.modeToggle.querySelectorAll(".crit-toggle-btn").forEach((b) => {
+        const on = b.dataset.mode === next
+        b.classList.toggle("crit-toggle-btn--active", on)
+        b.setAttribute("aria-pressed", on ? "true" : "false")
+      })
+    }
+    if (next === "pin") this.openPanel()
     if (next === "navigate") this.closeComposer()
   },
 
   enablePinButton() {
-    const pinBtn = this.modeToggle.querySelector('.crit-preview-toggle-btn[data-mode="pin"]')
+    if (!this.modeToggle) return
+    const pinBtn = this.modeToggle.querySelector('.crit-toggle-btn[data-mode="pin"]')
     if (!pinBtn) return
     pinBtn.removeAttribute("disabled")
     pinBtn.removeAttribute("aria-disabled")
     pinBtn.setAttribute("title", "Click an element in the preview to comment")
+  },
+
+  // ---- Panel open/close ----------------------------------------------------
+
+  openPanel() {
+    if (!this.panel) return
+    this.panel.classList.add("comments-panel-open")
+    this.syncToggleAria(true)
+  },
+
+  closePanel() {
+    if (!this.panel) return
+    this.panel.classList.remove("comments-panel-open")
+    this.syncToggleAria(false)
+  },
+
+  togglePanel() {
+    if (!this.panel) return
+    if (this.panel.classList.contains("comments-panel-open")) this.closePanel()
+    else this.openPanel()
+  },
+
+  syncToggleAria(isOpen) {
+    const btn = document.getElementById("comment-count")
+    if (btn) btn.setAttribute("aria-expanded", String(isOpen))
+  },
+
+  // ---- Filter pills + expand-all -------------------------------------------
+
+  applyFilter(btn, focus) {
+    if (!btn) return
+    this.activeFilter = btn.dataset.filter || "all"
+    this.filterPill.querySelectorAll(".crit-toggle-btn").forEach((b) => {
+      const active = b === btn
+      b.classList.toggle("crit-toggle-btn--active", active)
+      b.setAttribute("aria-checked", active ? "true" : "false")
+      b.setAttribute("tabindex", active ? "0" : "-1")
+    })
+    if (focus) btn.focus()
+    this.renderPanel()
+  },
+
+  // Default collapse state matches the shared card: resolved collapsed, open
+  // expanded — unless the user has toggled an override.
+  isCardCollapsed(c) {
+    const ov = this.collapseOverrides[c.id]
+    return ov !== undefined ? ov : !!c.resolved
+  },
+
+  toggleExpandAll() {
+    const pins = this.comments.filter((c) => c.dom_anchor)
+    const anyCollapsed = pins.some((c) => this.isCardCollapsed(c))
+    // If anything is collapsed, expand everything; otherwise collapse all.
+    pins.forEach((c) => { this.collapseOverrides[c.id] = !anyCollapsed })
+    this.renderPanel()
+  },
+
+  updateExpandAllLabel() {
+    if (!this.expandAllBtn) return
+    const pins = this.comments.filter((c) => c.dom_anchor)
+    const anyCollapsed = pins.some((c) => this.isCardCollapsed(c))
+    this.expandAllBtn.textContent = anyCollapsed ? "Expand all" : "Collapse all"
   },
 
   // ---- init + iframe src ---------------------------------------------------
@@ -309,11 +465,10 @@ export const PreviewMode = {
     if (typeof payload.can_comment === "boolean") this.canComment = payload.can_comment
 
     // iframe src is ROOT-RELATIVE so the iframe is always same-origin as the
-    // parent page. An absolute Endpoint.url() (data-base-url, e.g.
-    // http://localhost:4000) makes the iframe cross-origin when the page is
-    // browsed via a different host alias (e.g. http://127.0.0.1:4000); the
-    // agent<->hook postMessage channel enforces an exact origin match on both
-    // ends, so a mismatch silently blocks selection, the composer, and comments.
+    // parent page. An absolute Endpoint.url() (data-base-url) makes the iframe
+    // cross-origin when browsed via a different host alias (e.g. 127.0.0.1 vs
+    // localhost); the agent<->hook postMessage channel enforces an exact origin
+    // match on both ends, so a mismatch silently blocks selection + comments.
     const firstHtml = this.files.find((f) => /\.html?$/i.test(f.path || ""))
     this.htmlFile = (firstHtml && firstHtml.path) || "index.html"
     this.iframe.src = "/r/" + encodeURIComponent(this.token) + "/raw/" + this.htmlFile
@@ -389,7 +544,7 @@ export const PreviewMode = {
     this.sender.send({ type: C2A.SET_PINS, pins })
   },
 
-  // ---- Composer (port of live-mode.composer.js + open/submit flow) ---------
+  // ---- Composer (selection → new comment) ----------------------------------
 
   handleSelection(anchor) {
     if (!anchor || !anchor.css_selector) return
@@ -402,6 +557,7 @@ export const PreviewMode = {
     // composer — otherwise submitComposer sees a null anchor and silently
     // drops the comment (no pushEvent, nothing reaches the server).
     this.closeComposer()
+    this.openPanel()
     this.pendingAnchor = anchor
     const el = document.createElement("div")
     el.className = "crit-preview-composer"
@@ -409,7 +565,7 @@ export const PreviewMode = {
     el.setAttribute("aria-label", "New preview comment")
     el.innerHTML = [
       '<div class="crit-preview-composer-meta">',
-      '  <span class="crit-preview-composer-chip">' + escapeHTML(this.anchorLabel(anchor)) + "</span>",
+      '  <span class="crit-preview-composer-chip">' + escapeHtml(this.anchorLabel(anchor)) + "</span>",
       "</div>",
       '<textarea class="crit-preview-composer-body" rows="4" placeholder="Leave a comment… (Ctrl+Enter to submit, Escape to cancel)"></textarea>',
       '<div class="crit-preview-composer-error" hidden></div>',
@@ -420,8 +576,7 @@ export const PreviewMode = {
     ].join("")
 
     // Anchor the composer at the top of the panel so it never overlaps the
-    // iframe content (simpler than crit's pointer-positioned overlay, which
-    // depends on iframe-relative coordinates we don't compute here).
+    // iframe content.
     this.panelBody.insertBefore(el, this.panelBody.firstChild)
     this.composerEl = el
 
@@ -533,7 +688,62 @@ export const PreviewMode = {
     if (this.sender && this.sender.isReady()) this.pushPins()
   },
 
-  // ---- Side panel (port of live-mode.panel-render.js, LiveView-adapted) ----
+  // ---- Side panel (shared card renderer + preview adapter) -----------------
+
+  // Maps preview state onto the shared comments-panel contract. Preview cards
+  // are fully interactive (the panel is the only place comments live — there is
+  // no inline document to scroll to), so resolve + reply render on every card.
+  // Own-comment check, mirroring files mode's isOwnComment: by user id when the
+  // viewer is authenticated, else by anonymous identity.
+  isOwnComment(c) {
+    if (this.userId) return c.user_id != null && String(c.user_id) === String(this.userId)
+    return !!c.author_identity && c.author_identity === this.identity
+  },
+
+  isReviewOwner() {
+    return !!this.userId && !!this.reviewOwnerId && String(this.userId) === String(this.reviewOwnerId)
+  },
+
+  cardAdapter() {
+    return {
+      // Resolve/edit/delete are gated to the comment's author (resolve also to
+      // the review owner; delete also to admins) — matching files mode + crit
+      // local, and enforced server-side. Offering resolve to everyone left the
+      // button stuck-disabled for non-authors: the shared card disables it
+      // optimistically, but the server rejects an unauthorised resolve without
+      // echoing a state change, so it never re-enables.
+      isOwn: (c) => this.isOwnComment(c),
+      canResolve: (c) => this.isOwnComment(c) || this.isReviewOwner(),
+      canDelete: (c) => this.isOwnComment(c) || this.isAdmin,
+      displayName: this.displayName,
+      collapseOverrides: this.collapseOverrides,
+      showActions: () => true,
+      showReplyComposer: () => this.canComment,
+      markdownEnv: () => ({}),
+      headerBadges: (c) => {
+        const n = this.pinNumbers.get(String(c.id))
+        if (!n) return []
+        const badge = document.createElement("span")
+        badge.className = "crit-preview-pin-badge"
+        badge.setAttribute("aria-hidden", "true")
+        badge.textContent = String(n)
+        return [badge]
+      },
+      onResolve: (c, resolved) => this.pushEvent("resolve_comment", { id: c.id, resolved }),
+      onDelete: (c) => this.pushEvent("delete_comment", { id: c.id }),
+      onEditComment: (id, body) => this.pushEvent("edit_comment", { id, body }),
+      onAddReply: (commentId, body) => this.pushEvent("add_reply", { comment_id: commentId, body }),
+      onDeleteReply: (id) => this.pushEvent("delete_reply", { id }),
+      onEditReply: (commentId, reply) => {
+        const sel = window.CSS && CSS.escape ? CSS.escape(String(reply.id)) : reply.id
+        const replyEl = this.panelBody.querySelector('[data-reply-id="' + sel + '"]')
+        const bodyEl = replyEl && replyEl.querySelector(".reply-body")
+        if (bodyEl) startInlineBodyEdit(bodyEl, reply.body, (v) => this.pushEvent("edit_reply", { id: reply.id, body: v }))
+      },
+      scheduleTimeout: (fn, ms) => setTimeout(fn, ms),
+      onCardClick: (c) => this.flashPin(c),
+    }
+  },
 
   renderPanel() {
     if (!this.panelBody) return
@@ -547,9 +757,30 @@ export const PreviewMode = {
     if (composer) this.panelBody.appendChild(composer)
 
     const pins = this.comments.filter((c) => c.dom_anchor)
-    this.badge.textContent = String(pins.length)
+    const total = pins.length
+    const openCount = pins.filter((c) => !c.resolved).length
+    const resolvedCount = pins.filter((c) => c.resolved).length
 
-    if (pins.length === 0) {
+    // Pin numbers are stable across filters (panel order = full pin order),
+    // matching the marker numbers the agent assigns inside the iframe.
+    this.pinNumbers = new Map()
+    pins.forEach((c, i) => this.pinNumbers.set(String(c.id), i + 1))
+
+    // Counts: total badge, header number, and per-pill counts.
+    if (this.countBadge) this.countBadge.textContent = String(total)
+    const headerCount = document.getElementById("commentCountNumber")
+    if (headerCount) headerCount.textContent = total ? String(total) : ""
+    if (this.filterPill) {
+      this.filterPill.querySelectorAll(".crit-toggle-btn").forEach((b) => {
+        const countEl = b.querySelector(".filter-count")
+        if (!countEl) return
+        const f = b.dataset.filter
+        countEl.textContent = f === "open" ? openCount : f === "resolved" ? resolvedCount : total
+      })
+    }
+    this.updateExpandAllLabel()
+
+    if (total === 0) {
       const empty = document.createElement("div")
       empty.className = "comments-panel-empty"
       empty.innerHTML = this.canComment
@@ -559,8 +790,23 @@ export const PreviewMode = {
       return
     }
 
-    // Group by route (preview is single-page, so all pins share one group keyed
-    // by the html file) — mirrors crit's group-by-route panel layout.
+    const visible = pins.filter((c) => {
+      if (this.activeFilter === "open") return !c.resolved
+      if (this.activeFilter === "resolved") return c.resolved
+      return true
+    })
+
+    if (visible.length === 0) {
+      const empty = document.createElement("div")
+      empty.className = "comments-panel-empty"
+      empty.textContent = this.activeFilter === "open" ? "No open comments" : "No resolved comments"
+      this.panelBody.appendChild(empty)
+      return
+    }
+
+    // Single-page preview: one file group keyed by the html file, mirroring
+    // files mode's panel grouping but with a single group.
+    const adapter = this.cardAdapter()
     const group = document.createElement("div")
     group.className = "comments-panel-file-group"
     const name = document.createElement("div")
@@ -569,134 +815,12 @@ export const PreviewMode = {
     group.appendChild(name)
     const cards = document.createElement("div")
     cards.className = "comments-panel-file-cards"
+    visible.forEach((c) => cards.appendChild(renderCommentCard(c, adapter)))
     group.appendChild(cards)
-
-    pins.forEach((c, i) => cards.appendChild(this.buildCard(c, i + 1)))
     this.panelBody.appendChild(group)
   },
 
-  buildCard(c, pinNumber) {
-    const card = document.createElement("div")
-    card.className = "comment-card crit-preview-card"
-    card.dataset.commentId = String(c.id)
-    card.tabIndex = 0
-    if (c.resolved) card.dataset.resolved = "true"
-
-    const head = document.createElement("div")
-    head.className = "crit-preview-card-head"
-    head.innerHTML =
-      '<span class="crit-preview-pin-badge" aria-hidden="true">' +
-      pinNumber +
-      "</span>" +
-      '<span class="crit-preview-card-author">' +
-      escapeHTML(c.author || c.author_display_name || "Anonymous") +
-      "</span>" +
-      (c.resolved ? '<span class="crit-preview-card-resolved">resolved</span>' : "") +
-      (c.created_at ? '<span class="crit-preview-card-time">' + escapeHTML(formatTime(c.created_at)) + "</span>" : "")
-    card.appendChild(head)
-
-    const body = document.createElement("div")
-    body.className = "comment-card-body crit-preview-card-body"
-    body.textContent = c.body || ""
-    card.appendChild(body)
-
-    // Replies.
-    if (c.replies && c.replies.length) {
-      const repliesEl = document.createElement("div")
-      repliesEl.className = "crit-preview-card-replies"
-      c.replies.forEach((r) => {
-        const re = document.createElement("div")
-        re.className = "crit-preview-reply"
-        re.innerHTML =
-          '<span class="crit-preview-reply-author">' +
-          escapeHTML(r.author || r.author_display_name || "Anonymous") +
-          "</span>"
-        const rb = document.createElement("div")
-        rb.className = "crit-preview-reply-body"
-        rb.textContent = r.body || ""
-        re.appendChild(rb)
-        repliesEl.appendChild(re)
-      })
-      card.appendChild(repliesEl)
-    }
-
-    // Actions: resolve + reply (only when commenting is allowed).
-    const actions = document.createElement("div")
-    actions.className = "crit-preview-card-actions"
-
-    const resolveBtn = document.createElement("button")
-    resolveBtn.type = "button"
-    resolveBtn.className = "btn btn-sm crit-preview-resolve-btn"
-    resolveBtn.textContent = c.resolved ? "Unresolve" : "Resolve"
-    resolveBtn.addEventListener("click", (e) => {
-      e.stopPropagation()
-      this.pushEvent("resolve_comment", { id: c.id, resolved: !c.resolved })
-    })
-    actions.appendChild(resolveBtn)
-
-    if (this.canComment) {
-      const replyBtn = document.createElement("button")
-      replyBtn.type = "button"
-      replyBtn.className = "btn btn-sm crit-preview-reply-btn"
-      replyBtn.textContent = "Reply"
-      replyBtn.addEventListener("click", (e) => {
-        e.stopPropagation()
-        this.openReply(card, c)
-      })
-      actions.appendChild(replyBtn)
-    }
-    card.appendChild(actions)
-
-    // Click the card body → scroll/flash the pin in the iframe (keep/clear-
-    // highlight + flash-marker, port of crit's scrollAndFlashPin).
-    card.addEventListener("click", (e) => {
-      if (e.target.closest("button, a, input, textarea")) return
-      this.flashPin(c)
-    })
-
-    return card
-  },
-
-  openReply(card, comment) {
-    // One reply box at a time per card.
-    const existing = card.querySelector(".crit-preview-reply-form")
-    if (existing) {
-      existing.querySelector("textarea").focus()
-      return
-    }
-    const form = document.createElement("div")
-    form.className = "crit-preview-reply-form"
-    form.innerHTML = [
-      '<textarea class="crit-preview-reply-input" rows="2" placeholder="Reply… (Ctrl+Enter to submit, Escape to cancel)"></textarea>',
-      '<div class="crit-preview-reply-actions">',
-      '  <button type="button" class="btn btn-sm crit-preview-reply-cancel">Cancel</button>',
-      '  <button type="button" class="btn btn-sm btn-primary crit-preview-reply-save">Reply</button>',
-      "</div>",
-    ].join("")
-    card.appendChild(form)
-    const ta = form.querySelector("textarea")
-    const submit = () => {
-      const body = (ta.value || "").trim()
-      if (!body) {
-        ta.focus()
-        return
-      }
-      this.pushEvent("add_reply", { comment_id: comment.id, body })
-      form.remove()
-    }
-    form.querySelector(".crit-preview-reply-save").addEventListener("click", submit)
-    form.querySelector(".crit-preview-reply-cancel").addEventListener("click", () => form.remove())
-    ta.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        submit()
-      } else if (e.key === "Escape") {
-        e.preventDefault()
-        form.remove()
-      }
-    })
-    requestAnimationFrame(() => ta.focus())
-  },
+  // ---- Pin highlight + flash (agent bridge) --------------------------------
 
   flashPin(comment) {
     if (!comment) return
@@ -713,6 +837,7 @@ export const PreviewMode = {
   },
 
   scrollPanelToCard(pinId) {
+    this.openPanel()
     const card = this.panelBody.querySelector(
       '.comment-card[data-comment-id="' + (window.CSS && CSS.escape ? CSS.escape(String(pinId)) : pinId) + '"]'
     )

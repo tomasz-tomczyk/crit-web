@@ -81,7 +81,7 @@ test.describe("Preview mode", () => {
     await expect(card).toBeVisible({ timeout: 10_000 });
 
     // Badge counts dom-anchored comments.
-    await expect(page.locator("#critPreviewBadge")).toHaveText("1");
+    await expect(page.locator("#commentsPanelCountBadge")).toHaveText("1");
   });
 
   test("viewport toggle changes the iframe frame width", async ({
@@ -126,9 +126,9 @@ test.describe("Preview mode", () => {
     // the "imported" identity, not the anonymous browser session, so the session
     // cannot resolve it — that path is exercised by the Pin flow (which creates a
     // session-owned comment) once the in-iframe agent is reachable; see the
-    // fixme on "pin mode" below. Here we assert the deterministic, ownership-free
-    // half: the panel renders open vs. resolved comments with the correct
-    // data-resolved attribute and resolve-button label.
+    // fixme on "pin mode" below. Here we assert the deterministic half: the
+    // panel renders open vs. resolved comments with the correct resolved-card
+    // class, and resolve is gated off for this non-author session.
     const review = await createPreviewReview(request, {
       comments: [
         { body: "Open comment here", css_selector: "#hero" },
@@ -148,18 +148,57 @@ test.describe("Preview mode", () => {
       .locator("#critPreviewPanelBody .comment-card")
       .filter({ hasText: "Open comment here" });
     await expect(openCard).toBeVisible({ timeout: 10_000 });
-    await expect(openCard).not.toHaveAttribute("data-resolved", "true");
-    await expect(openCard.locator(".crit-preview-resolve-btn")).toHaveText(
-      "Resolve"
-    );
+    await expect(openCard).not.toHaveClass(/resolved-card/);
+    // These API-created comments are owned by "imported", not the anonymous
+    // browser session, so resolve is gated off — assert the button is absent
+    // (verifies ownership gating; the authorised path is the Pin flow below).
+    await expect(openCard.locator(".resolve-btn")).toHaveCount(0);
 
     const resolvedCard = page
-      .locator('#critPreviewPanelBody .comment-card[data-resolved="true"]')
+      .locator("#critPreviewPanelBody .comment-card.resolved-card")
       .filter({ hasText: "Already resolved here" });
     await expect(resolvedCard).toBeVisible({ timeout: 10_000 });
-    await expect(resolvedCard.locator(".crit-preview-resolve-btn")).toHaveText(
-      "Unresolve"
+    await expect(resolvedCard.locator(".resolve-btn")).toHaveCount(0);
+  });
+
+  test("filter pills narrow the panel to open / resolved comments", async ({
+    page,
+    request,
+  }) => {
+    const review = await createPreviewReview(request, {
+      comments: [
+        { body: "An open one", css_selector: "#hero" },
+        { body: "A resolved one", css_selector: "#counter", resolved: true },
+      ],
+    });
+    token = review.token;
+    deleteToken = review.deleteToken;
+
+    await loadPreview(page, token);
+
+    const pills = page.locator("#commentsFilterPill");
+    await expect(pills).toBeVisible({ timeout: 10_000 });
+    await expect(pills.locator('[data-filter="all"] .filter-count')).toHaveText(
+      "2"
     );
+    await expect(
+      pills.locator('[data-filter="open"] .filter-count')
+    ).toHaveText("1");
+    await expect(
+      pills.locator('[data-filter="resolved"] .filter-count')
+    ).toHaveText("1");
+
+    const cards = page.locator("#critPreviewPanelBody .comment-card");
+
+    // Open filter → only the open comment shows.
+    await pills.locator('[data-filter="open"]').click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.filter({ hasText: "An open one" })).toBeVisible();
+
+    // Resolved filter → only the resolved comment shows.
+    await pills.locator('[data-filter="resolved"]').click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.filter({ hasText: "A resolved one" })).toBeVisible();
   });
 
   test("reply from the panel adds a reply under the card", async ({
@@ -181,13 +220,15 @@ test.describe("Preview mode", () => {
       .filter({ hasText: "Please revisit this section" });
     await expect(card).toBeVisible({ timeout: 10_000 });
 
-    await card.locator(".crit-preview-reply-btn").click();
-    const replyInput = card.locator(".crit-preview-reply-input");
-    await expect(replyInput).toBeVisible({ timeout: 5_000 });
-    await replyInput.fill("Agreed, will fix.");
-    await card.locator(".crit-preview-reply-save").click();
+    // The shared reply composer is a collapsed input that expands to a textarea
+    // on focus, then submits via the "Reply" button.
+    await card.locator(".reply-input").click();
+    const replyTextarea = card.locator(".reply-textarea");
+    await expect(replyTextarea).toBeVisible({ timeout: 5_000 });
+    await replyTextarea.fill("Agreed, will fix.");
+    await card.locator(".reply-form-buttons .btn-primary").click();
 
-    await expect(card.locator(".crit-preview-reply-body")).toContainText(
+    await expect(card.locator(".reply-body")).toContainText(
       "Agreed, will fix.",
       { timeout: 10_000 }
     );
@@ -215,7 +256,7 @@ test.describe("Preview mode", () => {
       .locator("#critPreviewPanelBody .comment-card")
       .filter({ hasText: "Persisted comment body" });
     await expect(card).toBeVisible({ timeout: 10_000 });
-    await expect(card).toHaveAttribute("data-resolved", "true");
+    await expect(card).toHaveClass(/resolved-card/);
 
     await page.reload();
     await loadPreview(page, token);
@@ -224,7 +265,7 @@ test.describe("Preview mode", () => {
       .locator("#critPreviewPanelBody .comment-card")
       .filter({ hasText: "Persisted comment body" });
     await expect(afterReload).toBeVisible({ timeout: 10_000 });
-    await expect(afterReload).toHaveAttribute("data-resolved", "true");
+    await expect(afterReload).toHaveClass(/resolved-card/);
   });
 
   // End-to-end cross-frame create flow: the vendored agent (served from
@@ -262,6 +303,6 @@ test.describe("Preview mode", () => {
       .locator("#critPreviewPanelBody .comment-card")
       .filter({ hasText: "Created via pin mode" });
     await expect(card).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator("#critPreviewBadge")).toHaveText("1");
+    await expect(page.locator("#commentsPanelCountBadge")).toHaveText("1");
   });
 });

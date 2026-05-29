@@ -1186,7 +1186,9 @@ body.dragging { user-select: none; cursor: grabbing; }
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 40;
+  /* Above the comments panel (z-index 90), matching .crit-split-dropdown (100)
+     — the panel is open by default in preview, so a lower value gets clipped. */
+  z-index: 100;
   width: 280px;
   background: var(--crit-bg-elevated);
   border: 1px solid var(--crit-border-strong);
@@ -3871,13 +3873,14 @@ body.sidebar-resizing * {
 
 
 /* ============================================================
-   Preview mode — iframe pane + comment side panel (PreviewMode hook)
-   Ported from crit/frontend/style-live.css (.crit-live-*), using --crit-*
-   variables. Custom CSS only — no Tailwind/daisyUI on the review page.
-   crit local reuses .toggle-group/.toggle-btn from its code-review header;
-   crit-web's review page has no such header, so preview defines its own
-   .crit-preview-toggle-* button group here. Pin cards reuse the shared
-   .comment-card / .comments-panel-* chrome.
+   Preview mode — iframe pane + shared comments panel (PreviewMode hook)
+   The comment panel, cards, replies, resolve/reply and resolved styling are
+   REUSED from the shared chrome (.comments-panel*, .comment-card*, comments-
+   panel.js) — identical to files mode. This block defines only the preview-
+   specific pieces: the iframe pane, the header viewport/Navigate-Pin toggles
+   (which reuse .crit-diff-mode-toggle/.crit-toggle-btn), the pin-number badge,
+   the selection composer, and the pin flash animation.
+   Custom CSS only — no Tailwind/daisyUI on the review page.
    ============================================================ */
 
 .crit-preview-container {
@@ -3888,59 +3891,19 @@ body.sidebar-resizing * {
   background: var(--crit-editor-bg);
 }
 
-/* --- Chrome bar: viewport + mode toggles --- */
-.crit-preview-chrome {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--crit-border);
-  background: var(--crit-editor-bg-elevated);
-}
-
-.crit-preview-toggle-group {
+/* Header viewport + Navigate/Pin toggles (injected into .crit-header-actions-right). */
+.crit-preview-controls {
   display: inline-flex;
-  border: 1px solid var(--crit-border);
-  border-radius: var(--crit-r-md);
-  overflow: hidden;
-  background: var(--crit-editor-bg);
+  align-items: center;
+  gap: 8px;
 }
 
-.crit-preview-toggle-btn {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--crit-editor-fg-secondary);
-  font-family: var(--crit-font-body);
-  font-size: 13px;
-  line-height: 1;
-  padding: 6px 12px;
-  cursor: pointer;
-  border-right: 1px solid var(--crit-border);
-  transition: background 0.15s, color 0.15s;
+.crit-preview-controls .crit-toggle-btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
 }
 
-.crit-preview-toggle-btn:last-child { border-right: 0; }
-
-.crit-preview-toggle-btn:hover:not([disabled]) {
-  background: var(--crit-row-hover);
-  color: var(--crit-editor-fg);
-}
-
-.crit-preview-toggle-btn.active {
-  background: var(--crit-brand-cta);
-  color: var(--crit-fg-on-brand);
-}
-
-.crit-preview-toggle-btn[disabled] { opacity: 0.5; cursor: default; }
-
-.crit-preview-toggle-btn:focus-visible {
-  outline: 2px solid var(--crit-focus);
-  outline-offset: -2px;
-}
-
-/* --- Body: iframe pane + side panel split --- */
+/* --- Body: iframe pane + shared side panel split --- */
 .crit-preview-body {
   flex: 1 1 auto;
   display: flex;
@@ -3977,65 +3940,7 @@ body.sidebar-resizing * {
   border-radius: var(--crit-r-md);
 }
 
-/* --- Side panel --- */
-.crit-preview-panel {
-  flex: 0 0 340px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  border-left: 1px solid var(--crit-border);
-  background: var(--crit-editor-bg);
-}
-
-.crit-preview-panel-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--crit-border);
-}
-
-.crit-preview-panel-title {
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--crit-editor-fg);
-}
-
-.crit-preview-panel-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--crit-editor-bg-elevated);
-  color: var(--crit-editor-fg-muted);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.crit-preview-panel-body {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-/* --- Pin cards (reuse .comment-card base; add preview-specific chrome) --- */
-.crit-preview-card {
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.crit-preview-card[data-resolved="true"] { opacity: 0.7; }
-
-.crit-preview-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
+/* --- Pin-number badge on a shared .comment-card (preview-only chrome) --- */
 .crit-preview-pin-badge {
   display: inline-flex;
   align-items: center;
@@ -4050,61 +3955,6 @@ body.sidebar-resizing * {
   flex: 0 0 auto;
 }
 
-.crit-preview-card-author {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--crit-editor-fg);
-}
-
-.crit-preview-card-resolved {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--crit-green);
-}
-
-.crit-preview-card-time {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--crit-editor-fg-secondary);
-}
-
-.crit-preview-card-body {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--crit-editor-fg);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.crit-preview-card-replies {
-  margin-top: 8px;
-  padding-left: 12px;
-  border-left: 2px solid var(--crit-border);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.crit-preview-reply-author {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--crit-editor-fg);
-}
-
-.crit-preview-reply-body {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--crit-editor-fg);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.crit-preview-card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
 .crit-preview-card-flash { animation: crit-preview-flash 1.2s ease-out; }
 
 @keyframes crit-preview-flash {
@@ -4112,7 +3962,7 @@ body.sidebar-resizing * {
   100% { box-shadow: 0 0 0 2px transparent; }
 }
 
-/* --- Composer (ported from .crit-live-composer) --- */
+/* --- Selection composer (new DOM-anchored comment) --- */
 .crit-preview-composer {
   border: 1px solid var(--crit-brand);
   border-radius: var(--crit-r-md);
@@ -4142,8 +3992,7 @@ body.sidebar-resizing * {
   white-space: nowrap;
 }
 
-.crit-preview-composer-body,
-.crit-preview-reply-input {
+.crit-preview-composer-body {
   width: 100%;
   box-sizing: border-box;
   resize: vertical;
@@ -4157,8 +4006,7 @@ body.sidebar-resizing * {
   color: var(--crit-editor-fg);
 }
 
-.crit-preview-composer-body::placeholder,
-.crit-preview-reply-input::placeholder { color: var(--crit-editor-fg-muted); }
+.crit-preview-composer-body::placeholder { color: var(--crit-editor-fg-muted); }
 
 .crit-preview-composer-error {
   color: var(--crit-red);
@@ -4166,25 +4014,9 @@ body.sidebar-resizing * {
   margin-top: 6px;
 }
 
-.crit-preview-composer-actions,
-.crit-preview-reply-actions {
+.crit-preview-composer-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 8px;
-}
-
-.crit-preview-reply-form { margin-top: 8px; }
-
-/* --- Responsive: stack panel under iframe on narrow viewports --- */
-@media (max-width: 768px) {
-  .crit-preview-body { flex-direction: column; }
-
-  .crit-preview-panel {
-    flex: 1 1 auto;
-    border-left: 0;
-    border-top: 1px solid var(--crit-border);
-  }
-
-  .crit-preview-toggle-btn { padding: 10px 14px; font-size: 14px; }
 }

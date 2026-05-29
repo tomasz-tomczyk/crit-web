@@ -3,6 +3,18 @@ import hljs from "highlight.js"
 import { registerMarkdownPatch } from "./highlight-markdown-patch"
 import { heex } from "highlightjs-heex"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
+import {
+  commentMd,
+  escapeHtml,
+  formatTime,
+  authorColorIndex,
+  linkifyCommentRefsInDom,
+  renderReplyList as sharedRenderReplyList,
+  createReplyInput as sharedCreateReplyInput,
+  renderCommentCard,
+  attachSidebarResizeHandle,
+} from "./comments-panel"
+import { createSettingsPanel } from "./settings-panel"
 
 // Re-register hljs 'markdown' with patched grammar. Must run before any
 // hljs.highlight() call. See highlight-markdown-patch.js for rationale.
@@ -37,96 +49,12 @@ function isReviewOwner(ctx) {
   return ctx.userId !== "" && ctx.reviewOwnerId !== "" && String(ctx.userId) === String(ctx.reviewOwnerId)
 }
 
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-}
-
 function slugifyHeading(text) {
   return text
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s-]/gu, "")
     .replace(/[\s-]+/g, "-")
     .replace(/^-+|-+$/g, "")
-}
-
-const commentMd = markdownit({
-  html: false,
-  linkify: true,
-  typographer: true,
-  highlight(str, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try { return hljs.highlight(str, { language: lang }).value } catch (_) {}
-    }
-    return ''
-  },
-})
-
-// ===== File Reference Inline Rule =====
-commentMd.inline.ruler.push('file_ref', function(state, silent) {
-  var start = state.pos
-  var max = state.posMax
-  if (state.src.charCodeAt(start) !== 0x40 /* @ */) return false
-  if (start > 0 && !/\s/.test(state.src[start - 1])) return false
-  var end = start + 1
-  while (end < max && /[a-zA-Z0-9._\-\/]/.test(state.src[end])) end++
-  var path = state.src.substring(start + 1, end)
-  if (path.length === 0 || (path.indexOf('.') === -1 && path.indexOf('/') === -1)) return false
-  if (!silent) {
-    var token = state.push('file_ref', '', 0)
-    token.content = path
-  }
-  state.pos = end
-  return true
-})
-commentMd.renderer.rules.file_ref = function(tokens, idx) {
-  var path = tokens[idx].content
-  return '<span class="file-ref">' + escapeHtml(path) + '</span>'
-}
-
-// Override code_inline so backtick-wrapped comment IDs render as the same chip.
-const defaultCodeInline = commentMd.renderer.rules.code_inline || function(tokens, idx, options, env, self) {
-  return self.renderToken(tokens, idx, options)
-}
-commentMd.renderer.rules.code_inline = function(tokens, idx, options, env, self) {
-  const content = tokens[idx].content
-  if (/^(c|r|rp)_[a-f0-9]{6,}$/.test(content)) {
-    return '<span class="comment-ref comment-ref-code" tabindex="0" role="link" data-ref-id="' + escapeHtml(content) + '">' + escapeHtml(content) + '</span>'
-  }
-  return defaultCodeInline(tokens, idx, options, env, self)
-}
-
-function linkifyCommentRefsInDom(el) {
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false)
-  const textNodes = []
-  let node
-  while ((node = walker.nextNode())) {
-    if (node.parentNode.closest('code, pre, .comment-ref')) continue
-    textNodes.push(node)
-  }
-  const re = /((?:c|r|rp)_[a-f0-9]{6,})/g
-  textNodes.forEach(tn => {
-    if (!re.test(tn.nodeValue)) { re.lastIndex = 0; return }
-    re.lastIndex = 0
-    const frag = document.createDocumentFragment()
-    let last = 0, m
-    while ((m = re.exec(tn.nodeValue)) !== null) {
-      if (m.index > last) frag.appendChild(document.createTextNode(tn.nodeValue.slice(last, m.index)))
-      const span = document.createElement('span')
-      span.className = 'comment-ref'
-      span.tabIndex = 0
-      span.setAttribute('role', 'link')
-      span.dataset.refId = m[1]
-      span.textContent = m[1]
-      frag.appendChild(span)
-      last = m.index + m[0].length
-    }
-    if (last < tn.nodeValue.length) frag.appendChild(document.createTextNode(tn.nodeValue.slice(last)))
-    tn.parentNode.replaceChild(frag, tn)
-  })
 }
 
 // Scroll/expand/flash a comment card located anywhere in the document, given just its id.
@@ -826,22 +754,6 @@ function refreshVisualSelectionVisuals(ctx) {
       && sLine >= ctx.selectionStart && eLine <= ctx.selectionEnd
     lb.classList.toggle('selected', matches)
   }
-}
-
-function formatTime(isoStr) {
-  if (!isoStr) return ""
-  const d = new Date(isoStr)
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-}
-
-function authorColorIndex(author) {
-  if (!author) return 0
-  let hash = 0
-  for (let i = 0; i < author.length; i++) {
-    hash = ((hash << 5) - hash) + author.charCodeAt(i)
-    hash |= 0
-  }
-  return Math.abs(hash) % 6
 }
 
 // Split highlighted code HTML into per-line chunks,
@@ -3157,61 +3069,6 @@ function initSidebarWidths() {
   })
 }
 
-function attachSidebarResizeHandle(handle, target, cfg) {
-  // Pointer events + setPointerCapture: the handle keeps receiving move/up
-  // events even if the pointer leaves the window, devtools opens, or the
-  // user alt-tabs. Avoids the "stuck dragging" leak that document-level
-  // mousemove listeners suffer from.
-  handle.addEventListener('pointerdown', function(e) {
-    if (e.button !== 0) return
-    e.preventDefault()
-    handle.setPointerCapture(e.pointerId)
-    const startX = e.clientX
-    const startWidth = target.getBoundingClientRect().width
-    // For a left-edge handle (comments panel), dragging right shrinks the panel.
-    const dir = cfg.edge === 'left' ? -1 : 1
-    handle.classList.add('dragging')
-    document.body.classList.add('sidebar-resizing')
-    let lastWidth = startWidth
-
-    function onMove(ev) {
-      const delta = (ev.clientX - startX) * dir
-      const w = Math.max(cfg.min, startWidth + delta)
-      target.style.width = w + 'px'
-      lastWidth = w
-    }
-    function onEnd() {
-      handle.removeEventListener('pointermove', onMove)
-      handle.removeEventListener('pointerup', onEnd)
-      handle.removeEventListener('pointercancel', onEnd)
-      handle.classList.remove('dragging')
-      document.body.classList.remove('sidebar-resizing')
-      try {
-        localStorage.setItem(cfg.storageKey, String(Math.round(lastWidth)))
-      } catch { /* storage unavailable; ignore */ }
-    }
-    handle.addEventListener('pointermove', onMove)
-    handle.addEventListener('pointerup', onEnd)
-    handle.addEventListener('pointercancel', onEnd)
-  })
-
-  // Keyboard resize for a11y: ArrowLeft / ArrowRight nudges by `step` px.
-  // For left-edge handles the direction flips so ArrowRight always shrinks
-  // the controlled panel — matching pointer drag semantics.
-  handle.addEventListener('keydown', function(e) {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-    e.preventDefault()
-    const dir = cfg.edge === 'left' ? -1 : 1
-    const sign = e.key === 'ArrowRight' ? 1 : -1
-    const current = target.getBoundingClientRect().width
-    const w = Math.max(cfg.min, current + sign * dir * cfg.step)
-    target.style.width = w + 'px'
-    try {
-      localStorage.setItem(cfg.storageKey, String(Math.round(w)))
-    } catch { /* storage unavailable; ignore */ }
-  })
-}
-
 function insertSuggestion(textarea, formObj, ctx) {
   let lines
   if (formObj.quote) {
@@ -3236,166 +3093,85 @@ function insertSuggestion(textarea, formObj, ctx) {
 
 // ---- Threading: replies & resolved ------------------------------------------
 
+// ---- Comment card / replies / composer --------------------------------------
+// These delegate to the shared comments-panel module so files mode and preview
+// render comments identically. commentCardAdapter maps ctx + filePath onto the
+// shared module's mode-agnostic contract; every existing call site keeps its
+// (comment, ctx) / (commentId, ctx) / (ctx, comment, filePath) signature.
+
+function commentCardAdapter(ctx, filePath) {
+  return {
+    isOwn: (c) => isOwnComment(c, ctx),
+    canResolve: (c) => isOwnComment(c, ctx) || isReviewOwner(ctx),
+    canDelete: (c) => canDeleteComment(c, ctx),
+    displayName: ctx.displayName,
+    collapseOverrides: commentCollapseOverrides,
+    onResolve: (c, resolved) => ctx.pushEvent('resolve_comment', { id: c.id, resolved }),
+    onDelete: (c) => ctx.pushEvent('delete_comment', { id: c.id }),
+    onAddReply: (commentId, body) => ctx.pushEvent('add_reply', { comment_id: commentId, body }),
+    onDeleteReply: (id) => ctx.pushEvent('delete_reply', { id }),
+    onEditReply: (commentId, reply) => editReply(commentId, reply, ctx),
+    beforeReplyExpand: () => { closeEmptyReviewForm(ctx); closeEmptyForms(ctx, null) },
+    scheduleTimeout: (fn, ms) => trackedSetTimeout(ctx, fn, ms),
+    // Files-mode panel cards: resolve/delete live only on review-scope comments
+    // (file/line comments resolve at their inline location); replies read-only.
+    showActions: (c) => c.scope === 'review' && (isOwnComment(c, ctx) || isReviewOwner(ctx)),
+    showReplyComposer: () => false,
+    headerBadges: (c) => {
+      const badges = []
+      if (c.review_round >= 1) {
+        const rc = c.review_round === ctx.reviewRound ? ' round-current' : c.review_round === ctx.reviewRound - 1 ? ' round-latest' : ''
+        const roundBadge = document.createElement('span')
+        roundBadge.className = 'comment-round-badge' + rc
+        roundBadge.textContent = 'R' + c.review_round
+        badges.push(roundBadge)
+      }
+      if (c.scope !== 'review' && c.scope !== 'file' && c.start_line) {
+        const ref = document.createElement('span')
+        ref.className = 'comment-line-ref'
+        ref.textContent = c.start_line === c.end_line ? 'L' + c.start_line : 'L' + c.start_line + '–' + c.end_line
+        badges.push(ref)
+      }
+      return badges
+    },
+    markdownEnv: (c) => {
+      const env = {}
+      if (c.start_line && c.end_line) {
+        if (c.quote) {
+          env.originalLines = c.quote.split('\n')
+        } else {
+          let fileContent = ctx.rawContent
+          if (ctx.multiFile && filePath) {
+            const file = ctx.files.find(f => f.path === filePath)
+            if (file) fileContent = file.content
+          }
+          if (fileContent) {
+            env.originalLines = fileContent.split('\n').slice(c.start_line - 1, c.end_line)
+          }
+        }
+      }
+      return env
+    },
+    onCardClick: (c) => {
+      if (c.scope === 'review') {
+        scrollToReviewComment(ctx, c.id)
+      } else {
+        if (filePath) {
+          const section = document.getElementById('file-section-' + CSS.escape(filePath))
+          if (section && !section.open) section.open = true
+        }
+        if (c.start_line) scrollToInlineComment(c, ctx)
+      }
+    },
+  }
+}
+
 function renderReplyList(comment, ctx) {
-  const repliesContainer = document.createElement('div')
-  repliesContainer.className = 'comment-replies'
-  comment.replies.forEach(function(reply) {
-    const replyEl = document.createElement('div')
-    replyEl.className = 'comment-reply'
-    replyEl.dataset.replyId = reply.id
-
-    const replyHeader = document.createElement('div')
-    replyHeader.className = 'reply-header'
-
-    const replyMeta = document.createElement('div')
-    replyMeta.className = 'reply-meta'
-    const isOwnReply = isOwnComment(reply, ctx)
-    if (reply.author_display_name) {
-      const replyAuthorBadge = document.createElement('span')
-      replyAuthorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(reply.author_display_name)
-      replyAuthorBadge.textContent = '@' + reply.author_display_name
-      replyMeta.appendChild(replyAuthorBadge)
-    } else {
-      const author = document.createElement('span')
-      author.className = 'comment-author' + (isOwnReply ? ' comment-author-you' : '')
-      author.innerHTML =
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="comment-author-icon"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd"/></svg>' +
-        (isOwnReply ? (ctx.displayName || 'You') : (reply.author_identity || '?').slice(0, 20))
-      replyMeta.appendChild(author)
-    }
-    const replyTime = document.createElement('span')
-    replyTime.className = 'reply-time'
-    replyTime.textContent = formatTime(reply.created_at)
-    replyMeta.appendChild(replyTime)
-    replyHeader.appendChild(replyMeta)
-
-    if (isOwnReply || canDeleteComment(reply, ctx)) {
-      const replyActions = document.createElement('div')
-      replyActions.className = 'reply-actions'
-
-      if (isOwnReply) {
-        const replyEditBtn = document.createElement('button')
-        replyEditBtn.title = 'Edit'
-        replyEditBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>'
-        replyEditBtn.addEventListener('click', function(e) { e.stopPropagation(); editReply(comment.id, reply, ctx) })
-        replyActions.appendChild(replyEditBtn)
-      }
-
-      if (canDeleteComment(reply, ctx)) {
-        const replyDeleteBtn = document.createElement('button')
-        replyDeleteBtn.className = 'delete-btn'
-        replyDeleteBtn.title = 'Delete'
-        replyDeleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
-        replyDeleteBtn.addEventListener('click', function(e) {
-          e.stopPropagation()
-          ctx.pushEvent("delete_reply", { id: reply.id })
-        })
-        replyActions.appendChild(replyDeleteBtn)
-      }
-
-      replyHeader.appendChild(replyActions)
-    }
-
-    replyEl.appendChild(replyHeader)
-
-    const replyBody = document.createElement('div')
-    replyBody.className = 'reply-body'
-    replyBody.dataset.rawBody = reply.body
-    replyBody.innerHTML = commentMd.render(reply.body)
-    linkifyCommentRefsInDom(replyBody)
-    replyEl.appendChild(replyBody)
-
-    repliesContainer.appendChild(replyEl)
-  })
-  return repliesContainer
+  return sharedRenderReplyList(comment, commentCardAdapter(ctx, null))
 }
 
 function createReplyInput(commentId, ctx) {
-  const form = document.createElement('div')
-  form.className = 'reply-form'
-
-  const input = document.createElement('input')
-  input.type = 'text'
-  input.className = 'reply-input'
-  input.placeholder = 'Write a reply\u2026'
-  form.appendChild(input)
-
-  // Expanded state elements (hidden initially)
-  const textarea = document.createElement('textarea')
-  textarea.className = 'reply-textarea'
-  textarea.placeholder = 'Write a reply\u2026'
-  textarea.rows = 3
-
-  const buttons = document.createElement('div')
-  buttons.className = 'reply-form-buttons'
-
-  const cancelBtn = document.createElement('button')
-  cancelBtn.className = 'btn btn-sm'
-  cancelBtn.textContent = 'Cancel'
-
-  const submitBtn = document.createElement('button')
-  submitBtn.className = 'btn btn-sm btn-primary'
-  submitBtn.textContent = 'Reply'
-
-  buttons.appendChild(cancelBtn)
-  buttons.appendChild(submitBtn)
-
-  function expand() {
-    if (form.classList.contains('expanded')) return
-    closeEmptyReviewForm(ctx)
-    closeEmptyForms(ctx, null)
-    form.classList.add('expanded')
-    textarea.value = input.value
-    input.replaceWith(textarea)
-    form.appendChild(buttons)
-    textarea.focus()
-  }
-
-  function collapse() {
-    if (!form.classList.contains('expanded')) return
-    form.classList.remove('expanded')
-    textarea.replaceWith(input)
-    input.value = ''
-    if (buttons.parentNode) buttons.remove()
-  }
-
-  input.addEventListener('focus', expand)
-  cancelBtn.addEventListener('click', collapse)
-
-  // Collapse on blur if empty (with delay to allow button clicks)
-  textarea.addEventListener('blur', function() {
-    trackedSetTimeout(ctx, function() {
-      if (form.classList.contains('expanded') && !textarea.value.trim() && !form.contains(document.activeElement)) {
-        collapse()
-      }
-    }, 150)
-  })
-
-  submitBtn.addEventListener('click', function() {
-    const body = textarea.value.trim()
-    if (!body) return
-    submitBtn.disabled = true
-    ctx.pushEvent("add_reply", { comment_id: commentId, body: body })
-    collapse()
-    submitBtn.disabled = false
-  })
-
-  textarea.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault()
-      e.stopPropagation()
-      submitBtn.click()
-    }
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      e.stopPropagation()
-      if (!textarea.value.trim()) {
-        collapse()
-      }
-    }
-  })
-
-  return form
+  return sharedCreateReplyInput(commentId, commentCardAdapter(ctx, null))
 }
 
 function editReply(commentId, reply, ctx) {
@@ -4128,176 +3904,7 @@ function toggleExpandAllComments(ctx) {
 }
 
 function renderPanelCard(ctx, comment, filePath) {
-  const isGeneral = comment.scope === 'review'
-  const isResolved = comment.resolved
-
-  const wrapper = document.createElement('div')
-  wrapper.className = 'comment-block panel-comment-block'
-
-  const card = document.createElement('div')
-  card.className = 'comment-card' + (isResolved ? ' resolved-card' : '')
-  card.dataset.commentId = comment.id
-
-  // Collapse state
-  const isCollapsed = isResolved
-    ? (commentCollapseOverrides[comment.id] !== undefined ? commentCollapseOverrides[comment.id] : true)
-    : (commentCollapseOverrides[comment.id] === true)
-  if (isCollapsed) card.classList.add('collapsed')
-
-  // Header
-  const header = document.createElement('div')
-  header.className = 'comment-header'
-
-  const headerLeft = document.createElement('div')
-  headerLeft.className = 'comment-header-left'
-
-  const collapseBtn = document.createElement('button')
-  collapseBtn.className = 'comment-collapse-btn'
-  collapseBtn.title = isCollapsed ? 'Expand comment' : 'Collapse comment'
-  collapseBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg>'
-  collapseBtn.addEventListener('click', function(e) {
-    e.stopPropagation()
-    card.classList.toggle('collapsed')
-    commentCollapseOverrides[comment.id] = card.classList.contains('collapsed')
-    collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
-  })
-  headerLeft.appendChild(collapseBtn)
-
-  // Author
-  const isOwn = isOwnComment(comment, ctx)
-  const canResolve = isOwn || isReviewOwner(ctx)
-  if (comment.author_display_name) {
-    const authorBadge = document.createElement('span')
-    authorBadge.className = 'comment-author-badge author-color-' + authorColorIndex(comment.author_display_name)
-    authorBadge.textContent = '@' + comment.author_display_name
-    headerLeft.appendChild(authorBadge)
-  } else {
-    const author = document.createElement('span')
-    author.className = 'comment-author' + (isOwn ? ' comment-author-you' : '')
-    author.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="comment-author-icon"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd"/></svg>' +
-      (isOwn ? (ctx.displayName || 'You') : 'anonymous')
-    headerLeft.appendChild(author)
-  }
-
-  // Round badge
-  if (comment.review_round >= 1) {
-    const rc = comment.review_round === ctx.reviewRound ? ' round-current' : comment.review_round === ctx.reviewRound - 1 ? ' round-latest' : ''
-    const roundBadge = document.createElement('span')
-    roundBadge.className = 'comment-round-badge' + rc
-    roundBadge.textContent = 'R' + comment.review_round
-    headerLeft.appendChild(roundBadge)
-  }
-
-  // Line reference / scope label (no label for file-scope or review-scope)
-  if (!isGeneral && comment.scope !== 'file' && comment.start_line) {
-    const ref = document.createElement('span')
-    ref.className = 'comment-line-ref'
-    ref.textContent = comment.start_line === comment.end_line
-      ? 'L' + comment.start_line
-      : 'L' + comment.start_line + '\u2013' + comment.end_line
-    headerLeft.appendChild(ref)
-  }
-
-  // Time (inside headerLeft, as last child — matches crit local)
-  const time = document.createElement('span')
-  time.className = 'comment-time'
-  time.textContent = formatTime(comment.created_at)
-  headerLeft.appendChild(time)
-
-  header.appendChild(headerLeft)
-
-  // Actions appended to header (sibling to headerLeft — matches crit local)
-  if (isGeneral && (canResolve || isOwn)) {
-    const actions = document.createElement('div')
-    actions.className = 'comment-actions'
-
-    if (canResolve) {
-      const resolveBtn = document.createElement('button')
-      resolveBtn.className = isResolved ? 'resolve-btn resolve-btn--active' : 'resolve-btn'
-      resolveBtn.title = isResolved ? 'Unresolve' : 'Resolve'
-      resolveBtn.innerHTML = isResolved
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg><span>Unresolve</span>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Resolve</span>'
-      resolveBtn.addEventListener('click', function(e) {
-        e.stopPropagation()
-        if (resolveBtn.disabled) return;
-        resolveBtn.disabled = true;
-        ctx.pushEvent('resolve_comment', { id: comment.id, resolved: !isResolved })
-      })
-      actions.appendChild(resolveBtn)
-    }
-
-    if (canDeleteComment(comment, ctx)) {
-      const deleteBtn = document.createElement('button')
-      deleteBtn.className = 'delete-btn'
-      deleteBtn.title = 'Delete'
-      deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
-      deleteBtn.addEventListener('click', function(e) {
-        e.stopPropagation()
-        ctx.pushEvent('delete_comment', { id: comment.id })
-      })
-      actions.appendChild(deleteBtn)
-    }
-
-    header.appendChild(actions)
-  }
-
-  card.appendChild(header)
-
-  // Body
-  const bodyEl = document.createElement('div')
-  bodyEl.className = 'comment-body'
-  const env = {}
-  if (comment.start_line && comment.end_line) {
-    if (comment.quote) {
-      env.originalLines = comment.quote.split('\n')
-    } else {
-      let fileContent = ctx.rawContent
-      if (ctx.multiFile && filePath) {
-        const file = ctx.files.find(f => f.path === filePath)
-        if (file) fileContent = file.content
-      }
-      if (fileContent) {
-        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
-      }
-    }
-  }
-  bodyEl.innerHTML = commentMd.render(comment.body, env)
-  linkifyCommentRefsInDom(bodyEl)
-  card.appendChild(bodyEl)
-
-  // Replies (read-only in panel)
-  if (comment.replies && comment.replies.length > 0) {
-    card.appendChild(renderReplyList(comment, ctx))
-  }
-
-  wrapper.appendChild(card)
-
-  // Click-to-scroll
-  if (isGeneral) {
-    // Panel cards for review comments link back to the inline Review
-    // Conversation section, mirroring crit/'s behaviour.
-    wrapper.style.cursor = 'pointer'
-    wrapper.addEventListener('click', function(e) {
-      if (e.target.closest('button')) return
-      scrollToReviewComment(ctx, comment.id)
-    })
-  } else {
-    wrapper.style.cursor = 'pointer'
-    wrapper.addEventListener('click', function(e) {
-      if (e.target.closest('button')) return
-      if (filePath) {
-        const section = document.getElementById('file-section-' + CSS.escape(filePath))
-        if (section && !section.open) section.open = true
-      }
-      if (comment.start_line) {
-        scrollToInlineComment(comment, ctx)
-      }
-    })
-  }
-
-  return wrapper
+  return renderCommentCard(comment, commentCardAdapter(ctx, filePath))
 }
 
 function scrollToInlineComment(comment, ctx) {
@@ -4615,57 +4222,50 @@ function applyWidth(choice) {
   else document.documentElement.setAttribute('data-width', 'default')
 }
 
-// ---- Settings Panel ---------------------------------------------------------
+// ---- Settings panel adapter (files mode) ------------------------------------
+// The settings overlay UI lives in the shared settings-panel.js module; files
+// mode supplies the per-mode bits: content-width, hide-resolved, and the files
+// keyboard-shortcut list. createSettingsPanel() is called from mounted().
 
-let settingsPanelOpen = false
-let settingsPanelTab = 'settings'
+const FILES_SHORTCUT_GROUPS = [
+  { label: 'Navigation', shortcuts: [
+    { key: '<kbd>j</kbd>', action: 'Next block' },
+    { key: '<kbd>k</kbd>', action: 'Previous block' },
+    { key: '<kbd>Shift</kbd>+<kbd>V</kbd>', action: 'Visual line mode (extend with j/k, then c to comment)' },
+    { key: '<kbd>]</kbd>', action: 'Next comment' },
+    { key: '<kbd>[</kbd>', action: 'Previous comment' },
+  ]},
+  { label: 'Comments', shortcuts: [
+    { key: '<kbd>c</kbd>', action: 'Comment on focused block (or text selection, with quote)' },
+    { key: '<kbd>e</kbd>', action: 'Edit comment on focused block' },
+    { key: '<kbd>d</kbd>', action: 'Delete comment on focused block' },
+    { key: '<kbd>Shift</kbd>+<kbd>G</kbd>', action: 'General comment' },
+    { key: '<kbd>Ctrl</kbd>+<kbd>Enter</kbd>', action: 'Comment' },
+  ]},
+  { label: 'Review', shortcuts: [
+    { key: '<kbd>Shift</kbd>+<kbd>C</kbd>', action: 'Toggle comments panel' },
+  ]},
+  { label: 'View', shortcuts: [
+    { key: '<kbd>t</kbd>', action: 'Toggle table of contents' },
+    { key: '<kbd>h</kbd>', action: 'Toggle hide resolved' },
+    { key: '<kbd>Esc</kbd>', action: 'Cancel / clear focus' },
+    { key: '<kbd>?</kbd>', action: 'Toggle shortcuts' },
+  ]},
+]
 
-function openSettingsPanel(tab) {
-  settingsPanelTab = tab || 'settings'
-  settingsPanelOpen = true
-  const overlay = document.getElementById('settingsOverlay')
-  if (!overlay) return
-  overlay.classList.add('active')
-  // Ensure the sliding underline element exists
-  if (!overlay.querySelector('.settings-tab-underline')) {
-    const underline = document.createElement('div')
-    underline.className = 'settings-tab-underline'
-    overlay.querySelector('.settings-tabs').appendChild(underline)
+function filesSettingsAdapter(ctx) {
+  return {
+    showWidth: true,
+    readWidth: () => localStorage.getItem('crit-width') || 'default',
+    applyWidth: applyWidth,
+    showHideResolved: true,
+    readHideResolved: () => isHideResolved(ctx),
+    setHideResolved: (v) => setHideResolved(ctx, v),
+    shortcutGroups: FILES_SHORTCUT_GROUPS,
   }
-  switchSettingsTab(settingsPanelTab)
-  renderShortcutsPane()
 }
 
-function closeSettingsPanel() {
-  settingsPanelOpen = false
-  const overlay = document.getElementById('settingsOverlay')
-  if (overlay) overlay.classList.remove('active')
-}
-
-function switchSettingsTab(tab) {
-  settingsPanelTab = tab
-  let activeBtn = null
-  document.querySelectorAll('.settings-tab[data-tab]').forEach(function(t) {
-    const isActive = t.dataset.tab === tab
-    t.classList.toggle('active', isActive)
-    if (isActive) activeBtn = t
-  })
-  document.querySelectorAll('.settings-pane').forEach(function(p) {
-    p.classList.toggle('active', p.dataset.pane === tab)
-  })
-  // Position the sliding underline
-  const underline = document.querySelector('.settings-tab-underline')
-  if (underline && activeBtn) {
-    const tabsRect = activeBtn.parentElement.getBoundingClientRect()
-    const btnRect = activeBtn.getBoundingClientRect()
-    underline.style.left = (btnRect.left - tabsRect.left) + 'px'
-    underline.style.width = btnRect.width + 'px'
-  }
-  // Render the active pane content
-  if (tab === 'settings') renderSettingsPane()
-  else if (tab === 'about') renderAboutPane()
-}
-
+// ---- Hide resolved (apply) --------------------------------------------------
 function applyHideResolved(ctx) {
   const hide = ctx ? isHideResolved(ctx) : readHideResolved()
   document.querySelectorAll('.comment-block:not(.panel-comment-block)').forEach(function(block) {
@@ -4673,201 +4273,6 @@ function applyHideResolved(ctx) {
     if (card) {
       block.style.display = hide ? 'none' : ''
     }
-  })
-}
-
-function updatePillIndicator(indicatorId, values, current) {
-  const indicator = document.getElementById(indicatorId)
-  if (!indicator) return
-  const idx = values.indexOf(current)
-  if (idx >= 0) {
-    indicator.style.left = (idx * (100 / values.length)) + '%'
-    indicator.style.width = (100 / values.length) + '%'
-  }
-}
-
-function renderSettingsPane() {
-  const pane = document.getElementById('settingsPane')
-  if (!pane) return
-
-  const currentTheme = localStorage.getItem('phx:theme') || 'system'
-  const currentWidth = localStorage.getItem('crit-width') || 'default'
-  const hideResolved = isHideResolved(__activeCtx)
-
-  let html = ''
-
-  // Display section
-  html += '<div class="settings-section-label">Display</div>'
-  html += '<div class="settings-display-group">'
-
-  // Theme row
-  html += '<div class="settings-display-row">'
-  html += '<span class="settings-display-label">Theme</span>'
-  html += '<div class="settings-pill settings-pill--theme" id="settingsThemePill" role="group" aria-label="Theme">'
-  html += '<div class="settings-pill-indicator" id="settingsThemeIndicator"></div>'
-  const themeIcons = {
-    system: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 0 1 4.25 2h7.5A2.25 2.25 0 0 1 14 4.25v5.5A2.25 2.25 0 0 1 11.75 12h-1.312c.1.128.21.248.328.36a.75.75 0 0 1 .234.545v.345a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-.345a.75.75 0 0 1 .234-.545c.118-.111.228-.232.328-.36H4.25A2.25 2.25 0 0 1 2 9.75v-5.5Zm2.25-.75a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-7.5Z" clip-rule="evenodd"/></svg>',
-    light: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 1ZM10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM12.95 4.11a.75.75 0 1 0-1.06-1.06l-1.062 1.06a.75.75 0 0 0 1.061 1.062l1.06-1.061ZM15 8a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 15 8ZM11.89 12.95a.75.75 0 0 0 1.06-1.06l-1.06-1.062a.75.75 0 0 0-1.062 1.061l1.061 1.06ZM8 12a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 12ZM5.172 11.89a.75.75 0 0 0-1.061-1.062L3.05 11.89a.75.75 0 1 0 1.06 1.06l1.06-1.06ZM4 8a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 4 8ZM4.11 5.172A.75.75 0 0 0 5.173 4.11L4.11 3.05a.75.75 0 1 0-1.06 1.06l1.06 1.06Z"/></svg>',
-    dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M14.438 10.148c.19-.425-.321-.787-.748-.601A5.5 5.5 0 0 1 6.453 2.31c.186-.427-.176-.938-.6-.748a6.501 6.501 0 1 0 8.585 8.586Z"/></svg>'
-  }
-  ;['system', 'light', 'dark'].forEach(function(theme) {
-    const active = theme === currentTheme ? ' active' : ''
-    html += '<button class="settings-pill-btn' + active + '" data-settings-theme="' + theme + '" title="' + theme.charAt(0).toUpperCase() + theme.slice(1) + ' theme">' + themeIcons[theme] + '</button>'
-  })
-  html += '</div></div>'
-
-  // Width row
-  html += '<div class="settings-display-row">'
-  html += '<span class="settings-display-label">Content Width</span>'
-  html += '<div class="settings-pill settings-pill--width" id="settingsWidthPill" role="group" aria-label="Content width">'
-  html += '<div class="settings-pill-indicator" id="settingsWidthIndicator"></div>'
-  ;['compact', 'default', 'wide'].forEach(function(w) {
-    const active = w === currentWidth ? ' active' : ''
-    html += '<button class="settings-pill-btn' + active + '" data-settings-width="' + w + '">' + w.charAt(0).toUpperCase() + w.slice(1) + '</button>'
-  })
-  html += '</div></div>'
-
-  // Hide resolved row
-  html += '<div class="settings-display-row">'
-  html += '<span class="settings-display-label">Hide resolved comments</span>'
-  html += '<label class="comments-panel-switch">'
-  html += '<input type="checkbox" id="hideResolvedToggle" aria-label="Hide resolved comments"' + (hideResolved ? ' checked' : '') + '>'
-  html += '<span class="comments-panel-switch-track"><span class="comments-panel-switch-thumb"></span></span>'
-  html += '</label>'
-  html += '</div>'
-
-  html += '</div>' // close settings-display-group
-
-  pane.innerHTML = html
-
-  // Wire up hide-resolved toggle
-  const hideResolvedToggle = pane.querySelector('#hideResolvedToggle')
-  if (hideResolvedToggle) {
-    hideResolvedToggle.addEventListener('change', function() {
-      setHideResolved(__activeCtx, hideResolvedToggle.checked)
-    })
-  }
-
-  // Wire up theme pill clicks — call the same setTheme that app.js uses
-  pane.querySelectorAll('[data-settings-theme]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      const theme = btn.dataset.settingsTheme
-      // Dispatch the same event that the header theme pill uses
-      const event = new CustomEvent('phx:set-theme', { bubbles: true })
-      btn.dataset.phxTheme = theme
-      btn.dispatchEvent(event)
-      pane.querySelectorAll('[data-settings-theme]').forEach(function(b) { b.classList.toggle('active', b.dataset.settingsTheme === theme) })
-      updatePillIndicator('settingsThemeIndicator', ['system', 'light', 'dark'], theme)
-    })
-  })
-  updatePillIndicator('settingsThemeIndicator', ['system', 'light', 'dark'], currentTheme)
-
-  // Wire up width pill clicks
-  pane.querySelectorAll('[data-settings-width]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      const w = btn.dataset.settingsWidth
-      applyWidth(w)
-      pane.querySelectorAll('[data-settings-width]').forEach(function(b) { b.classList.toggle('active', b.dataset.settingsWidth === w) })
-      updatePillIndicator('settingsWidthIndicator', ['compact', 'default', 'wide'], w)
-    })
-  })
-  updatePillIndicator('settingsWidthIndicator', ['compact', 'default', 'wide'], currentWidth)
-}
-
-function renderShortcutsPane() {
-  const pane = document.getElementById('shortcutsPane')
-  if (!pane) return
-
-  const groups = [
-    { label: 'Navigation', shortcuts: [
-      { key: '<kbd>j</kbd>', action: 'Next block' },
-      { key: '<kbd>k</kbd>', action: 'Previous block' },
-      { key: '<kbd>Shift</kbd>+<kbd>V</kbd>', action: 'Visual line mode (extend with j/k, then c to comment)' },
-      { key: '<kbd>]</kbd>', action: 'Next comment' },
-      { key: '<kbd>[</kbd>', action: 'Previous comment' },
-    ]},
-    { label: 'Comments', shortcuts: [
-      { key: '<kbd>c</kbd>', action: 'Comment on focused block (or text selection, with quote)' },
-      { key: '<kbd>e</kbd>', action: 'Edit comment on focused block' },
-      { key: '<kbd>d</kbd>', action: 'Delete comment on focused block' },
-      { key: '<kbd>Shift</kbd>+<kbd>G</kbd>', action: 'General comment' },
-      { key: '<kbd>Ctrl</kbd>+<kbd>Enter</kbd>', action: 'Comment' },
-    ]},
-    { label: 'Review', shortcuts: [
-      { key: '<kbd>Shift</kbd>+<kbd>C</kbd>', action: 'Toggle comments panel' },
-    ]},
-    { label: 'View', shortcuts: [
-      { key: '<kbd>t</kbd>', action: 'Toggle table of contents' },
-      { key: '<kbd>h</kbd>', action: 'Toggle hide resolved' },
-      { key: '<kbd>Esc</kbd>', action: 'Cancel / clear focus' },
-      { key: '<kbd>?</kbd>', action: 'Toggle shortcuts' },
-    ]},
-  ]
-
-  let html = ''
-  groups.forEach(function(group) {
-    html += '<div class="shortcuts-group-label">' + group.label + '</div>'
-    html += '<table class="shortcuts-table">'
-    group.shortcuts.forEach(function(s) {
-      const modeTag = s.mode ? '<span class="shortcut-mode-badge">' + s.mode + '</span>' : ''
-      html += '<tr><td>' + s.key + '</td><td>' + s.action + modeTag + '</td></tr>'
-    })
-    html += '</table>'
-  })
-
-  pane.innerHTML = html
-}
-
-function renderAboutPane() {
-  const pane = document.getElementById('aboutPane')
-  if (!pane) return
-
-  let html = ''
-
-  // Header
-  html += '<div class="about-header">'
-  html += '<h2>Crit Web</h2>'
-  html += '<div class="about-version">Your feedback loop with the agent.</div>'
-  html += '</div>'
-
-  // Links
-  html += '<div class="settings-section-label">Links</div>'
-  html += '<div class="about-links">'
-  html += '<a class="about-link" href="https://crit.md" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1v4M5.5 3h5M3 7h10v6.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7Z"/></svg>Homepage</a>'
-  html += '<a class="about-link" href="https://github.com/tomasz-tomczyk/crit-web" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>GitHub</a>'
-  html += '<a class="about-link" href="https://crit.md/changelog" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg>Changelog</a>'
-  html += '</div>'
-
-  pane.innerHTML = html
-}
-
-function initSettingsPanel() {
-  // Gear icon opens Settings tab
-  const settingsToggle = document.getElementById('settingsToggle')
-  if (settingsToggle) {
-    settingsToggle.addEventListener('click', function() {
-      if (settingsPanelOpen) closeSettingsPanel()
-      else openSettingsPanel('settings')
-    })
-  }
-
-  // Close button
-  const settingsClose = document.getElementById('settingsClose')
-  if (settingsClose) {
-    settingsClose.addEventListener('click', closeSettingsPanel)
-  }
-
-  // Click outside to close
-  const overlay = document.getElementById('settingsOverlay')
-  if (overlay) {
-    overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) closeSettingsPanel()
-    })
-  }
-
-  // Tab switching
-  document.querySelectorAll('.settings-tab[data-tab]').forEach(function(tab) {
-    tab.addEventListener('click', function() { switchSettingsTab(tab.dataset.tab) })
   })
 }
 
@@ -4916,9 +4321,9 @@ export const DocumentRenderer = {
     ctx._hideResolved = readHideResolved()
     ctx._timers = new Set()
 
-    // Initialize content width and settings panel
+    // Initialize content width and the (shared) settings panel
     initWidth()
-    initSettingsPanel()
+    ctx._settings = createSettingsPanel(filesSettingsAdapter(ctx))
 
     const rawContent = ctx.el.dataset.content || ""
     ctx.rawContent = rawContent
@@ -5421,14 +4826,14 @@ export const DocumentRenderer = {
       // Settings panel (shortcuts tab via ?)
       if (e.key === '?') {
         e.preventDefault()
-        if (settingsPanelOpen) closeSettingsPanel()
-        else openSettingsPanel('shortcuts')
+        if (ctx._settings.isOpen()) ctx._settings.close()
+        else ctx._settings.open('shortcuts')
         return
       }
-      if (settingsPanelOpen) {
+      if (ctx._settings.isOpen()) {
         if (e.key === 'Escape') {
           e.preventDefault()
-          closeSettingsPanel()
+          ctx._settings.close()
         }
         return
       }
@@ -5613,8 +5018,8 @@ export const DocumentRenderer = {
     if (this._resizeHandler) {
       window.removeEventListener("resize", this._resizeHandler)
     }
-    // Close settings panel if open
-    closeSettingsPanel()
+    // Tear down the shared settings panel (removes its listeners)
+    if (this._settings) this._settings.destroy()
     // Defensive: clear any pending tracked timeouts so callbacks don't fire
     // against a torn-down hook (and detached DOM nodes).
     if (this._timers) {
