@@ -3869,3 +3869,322 @@ body.sidebar-resizing * {
   .line-comment-gutter { touch-action: none; }
 }
 
+
+/* ============================================================
+   Preview mode — iframe pane + comment side panel (PreviewMode hook)
+   Ported from crit/frontend/style-live.css (.crit-live-*), using --crit-*
+   variables. Custom CSS only — no Tailwind/daisyUI on the review page.
+   crit local reuses .toggle-group/.toggle-btn from its code-review header;
+   crit-web's review page has no such header, so preview defines its own
+   .crit-preview-toggle-* button group here. Pin cards reuse the shared
+   .comment-card / .comments-panel-* chrome.
+   ============================================================ */
+
+.crit-preview-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--crit-header-height, 56px));
+  min-height: 0;
+  background: var(--crit-editor-bg);
+}
+
+/* --- Chrome bar: viewport + mode toggles --- */
+.crit-preview-chrome {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--crit-border);
+  background: var(--crit-editor-bg-elevated);
+}
+
+.crit-preview-toggle-group {
+  display: inline-flex;
+  border: 1px solid var(--crit-border);
+  border-radius: var(--crit-r-md);
+  overflow: hidden;
+  background: var(--crit-editor-bg);
+}
+
+.crit-preview-toggle-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--crit-editor-fg-secondary);
+  font-family: var(--crit-font-body);
+  font-size: 13px;
+  line-height: 1;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-right: 1px solid var(--crit-border);
+  transition: background 0.15s, color 0.15s;
+}
+
+.crit-preview-toggle-btn:last-child { border-right: 0; }
+
+.crit-preview-toggle-btn:hover:not([disabled]) {
+  background: var(--crit-row-hover);
+  color: var(--crit-editor-fg);
+}
+
+.crit-preview-toggle-btn.active {
+  background: var(--crit-brand-cta);
+  color: var(--crit-fg-on-brand);
+}
+
+.crit-preview-toggle-btn[disabled] { opacity: 0.5; cursor: default; }
+
+.crit-preview-toggle-btn:focus-visible {
+  outline: 2px solid var(--crit-focus);
+  outline-offset: -2px;
+}
+
+/* --- Body: iframe pane + side panel split --- */
+.crit-preview-body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+.crit-preview-iframe-pane {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--crit-editor-bg);
+}
+
+.crit-preview-iframe-frame {
+  position: relative;
+  flex: 0 0 auto;
+  background: #fff;
+  border: 1px solid var(--crit-border);
+  box-shadow: var(--crit-shadow);
+  border-radius: var(--crit-r-md);
+  /* width/height set inline by the viewport controller */
+}
+
+.crit-preview-iframe-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--crit-r-md);
+}
+
+/* --- Side panel --- */
+.crit-preview-panel {
+  flex: 0 0 340px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--crit-border);
+  background: var(--crit-editor-bg);
+}
+
+.crit-preview-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--crit-border);
+}
+
+.crit-preview-panel-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--crit-editor-fg);
+}
+
+.crit-preview-panel-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--crit-editor-bg-elevated);
+  color: var(--crit-editor-fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.crit-preview-panel-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+/* --- Pin cards (reuse .comment-card base; add preview-specific chrome) --- */
+.crit-preview-card {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.crit-preview-card[data-resolved="true"] { opacity: 0.7; }
+
+.crit-preview-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.crit-preview-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--crit-brand-cta);
+  color: var(--crit-fg-on-brand);
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.crit-preview-card-author {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--crit-editor-fg);
+}
+
+.crit-preview-card-resolved {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--crit-green);
+}
+
+.crit-preview-card-time {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--crit-editor-fg-secondary);
+}
+
+.crit-preview-card-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--crit-editor-fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.crit-preview-card-replies {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--crit-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.crit-preview-reply-author {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--crit-editor-fg);
+}
+
+.crit-preview-reply-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--crit-editor-fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.crit-preview-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.crit-preview-card-flash { animation: crit-preview-flash 1.2s ease-out; }
+
+@keyframes crit-preview-flash {
+  0%   { box-shadow: 0 0 0 2px var(--crit-brand-cta); }
+  100% { box-shadow: 0 0 0 2px transparent; }
+}
+
+/* --- Composer (ported from .crit-live-composer) --- */
+.crit-preview-composer {
+  border: 1px solid var(--crit-brand);
+  border-radius: var(--crit-r-md);
+  background: var(--crit-editor-comment-bg);
+  box-shadow: 0 0 0 2px var(--crit-brand-subtle);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.crit-preview-composer-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.crit-preview-composer-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--crit-r-sm);
+  background: var(--crit-editor-code-bg);
+  color: var(--crit-editor-fg);
+  font-size: 12px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crit-preview-composer-body,
+.crit-preview-reply-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: var(--crit-font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 8px;
+  border: 1px solid var(--crit-border);
+  border-radius: var(--crit-r-sm);
+  background: var(--crit-editor-bg);
+  color: var(--crit-editor-fg);
+}
+
+.crit-preview-composer-body::placeholder,
+.crit-preview-reply-input::placeholder { color: var(--crit-editor-fg-muted); }
+
+.crit-preview-composer-error {
+  color: var(--crit-red);
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.crit-preview-composer-actions,
+.crit-preview-reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.crit-preview-reply-form { margin-top: 8px; }
+
+/* --- Responsive: stack panel under iframe on narrow viewports --- */
+@media (max-width: 768px) {
+  .crit-preview-body { flex-direction: column; }
+
+  .crit-preview-panel {
+    flex: 1 1 auto;
+    border-left: 0;
+    border-top: 1px solid var(--crit-border);
+  }
+
+  .crit-preview-toggle-btn { padding: 10px 14px; font-size: 14px; }
+}
