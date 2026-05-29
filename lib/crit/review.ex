@@ -13,6 +13,8 @@ defmodule Crit.Review do
       values: [:open, :logged_in_only, :disallowed],
       default: :open
 
+    field :review_type, Ecto.Enum, values: [:files, :preview], default: :files
+
     belongs_to :user, Crit.User, type: :binary_id
     belongs_to :organization, Crit.Organizations.Organization, type: :binary_id
 
@@ -30,7 +32,7 @@ defmodule Crit.Review do
   @doc "Changeset for creating a new review."
   def create_changeset(review, attrs) do
     review
-    |> cast(attrs, [:review_round, :cli_args])
+    |> cast(attrs, [:review_round, :cli_args, :review_type])
     |> validate_cli_args()
     |> put_token()
     |> put_delete_token()
