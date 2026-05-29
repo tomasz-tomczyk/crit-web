@@ -53,6 +53,16 @@ defmodule CritWeb.RawController do
       mime = mime_for(file_path, preview?)
 
       conn
+      # The raw endpoint is a read-only GET addressed by an unguessable token,
+      # loaded inside the sandboxed (opaque-origin) preview iframe — so every
+      # subresource request is cross-origin. Plug.CSRFProtection raises
+      # InvalidCrossOriginRequestError (403) for a cross-origin GET that returns
+      # a JavaScript content-type (its anti-`<script src>` exfiltration guard),
+      # which blocked a preview's own app.js. This endpoint mutates no state and
+      # has no CSRF surface, so skip the guard. The check runs in a
+      # register_before_send hook, so setting this here (before send_resp) is
+      # honoured.
+      |> put_private(:plug_skip_csrf_protection, true)
       |> put_resp_content_type(mime)
       |> put_resp_header("content-disposition", ~s(inline; filename="#{basename}"))
       |> maybe_preview_csp(preview?, mime)
