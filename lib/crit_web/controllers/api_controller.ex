@@ -16,6 +16,7 @@ defmodule CritWeb.ApiController do
     review_comments = params["review_comments"] || []
     org_slug = params["org"]
     visibility = parse_visibility(params["visibility"])
+    review_type = parse_review_type(params["review_type"])
     scope = api_scope(conn)
     max_comments = Settings.get().max_comments_per_review
 
@@ -30,7 +31,8 @@ defmodule CritWeb.ApiController do
         case Reviews.create_review(scope, files, review_round, comments, review_comments,
                cli_args: cli_args,
                org: org_slug,
-               visibility: visibility
+               visibility: visibility,
+               review_type: review_type
              ) do
           {:ok, review} ->
             review = maybe_update_comment_policy(scope, review, params)
@@ -68,6 +70,7 @@ defmodule CritWeb.ApiController do
     review_comments = params["review_comments"] || []
     org_slug = params["org"]
     visibility = parse_visibility(params["visibility"])
+    review_type = parse_review_type(params["review_type"])
     scope = api_scope(conn)
 
     file_path = filename || "document"
@@ -90,7 +93,8 @@ defmodule CritWeb.ApiController do
                review_comments,
                cli_args: cli_args,
                org: org_slug,
-               visibility: visibility
+               visibility: visibility,
+               review_type: review_type
              ) do
           {:ok, review} ->
             review = maybe_update_comment_policy(scope, review, params)
@@ -427,6 +431,9 @@ defmodule CritWeb.ApiController do
   defp parse_visibility("public"), do: :public
   defp parse_visibility("organization"), do: :organization
   defp parse_visibility(_), do: nil
+
+  defp parse_review_type("preview"), do: "preview"
+  defp parse_review_type(_), do: "files"
 
   # Track invalid token lookups: 10 per 5 minutes per IP, then return 429.
   defp not_found(conn) do
