@@ -81,6 +81,7 @@ defmodule CritWeb.Router do
     get "/auth/cli/success", DeviceController, :success
 
     get "/r/:token/raw/*file_path", RawController, :show
+    get "/agent-marker.css", RawController, :marker_css
     get "/share-receiver", ShareReceiverController, :index
   end
 

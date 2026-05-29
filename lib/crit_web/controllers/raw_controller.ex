@@ -42,16 +42,19 @@ defmodule CritWeb.RawController do
   @marker_css File.read!(@marker_css_path)
 
   # Restrictive sandbox CSP for preview HTML rendered inside the same-origin
-  # iframe. No external origins, no network egress (`connect-src 'none'`), and
-  # the preview itself cannot frame anything (`frame-src 'none'`). Inline
-  # styles/scripts are allowed because shared static pages routinely rely on
-  # them and the content is already untrusted-but-sandboxed.
+  # iframe. No external origins and the preview itself cannot frame anything
+  # (`frame-src 'none'`). Inline styles/scripts are allowed because shared
+  # static pages routinely rely on them and the content is already
+  # untrusted-but-sandboxed. `connect-src 'self'` (not 'none') so the injected
+  # crit-agent can fetch its same-origin marker CSS without a CSP violation —
+  # external egress is still blocked since only 'self' is allowed. (crit local
+  # serves this with no CSP at all; this is still far stricter.)
   @preview_csp Enum.join(
                  [
                    "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
                    "img-src 'self' data: blob:",
                    "font-src 'self' data:",
-                   "connect-src 'none'",
+                   "connect-src 'self'",
                    "frame-src 'none'"
                  ],
                  "; "
@@ -91,6 +94,17 @@ defmodule CritWeb.RawController do
     end
   end
 
+  # The injected crit-agent fetches its marker overlay CSS from
+  # `<origin>/agent-marker.css` (hard-coded in the vendored, byte-identical
+  # crit-agent.js — crit local serves it at this same root path). Serve it here
+  # so the fetch succeeds instead of 404ing in the iframe console.
+  def marker_css(conn, _params) do
+    conn
+    |> put_resp_content_type("text/css")
+    |> put_resp_header("cache-control", "public, max-age=3600")
+    |> send_resp(200, @marker_css)
+  end
+
   # base64 snapshots (binary assets like images) are decoded back to raw bytes.
   defp decode_content(%{encoding: "base64", content: content}), do: Base.decode64(content)
   defp decode_content(%{content: content}), do: {:ok, content}
@@ -107,14 +121,12 @@ defmodule CritWeb.RawController do
   # `servePreviewHTML`: insert before the last `</body>`, falling back to an
   # append when no closing body tag exists.
   defp maybe_inject_agent_scripts(content, true, "text/html") do
-    marker_style = ~s(<style data-crit-marker-css="1">#{@marker_css}</style>)
-
     scripts =
       Enum.map_join(@agent_script_files, fn name ->
         ~s(<script src="/preview-agent/#{name}"></script>)
       end)
 
-    inject_before_body_close(content, marker_style <> scripts)
+    inject_before_body_close(content, scripts)
   end
 
   defp maybe_inject_agent_scripts(content, _preview?, _content_type), do: content
@@ -138,10 +150,23 @@ defmodule CritWeb.RawController do
   end
 
   defp maybe_preview_csp(conn, true, "text/html") do
-    put_resp_header(conn, "content-security-policy", @preview_csp)
+    put_resp_header(conn, "content-security-policy", preview_csp())
   end
 
   defp maybe_preview_csp(conn, _preview?, _content_type), do: conn
+
+  # In dev, Phoenix LiveReload injects an iframe pointing at
+  # /phoenix/live_reload/frame into every page; `frame-src 'none'` blocks it and
+  # logs a CSP violation in the console. Relax frame-src to 'self' when the code
+  # reloader is enabled (dev only) so the dev console stays clean; prod keeps the
+  # strict `frame-src 'none'`.
+  defp preview_csp do
+    if CritWeb.Endpoint.config(:code_reloader) do
+      String.replace(@preview_csp, "frame-src 'none'", "frame-src 'self'")
+    else
+      @preview_csp
+    end
+  end
 
   # Mirrors `CritWeb.UserAuth.on_mount(:require_review_scope, ...)` for the
   # plain-controller raw endpoint. On selfhosted+OAuth instances, anonymous

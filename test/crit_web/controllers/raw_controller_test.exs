@@ -139,7 +139,10 @@ defmodule CritWeb.RawControllerTest do
       assert csp =~ "default-src 'self' 'unsafe-inline' 'unsafe-eval'"
       assert csp =~ "img-src 'self' data: blob:"
       assert csp =~ "font-src 'self' data:"
-      assert csp =~ "connect-src 'none'"
+      # connect-src 'self' (not 'none') so the injected agent can fetch its
+      # same-origin marker CSS without a CSP violation; external egress stays
+      # blocked.
+      assert csp =~ "connect-src 'self'"
       assert csp =~ "frame-src 'none'"
       # No external origins in the preview sandbox CSP.
       refute csp =~ "http"
