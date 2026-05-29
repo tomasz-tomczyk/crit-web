@@ -4,7 +4,11 @@ mise-trust = "mise trust ."
 [[pre-start]]
 direnv-allow = "direnv allow"
 
-# Copy build caches from source branch worktree
+# Copy build caches + deps (deps/, _build/, node_modules/, assets/node_modules/,
+# .envrc.local) from the source worktree so a new worktree is ready immediately.
 [post-start]
 copy = "wt step copy-ignored"
+# Ensure the shared Postgres container is running so `mix test` works without
+# anyone running `mise run db:start` first. Idempotent and machine-global.
+db = "mise run db:start"
 

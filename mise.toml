@@ -5,7 +5,11 @@ elixir = "1.19.5-otp-28"
 [env]
 PORT = "4000"
 DB_NAME = "crit_dev"
-DB_PORT = "{{ get_env(name='DB_PORT', default='5432') }}"
+# Default to 5433 — the host port the crit-web-postgres container maps to
+# (5433 host -> 5432 container). This makes `mise exec`/`mise run` work in
+# non-interactive shells without anyone exporting DB_PORT. An explicit
+# DB_PORT in the environment still overrides (e.g. CI uses 5432).
+DB_PORT = "{{ get_env(name='DB_PORT', default='5433') }}"
 DB_USER = "postgres"
 DB_PASSWORD = "postgres"
 DB_HOST = "localhost"

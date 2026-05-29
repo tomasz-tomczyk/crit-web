@@ -1,4 +1,5 @@
 deps/
 _build/
+node_modules/
 assets/node_modules/
 .envrc.local
