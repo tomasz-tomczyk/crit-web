@@ -15,6 +15,7 @@ defmodule Crit.Comment do
     field :resolved, :boolean, default: false
     field :resolved_round, :integer
     field :external_id, :string
+    field :dom_anchor, :map
     belongs_to :review, Crit.Review
     belongs_to :parent, Crit.Comment
     belongs_to :user, Crit.User
@@ -39,7 +40,8 @@ defmodule Crit.Comment do
       :resolved,
       :resolved_round,
       :scope,
-      :external_id
+      :external_id,
+      :dom_anchor
     ])
     |> validate_required([:body])
     |> validate_inclusion(:scope, ["line", "file", "review"])
@@ -47,6 +49,24 @@ defmodule Crit.Comment do
     |> validate_body_length()
     |> validate_length(:author_display_name, max: 40)
     |> validate_length(:file_path, max: 500)
+    |> validate_dom_anchor()
+  end
+
+  defp validate_dom_anchor(changeset) do
+    case get_field(changeset, :dom_anchor) do
+      nil ->
+        changeset
+
+      %{} = a ->
+        if is_binary(a["pathname"]) and is_binary(a["css_selector"]) do
+          changeset
+        else
+          add_error(changeset, :dom_anchor, "requires pathname and css_selector")
+        end
+
+      _ ->
+        add_error(changeset, :dom_anchor, "must be a map")
+    end
   end
 
   defp validate_line_numbers(changeset) do
