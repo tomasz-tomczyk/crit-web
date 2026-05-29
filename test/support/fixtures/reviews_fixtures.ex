@@ -25,13 +25,20 @@ defmodule Crit.ReviewsFixtures do
         user_id -> Scope.for_user(%Crit.User{id: user_id})
       end
 
+    opts =
+      case attrs[:review_type] do
+        nil -> []
+        review_type -> [review_type: to_string(review_type)]
+      end
+
     {:ok, review} =
       Reviews.create_review(
         scope,
         attrs[:files],
         attrs[:review_round],
         attrs[:comments] || [],
-        []
+        [],
+        opts
       )
 
     Reviews.get_by_token(review.token)

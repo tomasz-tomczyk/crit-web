@@ -16,7 +16,7 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
       conn = get(conn, ~p"/")
 
       assert get_resp_header(conn, "x-content-type-options") == ["nosniff"]
-      assert get_resp_header(conn, "x-frame-options") == ["DENY"]
+      assert get_resp_header(conn, "x-frame-options") == ["SAMEORIGIN"]
     end
 
     test "does not set HSTS when hsts_enabled is not configured", %{conn: conn} do

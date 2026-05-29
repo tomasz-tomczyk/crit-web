@@ -286,6 +286,7 @@ defmodule Crit.Reviews do
 
     user_id = Scope.user_id(scope)
     cli_args = Keyword.get(opts, :cli_args) || []
+    review_type = Keyword.get(opts, :review_type) || "files"
     org_slug = Keyword.get(opts, :org)
     explicit_visibility = Keyword.get(opts, :visibility)
 
@@ -299,7 +300,8 @@ defmodule Crit.Reviews do
           %Review{}
           |> Review.create_changeset(%{
             "review_round" => review_round || 0,
-            "cli_args" => cli_args
+            "cli_args" => cli_args,
+            "review_type" => review_type
           })
           |> then(fn cs ->
             if user_id, do: Ecto.Changeset.put_change(cs, :user_id, user_id), else: cs
@@ -643,7 +645,8 @@ defmodule Crit.Reviews do
           "round_number" => round_number,
           "position" => idx,
           "status" => status,
-          "generated" => file_attrs["generated"] == true
+          "generated" => file_attrs["generated"] == true,
+          "encoding" => file_attrs["encoding"]
         })
         |> Ecto.Changeset.put_change(:review_id, review.id)
         |> Repo.insert()
