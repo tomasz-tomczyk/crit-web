@@ -6,7 +6,7 @@
 # All reviews are tied to a seeded GitHub user so they appear on the dashboard.
 # Tokens are deterministic so you can bookmark them.
 
-if Mix.env() in [:dev, :test] do
+if Mix.env() == :dev do
   import Ecto.Query
   alias Crit.{Repo, User, Review, Comment, ReviewRoundSnapshot}
   alias Crit.Organizations.{Organization, OrganizationMembership}
