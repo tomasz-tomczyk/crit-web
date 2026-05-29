@@ -618,6 +618,7 @@ defmodule CritWeb.ReviewLiveTest do
           :user_id,
           :review_round,
           :file_path,
+          :dom_anchor,
           :resolved,
           :resolved_round,
           :external_id,

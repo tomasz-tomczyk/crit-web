@@ -1262,6 +1262,7 @@ defmodule Crit.Reviews do
       user_id: c.user_id,
       review_round: c.review_round,
       file_path: c.file_path,
+      dom_anchor: c.dom_anchor,
       resolved: c.resolved,
       resolved_round: c.resolved_round,
       external_id: c.external_id,
