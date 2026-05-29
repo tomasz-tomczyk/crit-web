@@ -12,6 +12,7 @@ defmodule Crit.ReviewRoundSnapshot do
       default: :modified
 
     field :generated, :boolean, default: false
+    field :encoding, :string
 
     belongs_to :review, Crit.Review
     timestamps(updated_at: false)
@@ -19,8 +20,17 @@ defmodule Crit.ReviewRoundSnapshot do
 
   def changeset(snapshot, attrs) do
     snapshot
-    |> cast(attrs, [:round_number, :file_path, :content, :position, :status, :generated])
+    |> cast(attrs, [
+      :round_number,
+      :file_path,
+      :content,
+      :position,
+      :status,
+      :generated,
+      :encoding
+    ])
     |> validate_required([:round_number, :file_path])
+    |> validate_inclusion(:encoding, ["base64"])
     |> then(fn cs ->
       if Ecto.Changeset.get_field(cs, :status) == :removed do
         # Removed (orphaned) files may have empty content; default to "" if nil
