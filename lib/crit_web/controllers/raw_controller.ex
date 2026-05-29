@@ -6,6 +6,38 @@ defmodule CritWeb.RawController do
 
   plug :require_review_scope
 
+  # The 7 transport-agnostic agent scripts crit injects into preview iframes,
+  # vendored verbatim into priv/static/preview-agent/. Order matters and must
+  # match crit's `agentScriptFiles` (server.go): protocol first, helpers next,
+  # the main agent entry point last. Keeping the order identical preserves
+  # DOM-anchor compatibility across the crit (Go) and crit-web (Phoenix)
+  # renderers. `agent-marker.css` is served separately and is NOT injected.
+  @agent_script_files [
+    "agent-protocol.js",
+    "agent-anchor-utils.js",
+    "agent-marker-overlay.js",
+    "agent-mutation-batcher.js",
+    "agent-resolution.js",
+    "agent-reanchor-state.js",
+    "crit-agent.js"
+  ]
+
+  # Restrictive sandbox CSP for preview HTML rendered inside the same-origin
+  # iframe. No external origins, no network egress (`connect-src 'none'`), and
+  # the preview itself cannot frame anything (`frame-src 'none'`). Inline
+  # styles/scripts are allowed because shared static pages routinely rely on
+  # them and the content is already untrusted-but-sandboxed.
+  @preview_csp Enum.join(
+                 [
+                   "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                   "img-src 'self' data: blob:",
+                   "font-src 'self' data:",
+                   "connect-src 'none'",
+                   "frame-src 'none'"
+                 ],
+                 "; "
+               )
+
   def show(conn, %{"token" => token, "file_path" => path_segments})
       when is_list(path_segments) do
     file_path = Enum.join(path_segments, "/")
@@ -13,17 +45,72 @@ defmodule CritWeb.RawController do
 
     with %Review{} = review <- Reviews.get_by_token(token),
          :ok <- Reviews.check_org_access(review, scope),
-         %{content: content} = file <-
+         %{} = file <-
            Enum.find(review.files, fn f -> f.file_path == file_path end),
-         basename when basename != :unsafe <- safe_basename(file.file_path) do
+         basename when basename != :unsafe <- safe_basename(file.file_path),
+         {:ok, content} <- decode_content(file) do
+      preview? = review.review_type == :preview
+      mime = mime_for(file_path, preview?)
+
       conn
-      |> put_resp_content_type("text/plain", "utf-8")
+      |> put_resp_content_type(mime)
       |> put_resp_header("content-disposition", ~s(inline; filename="#{basename}"))
-      |> send_resp(200, content)
+      |> maybe_preview_csp(preview?, mime)
+      |> send_resp(200, maybe_inject_agent_scripts(content, preview?, mime))
     else
       _ -> conn |> put_status(404) |> text("not found")
     end
   end
+
+  # base64 snapshots (binary assets like images) are decoded back to raw bytes.
+  defp decode_content(%{encoding: "base64", content: content}), do: Base.decode64(content)
+  defp decode_content(%{content: content}), do: {:ok, content}
+
+  # Preview reviews carry real web assets (HTML/CSS/JS/images) that must be
+  # served with their true MIME type so the iframe renders them. Files-mode
+  # reviews serve source files for in-browser reading and keep the historical
+  # `text/plain` behaviour (so e.g. `.ex` isn't offered as an octet download).
+  # `put_resp_content_type/2` appends `; charset=utf-8` to the bare type.
+  defp mime_for(file_path, true), do: MIME.from_path(file_path)
+  defp mime_for(_file_path, false), do: "text/plain"
+
+  # Inject the agent scripts only into preview HTML, mirroring crit's
+  # `servePreviewHTML`: insert before the last `</body>`, falling back to an
+  # append when no closing body tag exists.
+  defp maybe_inject_agent_scripts(content, true, "text/html") do
+    scripts =
+      Enum.map_join(@agent_script_files, fn name ->
+        ~s(<script src="/preview-agent/#{name}"></script>)
+      end)
+
+    inject_before_body_close(content, scripts)
+  end
+
+  defp maybe_inject_agent_scripts(content, _preview?, _content_type), do: content
+
+  defp inject_before_body_close(html, scripts) do
+    case last_body_close_index(html) do
+      nil -> html <> scripts
+      idx -> binary_part(html, 0, idx) <> scripts <> binary_part(html, idx, byte_size(html) - idx)
+    end
+  end
+
+  # Case-insensitive search for the last "</body>" occurrence, mirroring
+  # crit's `bytes.LastIndex(bytes.ToLower(body), "</body>")`.
+  defp last_body_close_index(html) do
+    downcased = String.downcase(html)
+
+    case :binary.matches(downcased, "</body>") do
+      [] -> nil
+      matches -> matches |> List.last() |> elem(0)
+    end
+  end
+
+  defp maybe_preview_csp(conn, true, "text/html") do
+    put_resp_header(conn, "content-security-policy", @preview_csp)
+  end
+
+  defp maybe_preview_csp(conn, _preview?, _content_type), do: conn
 
   # Mirrors `CritWeb.UserAuth.on_mount(:require_review_scope, ...)` for the
   # plain-controller raw endpoint. On selfhosted+OAuth instances, anonymous

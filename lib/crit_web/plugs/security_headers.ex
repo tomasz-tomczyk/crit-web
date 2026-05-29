@@ -19,7 +19,7 @@ defmodule CritWeb.Plugs.SecurityHeaders do
     conn
     |> put_resp_header("content-security-policy", csp())
     |> put_resp_header("x-content-type-options", "nosniff")
-    |> put_resp_header("x-frame-options", "DENY")
+    |> put_resp_header("x-frame-options", "SAMEORIGIN")
     |> put_resp_header("permissions-policy", Enum.join(@permissions_policy, ", "))
     |> maybe_put_hsts()
   end
