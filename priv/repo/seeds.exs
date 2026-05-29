@@ -1421,6 +1421,95 @@ if Mix.env() in [:dev, :test] do
     ]
   })
 
+  # ════════════════════════════════════════════════════════════════════════
+  # PREVIEW REVIEW — shared static page (html + css + js + png) with
+  #   DOM-anchored comments. review_type: :preview. Token: preview-demo-0000
+  #
+  #   Renders in an iframe with the preview chrome. The .png snapshot is
+  #   stored Base64-encoded (encoding: "base64") to exercise the raw
+  #   controller's decode path; the text assets are stored raw (encoding nil).
+  #   Comments carry a `dom_anchor` map targeting real selectors in index.html.
+  # ════════════════════════════════════════════════════════════════════════
+
+  preview_demo_dir = Path.join(__DIR__, "seed_assets/preview_demo")
+  read_demo_asset = fn name -> File.read!(Path.join(preview_demo_dir, name)) end
+
+  unless Repo.exists?(from r in Review, where: r.token == "preview-demo-0000") do
+    preview_review =
+      Repo.insert!(%Review{
+        token: "preview-demo-0000",
+        delete_token: "del_preview-demo-0000",
+        review_round: 0,
+        cli_args: ["index.html"],
+        user_id: user.id,
+        review_type: :preview,
+        visibility: :unlisted,
+        last_activity_at: now,
+        inserted_at: now,
+        updated_at: now
+      })
+
+    # {file_path, content, encoding}. Text assets raw; the PNG Base64-encoded.
+    preview_files = [
+      {"index.html", read_demo_asset.("index.html"), nil},
+      {"style.css", read_demo_asset.("style.css"), nil},
+      {"app.js", read_demo_asset.("app.js"), nil},
+      {"logo.png", Base.encode64(read_demo_asset.("logo.png")), "base64"}
+    ]
+
+    for {{file_path, content, encoding}, position} <- Enum.with_index(preview_files) do
+      Repo.insert!(%ReviewRoundSnapshot{
+        review_id: preview_review.id,
+        round_number: 0,
+        file_path: file_path,
+        content: content,
+        position: position,
+        status: :modified,
+        encoding: encoding,
+        inserted_at: now_naive
+      })
+    end
+
+    # Open comment anchored to the hero <h1>.
+    Repo.insert!(%Comment{
+      id: "e1000000-0000-0000-0000-000000000001",
+      review_id: preview_review.id,
+      body:
+        "Strong opener. Could we A/B a more concrete value prop, e.g. lead with the go/no-go signal?",
+      author_display_name: "Alice",
+      scope: "file",
+      file_path: "index.html",
+      resolved: false,
+      dom_anchor: %{
+        "pathname" => "/",
+        "css_selector" => "h1.hero",
+        "tag_chain" => ["body", "main.card", "h1.hero"],
+        "outer_html" => "<h1 class=\"hero\">Ship calmer releases.</h1>"
+      },
+      inserted_at: now,
+      updated_at: now
+    })
+
+    # Resolved comment anchored to the CTA button.
+    Repo.insert!(%Comment{
+      id: "e1000000-0000-0000-0000-000000000002",
+      review_id: preview_review.id,
+      body: "CTA reads clearly and the counter interaction works. Approving this one.",
+      author_display_name: "Bob",
+      scope: "file",
+      file_path: "index.html",
+      resolved: true,
+      dom_anchor: %{
+        "pathname" => "/",
+        "css_selector" => "#cta",
+        "tag_chain" => ["body", "main.card", "button#cta"],
+        "outer_html" => "<button class=\"cta\" id=\"cta\">Start free — 0 deploys watched</button>"
+      },
+      inserted_at: now,
+      updated_at: now
+    })
+  end
+
   # ── Summary ────────────────────────────────────────────────────────────
 
   reviews = [
@@ -1431,7 +1520,9 @@ if Mix.env() in [:dev, :test] do
     {"seed-markdown-comm01", "Markdown comments", "tables, code blocks, blockquotes"},
     {"seed-all-resolved-01", "All resolved", "every comment marked resolved"},
     {"seed-no-comments-01", "No comments", "clean file view, empty state"},
-    {"seed-public-review01", "Public review", "visibility: :public — indexable, in sitemap"}
+    {"seed-public-review01", "Public review", "visibility: :public — indexable, in sitemap"},
+    {"preview-demo-0000", "Preview (iframe)",
+     "html+css+js+png, review_type: :preview, DOM-anchored comments"}
   ]
 
   IO.puts("\n  Seeded #{length(reviews)} reviews for #{user.name}:\n")
