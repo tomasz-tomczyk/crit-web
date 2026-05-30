@@ -23,6 +23,14 @@ config :crit, Crit.Repo,
 config :crit, CritWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "Sg3AbYy0ombvmL33BiB7bfASWI/y6HNgUzvV1JFennme5U8HK2EJBDouMeFYehBc",
+  # The endpoint :url host is "localhost" (config.exs), but the E2E Playwright
+  # harness loads the server over http://127.0.0.1 (avoids macOS resolving
+  # localhost to IPv6 ::1 while Bandit binds IPv4). With the default
+  # check_origin: true, that origin mismatch 403s the LiveView socket (WS AND
+  # longpoll) → the LiveView never connects and the review page never renders.
+  # Disabling the origin check is safe in test (no real cross-origin risk) and
+  # lets the socket accept both 127.0.0.1 and localhost.
+  check_origin: false,
   server: false
 
 # Print only warnings and errors during test
