@@ -32,6 +32,35 @@ defmodule CritWeb.ApiControllerTest do
     end
   end
 
+  describe "CORS preflight for re-share / pull from localhost" do
+    test "OPTIONS /api/reviews/:token returns 204 and allows PUT", %{conn: conn} do
+      review = create_review()
+
+      conn =
+        conn
+        |> put_req_header("origin", "http://localhost:3123")
+        |> put_req_header("access-control-request-method", "PUT")
+        |> options("/api/reviews/#{review.token}")
+
+      assert conn.status == 204
+      methods = get_resp_header(conn, "access-control-allow-methods") |> List.first()
+      assert methods =~ "PUT", "preflight must allow PUT for re-share, got #{inspect(methods)}"
+      assert get_resp_header(conn, "access-control-allow-origin") == ["http://localhost:3123"]
+    end
+
+    test "OPTIONS /api/reviews/:token/comments returns 204 for 127.0.0.1", %{conn: conn} do
+      review = create_review()
+
+      conn =
+        conn
+        |> put_req_header("origin", "http://127.0.0.1:9999")
+        |> options("/api/reviews/#{review.token}/comments")
+
+      assert conn.status == 204
+      assert get_resp_header(conn, "access-control-allow-origin") == ["http://127.0.0.1:9999"]
+    end
+  end
+
   describe "POST /api/reviews with comments" do
     test "creates a review with seed comments", %{conn: conn} do
       comments = [
