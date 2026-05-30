@@ -136,6 +136,7 @@ defmodule Crit.Output do
       quote: c.quote,
       scope: c.scope || "line",
       author: c.author_display_name,
+      dom_anchor: c.dom_anchor,
       review_round: c.review_round,
       resolved: c.resolved,
       resolved_round: c.resolved_round,

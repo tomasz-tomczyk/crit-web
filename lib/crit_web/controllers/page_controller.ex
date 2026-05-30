@@ -491,7 +491,6 @@ defmodule CritWeb.PageController do
         demo_token: Application.get_env(:crit, :demo_review_token),
         testimonials: @testimonials,
         faq: @faq,
-        stats: Crit.Statistics.totals(),
         canonical_url: canonical_url(conn),
         page_title: "Crit - Point at the line. Tell the agent.",
         meta_description:

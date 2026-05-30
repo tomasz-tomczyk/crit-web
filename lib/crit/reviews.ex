@@ -559,7 +559,8 @@ defmodule Crit.Reviews do
         "resolved" => attrs["resolved"] || false,
         "resolved_round" => attrs["resolved_round"],
         "scope" => scope,
-        "external_id" => external_id
+        "external_id" => external_id,
+        "dom_anchor" => attrs["dom_anchor"] || (existing && existing.dom_anchor)
       })
       |> Ecto.Changeset.put_change(:review_id, review.id)
       |> Ecto.Changeset.put_change(:author_identity, resolved_identity)

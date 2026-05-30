@@ -301,6 +301,34 @@ defmodule CritWeb.ApiControllerTest do
       refute Map.has_key?(comment, "file_path")
     end
 
+    test "includes dom_anchor so CLI fetch can round-trip preview anchors", %{conn: conn} do
+      anchor = %{"pathname" => "/preview-content", "css_selector" => "body > main > h1"}
+
+      {:ok, review} =
+        Reviews.create_review(
+          anon_scope(),
+          [%{"path" => "index.html", "content" => "<h1>hi</h1>"}],
+          1,
+          [
+            %{
+              "file" => "index.html",
+              "start_line" => 1,
+              "end_line" => 1,
+              "body" => "anchored",
+              "external_id" => "c1",
+              "dom_anchor" => anchor
+            }
+          ],
+          []
+        )
+
+      conn = get(conn, ~p"/api/export/#{review.token}/comments")
+      body = json_response(conn, 200)
+
+      [comment] = body["files"]["index.html"]["comments"]
+      assert comment["dom_anchor"] == anchor
+    end
+
     test "returns 404 for unknown token", %{conn: conn} do
       conn = get(conn, ~p"/api/export/nonexistent_token/comments")
       assert json_response(conn, 404)

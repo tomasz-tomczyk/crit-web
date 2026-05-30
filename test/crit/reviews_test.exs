@@ -1173,6 +1173,76 @@ defmodule Crit.ReviewsTest do
       assert comment.resolved == true
     end
 
+    test "preserves dom_anchor from payload across re-share" do
+      scope = anon_scope()
+      anchor = %{"pathname" => "/preview-content", "css_selector" => "body > main > h1"}
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "index.html", "content" => "v1"}], 1, [], [])
+
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
+        "files" => [%{"path" => "index.html", "content" => "v2"}],
+        "comments" => [
+          %{
+            "file" => "index.html",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "anchored",
+            "external_id" => "local-c1",
+            "dom_anchor" => anchor
+          }
+        ],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.dom_anchor == anchor
+    end
+
+    test "carries forward existing dom_anchor when payload omits it (matched by external_id)" do
+      scope = anon_scope()
+      anchor = %{"pathname" => "/preview-content", "css_selector" => "body > main > h1"}
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "index.html", "content" => "v1"}], 1, [], [])
+
+      # First re-share carries the anchor.
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
+        "files" => [%{"path" => "index.html", "content" => "v2"}],
+        "comments" => [
+          %{
+            "file" => "index.html",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "anchored",
+            "external_id" => "local-c1",
+            "dom_anchor" => anchor
+          }
+        ],
+        "review_round" => 1
+      })
+
+      # Second re-share via a payload that lost dom_anchor (e.g. CLI fetch path).
+      Reviews.upsert_review(scope, review.token, review.delete_token, %{
+        "files" => [%{"path" => "index.html", "content" => "v3"}],
+        "comments" => [
+          %{
+            "file" => "index.html",
+            "start_line" => 1,
+            "end_line" => 1,
+            "body" => "anchored",
+            "external_id" => "local-c1"
+          }
+        ],
+        "review_round" => 1
+      })
+
+      updated = Reviews.get_by_token(review.token)
+      [comment] = updated.comments
+      assert comment.dom_anchor == anchor
+    end
+
     test "preserves author_display_name from payload" do
       scope = anon_scope()
 
