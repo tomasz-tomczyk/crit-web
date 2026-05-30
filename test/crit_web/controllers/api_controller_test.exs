@@ -59,6 +59,22 @@ defmodule CritWeb.ApiControllerTest do
       assert conn.status == 204
       assert get_resp_header(conn, "access-control-allow-origin") == ["http://127.0.0.1:9999"]
     end
+
+    test "non-localhost origin gets NO allow-origin header (the gate holds)", %{conn: conn} do
+      review = create_review()
+
+      conn =
+        conn
+        |> put_req_header("origin", "https://evil.example.com")
+        |> put_req_header("access-control-request-method", "PUT")
+        |> options("/api/reviews/#{review.token}")
+
+      # Route still resolves (204), but the localhost gate must not reflect CORS
+      # headers for a non-loopback origin — broadening allow-methods to PUT must
+      # not widen which origins are trusted.
+      assert get_resp_header(conn, "access-control-allow-origin") == []
+      assert get_resp_header(conn, "access-control-allow-methods") == []
+    end
   end
 
   describe "POST /api/reviews with comments" do
