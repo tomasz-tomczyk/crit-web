@@ -896,6 +896,10 @@ async function renderMermaidBlocks(container) {
 // ---- Markdown parsing & line-block building ---------------------------------
 
 function buildLineBlocks(md, rawContent) {
+  // Reset per-render heading-slug dedup state (see heading_open rule). Scoping
+  // the counter to one buildLineBlocks() call prevents collisions accumulating
+  // across renders and keeps prev/current diff renders independent.
+  md.__headingSlugCounter = new Map()
   const tokens = md.parse(rawContent, {})
   const sourceLines = rawContent.split("\n")
   const totalLines = sourceLines.length
@@ -4362,8 +4366,21 @@ export const DocumentRenderer = {
       const token = tokens[idx]
       const inline = tokens[idx + 1]
       if (inline && inline.type === "inline") {
-        const slug = slugifyHeading(inline.content)
-        if (slug) token.attrSet("id", slug)
+        const baseSlug = slugifyHeading(inline.content)
+        if (baseSlug) {
+          // Dedup duplicate heading slugs per render pass (GitHub-style:
+          // examples, examples-1, examples-2). The counter is reset at the
+          // start of buildLineBlocks() — each heading is rendered in its own
+          // md.renderer.render() call (fresh env), so the counter must live on
+          // the md instance, not the env, to accumulate across blocks. Keep
+          // this algorithm identical to crit local (crit/frontend/app.js) so
+          // generated ids match between the two frontends (parity contract).
+          const counter = md.__headingSlugCounter || (md.__headingSlugCounter = new Map())
+          const count = counter.get(baseSlug) || 0
+          const slug = count === 0 ? baseSlug : baseSlug + "-" + count
+          counter.set(baseSlug, count + 1)
+          token.attrSet("id", slug)
+        }
       }
       return self.renderToken(tokens, idx, options)
     }
