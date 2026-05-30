@@ -568,6 +568,23 @@
   }
 }
 
+/* ===== Reduced motion ===== */
+/* Respect prefers-reduced-motion: near-instant transitions/animations.
+   Also makes theme switches apply instantly instead of cross-fading
+   color/background through low-contrast intermediate frames (the
+   transient state axe-core flagged on .crit-round-diff-btn — CRI-90).
+   0.01ms (not 0) keeps transitionend/animationend listeners firing. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ===== Brand link ===== */
 .crit-link {
   color: var(--crit-brand);

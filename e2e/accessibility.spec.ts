@@ -49,6 +49,10 @@ test.describe("Accessibility", () => {
   test("should have no color contrast violations in dark theme", async ({
     page,
   }) => {
+    // Contrast is a settled-state property. Reduced motion zeroes the
+    // theme-switch transition so axe measures final colors, not the
+    // 150ms color/background cross-fade through low-contrast frames (CRI-90).
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await loadReview(page, token);
 
     await page.evaluate(() =>
@@ -75,6 +79,7 @@ test.describe("Accessibility", () => {
   test("should have no color contrast violations in light theme", async ({
     page,
   }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await loadReview(page, token);
 
     await page.evaluate(() =>
