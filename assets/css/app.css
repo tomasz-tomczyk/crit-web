@@ -950,8 +950,22 @@ body.dragging { user-select: none; cursor: grabbing; }
   padding: 0 24px 0 12px;
   overflow-wrap: break-word;
 }
+/* Heading top spacing lives on the .line-block row (see the .line-block:has(...)
+   rule below), NOT as margin-top on the heading. A margin-top would push the
+   rendered text down inside the flex row while the gutter line-number stays
+   pinned at the row top (align-items: flex-start), misaligning the number with
+   its text (#631). Putting the spacing on the row moves number and text down
+   together, keeping them aligned while preserving the breathing room above. */
 .line-content h1,.line-content h2,.line-content h3,.line-content h4,.line-content h5,.line-content h6 {
-  color: var(--crit-editor-fg); font-weight: 600; line-height: 1.3; margin-top: 8px; position: relative;
+  color: var(--crit-editor-fg); font-weight: 600; line-height: 1.3; margin-top: 0; position: relative;
+}
+.line-block:has(> .line-content > h1),
+.line-block:has(> .line-content > h2),
+.line-block:has(> .line-content > h3),
+.line-block:has(> .line-content > h4),
+.line-block:has(> .line-content > h5),
+.line-block:has(> .line-content > h6) {
+  padding-top: 8px;
 }
 .line-content h1 { font-size: 1.8rem; padding-bottom: 8px; border-bottom: 1px solid var(--crit-border); margin-bottom: 4px; }
 .line-content h2 { font-size: 1.45rem; padding-bottom: 6px; border-bottom: 1px solid var(--crit-border); margin-bottom: 4px; }
@@ -973,6 +987,12 @@ body.dragging { user-select: none; cursor: grabbing; }
 .heading-anchor-icon { display: inline-block; fill: currentColor; }
 .heading-anchor-copied { opacity: 1; color: var(--crit-green); }
 .line-content p { margin: 4px 0; }
+/* For a top-level paragraph (the block's own content element) move the top
+   spacing onto the row so the gutter number lines up with the first text line
+   (#631); keep the bottom margin for rhythm. Nested paragraphs (in lists,
+   blockquotes) keep the descendant margin above and are unaffected. */
+.line-content > p { margin-top: 0; }
+.line-block:has(> .line-content > p) { padding-top: 4px; }
 .line-content a { color: var(--crit-brand); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
 .line-content a:hover { border-bottom-color: var(--crit-brand); }
 .line-content code {
