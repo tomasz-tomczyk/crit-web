@@ -132,20 +132,22 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
     await loadReview(page, token);
 
     const filePath = "src/main.ts";
-    const sectionId = await page.evaluate(
-      (p) => "file-section-" + CSS.escape(p),
-      filePath
-    );
-    const section = page.locator(`[id="${sectionId}"]`);
-    const checkbox = section.locator(
-      '.file-header-viewed input[type="checkbox"]'
-    );
 
     // No viewed indicator initially
     const treeFile = page.locator(`.tree-file[data-path="${filePath}"]`);
     await expect(treeFile.locator(".tree-viewed-check")).toHaveCount(0);
 
-    await checkbox.click();
+    // Click via getElementById + CSS.escape — ids escape '/' and '.' for CSS
+    await page.evaluate((path) => {
+      const section = document.getElementById(
+        "file-section-" + CSS.escape(path)
+      );
+      const cb = section?.querySelector(
+        '.file-header-viewed input[type="checkbox"]'
+      );
+      if (!cb) throw new Error("viewed checkbox not found for " + path);
+      (cb as HTMLInputElement).click();
+    }, filePath);
 
     // Tree file should have viewed class and checkmark
     await expect(treeFile).toHaveClass(/viewed/);
