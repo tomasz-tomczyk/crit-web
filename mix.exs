@@ -97,8 +97,8 @@ defmodule Crit.MixProject do
       "assets.build": ["compile", "tailwind crit", "esbuild crit", "esbuild share_receiver"],
       "assets.deploy": [
         "tailwind crit --minify",
-        "esbuild crit --minify",
-        "esbuild share_receiver --minify",
+        "esbuild crit --minify --sourcemap",
+        "esbuild share_receiver --minify --sourcemap",
         "phx.digest"
       ],
       precommit: [

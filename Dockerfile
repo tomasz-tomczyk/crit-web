@@ -14,6 +14,8 @@
 ARG ELIXIR_VERSION=1.19.5
 ARG OTP_VERSION=28.3.1
 ARG DEBIAN_VERSION=trixie-20260202-slim
+# Git SHA passed by deploy.yml; must match SENTRY_RELEASE in the running app.
+ARG SENTRY_RELEASE=""
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
@@ -61,6 +63,21 @@ RUN npm ci --prefix assets
 
 # compile assets
 RUN mix assets.deploy
+
+# Upload frontend source maps from the same build that ships, then strip .map files
+# so they are not served publicly. Skipped when SENTRY_AUTH_TOKEN is absent (e.g.
+# local docker build, GHCR multi-arch job).
+RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN,required=false \
+  if [ -f /run/secrets/SENTRY_AUTH_TOKEN ] && [ -n "${SENTRY_RELEASE}" ]; then \
+    export SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN)" && \
+    npx --yes @sentry/cli@2 sourcemaps upload \
+      --org crit-md \
+      --project crit-web-frontend \
+      --release "${SENTRY_RELEASE}" \
+      --url-prefix '~/assets/js' \
+      priv/static/assets/js; \
+  fi && \
+  find priv/static/assets/js -name '*.map' -delete
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
