@@ -131,13 +131,14 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
   test("viewed checkbox updates the tree indicator", async ({ page }) => {
     await loadReview(page, token);
 
-    const section = page.locator("details.file-section").first();
+    const filePath = "src/main.ts";
+    const section = page.locator(`#file-section-${filePath}`);
     const checkbox = section.locator(
       '.file-header-viewed input[type="checkbox"]'
     );
 
     // No viewed indicator initially
-    const treeFile = page.locator(".tree-file").first();
+    const treeFile = page.locator(`.tree-file[data-path="${filePath}"]`);
     await expect(treeFile.locator(".tree-viewed-check")).toHaveCount(0);
 
     await checkbox.click();
