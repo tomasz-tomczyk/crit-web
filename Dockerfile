@@ -14,13 +14,15 @@
 ARG ELIXIR_VERSION=1.19.5
 ARG OTP_VERSION=28.3.1
 ARG DEBIAN_VERSION=trixie-20260202-slim
-# Git SHA passed by deploy.yml; must match SENTRY_RELEASE in the running app.
-ARG SENTRY_RELEASE=""
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
+
+# Git SHA from deploy.yml --build-arg; must match runtime SENTRY_RELEASE.
+# ARG must be declared inside the stage (pre-FROM ARGs are not in scope here).
+ARG SENTRY_RELEASE=""
 
 # install build dependencies
 RUN apt-get update \
