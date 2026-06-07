@@ -23,6 +23,17 @@ hljs.registerLanguage('heex', heex)
 
 // ---- Helpers ----------------------------------------------------------------
 
+// Byte-order path compare matching Go sort.Strings and GitHub PR file order.
+// localeCompare puts '_' before '.' (foo_test.go before foo.go).
+function pathCompare(a, b) {
+  const min = Math.min(a.length, b.length)
+  for (let i = 0; i < min; i++) {
+    const diff = a.charCodeAt(i) - b.charCodeAt(i)
+    if (diff !== 0) return diff
+  }
+  return a.length - b.length
+}
+
 const IDENTITY_HUES = [200, 140, 30, 260, 350, 90, 175, 315, 55, 220, 0, 160]
 
 function identityHue(identity) {
@@ -1382,7 +1393,7 @@ function renderTreeNode(ctx, container, node, depth, pathPrefix) {
   }
 
   // Render files
-  const sortedFiles = node.files.slice().sort(function(a, b) { return a.path.localeCompare(b.path) })
+  const sortedFiles = node.files.slice().sort(function(a, b) { return pathCompare(a.path, b.path) })
   for (const f of sortedFiles) {
     const fileName = f.path.split('/').pop()
     const fileEl = document.createElement('div')
@@ -4598,7 +4609,7 @@ export const DocumentRenderer = {
             status: f.status || 'modified',
             orphaned,
           }
-        })
+        }).sort((a, b) => pathCompare(a.path, b.path))
         restoreViewedState(ctx)
       } else if (files && files.length === 1) {
         const f = files[0]
