@@ -132,7 +132,11 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
     await loadReview(page, token);
 
     const filePath = "src/main.ts";
-    const section = page.locator(`[id="file-section-${filePath}"]`);
+    const sectionId = await page.evaluate(
+      (p) => "file-section-" + CSS.escape(p),
+      filePath
+    );
+    const section = page.locator(`[id="${sectionId}"]`);
     const checkbox = section.locator(
       '.file-header-viewed input[type="checkbox"]'
     );
