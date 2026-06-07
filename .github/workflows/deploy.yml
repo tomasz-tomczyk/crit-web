@@ -39,6 +39,14 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: crit-md
+      - name: Restore dependencies cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            deps
+            _build
+            assets/node_modules
+          key: ${{ runner.os }}-deploy-${{ hashFiles('**/mix.lock', 'assets/package-lock.json') }}
       - name: Upload frontend source maps
         env:
           MIX_ENV: prod
@@ -46,8 +54,9 @@ jobs:
         run: |
           mix local.hex --force
           mix local.rebar --force
-          mix deps.get --only prod
+          mix deps.get --only "$MIX_ENV"
           mix assets.setup
+          npm ci --prefix assets
           mix compile
           mix assets.deploy
           npx --yes @sentry/cli@2 sourcemaps upload \
