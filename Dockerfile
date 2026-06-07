@@ -70,10 +70,9 @@ RUN mix assets.deploy
 # Upload frontend source maps from the same build that ships, then strip .map files
 # so they are not served publicly. Skipped when SENTRY_AUTH_TOKEN is absent (e.g.
 # local docker build, GHCR multi-arch job).
-RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
+RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN \
   set -eu; \
-  if [ -f /run/secrets/SENTRY_AUTH_TOKEN ] && [ -n "${SENTRY_RELEASE}" ]; then \
-    export SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN)"; \
+  if [ -n "${SENTRY_AUTH_TOKEN:-}" ] && [ -n "${SENTRY_RELEASE}" ]; then \
     echo "Uploading source maps for release ${SENTRY_RELEASE}..."; \
     npx --yes @sentry/cli@2 sourcemaps upload \
       --org crit-md \
@@ -82,7 +81,7 @@ RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
       --url-prefix '~/assets/js' \
       priv/static/assets/js; \
   else \
-    echo "Skipping source map upload (secret=$([ -f /run/secrets/SENTRY_AUTH_TOKEN ] && echo present || echo absent), release=${SENTRY_RELEASE:-empty})"; \
+    echo "Skipping source map upload (token=${SENTRY_AUTH_TOKEN:+present}, release=${SENTRY_RELEASE:-empty})"; \
   fi; \
   find priv/static/assets/js -name '*.map' -delete
 
