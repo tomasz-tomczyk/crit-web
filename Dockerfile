@@ -23,6 +23,7 @@ FROM ${BUILDER_IMAGE} AS builder
 # Git SHA from deploy.yml --build-arg; must match runtime SENTRY_RELEASE.
 # ARG must be declared inside the stage (pre-FROM ARGs are not in scope here).
 ARG SENTRY_RELEASE=""
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
 
 # install build dependencies
 RUN apt-get update \
@@ -69,16 +70,20 @@ RUN mix assets.deploy
 # Upload frontend source maps from the same build that ships, then strip .map files
 # so they are not served publicly. Skipped when SENTRY_AUTH_TOKEN is absent (e.g.
 # local docker build, GHCR multi-arch job).
-RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN,required=false \
+RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
+  set -eu; \
   if [ -f /run/secrets/SENTRY_AUTH_TOKEN ] && [ -n "${SENTRY_RELEASE}" ]; then \
-    export SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN)" && \
+    export SENTRY_AUTH_TOKEN="$(cat /run/secrets/SENTRY_AUTH_TOKEN)"; \
+    echo "Uploading source maps for release ${SENTRY_RELEASE}..."; \
     npx --yes @sentry/cli@2 sourcemaps upload \
       --org crit-md \
       --project crit-web-frontend \
       --release "${SENTRY_RELEASE}" \
       --url-prefix '~/assets/js' \
       priv/static/assets/js; \
-  fi && \
+  else \
+    echo "Skipping source map upload (secret=$([ -f /run/secrets/SENTRY_AUTH_TOKEN ] && echo present || echo absent), release=${SENTRY_RELEASE:-empty})"; \
+  fi; \
   find priv/static/assets/js -name '*.map' -delete
 
 # Changes to config/runtime.exs don't require recompiling the code

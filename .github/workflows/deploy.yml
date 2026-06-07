@@ -33,10 +33,11 @@ jobs:
       - run: |
           flyctl deploy --remote-only \
             --build-arg SENTRY_RELEASE=${{ github.sha }} \
-            --build-secret SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }} \
+            --build-secret SENTRY_AUTH_TOKEN="${SENTRY_AUTH_TOKEN}" \
             --env SENTRY_RELEASE=${{ github.sha }}
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
   docker:
     name: Build and push Docker image
