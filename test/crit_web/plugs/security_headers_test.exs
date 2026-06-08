@@ -39,5 +39,47 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
       [hsts] = get_resp_header(conn, "strict-transport-security")
       assert hsts == "max-age=31536000; includeSubDomains"
     end
+
+    test "includes Umami in CSP on hosted deployments", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, false)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      conn = get(conn, ~p"/")
+      [csp] = get_resp_header(conn, "content-security-policy")
+
+      assert csp =~ "https://cloud.umami.is"
+      assert csp =~ "https://api-gateway.umami.dev"
+    end
+
+    test "omits Umami from CSP on self-hosted deployments", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      conn = get(conn, ~p"/")
+      [csp] = get_resp_header(conn, "content-security-policy")
+
+      refute csp =~ "cloud.umami.is"
+    end
+  end
+
+  describe "Umami analytics script" do
+    test "renders on hosted deployments", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, false)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      html = get(conn, ~p"/") |> html_response(200)
+
+      assert html =~ "cloud.umami.is/script.js"
+      assert html =~ "24d521a2-4440-4f90-9cbb-f0b2abcd67e2"
+    end
+
+    test "omits on self-hosted deployments", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      html = get(conn, ~p"/privacy") |> html_response(200)
+
+      refute html =~ "cloud.umami.is"
+    end
   end
 end

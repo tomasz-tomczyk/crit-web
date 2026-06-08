@@ -131,7 +131,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 ## Privacy
 
-Crit Web collects no analytics or tracking data. There is no telemetry, no usage stats, and no phone-home. If we ever add anonymous usage statistics in the future, they will be explicitly opt-in.
+Self-hosted Crit Web collects no analytics or tracking data. The public crit.md deployment uses [Umami](https://umami.is) for cookieless, aggregate website analytics (page views and traffic sources only — not linked to individual users or review content). See the [privacy policy](https://crit.md/privacy) for details.
 
 ## License
 

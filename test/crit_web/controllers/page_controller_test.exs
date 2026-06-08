@@ -19,6 +19,8 @@ defmodule CritWeb.PageControllerTest do
   test "GET /privacy", %{conn: conn} do
     conn = get(conn, ~p"/privacy")
     assert html_response(conn, 200) =~ "Privacy Policy"
+    assert html_response(conn, 200) =~ "Website analytics"
+    assert html_response(conn, 200) =~ "Umami"
   end
 
   test "GET /self-hosting", %{conn: conn} do

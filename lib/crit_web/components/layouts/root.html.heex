@@ -88,6 +88,14 @@
         }
       })();
     </script>
+    <%= if Crit.Config.hosted?() do %>
+      <script
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="24d521a2-4440-4f90-9cbb-f0b2abcd67e2"
+      >
+      </script>
+    <% end %>
   </head>
   <body class="bg-(--crit-bg-page) text-(--crit-fg-primary)">
     {@inner_content}

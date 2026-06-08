@@ -18,6 +18,15 @@ defmodule Crit.Config do
   end
 
   @doc """
+  Returns true on the public crit.md deployment. Self-hosted instances opt out
+  of hosted-only integrations such as Umami analytics.
+  """
+  @spec hosted?() :: boolean()
+  def hosted? do
+    Application.get_env(:crit, :selfhosted) != true
+  end
+
+  @doc """
   Returns true when an OAuth provider is configured, regardless of selfhosted
   mode. Use this for sites that gate purely on OAuth presence (device flow,
   public-mode auth-required redirects). Distinct from `selfhosted_oauth?/0`,
