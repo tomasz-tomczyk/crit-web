@@ -48,6 +48,7 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
       [csp] = get_resp_header(conn, "content-security-policy")
 
       assert csp =~ "https://cloud.umami.is"
+      assert csp =~ "https://gateway.umami.is"
       assert csp =~ "https://api-gateway.umami.dev"
     end
 

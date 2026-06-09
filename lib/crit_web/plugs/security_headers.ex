@@ -47,7 +47,7 @@ defmodule CritWeb.Plugs.SecurityHeaders do
     umami_connect =
       if Crit.Config.hosted?(),
         do:
-          " https://cloud.umami.is https://api-gateway.umami.dev https://api-gateway-eu.umami.dev",
+          " https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev https://api-gateway-eu.umami.dev",
         else: ""
 
     "default-src 'self'; " <>
