@@ -391,6 +391,7 @@ function closeEmptyForms(ctx, exceptKey) {
 }
 
 function openForm(ctx, newForm) {
+  rememberKeyboardFocusFromForm(ctx, newForm)
   const fk = formKey(newForm)
   const existing = ctx.activeForms.find(f => f.formKey === fk)
   if (existing) {
@@ -673,6 +674,90 @@ function getFocusedLineBlocks(ctx) {
   return file ? file.lineBlocks : []
 }
 
+// Stable j/k position across re-renders (DOM indices alone are not enough).
+function rememberKeyboardFocusTarget(ctx, target) {
+  if (!target || !target.filePath) return
+  ctx.keyboardFocusTarget = target
+}
+
+function rememberKeyboardFocusFromForm(ctx, formObj) {
+  if (!formObj || !formObj.filePath || formObj.scope === 'file') return
+  const target = { filePath: formObj.filePath }
+  if (formObj.afterBlockIndex !== null && formObj.afterBlockIndex !== undefined) {
+    target.blockIndex = String(formObj.afterBlockIndex)
+  }
+  if (formObj.startLine) target.startLine = String(formObj.startLine)
+  if (formObj.endLine) target.endLine = String(formObj.endLine)
+  rememberKeyboardFocusTarget(ctx, target)
+}
+
+function rememberKeyboardFocusFromBlock(ctx, block) {
+  if (!block) return
+  const fp = block.dataset.filePath
+  if (!fp) return
+  const target = { filePath: fp }
+  if (block.dataset.blockIndex !== undefined) {
+    target.blockIndex = block.dataset.blockIndex
+  }
+  if (block.dataset.startLine) target.startLine = block.dataset.startLine
+  if (block.dataset.endLine) target.endLine = block.dataset.endLine
+  rememberKeyboardFocusTarget(ctx, target)
+}
+
+function clearKeyboardFocusTarget(ctx) {
+  ctx.keyboardFocusTarget = null
+}
+
+function getKeyboardFocusTarget(ctx) {
+  if (ctx.keyboardFocusTarget) return ctx.keyboardFocusTarget
+  if (ctx.focusedBlockIndex < 0) return null
+  const blocks = ctx.el.querySelectorAll('.line-block')
+  const block = blocks[ctx.focusedBlockIndex]
+  if (!block) return null
+  const target = { filePath: block.dataset.filePath || '' }
+  if (block.dataset.blockIndex !== undefined) {
+    target.blockIndex = block.dataset.blockIndex
+  }
+  if (block.dataset.startLine) target.startLine = block.dataset.startLine
+  if (block.dataset.endLine) target.endLine = block.dataset.endLine
+  return target.filePath ? target : null
+}
+
+function findLineBlockForFocusTarget(ctx, target) {
+  if (!target || !target.filePath) return null
+  const blocks = ctx.el.querySelectorAll('.line-block')
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i]
+    const fp = b.dataset.filePath || ''
+    if (fp !== target.filePath) continue
+    if (target.blockIndex !== undefined && b.dataset.blockIndex === target.blockIndex) {
+      return { el: b, index: i }
+    }
+    if (target.startLine && b.dataset.startLine === target.startLine &&
+        (b.dataset.endLine || target.startLine) === (target.endLine || target.startLine)) {
+      return { el: b, index: i }
+    }
+  }
+  return null
+}
+
+function restoreKeyboardFocus(ctx) {
+  const target = getKeyboardFocusTarget(ctx)
+  if (!target) return
+  const match = findLineBlockForFocusTarget(ctx, target)
+  if (!match) return
+  ctx.focusedBlockIndex = match.index
+  if (ctx.multiFile && match.el.dataset.filePath) {
+    ctx.focusedFilePath = match.el.dataset.filePath
+  }
+  const prev = ctx.el.querySelector('.line-block.focused')
+  if (prev) prev.classList.remove('focused')
+  // Keep j/k position while a comment form is open, but don't show the highlight
+  // behind the form (textarea focus is the active affordance).
+  if (ctx.activeForms.length > 0) return
+  match.el.classList.add('focused')
+}
+
 function focusBlock(ctx, index) {
   const prev = ctx.el.querySelector('.line-block.focused')
   if (prev) prev.classList.remove('focused')
@@ -688,6 +773,7 @@ function focusBlock(ctx, index) {
   if (ctx.multiFile && block.dataset.filePath) {
     ctx.focusedFilePath = block.dataset.filePath
   }
+  rememberKeyboardFocusFromBlock(ctx, block)
 
   const header = document.querySelector('.crit-header')
   const offset = header ? header.offsetHeight + 16 : 68
@@ -699,6 +785,7 @@ function focusBlock(ctx, index) {
 
 function clearFocus(ctx) {
   ctx.focusedBlockIndex = -1
+  clearKeyboardFocusTarget(ctx)
   const prev = ctx.el.querySelector('.line-block.focused')
   if (prev) prev.classList.remove('focused')
 }
@@ -1579,6 +1666,7 @@ function render(ctx) {
   }
   renderReviewConversation(ctx)
   applyHideResolved(ctx)
+  restoreKeyboardFocus(ctx)
 }
 
 // ---- Multi-file rendering ---------------------------------------------------
@@ -2519,13 +2607,6 @@ function renderDocument(ctx) {
   replaceBrokenImages(container)
   highlightQuotesInSection(container, { path: ctx.singleFilePath, comments: ctx.comments }, ctx.activeForms)
   updateCommentCount(ctx)
-
-  if (ctx.focusedBlockIndex >= 0) {
-    const blocks = container.querySelectorAll('.line-block')
-    if (ctx.focusedBlockIndex < blocks.length) {
-      blocks[ctx.focusedBlockIndex].classList.add('focused')
-    }
-  }
 }
 
 function replaceBrokenImages(container) {
@@ -3010,6 +3091,7 @@ function createInlineEditor(comment, formObj, ctx) {
 
 function submitNewComment(body, formObj, ctx) {
   if (!body.trim()) return
+  rememberKeyboardFocusFromForm(ctx, formObj)
   clearDraft(ctx.reviewToken, formObj)
   const payload = {
     body: body.trim(),
@@ -3026,13 +3108,13 @@ function submitNewComment(body, formObj, ctx) {
   if (ctx.activeForms.length === 0) {
     ctx.selectionStart = null
     ctx.selectionEnd = null
-    ctx.focusedBlockIndex = -1
   }
   render(ctx)
 }
 
 function submitEditComment(id, body, formObj, ctx) {
   if (!body.trim()) return
+  rememberKeyboardFocusFromForm(ctx, formObj)
   ctx.pushEvent("edit_comment", { id, body: body.trim() })
   removeForm(ctx, formObj.formKey)
   render(ctx)
@@ -3048,11 +3130,11 @@ function confirmDiscardIfDirty(formObj) {
 }
 
 function cancelComment(formObj, ctx) {
+  rememberKeyboardFocusFromForm(ctx, formObj)
   removeForm(ctx, formObj.formKey)
   if (ctx.activeForms.length === 0) {
     ctx.selectionStart = null
     ctx.selectionEnd = null
-    ctx.focusedBlockIndex = -1
   }
   render(ctx)
 }
@@ -4306,6 +4388,7 @@ export const DocumentRenderer = {
     // null or { anchorBlockIndex, anchorStartLine, anchorEndLine, filePath }
     ctx.visualMode = null
     ctx.focusedBlockIndex = -1
+    ctx.keyboardFocusTarget = null
     ctx.identity = ctx.el.dataset.identity || ""
     ctx.userId = ctx.el.dataset.userId || ""
     ctx.reviewOwnerId = ctx.el.dataset.reviewOwnerId || ""
