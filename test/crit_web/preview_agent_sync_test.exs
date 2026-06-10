@@ -28,7 +28,7 @@ defmodule CritWeb.PreviewAgentSyncTest do
   ]
 
   @vendored_dir Path.join([File.cwd!(), "priv", "static", "preview-agent"])
-  @crit_frontend Path.join([File.cwd!(), "..", "crit", "frontend"])
+  @crit_frontend Path.join([File.cwd!(), "..", "crit", "web"])
 
   defp sha256(path), do: :crypto.hash(:sha256, File.read!(path)) |> Base.encode16(case: :lower)
 
@@ -42,7 +42,7 @@ defmodule CritWeb.PreviewAgentSyncTest do
     end
   end
 
-  test "vendored preview-agent files match the crit/frontend sources by content hash" do
+  test "vendored preview-agent files match the crit/web sources by content hash" do
     if File.dir?(@crit_frontend) do
       for f <- @files do
         vendored = Path.join(@vendored_dir, f)

@@ -10,11 +10,11 @@
 # re-run this script and commit the result in both repos.
 #
 # Usage: scripts/sync-preview-agent.sh [SRC_DIR]
-#   SRC_DIR defaults to <repo>/../crit/frontend
+#   SRC_DIR defaults to <repo>/../crit/web
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="${1:-$SCRIPT_DIR/../../crit/frontend}"
+SRC="${1:-$SCRIPT_DIR/../../crit/web}"
 DST="$SCRIPT_DIR/../priv/static/preview-agent"
 
 # Keep in sync with `agentScriptFiles` in crit/server.go (order matters:

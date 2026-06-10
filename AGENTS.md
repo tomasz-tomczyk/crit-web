@@ -257,12 +257,12 @@ Use `:req` (`Req`) for HTTP requests. **Avoid** `:httpoison`, `:tesla`, `:httpc`
 
 <important if="you are changing any agent-*.js or crit-agent.js in crit/">
 
-The preview-agent scripts in `crit-web/priv/static/preview-agent/` are vendored **verbatim** from `crit/frontend/` — they are the exact set + order crit injects into preview iframes (`agentScriptFiles` in `crit/server.go`), plus `agent-marker.css` (served at `/agent-marker.css` locally). crit-web must serve byte-identical copies so DOM anchoring stays compatible across both renderers.
+The preview-agent scripts in `crit-web/priv/static/preview-agent/` are vendored **verbatim** from `crit/web/` — they are the exact set + order crit injects into preview iframes (`agentScriptFiles` in `crit/server.go`), plus `agent-marker.css` (served at `/agent-marker.css` locally). crit-web must serve byte-identical copies so DOM anchoring stays compatible across both renderers.
 
 When you change any `agent-*.js`, `crit-agent.js`, or `agent-marker.css` in `crit/`:
 
-1. Re-sync: run `crit-web/scripts/sync-preview-agent.sh` (copies the 8 files from `../crit/frontend/`).
+1. Re-sync: run `crit-web/scripts/sync-preview-agent.sh` (copies the 8 files from `../crit/web/`).
 2. Commit the re-synced files in **both** repos.
 
-The drift-guard test `test/crit_web/preview_agent_sync_test.exs` fails loudly when the vendored copies diverge from `crit/frontend/` (and skips gracefully when the sibling `crit/` checkout is absent, e.g. CI). Do not edit `priv/static/preview-agent/*` by hand — always re-sync from crit.
+The drift-guard test `test/crit_web/preview_agent_sync_test.exs` fails loudly when the vendored copies diverge from `crit/web/` (and skips gracefully when the sibling `crit/` checkout is absent, e.g. CI). Do not edit `priv/static/preview-agent/*` by hand — always re-sync from crit.
 </important>
