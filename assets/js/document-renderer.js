@@ -1714,7 +1714,9 @@ function renderMultiFile(ctx) {
 
   container.appendChild(filesContainer)
 
-  // Attach touch handler for mobile comment initiation
+  // Attach delegated mouse + touch handlers for comment initiation (one each
+  // per container, instead of per-block listeners that are O(n) on large diffs)
+  attachGutterMouseHandler(filesContainer, ctx)
   attachGutterTouchHandler(filesContainer, ctx)
 
   // Update comment count
@@ -1925,7 +1927,7 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
       lineAdd.className = 'line-add'
       lineAdd.textContent = '+'
       commentGutter.appendChild(lineAdd)
-      commentGutter.addEventListener('mousedown', (e) => handleGutterMouseDown(e, ctx))
+      // mousedown handled by delegated attachGutterMouseHandler on the container
     }
     lineBlockEl.appendChild(commentGutter)
   } else {
@@ -2527,9 +2529,7 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
 
   gutter.appendChild(lineNum)
   gutter.appendChild(commentGutter)
-  if (ctx.canComment !== false) {
-    gutter.addEventListener("mousedown", (e) => handleGutterMouseDown(e, ctx))
-  }
+  // mousedown handled by delegated attachGutterMouseHandler on the container
 
   // Content
   const content = document.createElement("div")
@@ -2584,6 +2584,8 @@ function renderDocument(ctx) {
         ? renderRenderedDiffSplit(ctx, ctx.md, file, prevContent)
         : renderRenderedDiffUnified(ctx, ctx.md, file, prevContent)
       container.appendChild(diffEl)
+      attachGutterMouseHandler(container, ctx)
+      attachGutterTouchHandler(container, ctx)
       renderMermaidBlocks(container)
       replaceBrokenImages(container)
       updateCommentCount(ctx)
@@ -2600,7 +2602,8 @@ function renderDocument(ctx) {
     container.appendChild(renderBlock(ctx, block, bi, commentsMap, commentedLineSet, ctx.singleFilePath || null))
   }
 
-  // Attach touch handler for mobile comment initiation
+  // Attach delegated mouse + touch handlers for comment initiation
+  attachGutterMouseHandler(container, ctx)
   attachGutterTouchHandler(container, ctx)
 
   renderMermaidBlocks(container)
@@ -2649,12 +2652,10 @@ function updateCommentCount(ctx) {
 
 // ---- Gutter drag selection --------------------------------------------------
 
-function handleGutterMouseDown(e, ctx) {
+function handleGutterMouseDown(e, ctx, gutter, blockEl) {
   e.preventDefault()
-  const gutter = e.currentTarget
-  const startLine = parseInt(gutter.dataset.startLine)
-  const endLine = parseInt(gutter.dataset.endLine)
-  const blockEl = gutter.parentElement
+  const startLine = parseInt(gutter.dataset.startLine || blockEl.dataset.startLine)
+  const endLine = parseInt(gutter.dataset.endLine || blockEl.dataset.endLine)
   const blockIndex = parseInt(blockEl.dataset.blockIndex)
   const filePath = blockEl.dataset.filePath || null
 
@@ -2746,9 +2747,51 @@ function handleDragEnd(_e, ctx, onMove, onUp) {
   openForm(ctx, { afterBlockIndex: lastBlockIndex, startLine: rangeStart, endLine: rangeEnd, editingId: null, filePath: filePath })
 }
 
+// ---- Mouse comment handler --------------------------------------------------
+
+// Single delegated mousedown on the diff container instead of one listener per
+// rendered block. Per-block listeners are O(n) and freeze the main thread for
+// seconds on large diffs (thousands of blocks). Resolve the target gutter via
+// closest() and reconstruct the same metadata the per-block handler read.
+function attachGutterMouseHandler(container, ctx) {
+  if (ctx.canComment === false) return
+  // render(ctx) re-runs on every drag move; the single-file container is
+  // persistent, so guard against stacking duplicate delegated listeners.
+  if (container._gutterMouseBound) return
+  container._gutterMouseBound = true
+  container.addEventListener('mousedown', function(e) {
+    const lineBlock = e.target.closest('.line-block')
+    if (!lineBlock || !container.contains(lineBlock)) return
+    if (!lineBlock.dataset.blockIndex) return
+    // renderBlock made the whole .line-gutter the mousedown target (it carries
+    // data-start-line and wraps the comment gutter). renderRoundDiffBlock made
+    // only the .line-comment-gutter the target. Preserve each hit-area exactly.
+    const lineGutter = e.target.closest('.line-gutter')
+    const commentGutter = e.target.closest('.line-comment-gutter')
+    let gutter = null
+    if (lineGutter && lineGutter.dataset.startLine) {
+      // renderBlock case: .line-gutter is the commentable hit-area.
+      gutter = lineGutter
+    } else if (
+      commentGutter &&
+      !commentGutter.classList.contains('diff-no-comment') &&
+      commentGutter.dataset.startLine
+    ) {
+      // renderRoundDiffBlock case: only the comment gutter is commentable.
+      gutter = commentGutter
+    }
+    if (!gutter) return
+    handleGutterMouseDown(e, ctx, gutter, lineBlock)
+  })
+}
+
 // ---- Touch comment handler --------------------------------------------------
 
 function attachGutterTouchHandler(container, ctx) {
+  // render(ctx) re-runs on every drag move; the single-file container is
+  // persistent, so guard against stacking duplicate delegated listeners.
+  if (container._gutterTouchBound) return
+  container._gutterTouchBound = true
   container.addEventListener('pointerdown', function(e) {
     if (e.pointerType !== 'touch') return
     const num = e.target.closest('.line-num')
