@@ -72,6 +72,8 @@ function initSentry(liveSocket) {
     const socket = liveSocket?.getSocket?.()
     if (socket) {
       const PERSISTENCE_MS = 5000
+      const STALE_TAB_MS = 30 * 60 * 1000
+      const MIN_CONSECUTIVE_ERRORS = 3
       let pendingTimer = null
       let consecutiveErrors = 0
       let firstErrorAt = null
@@ -86,13 +88,16 @@ function initSentry(liveSocket) {
         const errSnapshot = err
         pendingTimer = setTimeout(() => {
           pendingTimer = null
+          const msSinceOpen = lastOpenAt ? Date.now() - lastOpenAt : null
+          if (msSinceOpen !== null && msSinceOpen > STALE_TAB_MS) return
+          if (consecutiveErrors < MIN_CONSECUTIVE_ERRORS) return
           Sentry.captureMessage("LiveSocket transport error (persistent)", {
             level: "warning",
             extra: {
               type: errSnapshot?.type,
               message: String(errSnapshot?.message ?? errSnapshot),
               consecutive_errors: consecutiveErrors,
-              ms_since_last_open: lastOpenAt ? Date.now() - lastOpenAt : null,
+              ms_since_last_open: msSinceOpen,
               transport: socket.transport?.name || socket.transport?.constructor?.name || null,
             },
           })
