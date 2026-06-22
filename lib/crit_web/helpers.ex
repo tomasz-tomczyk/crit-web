@@ -75,7 +75,7 @@ defmodule CritWeb.Helpers do
 
   Returns one of:
     * `{:markdown, safe_html}` — for `.md` / `.markdown` files; first ~10 source
-      lines rendered to HTML via Earmark, marked safe for direct injection.
+      lines rendered to HTML via MDEx, marked safe for direct injection.
     * `{:code, [line_string, ...]}` — line-numbered plain-text preview for any
       other file type (or markdown when rendering fails).
     * `:none` — when there is no file content available.
@@ -88,12 +88,8 @@ defmodule CritWeb.Helpers do
 
     cond do
       markdown?(path) ->
-        case Earmark.as_html(Enum.join(lines, "\n"),
-               escape: true,
-               compact_output: true,
-               smartypants: false
-             ) do
-          {:ok, html, _} -> {:markdown, Phoenix.HTML.raw(html)}
+        case MDEx.to_html(Enum.join(lines, "\n"), render: [escape: true, hardbreaks: true]) do
+          {:ok, html} -> {:markdown, Phoenix.HTML.raw(html)}
           _ -> {:code, lines}
         end
 

@@ -3431,7 +3431,7 @@ body.sidebar-resizing * {
   flex-shrink: 0;
 }
 
-/* ===== Changelog body (Earmark-rendered markdown) ===== */
+/* ===== Changelog body (MDEx-rendered markdown) ===== */
 
 .changelog-body {
   font-size: 0.9375rem;

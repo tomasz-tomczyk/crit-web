@@ -69,7 +69,7 @@ defmodule Crit.MixProject do
       {:hammer, "~> 7.0"},
       {:req, "~> 0.5"},
       {:assent, "~> 0.2"},
-      {:earmark, "~> 1.4"},
+      {:mdex, "~> 0.13"},
       {:sentry, "~> 13.0"},
       {:bcrypt_elixir, "~> 3.0"},
       {:swoosh, "~> 1.25"},

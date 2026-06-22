@@ -46,9 +46,9 @@ defmodule Crit.Changelog do
     cleaned_body = strip_contributors_section(raw_body)
 
     body_html =
-      case Earmark.as_html(cleaned_body) do
-        {:ok, html, _} -> sanitize_html(html)
-        {:error, _, _} -> "<p>#{cleaned_body}</p>"
+      case MDEx.to_html(cleaned_body) do
+        {:ok, html} -> sanitize_html(html)
+        _ -> "<p>#{cleaned_body}</p>"
       end
 
     %{
