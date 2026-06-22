@@ -2,8 +2,8 @@
 
 <div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
   <Layouts.site_header current_scope={@current_scope} current_page={:features} />
-  
-<!-- Breadcrumb -->
+
+  <!-- Breadcrumb -->
   <div class="max-w-7xl mx-auto w-full px-10 mt-10 max-sm:px-4 max-sm:mt-5">
     <a
       href={~p"/features"}
@@ -12,8 +12,8 @@
       &larr; All features
     </a>
   </div>
-  
-<!-- Hero -->
+
+  <!-- Hero -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-4">
     <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-3">
       Feature
@@ -25,8 +25,8 @@
       {CritWeb.PageHTML.inline_code(@feature.description)}
     </p>
   </section>
-  
-<!-- Visual widget -->
+
+  <!-- Visual widget -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
     <%= case @slug do %>
       <% "inline-comments" -> %>
@@ -245,7 +245,8 @@
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            File updated (<span class="text-(--crit-brand)">8</span> edits detected)
+            File updated (<span class="text-(--crit-brand)">8</span>
+            edits detected)
           </div>
           <div class="mt-2">
             <span class="text-(--crit-brand)">&rarr;</span>
@@ -261,7 +262,8 @@
           </div>
           <div>
             <span class="text-(--crit-green)">&rarr;</span>
-            File updated (<span class="text-(--crit-brand)">3</span> edits detected)
+            File updated (<span class="text-(--crit-brand)">3</span>
+            edits detected)
           </div>
           <div class="mt-2">
             <span class="text-(--crit-brand)">&rarr;</span>
@@ -423,8 +425,8 @@
       <% _ -> %>
     <% end %>
   </section>
-  
-<!-- Details -->
+
+  <!-- Details -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
     <h2 class="text-2xl font-extrabold tracking-tight mb-6">How it works</h2>
     <div class="grid gap-5">
@@ -440,8 +442,8 @@
       <% end %>
     </div>
   </section>
-  
-<!-- Why this matters -->
+
+  <!-- Why this matters -->
   <%= if @feature[:why_this_matters] do %>
     <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
       <h2 class="text-2xl font-extrabold tracking-tight mb-6">Why this matters</h2>
@@ -454,8 +456,8 @@
       </div>
     </section>
   <% end %>
-  
-<!-- How Crit compares -->
+
+  <!-- How Crit compares -->
   <%= if @feature[:how_crit_compares] do %>
     <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-8">
       <h2 class="text-2xl font-extrabold tracking-tight mb-4">How Crit compares</h2>
@@ -464,8 +466,8 @@
       </p>
     </section>
   <% end %>
-  
-<!-- Demo + Install CTA -->
+
+  <!-- Demo + Install CTA -->
   <section class="max-w-7xl mx-auto w-full px-10 mt-14 mb-16 max-sm:px-4 max-sm:mt-10">
     <div class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-8 max-sm:p-5">
       <h2 class="text-2xl font-extrabold tracking-tight mb-2">Try it out</h2>
@@ -496,8 +498,8 @@
       <CritWeb.PageHTML.install_widget />
     </div>
   </section>
-  
-<!-- Other features -->
+
+  <!-- Other features -->
   <section class="max-w-7xl mx-auto w-full px-10 mb-16 max-sm:px-4">
     <h2 class="text-base font-semibold tracking-tight mb-4 text-(--crit-fg-secondary)">
       More features

@@ -73,8 +73,7 @@
         class="w-full h-auto"
         poster="https://assets.crit.md/crit-demo-poster.png"
         src="https://assets.crit.md/crit-demo.mp4"
-      >
-      </video>
+      ></video>
     </div>
 
     <%!-- YouTube video modal --%>
@@ -93,8 +92,7 @@
           allowfullscreen
           class="absolute inset-0 w-full h-full rounded-xl"
           style="border: 0;"
-        >
-        </iframe>
+        ></iframe>
         <button
           type="button"
           data-video-close
@@ -169,8 +167,7 @@
                   class="w-full h-auto"
                   poster={mode[:poster]}
                   data-lazy-src={mode.video}
-                >
-                </video>
+                ></video>
               </div>
             <% else %>
               <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{mode.slug}"}>

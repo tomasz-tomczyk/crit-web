@@ -35,8 +35,7 @@
           class="w-full h-auto"
           poster={@mode[:poster]}
           src={@mode.video}
-        >
-        </video>
+        ></video>
       </div>
     <% else %>
       <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{@mode.label}"}>
