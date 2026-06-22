@@ -28,20 +28,6 @@ defmodule Crit.SentryFilterTest do
       assert :ignore = SentryFilter.before_send(event)
     end
 
-    test "drops OAuth state KeyError when session expired" do
-      event =
-        event(%{
-          exception: [
-            %{
-              type: "KeyError",
-              value: "key :state not found in:\n\n    %{}\n"
-            }
-          ]
-        })
-
-      assert :ignore = SentryFilter.before_send(event)
-    end
-
     test "passes through unrelated exceptions" do
       event =
         event(%{

@@ -22,7 +22,7 @@ defmodule Crit.SentryFilter do
     |> scrub_query_params()
   end
 
-  # Bot scanners and expired OAuth sessions — not actionable product bugs.
+  # Bot scanners — not actionable product bugs.
   defp drop_noise(%{exception: exceptions} = event) when is_list(exceptions) do
     if Enum.any?(exceptions, &noise_exception?/1), do: :ignore, else: event
   end
@@ -31,10 +31,6 @@ defmodule Crit.SentryFilter do
 
   defp noise_exception?(%{type: "Bandit.HTTPError", value: value}) when is_binary(value) do
     String.contains?(value, "Header too long")
-  end
-
-  defp noise_exception?(%{type: "KeyError", value: value}) when is_binary(value) do
-    String.contains?(value, "key :state not found")
   end
 
   defp noise_exception?(_), do: false
