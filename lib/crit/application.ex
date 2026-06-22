@@ -20,6 +20,7 @@ defmodule Crit.Application do
         review_cleaner() ++
         device_code_cleaner() ++
         changelog() ++
+        github_stars() ++
         [
           CritWeb.Endpoint
         ]
@@ -59,6 +60,14 @@ defmodule Crit.Application do
   defp changelog do
     if Application.get_env(:crit, :start_changelog, true) do
       [Crit.Changelog]
+    else
+      []
+    end
+  end
+
+  defp github_stars do
+    if Application.get_env(:crit, :start_github_stars, true) do
+      [Crit.GithubStars]
     else
       []
     end

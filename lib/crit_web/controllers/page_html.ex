@@ -483,4 +483,58 @@ defmodule CritWeb.PageHTML do
     </div>
     """
   end
+
+  attr :variant, :string, default: "hero", values: ~w(hero cta)
+
+  def github_star_link(assigns) do
+    star_count = Crit.GithubStars.count()
+    formatted = if star_count, do: Crit.GithubStars.format_count(star_count)
+
+    assigns =
+      assigns
+      |> assign(:star_count, star_count)
+      |> assign(:formatted_count, formatted)
+
+    ~H"""
+    <a
+      href="https://github.com/tomasz-tomczyk/crit"
+      class={[
+        "inline-flex items-center justify-center gap-2 text-sm font-semibold no-underline transition-all",
+        @variant == "hero" &&
+          "group/star px-5 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) max-sm:w-full",
+        @variant == "cta" &&
+          "px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary)"
+      ]}
+      aria-label={
+        if @star_count,
+          do: "Star Crit on GitHub — #{@formatted_count} stars",
+          else: "Star Crit on GitHub"
+      }
+    >
+      <svg
+        viewBox="0 0 16 16"
+        class={[
+          "fill-current",
+          @variant == "hero" &&
+            "size-4 opacity-60 group-hover/star:opacity-100 group-hover/star:text-(--crit-yellow) group-hover/star:scale-110 transition-all duration-200",
+          @variant == "cta" && "size-3.5 opacity-70"
+        ]}
+        aria-hidden="true"
+      >
+        <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
+      </svg>
+      <span>Star on GitHub</span>
+      <span
+        :if={@formatted_count}
+        class={[
+          "tabular-nums font-medium",
+          @variant == "hero" && "text-(--crit-fg-muted) group-hover/star:text-(--crit-yellow)",
+          @variant == "cta" && "text-(--crit-fg-muted)"
+        ]}
+      >
+        {@formatted_count}
+      </span>
+    </a>
+    """
+  end
 end
