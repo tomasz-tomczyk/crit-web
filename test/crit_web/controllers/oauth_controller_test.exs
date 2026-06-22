@@ -45,7 +45,7 @@ defmodule CritWeb.OAuthControllerTest do
     test "logs in user, sets session user_id, and redirects to dashboard" do
       conn =
         build_conn()
-        |> init_test_session(%{oauth_session_params: %{}})
+        |> init_test_session(%{oauth_session_params: %{state: "test_state"}})
         |> get(~p"/auth/login/callback", %{"code" => "test_code"})
 
       assert redirected_to(conn) == ~p"/dashboard"
@@ -58,7 +58,7 @@ defmodule CritWeb.OAuthControllerTest do
       conn =
         build_conn()
         |> init_test_session(%{
-          oauth_session_params: %{},
+          oauth_session_params: %{state: "test_state"},
           device_code_id: device_code.id
         })
         |> get(~p"/auth/login/callback", %{"code" => "test_code"})
@@ -119,11 +119,29 @@ defmodule CritWeb.OAuthControllerTest do
     test "callback redirects to / (default) when no return_to was stored" do
       conn =
         build_conn()
-        |> init_test_session(%{oauth_session_params: %{}})
+        |> init_test_session(%{oauth_session_params: %{state: "test_state"}})
         |> get(~p"/auth/login/callback", %{"code" => "test_code"})
 
       # No oauth_return_to in session → callback falls back to /dashboard.
       assert redirected_to(conn) == ~p"/dashboard"
+    end
+
+    test "redirects with flash when oauth session params are missing state" do
+      conn =
+        build_conn()
+        |> init_test_session(%{oauth_session_params: %{}})
+        |> get(~p"/auth/login/callback", %{"code" => "test_code"})
+
+      assert redirected_to(conn) == ~p"/"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "OAuth session expired"
+      assert get_session(conn, "user_id") == nil
+    end
+
+    test "redirects with flash when oauth session params are absent" do
+      conn = get(build_conn(), ~p"/auth/login/callback", %{"code" => "test_code"})
+
+      assert redirected_to(conn) == ~p"/"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "OAuth session expired"
     end
   end
 

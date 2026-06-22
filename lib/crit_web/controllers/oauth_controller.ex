@@ -24,9 +24,19 @@ defmodule CritWeb.OAuthController do
 
   @doc "Handles the OAuth callback: exchanges code for token, finds/creates user, logs in."
   def callback(conn, params) do
-    session_params = get_session(conn, :oauth_session_params) || %{}
     config = build_config()
+    session_params = get_session(conn, :oauth_session_params) || %{}
 
+    if oauth_session_expired?(config, session_params) do
+      conn
+      |> put_flash(:error, "OAuth session expired. Please try signing in again.")
+      |> redirect(to: ~p"/")
+    else
+      complete_callback(conn, params, config, session_params)
+    end
+  end
+
+  defp complete_callback(conn, params, config, session_params) do
     case config
          |> Keyword.put(:session_params, session_params)
          |> config[:strategy].callback(params) do
@@ -91,4 +101,17 @@ defmodule CritWeb.OAuthController do
       _ -> "custom"
     end
   end
+
+  # Assent's OAuth2 verify_state/3 raises KeyError when session_params lacks :state
+  # (expired session, bookmarked callback URL, or cross-browser flow). Fail gracefully.
+  defp oauth_session_expired?(config, session_params) do
+    state_required? = Keyword.get(config, :state, true) != false
+    state_required? and not has_oauth_state?(session_params)
+  end
+
+  defp has_oauth_state?(params) when is_map(params) do
+    Map.has_key?(params, :state) or Map.has_key?(params, "state")
+  end
+
+  defp has_oauth_state?(_), do: false
 end
