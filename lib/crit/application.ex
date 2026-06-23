@@ -58,19 +58,18 @@ defmodule Crit.Application do
   end
 
   defp changelog do
-    if Application.get_env(:crit, :start_changelog, true) do
-      [Crit.Changelog]
-    else
-      []
-    end
+    if hosted_only_child?(:start_changelog), do: [Crit.Changelog], else: []
   end
 
   defp github_stars do
-    if Application.get_env(:crit, :start_github_stars, true) do
-      [Crit.GithubStars]
-    else
-      []
-    end
+    if hosted_only_child?(:start_github_stars), do: [Crit.GithubStars], else: []
+  end
+
+  # GitHub stars/changelog poll api.github.com for the public marketing site.
+  # Self-hosted instances don't expose that UI, so skip the background fetchers.
+  defp hosted_only_child?(key) do
+    Application.get_env(:crit, :selfhosted) != true &&
+      Application.get_env(:crit, key, true)
   end
 
   # Tell Phoenix to update the endpoint configuration
