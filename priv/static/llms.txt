@@ -30,6 +30,12 @@ claude plugin marketplace add tomasz-tomczyk/crit
 claude plugin install crit@crit
 ```
 
+For Codex, **`crit install codex-plugin` is the recommended path**. It installs the $crit skill, crit-cli, and a proposed-plan Stop hook that reviews in-chat plans before the turn ends:
+
+```
+cd ~ && crit install codex-plugin
+```
+
 For every other agent, `crit install <tool>` writes the integration files (skills, custom rules, or a slash command, depending on the tool).
 
 - [All integrations](https://crit.md/integrations): Index of every supported agent with install instructions.
@@ -37,7 +43,7 @@ For every other agent, `crit install <tool>` writes the integration files (skill
 - [Cursor](https://crit.md/integrations/cursor): `crit install cursor`. Drops the /crit slash command and crit-cli skill into `.cursor/skills/`.
 - [GitHub Copilot](https://crit.md/integrations/github-copilot): `crit install github-copilot`. Installs as Agent Skills under `.github/skills/`.
 - [OpenCode](https://crit.md/integrations/opencode): `crit install opencode`. Skill auto-activates on plan and review requests.
-- [Codex](https://crit.md/integrations/codex): `crit install codex`. Cross-tool Agent Skills format, project or global install.
+- [Codex](https://crit.md/integrations/codex): `crit install codex-plugin` globally (recommended, see above) or `crit install codex` per project for skills only.
 - [Windsurf](https://crit.md/integrations/windsurf): `crit install windsurf`. Single rule under `.windsurf/rules/`.
 - [Cline](https://crit.md/integrations/cline): `crit install cline`. Single rule under `.clinerules/`.
 - [Aider](https://crit.md/integrations/aider): Append the crit conventions to your `CONVENTIONS.md`.

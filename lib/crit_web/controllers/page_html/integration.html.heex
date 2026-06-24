@@ -78,9 +78,13 @@
               </div>
             </div>
             <p class="text-(--crit-fg-secondary) leading-relaxed" phx-no-format>
-              Run from the project root to add the <code class="text-(--crit-brand) bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">/crit</code>
-              and <code class="text-(--crit-brand) bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">crit-cli</code>
-              skills to the repo. The whole team gets them once pushed.
+              <%= if note = Map.get(@tool, :per_project_note) do %>
+                {note}
+              <% else %>
+                Run from the project root to add the <code class="text-(--crit-brand) bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">/crit</code>
+                and <code class="text-(--crit-brand) bg-(--crit-bg-elevated) px-1.5 py-0.5 rounded">crit-cli</code>
+                skills to the repo. The whole team gets them once pushed.
+              <% end %>
             </p>
           </div>
         <% nil -> %>

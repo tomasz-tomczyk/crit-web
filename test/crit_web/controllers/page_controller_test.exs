@@ -72,6 +72,16 @@ defmodule CritWeb.PageControllerTest do
       assert html =~ "Per-project alternative"
     end
 
+    test "renders the marketplace branch for codex", %{conn: conn} do
+      conn = get(conn, ~p"/integrations/codex")
+      html = html_response(conn, 200)
+      assert html =~ "Install the plugin (recommended)"
+      assert html =~ "crit install codex-plugin"
+      assert html =~ "Proposed-plan review hook"
+      assert html =~ "Per-project alternative"
+      assert html =~ "crit install codex"
+    end
+
     test "returns 404 for an unknown tool", %{conn: conn} do
       conn = get(conn, ~p"/integrations/does-not-exist")
       body = response(conn, 404)

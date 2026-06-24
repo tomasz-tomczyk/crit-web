@@ -317,11 +317,12 @@ defmodule CritWeb.PageHTML do
     %{
       id: "codex",
       name: "Codex",
-      copy: "crit install codex",
+      copy: "cd ~ && crit install codex-plugin",
       lines: [
-        %{type: :cmd, prompt: "$ ", text: "crit install codex"},
+        %{type: :cmd, prompt: "$ ", text: "cd ~ && crit install codex-plugin"},
         %{type: :output, text: "Installed: .agents/skills/crit/SKILL.md"},
-        %{type: :output, text: "Installed: .agents/skills/crit-cli/SKILL.md"}
+        %{type: :output, text: "Installed: .codex/plugins/crit/hooks/hooks.json"},
+        %{type: :output, text: "Enabled: crit@local in ~/.codex/config.toml"}
       ]
     },
     %{

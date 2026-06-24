@@ -82,18 +82,27 @@ defmodule Crit.Integrations do
     %{
       id: "codex",
       name: "Codex",
-      tagline: "Crit as a Codex skill",
+      tagline: "The full Crit workflow for Codex",
       logo: %{
         light: "/images/integrations/codex-light.svg",
         dark: "/images/integrations/codex-dark.svg"
       },
-      page_title: "Crit + OpenAI Codex CLI — review AI plans inline",
+      page_title: "Crit + OpenAI Codex CLI — plan-mode review for AI agents",
       meta:
-        "Install crit's Codex skill. Drops .agents/skills/crit/ and .agents/skills/crit-cli/ so the OpenAI Codex CLI discovers the review workflow automatically.",
+        "Install crit's Codex plugin: a $crit skill, the crit-cli skill, and a proposed-plan Stop hook that opens every in-chat plan for inline review before the turn ends.",
       intro:
-        "Codex CLI walks up from cwd looking for .agents/skills/, with a global fallback at ~/.agents/skills/. The files follow the cross-tool Agent Skills spec, so any compatible agent loads them.",
+        "Codex is the only agent besides Claude Code with a plan hook: proposed plans in Plan mode go through Crit for inline review before the turn completes. Install the plugin for the hook; skills-only install works for on-demand $crit on files already on disk.",
       command: "crit install codex",
-      components: [:crit_command, :crit_cli_skill]
+      components: [:codex_crit_command, :crit_cli_skill, :codex_plan_hook],
+      marketplace: %{
+        intro:
+          "Installs the Crit Codex plugin globally: $crit and crit-cli skills, a local marketplace entry, and the proposed-plan Stop hook. Enables the plugin in ~/.codex/config.toml automatically.",
+        commands: [
+          "cd ~ && crit install codex-plugin"
+        ]
+      },
+      per_project_note:
+        "Run from the project root for skills only — $crit and crit-cli land in .agents/skills/. No plan hook. For the hook too, run crit install codex-plugin instead and commit plugins/crit/."
     },
     %{
       id: "gemini",
@@ -236,6 +245,19 @@ defmodule Crit.Integrations do
         }
       ]
     },
+    codex_crit_command: %{
+      label: "$crit skill",
+      summary:
+        "Starts the review loop when you type $crit in Codex chat. The agent launches Crit, waits for your inline comments, then revises until you approve.",
+      use_cases: [
+        %{
+          title: nil,
+          desc: nil,
+          example_label: "In your agent's chat:",
+          example: "$crit"
+        }
+      ]
+    },
     crit_cli_skill: %{
       label: "crit-cli skill",
       summary:
@@ -262,6 +284,19 @@ defmodule Crit.Integrations do
       label: "Plan-mode review hook",
       summary:
         "Intercepts Claude Code's ExitPlanMode and sends the plan to Crit for inline review. You comment line-by-line, the agent revises, and plan mode doesn't exit until you approve. Ships only with the marketplace plugin.",
+      use_cases: [
+        %{
+          title: nil,
+          desc: nil,
+          example_label: "Disable per-shell or globally:",
+          example: "export CRIT_PLAN_REVIEW=off"
+        }
+      ]
+    },
+    codex_plan_hook: %{
+      label: "Proposed-plan review hook",
+      summary:
+        "Intercepts Codex's Stop hook when the agent proposes a plan in Plan mode. Reads the in-chat <proposed_plan>, writes it to disk, and runs crit plan-hook --mode codex so you can comment inline before the turn ends. Ships only with crit install codex-plugin — bare $crit needs a file path and cannot review in-chat plans on its own.",
       use_cases: [
         %{
           title: nil,
