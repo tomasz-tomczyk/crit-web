@@ -1350,6 +1350,30 @@ function processTaskLists(html) {
       liTag + (checked === "x" ? '<input type="checkbox" checked disabled>' : '<input type="checkbox" disabled>'))
 }
 
+function resolveImagePath(filePath, src) {
+  const fileDir = filePath.includes("/") ? filePath.replace(/\/[^/]*$/, "") : ""
+  const combined = fileDir ? fileDir + "/" + src : src
+  const parts = combined.split("/")
+  const stack = []
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i]
+    if (!p || p === ".") continue
+    if (p === "..") { if (stack.length) stack.pop() }
+    else stack.push(p)
+  }
+  return stack.join("/")
+}
+
+function rewriteImageSrcs(html, filePath, reviewToken) {
+  return html.replace(/(<img\s[^>]*src=")([^"]+)(")/gi, function(match, pre, src, post) {
+    if (/^https?:\/\/|^data:|^\//.test(src)) return match
+    const resolved = resolveImagePath(filePath || "", src)
+    const href = "/r/" + encodeURIComponent(reviewToken) + "/raw/" +
+      resolved.split("/").map(encodeURIComponent).join("/")
+    return pre + href + post
+  })
+}
+
 // ---- Viewed state (localStorage) --------------------------------------------
 
 function viewedStorageKey(ctx) {
@@ -1953,6 +1977,7 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
   contentEl.className = contentClasses
   let html = block.wordDiffHtml || block.html
   html = processTaskLists(html)
+  html = rewriteImageSrcs(html, file.path, ctx.reviewToken)
   contentEl.innerHTML = html
   lineBlockEl.appendChild(contentEl)
 
@@ -2539,6 +2564,7 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
   content.className = contentClasses
   let html = block.html
   html = processTaskLists(html)
+  html = rewriteImageSrcs(html, filePath, ctx.reviewToken)
   content.innerHTML = html
 
   lineBlockEl.appendChild(gutter)
