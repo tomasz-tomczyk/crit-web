@@ -40,7 +40,7 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: crit-md
       - name: Restore dependencies cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             deps
