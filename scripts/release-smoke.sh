@@ -15,6 +15,7 @@ mix local.hex --force >/dev/null
 mix local.rebar --force >/dev/null
 mix deps.get --only prod
 npm ci --prefix assets
+mix compile
 mix assets.deploy
 mix release --overwrite
 
