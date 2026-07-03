@@ -33,7 +33,7 @@ defmodule CritWeb.PageControllerTest do
     html = html_response(conn, 200)
     assert html =~ "Point at the line."
     assert html =~ "Every agent reads files"
-      assert html =~ "Guides & articles"
+    assert html =~ "Guides & articles"
     assert html =~ "Frequently asked questions"
   end
 

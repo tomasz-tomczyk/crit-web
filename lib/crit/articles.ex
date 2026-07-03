@@ -88,7 +88,8 @@ defmodule Crit.Articles do
   end
 
   defp mermaid_blocks(html) do
-    Regex.replace(~r/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/, html, fn _, src ->
+    Regex.replace(~r/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/, html, fn _,
+                                                                                              src ->
       decoded =
         src
         |> String.replace("&amp;", "&")
