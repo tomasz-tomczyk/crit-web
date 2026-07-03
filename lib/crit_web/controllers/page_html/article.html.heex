@@ -1,0 +1,66 @@
+<Layouts.flash_group flash={@flash} />
+
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+  <Layouts.site_header current_scope={@current_scope} current_page={:articles} />
+
+  <article class="max-w-7xl mx-auto w-full px-10 mt-16 pb-20 max-sm:px-4 max-sm:mt-10 max-sm:pb-12">
+    <p class="mb-6">
+      <a
+        href={~p"/articles"}
+        class="inline-flex items-center gap-1.5 text-sm font-medium text-(--crit-fg-muted) hover:text-(--crit-brand) no-underline transition-colors"
+      >
+        <.icon name="hero-arrow-left-mini" class="size-3.5" /> All articles
+      </a>
+    </p>
+
+    <header class="mb-8">
+      <div class="flex flex-wrap items-center gap-3 mb-4 text-xs text-(--crit-fg-muted)">
+        <span class="inline-flex items-center rounded-full border border-(--crit-border) bg-(--crit-bg-elevated) px-3 py-1 font-medium text-(--crit-fg-secondary)">
+          {@article.category}
+        </span>
+        <time datetime={Crit.Articles.format_date_iso(@article.published_at)}>
+          {Crit.Articles.format_date(@article.published_at)}
+        </time>
+        <span aria-hidden="true">·</span>
+        <span>{@article.author}</span>
+        <span aria-hidden="true">·</span>
+        <span>{@article.read_time}</span>
+      </div>
+
+      <h1 class="text-4xl font-extrabold tracking-tight leading-tight max-sm:text-3xl text-balance">
+        {@article.title}
+      </h1>
+
+      <p class="text-lg text-(--crit-fg-secondary) leading-relaxed mt-4">
+        {@article.excerpt}
+      </p>
+    </header>
+
+    <div class="mb-10">
+      <img
+        src={@article.hero_image}
+        alt=""
+        class="w-full h-auto"
+        width="1200"
+        height="675"
+        loading="eager"
+        decoding="async"
+      />
+    </div>
+
+    <div class="article-body text-(--crit-fg-secondary)">
+      {@article.body_html}
+    </div>
+
+    <footer class="mt-12 pt-8 border-t border-(--crit-border)">
+      <a
+        href={~p"/articles"}
+        class="text-sm font-semibold text-(--crit-brand) no-underline hover:underline"
+      >
+        More articles &rarr;
+      </a>
+    </footer>
+  </article>
+
+  <Layouts.site_footer />
+</div>

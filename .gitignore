@@ -46,3 +46,4 @@ npm-debug.log
 mise.local.toml
 .env
 .envrc.local
+.wrangler/

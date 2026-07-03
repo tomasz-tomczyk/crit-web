@@ -431,3 +431,7 @@ if (prefersReducedMotion) {
   })
 }
 
+if (/^\/articles\/[^/]+$/.test(window.location.pathname)) {
+  import("./article-mermaid").then(({ initArticleMermaid }) => initArticleMermaid())
+}
+

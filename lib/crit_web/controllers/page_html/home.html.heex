@@ -251,6 +251,36 @@
     </div>
   </section>
 
+  <%!-- ===== Recent articles ===== --%>
+  <section id="articles" class="py-16 max-sm:py-10">
+    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
+      <div class="flex flex-wrap items-end justify-between gap-6 mb-12 max-sm:mb-8">
+        <div class="max-w-2xl">
+          <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
+            Guides & articles
+          </p>
+          <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
+            Ideas for tighter agent loops<span class="text-(--crit-brand)">.</span>
+          </h2>
+        </div>
+        <a
+          href={~p"/articles"}
+          class="text-sm font-semibold text-(--crit-brand) no-underline hover:underline shrink-0"
+        >
+          View all articles &rarr;
+        </a>
+      </div>
+
+      <div class="grid grid-cols-3 gap-8 max-lg:grid-cols-2 max-sm:grid-cols-1">
+        <CritWeb.PageHTML.article_card
+          :for={article <- @recent_articles}
+          article={article}
+          variant="compact"
+        />
+      </div>
+    </div>
+  </section>
+
   <%!-- ===== Founder ===== --%>
   <section id="built-by" class="py-16 max-sm:py-10">
     <div class="max-w-3xl mx-auto px-10 max-sm:px-4 w-full">

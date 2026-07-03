@@ -71,7 +71,7 @@ defmodule CritWeb.Layouts do
 
   attr :current_page, :atom,
     default: nil,
-    doc: "one of :features, :changelog, :integrations"
+    doc: "one of :features, :articles, :changelog, :integrations"
 
   def site_header(assigns) do
     current_user = assigns.current_scope && assigns.current_scope.user
@@ -180,6 +180,9 @@ defmodule CritWeb.Layouts do
           </.nav_link>
           <.nav_link href={~p"/features"} active={@current_page == :features}>
             Features
+          </.nav_link>
+          <.nav_link href={~p"/articles"} active={@current_page == :articles}>
+            Articles
           </.nav_link>
           <.nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
             Self-Hosting
@@ -341,6 +344,9 @@ defmodule CritWeb.Layouts do
           </.nav_mobile_link>
           <.nav_mobile_link href={~p"/features"} active={@current_page == :features}>
             Features
+          </.nav_mobile_link>
+          <.nav_mobile_link href={~p"/articles"} active={@current_page == :articles}>
+            Articles
           </.nav_mobile_link>
           <.nav_mobile_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
             Self-Hosting
@@ -1183,6 +1189,12 @@ defmodule CritWeb.Layouts do
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Changelog
+              </a>
+              <a
+                href={~p"/articles"}
+                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
+              >
+                Articles
               </a>
             </div>
           </div>

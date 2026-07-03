@@ -16,6 +16,7 @@
   var validateMessage = protocol.validateMessage;
 
   var utils = window.crit && window.crit.agent && window.crit.agent.anchorUtils;
+  var scrollUtils = window.crit && window.crit.agent && window.crit.agent.scrollUtils;
   var markersAPI = window.crit && window.crit.agent && window.crit.agent.markers;
   var batcherAPI = window.crit && window.crit.agent && window.crit.agent.batcher;
   var resolutionAPI = window.crit && window.crit.agent && window.crit.agent.resolution;
@@ -51,6 +52,9 @@
     observer: null,           // MutationObserver
     reanchor: ReanchorStateCtor ? new ReanchorStateCtor() : null,
     routePathname: typeof location !== 'undefined' ? location.pathname : '',
+    unsafeDocumentScroll: scrollUtils
+      ? scrollUtils.detectUnsafeDocumentScroll(document, window)
+      : false,
   };
   window.__critAgentState = state;
 
@@ -234,7 +238,7 @@
       case C2A.FLASH_MARKER: onFlashMarker(msg.pin_id); break;
       case C2A.CANCEL_REANCHOR: onCancelReanchor(); break;
       case C2A.SET_MARKER_TABINDEX: onSetMarkerTabindex(msg.value); break;
-      case C2A.KEEP_HIGHLIGHT: onKeepHighlight(msg.selector); break;
+      case C2A.KEEP_HIGHLIGHT: onKeepHighlight(msg.selector, msg.scroll); break;
       case C2A.CLEAR_HIGHLIGHT: onClearHighlight(); break;
       default: break;
     }
@@ -244,7 +248,7 @@
   // is open so the user can see what they're commenting on. Auto-clears on
   // route change (the element is gone) and on explicit CLEAR_HIGHLIGHT
   // (Save/Cancel/Esc/dismiss).
-  function onKeepHighlight(selector) {
+  function onKeepHighlight(selector, scroll) {
     onClearHighlight(); // ensure only one element highlighted at a time
     if (!selector) return;
     try {
@@ -252,6 +256,21 @@
       if (!el) return;
       el.classList.add('crit-live-pending-highlight');
       state._pendingHighlightEl = el;
+      // When chrome navigates to a comment (clicking its card / a deep-link)
+      // it asks us to scroll the anchored element into view. The compose
+      // path leaves scroll falsy — that element was just clicked and is
+      // already on screen, so re-centring it would be jarring.
+      // Navigation scroll uses container-aware scrolling + a visibility gate
+      // so we don't disturb scroll-hijacking pages (see PR #590).
+      if (scroll && scrollUtils) {
+        try {
+          scrollUtils.scrollIntoNearestContainer(el, {
+            win: window,
+            doc: document,
+            unsafeDocumentScroll: state.unsafeDocumentScroll,
+          });
+        } catch (_) { /* noop */ }
+      }
       // Suppress the dashed hover overlay while the user is composing —
       // chasing the cursor at this point is just visual noise. Overlay
       // resumes on CLEAR_HIGHLIGHT (Save / Cancel / Esc / dismiss).
