@@ -6,16 +6,11 @@ defmodule Crit.Articles do
   with MDEx.
   """
 
-  @articles_root Path.expand("../../priv/articles", __DIR__)
-  @article_paths Path.wildcard(Path.join(@articles_root, "*/index.md"))
-
-  for path <- @article_paths do
-    @external_resource path
-  end
-
   @doc "All articles, newest first."
   def list do
-    @article_paths
+    articles_root()
+    |> Path.join("*/index.md")
+    |> Path.wildcard()
     |> Enum.map(&build_article/1)
     |> Enum.sort_by(& &1.published_at, {:desc, Date})
   end
@@ -32,6 +27,8 @@ defmodule Crit.Articles do
   end
 
   def format_date_iso(%Date{} = date), do: Date.to_iso8601(date)
+
+  defp articles_root, do: Path.join(:code.priv_dir(:crit), "articles")
 
   defp build_article(path) do
     {frontmatter, body} = path |> File.read!() |> parse_frontmatter()

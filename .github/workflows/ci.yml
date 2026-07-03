@@ -75,3 +75,55 @@ jobs:
           files: cover/excoveralls.json
           flags: unit
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  release-smoke:
+    name: Release smoke
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: crit_release_smoke
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.19"
+          otp-version: "28"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: assets/package-lock.json
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build/prod
+            assets/node_modules
+          key: ${{ runner.os }}-release-smoke-${{ hashFiles('**/mix.lock', 'assets/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-release-smoke-
+
+      - name: Smoke test prod release
+        run: ./scripts/release-smoke.sh
+        env:
+          RELEASE_SMOKE_PORT: "4001"
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/crit_release_smoke
+          SECRET_KEY_BASE: ci-release-smoke-secret-key-base-must-be-at-least-sixty-four-bytes-long
