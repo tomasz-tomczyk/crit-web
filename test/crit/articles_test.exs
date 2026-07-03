@@ -23,6 +23,15 @@ defmodule Crit.ArticlesTest do
     refute Articles.get("missing-slug")
   end
 
+  test "article markdown files live under :code.priv_dir/1 (release layout)" do
+    root = Path.join(:code.priv_dir(:crit), "articles")
+    assert File.dir?(root)
+
+    paths = Path.wildcard(Path.join(root, "*/index.md"))
+    assert paths != []
+    assert Enum.all?(paths, &File.regular?/1)
+  end
+
   test "renders markdown body as HTML" do
     article = Articles.get("how-to-plan-document-and-review")
     html = Phoenix.HTML.safe_to_string(article.body_html)
