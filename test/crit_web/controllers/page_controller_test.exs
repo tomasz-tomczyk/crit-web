@@ -33,7 +33,32 @@ defmodule CritWeb.PageControllerTest do
     html = html_response(conn, 200)
     assert html =~ "Point at the line."
     assert html =~ "Every agent reads files"
+    assert html =~ "From the blog"
     assert html =~ "Frequently asked questions"
+  end
+
+  describe "GET /articles" do
+    test "renders the articles landing page", %{conn: conn} do
+      conn = get(conn, ~p"/articles")
+      html = html_response(conn, 200)
+      assert html =~ "Articles"
+      assert html =~ "How to Plan, Document and Review Code with Open Source Tools"
+    end
+  end
+
+  describe "GET /articles/:slug" do
+    test "renders an article", %{conn: conn} do
+      conn = get(conn, ~p"/articles/how-to-plan-document-and-review")
+      html = html_response(conn, 200)
+      assert html =~ "How to Plan, Document and Review Code with Open Source Tools"
+      assert html =~ "All articles"
+    end
+
+    test "returns 404 for unknown slug", %{conn: conn} do
+      conn = get(conn, ~p"/articles/does-not-exist")
+      body = response(conn, 404)
+      assert body =~ "not found"
+    end
   end
 
   describe "GET /integrations" do

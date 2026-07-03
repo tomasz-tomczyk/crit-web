@@ -51,6 +51,8 @@ defmodule CritWeb.PageControllerSeoTest do
       assert body =~ "<loc>#{base}/</loc>"
       assert body =~ "<loc>#{base}/features</loc>"
       assert body =~ "<loc>#{base}/changelog</loc>"
+      assert body =~ "<loc>#{base}/articles</loc>"
+      assert body =~ "<loc>#{base}/articles/how-to-plan-document-and-review</loc>"
     end
 
     test "includes public reviews and excludes unlisted", %{conn: conn} do

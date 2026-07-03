@@ -65,6 +65,103 @@ defmodule CritWeb.PageHTML do
 
   def modes, do: @modes
 
+  attr :article, :map, required: true
+  attr :variant, :string, default: "default", values: ~w(default featured compact)
+
+  def article_card(assigns) do
+    ~H"""
+    <a
+      href={~p"/articles/#{@article.slug}"}
+      class={[
+        "group flex flex-col no-underline text-inherit overflow-hidden transition-all duration-200",
+        @variant == "featured" &&
+          "grid grid-cols-2 gap-0 rounded-2xl border border-(--crit-border) bg-(--crit-bg-card) hover:border-(--crit-fg-muted) hover:shadow-lg max-lg:grid-cols-1",
+        @variant == "default" &&
+          "rounded-xl border border-(--crit-border) bg-(--crit-bg-card) hover:border-(--crit-fg-muted) hover:-translate-y-0.5 hover:shadow-md",
+        @variant == "compact" &&
+          "rounded-xl border border-(--crit-border) bg-(--crit-bg-card) hover:border-(--crit-fg-muted)"
+      ]}
+    >
+      <div class={[
+        "relative overflow-hidden bg-(--crit-bg-elevated)",
+        @variant == "featured" && "min-h-[280px] max-lg:min-h-[200px]",
+        @variant == "default" && "aspect-[16/10]",
+        @variant == "compact" && "aspect-[16/10]"
+      ]}>
+        <img
+          src={@article.hero_image}
+          alt=""
+          class={[
+            "w-full h-full object-cover transition-transform duration-500",
+            "group-hover:scale-[1.03]"
+          ]}
+          loading="lazy"
+          width="640"
+          height="400"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-80" />
+        <span class="absolute top-3 left-3 inline-flex items-center rounded-full border border-white/20 bg-black/40 backdrop-blur-sm px-2.5 py-1 text-[11px] font-medium text-white/90">
+          {@article.category}
+        </span>
+      </div>
+
+      <div class={[
+        "flex flex-col flex-1",
+        @variant == "featured" && "justify-center p-8 max-sm:p-6",
+        @variant in ["default", "compact"] && "p-5"
+      ]}>
+        <div :if={@variant != "featured"} class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="text-xs text-(--crit-fg-muted)">{@article.author}</span>
+          <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+          <time
+            datetime={Crit.Articles.format_date_iso(@article.published_at)}
+            class="text-[11px] text-(--crit-fg-muted)"
+          >
+            {Crit.Articles.format_date(@article.published_at)}
+          </time>
+          <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+          <span class="text-[11px] text-(--crit-fg-muted)">{@article.read_time}</span>
+        </div>
+
+        <h2 class={[
+          "font-bold tracking-tight text-(--crit-fg-primary) group-hover:text-(--crit-brand) transition-colors",
+          @variant == "featured" && "text-2xl leading-snug max-sm:text-xl",
+          @variant in ["default", "compact"] && "text-lg leading-snug"
+        ]}>
+          {@article.title}
+        </h2>
+
+        <p class={[
+          "text-(--crit-fg-secondary) leading-relaxed mt-2",
+          @variant == "featured" && "text-base mt-3",
+          @variant in ["default", "compact"] && "text-sm line-clamp-3"
+        ]}>
+          {@article.excerpt}
+        </p>
+
+        <div class={[
+          "flex flex-wrap items-center gap-x-3 gap-y-1 mt-auto text-xs text-(--crit-fg-muted)",
+          @variant == "featured" && "pt-6",
+          @variant in ["default", "compact"] && "pt-4"
+        ]}>
+          <span :if={@variant == "featured"}>{@article.author}</span>
+          <span :if={@variant == "featured"} class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
+          <time
+            :if={@variant == "featured"}
+            datetime={Crit.Articles.format_date_iso(@article.published_at)}
+            class="text-xs"
+          >
+            {Crit.Articles.format_date(@article.published_at)}
+          </time>
+          <span class="text-sm font-semibold text-(--crit-brand) group-hover:underline ml-auto">
+            Read article &rarr;
+          </span>
+        </div>
+      </div>
+    </a>
+    """
+  end
+
   slot :inner_block, required: true
   attr :url, :string, required: true
   attr :tag, :string, default: nil

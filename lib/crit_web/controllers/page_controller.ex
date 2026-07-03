@@ -489,6 +489,7 @@ defmodule CritWeb.PageController do
     else
       render(conn, :home,
         demo_token: Application.get_env(:crit, :demo_review_token),
+        recent_articles: Crit.Articles.recent(),
         testimonials: @testimonials,
         faq: @faq,
         canonical_url: canonical_url(conn),
@@ -746,6 +747,56 @@ defmodule CritWeb.PageController do
     end
   end
 
+  def articles(conn, _params) do
+    articles = Crit.Articles.list()
+    [featured | rest] = articles
+
+    render(conn, :articles,
+      featured: featured,
+      rest: rest,
+      canonical_url: canonical_url(conn),
+      page_title: "Articles - Crit",
+      meta_description:
+        "Essays on reviewing AI agent output, structured feedback loops, and shipping with more control."
+    )
+  end
+
+  def article(conn, %{"slug" => slug}) do
+    case Crit.Articles.get(slug) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(CritWeb.ErrorHTML)
+        |> render(:"404")
+
+      article ->
+        render(conn, :article,
+          article: article,
+          canonical_url: canonical_url(conn),
+          page_title: "#{article.title} - Crit",
+          meta_description: article.excerpt,
+          og_image: article.hero_image,
+          json_ld: %{
+            "@context" => "https://schema.org",
+            "@type" => "Article",
+            "headline" => article.title,
+            "description" => article.excerpt,
+            "datePublished" => Crit.Articles.format_date_iso(article.published_at),
+            "author" => %{
+              "@type" => "Person",
+              "name" => article.author
+            },
+            "image" => article.hero_image,
+            "publisher" => %{
+              "@type" => "Organization",
+              "name" => "Crit",
+              "url" => "https://crit.md"
+            }
+          }
+        )
+    end
+  end
+
   def changelog(conn, _params) do
     releases = Crit.Changelog.list_releases()
     cli_releases = Enum.filter(releases, &(&1.source == :cli))
@@ -795,6 +846,7 @@ defmodule CritWeb.PageController do
     {"/modes/preview", "monthly", "0.8"},
     {"/getting-started", "monthly", "0.9"},
     {"/self-hosting", "monthly", "0.7"},
+    {"/articles", "weekly", "0.8"},
     {"/changelog", "daily", "0.7"},
     {"/terms", "monthly", "0.3"},
     {"/privacy", "monthly", "0.3"}
@@ -831,6 +883,12 @@ defmodule CritWeb.PageController do
     static_entries =
       Enum.map(@sitemap_paths, fn {p, f, pr} -> sitemap_entry(base <> p, f, pr) end)
 
+    article_entries =
+      Crit.Articles.list()
+      |> Enum.map(fn article ->
+        sitemap_entry(base <> "/articles/#{article.slug}", "monthly", "0.6")
+      end)
+
     review_entries =
       Crit.Reviews.list_public_review_tokens()
       |> Enum.map(fn token -> sitemap_entry(base <> "/r/#{token}", "weekly", "0.5") end)
@@ -838,7 +896,7 @@ defmodule CritWeb.PageController do
     body = """
     <?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    #{Enum.join(static_entries ++ review_entries, "\n")}
+    #{Enum.join(static_entries ++ article_entries ++ review_entries, "\n")}
     </urlset>
     """
 

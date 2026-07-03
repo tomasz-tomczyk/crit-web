@@ -3517,6 +3517,156 @@ body.sidebar-resizing * {
   border-top: 1px solid var(--crit-border);
   margin: 1.5em 0;
 }
+
+/* ===== Article body (MDEx-rendered markdown) ===== */
+
+.article-body {
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.article-body h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--crit-fg-primary);
+  margin: 2em 0 0.75em;
+  letter-spacing: -0.02em;
+}
+
+.article-body h2:first-child {
+  margin-top: 0;
+}
+
+.article-body h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--crit-fg-primary);
+  margin: 1.5em 0 0.5em;
+}
+
+.article-body p {
+  margin: 0.85em 0;
+}
+
+.article-body ul,
+.article-body ol {
+  padding-left: 1.35em;
+  margin: 0.85em 0;
+}
+
+.article-body ul {
+  list-style: disc;
+}
+
+.article-body ol {
+  list-style: decimal;
+}
+
+.article-body li {
+  margin: 0.35em 0;
+}
+
+.article-body a {
+  color: var(--crit-brand);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: border-color var(--crit-dur-fast) var(--crit-ease);
+  overflow-wrap: anywhere;
+}
+
+.article-body a:hover {
+  border-bottom-color: var(--crit-brand);
+}
+
+.article-body code {
+  font-family: var(--crit-font-mono);
+  font-size: 0.875em;
+  background: var(--crit-bg-elevated);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.article-body pre {
+  background: var(--crit-bg-card);
+  border: 1px solid var(--crit-border);
+  border-radius: 8px;
+  padding: 0.85em 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+
+.article-body pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.article-body strong {
+  color: var(--crit-fg-primary);
+  font-weight: 600;
+}
+
+.article-body hr {
+  border: none;
+  border-top: 1px solid var(--crit-border);
+  margin: 2em 0;
+}
+
+.article-body img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+  background: none;
+}
+
+.article-body p:has(> img) {
+  margin: 1.25em 0;
+  padding: 0;
+}
+
+.article-body p:has(> img) img {
+  margin: 0;
+}
+
+.article-body blockquote {
+  border-left: 3px solid var(--crit-brand);
+  margin: 1.25em 0;
+  padding: 0.25em 0 0.25em 1em;
+  color: var(--crit-fg-secondary);
+}
+
+.article-body pre.mermaid {
+  background: var(--crit-bg-card);
+  border: 1px solid var(--crit-border);
+  border-radius: 10px;
+  padding: 1.25em;
+  text-align: center;
+  min-height: 80px;
+}
+
+.article-body .mermaid-rendered {
+  margin: 1.5em 0;
+  padding: 1.25em;
+  background: var(--crit-bg-card);
+  border: 1px solid var(--crit-border);
+  border-radius: 10px;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.article-body .mermaid-rendered svg {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Integration logo theme swap (default site is dark) */
 .logo-light { display: none; }
 [data-theme="light"] .logo-light { display: inline-block; }

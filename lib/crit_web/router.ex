@@ -58,6 +58,8 @@ defmodule CritWeb.Router do
     get "/privacy", PageController, :privacy
     get "/getting-started", PageController, :getting_started
     get "/self-hosting", PageController, :self_hosting
+    get "/articles", PageController, :articles
+    get "/articles/:slug", PageController, :article
     get "/changelog", PageController, :changelog
     get "/modes/:mode", PageController, :mode
     get "/sitemap.xml", PageController, :sitemap_xml
