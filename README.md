@@ -89,6 +89,7 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `OAUTH_CLIENT_SECRET` | No | — | Generic OAuth2 client secret |
 | `OAUTH_BASE_URL` | No | — | OIDC discovery base URL, e.g. `https://accounts.google.com` |
 | `PHX_HOST` | No | `localhost` | Hostname for URL generation |
+| `PREVIEW_HOST` | No | — | Optional dedicated host for preview raw pages (e.g. `preview.example.com`). When set, this host serves only preview routes and can run a separate CSP for user-defined scripts |
 | `PORT` | No | `4000` | HTTP listening port |
 | `FORCE_SSL` | No | `false` | Set `true` if terminating TLS at the app (not behind a reverse proxy) |
 | `PHX_SCHEME` | No | `https` | URL scheme for link generation |

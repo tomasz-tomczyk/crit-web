@@ -19,9 +19,17 @@ defmodule CritWeb.Plugs.SecurityHeaders do
     conn
     |> put_resp_header("content-security-policy", csp())
     |> put_resp_header("x-content-type-options", "nosniff")
-    |> put_resp_header("x-frame-options", "SAMEORIGIN")
+    |> maybe_put_x_frame_options()
     |> put_resp_header("permissions-policy", Enum.join(@permissions_policy, ", "))
     |> maybe_put_hsts()
+  end
+
+  defp maybe_put_x_frame_options(conn) do
+    if conn.host == CritWeb.Hosts.preview_host() do
+      conn
+    else
+      put_resp_header(conn, "x-frame-options", "SAMEORIGIN")
+    end
   end
 
   defp maybe_put_hsts(conn) do

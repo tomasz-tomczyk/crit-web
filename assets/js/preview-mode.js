@@ -96,7 +96,11 @@ function makeAgentSender(post) {
 export const PreviewMode = {
   mounted() {
     this.token = this.el.dataset.token
-    this.baseUrl = (this.el.dataset.baseUrl || "").replace(/\/$/, "")
+    const configuredOrigin = (this.el.dataset.previewOrigin || "").replace(/\/$/, "")
+    // When PREVIEW_HOST is unset (dev/E2E), load the iframe root-relative so the
+    // browser uses whatever host the user opened (127.0.0.1 vs localhost).
+    this.previewIsolated = configuredOrigin !== ""
+    this.previewOrigin = configuredOrigin || window.location.origin
     this.canComment = this.el.dataset.canComment === "true"
     // Viewer identity (server-rendered, same as files mode's #document-renderer)
     // so the panel can gate edit/delete/resolve to the comment's author.
@@ -186,7 +190,10 @@ export const PreviewMode = {
       '<div class="crit-preview-body">',
       '  <div class="crit-preview-iframe-pane">',
       '    <div class="crit-preview-iframe-frame" id="critPreviewFrame">',
-      '      <iframe id="critPreviewIframe" title="Preview" referrerpolicy="no-referrer"></iframe>',
+      // Sandbox runs on preview.crit.md (not crit.md). allow-same-origin restores the
+      // preview host origin for postMessage + relative assets; CSP on that host allows
+      // arbitrary CDNs (script-src *). No crit.md session crosses the host boundary.
+      '      <iframe id="critPreviewIframe" title="Preview" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>',
       "    </div>",
       "  </div>",
       '  <div class="sidebar-resize-handle" id="commentsPanelResizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize comments panel"></div>',
@@ -464,14 +471,14 @@ export const PreviewMode = {
     this.isAdmin = !!payload.is_admin
     if (typeof payload.can_comment === "boolean") this.canComment = payload.can_comment
 
-    // iframe src is ROOT-RELATIVE so the iframe is always same-origin as the
-    // parent page. An absolute Endpoint.url() (data-base-url) makes the iframe
-    // cross-origin when browsed via a different host alias (e.g. 127.0.0.1 vs
-    // localhost); the agent<->hook postMessage channel enforces an exact origin
-    // match on both ends, so a mismatch silently blocks selection + comments.
+    // Preview loads from the dedicated preview origin when configured.
+    // This isolates user-authored JS/CSS from the main app origin while keeping
+    // the postMessage bridge explicit and strict.
     const firstHtml = this.files.find((f) => /\.html?$/i.test(f.path || ""))
     this.htmlFile = (firstHtml && firstHtml.path) || "index.html"
-    this.iframe.src = "/r/" + encodeURIComponent(this.token) + "/raw/" + this.htmlFile
+    const rawPath =
+      "/r/" + encodeURIComponent(this.token) + "/raw/" + this.htmlFile
+    this.iframe.src = this.previewIsolated ? this.previewOrigin + rawPath : rawPath
 
     this.applyViewport(this.viewport)
     this.afterCommentsChanged()
@@ -483,17 +490,17 @@ export const PreviewMode = {
     const iw = this.iframe && this.iframe.contentWindow
     if (!iw) return
     try {
-      iw.postMessage(msg, window.location.origin)
+      iw.postMessage(msg, this.previewOrigin)
     } catch (_) {
       /* noop */
     }
   },
 
   handleAgentMessage(event) {
-    // Accept only messages from our iframe's content window. Preview is served
-    // same-origin, so origin must match ours.
+    // Accept only messages from our iframe's content window and from the
+    // configured preview origin.
     if (!this.iframe || event.source !== this.iframe.contentWindow) return
-    if (event.origin !== window.location.origin) return
+    if (event.origin !== this.previewOrigin) return
     const msg = event.data
     if (!msg || typeof msg.type !== "string") return
 

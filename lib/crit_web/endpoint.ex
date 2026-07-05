@@ -56,6 +56,7 @@ defmodule CritWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug CritWeb.Plugs.CanonicalHost
+  plug CritWeb.Plugs.HostGate
   plug :session
 
   # Drop request body and cookies — review documents and comment bodies must
