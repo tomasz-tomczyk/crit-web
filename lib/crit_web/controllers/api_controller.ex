@@ -390,6 +390,18 @@ defmodule CritWeb.ApiController do
           json(conn, Reviews.serialize_reply(reply))
       end
     end
+
+    # Browser-session login for security/isolation E2E: writes the app session
+    # cookie for a previously seeded user so Playwright can drive a victim
+    # browser context authenticated against the canonical host. NEVER compiled
+    # into :prod (router only mounts this under `Mix.env() in [:test, :dev]`).
+    # The route is GET-only (no CSRF concern in test/dev, and Playwright can't
+    # easily POST-with-csrf-test-helper-token through page.goto).
+    def login_as(conn, %{"user_id" => user_id}) do
+      user = Crit.Repo.get!(Crit.User, user_id)
+      conn = CritWeb.UserAuth.log_in_user(conn, user)
+      json(conn, %{ok: true, user_id: user.id, email: user.email})
+    end
   end
 
   # Handled by LocalhostCors plug — this action is never reached.
