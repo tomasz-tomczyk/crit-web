@@ -89,7 +89,7 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `OAUTH_CLIENT_SECRET` | No | — | Generic OAuth2 client secret |
 | `OAUTH_BASE_URL` | No | — | OIDC discovery base URL, e.g. `https://accounts.google.com` |
 | `PHX_HOST` | No | `localhost` | Hostname for URL generation |
-| `PREVIEW_HOST` | No | — | Optional dedicated host for preview raw pages (e.g. `preview.example.com`). When set, this host serves only preview routes and can run a separate CSP for user-defined scripts |
+| `PREVIEW_HOST` | No | — | Dedicated host for preview-mode iframes (e.g. `preview.example.com`). See [Preview mode isolation](#preview-mode-isolation) |
 | `PORT` | No | `4000` | HTTP listening port |
 | `FORCE_SSL` | No | `false` | Set `true` if terminating TLS at the app (not behind a reverse proxy) |
 | `PHX_SCHEME` | No | `https` | URL scheme for link generation |
@@ -110,6 +110,29 @@ The app listens on HTTP. Your reverse proxy (nginx, Caddy, Traefik) handles TLS.
 PHX_HOST=reviews.yourdomain.com
 PHX_SCHEME=https
 PHX_URL_PORT=443
+```
+
+### Preview mode isolation
+
+Preview reviews embed user-authored HTML, CSS, and JavaScript in an iframe so you can click around a live page while commenting. By default that iframe loads from the same origin as the review page (`PHX_HOST`). User scripts in a shared preview could then read your session cookies and act as you on the main app.
+
+Set `PREVIEW_HOST` to a separate hostname that points at the same crit-web container (via your reverse proxy). Preview raw assets are redirected there; the preview host only serves preview routes (`/r/.../raw/...`, agent scripts, health). Your login session stays on `PHX_HOST` and is not sent to the preview origin.
+
+Recommended for any self-hosted instance where untrusted people can open shared preview links. Leave unset for local dev — the iframe loads root-relative and works on a single host.
+
+```env
+PHX_HOST=reviews.yourdomain.com
+PREVIEW_HOST=preview.yourdomain.com
+PHX_SCHEME=https
+PHX_URL_PORT=443
+```
+
+Both hostnames must resolve to crit-web. Example Caddy snippet:
+
+```caddy
+reviews.yourdomain.com, preview.yourdomain.com {
+    reverse_proxy localhost:4000
+}
 ```
 
 ### Updating

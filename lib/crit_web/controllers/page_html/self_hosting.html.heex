@@ -298,6 +298,17 @@
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
           <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
+            <code class="text-sm font-mono text-(--crit-fg-primary)">PREVIEW_HOST</code>
+            <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
+              Optional separate hostname for preview-mode iframes, e.g.
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">preview.crit.example.com</code>.
+              Keeps user-authored scripts in shared previews away from your login session on
+              <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">PHX_HOST</code>.
+              See <a href="#preview-mode-isolation" class="crit-link">Preview mode isolation</a> below.
+            </p>
+            <span class="text-xs font-mono text-(--crit-fg-muted) sm:text-right">optional</span>
+          </div>
+          <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">PHX_SERVER</code>
             <p class="text-sm text-(--crit-fg-secondary)">
               Set to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">true</code>
@@ -616,6 +627,67 @@
           </p>
         </div>
       </div>
+    </section>
+
+    <%!-- Preview mode isolation --%>
+    <section id="preview-mode-isolation" class="mb-16 max-sm:mb-12">
+      <div phx-no-format class="mb-5 border-t border-(--crit-border) pt-10">
+        <h2 class="text-2xl font-extrabold tracking-tight mb-2">
+          Preview mode isolation<span class="text-(--crit-brand)">.</span>
+        </h2>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-3">
+          Preview reviews render a live page inside an iframe so reviewers can click around
+          while commenting. That page is built from HTML, CSS, and JavaScript you (or an agent)
+          authored — and anyone with the share link can open it.
+        </p>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-3">
+          Without <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PREVIEW_HOST</code>,
+          the iframe loads from the same origin as the review UI
+          (<code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>).
+          Scripts in a shared preview could read your session cookies and perform actions as you
+          on the main app.
+        </p>
+        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
+          Set <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PREVIEW_HOST</code>
+          to a second hostname that reverse-proxies to the same crit-web container. Preview raw
+          assets are served only from that host; it accepts preview routes and nothing else. Your
+          login session stays on <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>
+          and is never sent to the preview origin. Recommended for production when untrusted
+          viewers can open preview links; leave unset for local dev.
+        </p>
+      </div>
+
+      <div class="border border-(--crit-border) rounded-lg overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-2.5 bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+          <div class="flex gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-(--crit-fg-muted) opacity-40"></div>
+          </div>
+          <span class="font-mono text-xs text-(--crit-fg-muted) ml-2">.env</span>
+        </div>
+        <div class="bg-(--crit-code-bg) p-6 font-mono text-sm leading-7 text-(--crit-fg-secondary)">
+          <div>
+            <span class="text-(--crit-fg-primary)">PHX_HOST</span>=<span class="text-(--crit-fg-muted)">crit.example.com</span>
+          </div>
+          <div>
+            <span class="text-(--crit-fg-primary)">PREVIEW_HOST</span>=<span class="text-(--crit-fg-muted)">preview.crit.example.com</span>
+          </div>
+          <div>
+            <span class="text-(--crit-fg-primary)">PHX_SCHEME</span>=<span class="text-(--crit-fg-muted)">https</span>
+          </div>
+          <div>
+            <span class="text-(--crit-fg-primary)">PHX_URL_PORT</span>=<span class="text-(--crit-fg-muted)">443</span>
+          </div>
+        </div>
+      </div>
+
+      <p phx-no-format class="text-sm text-(--crit-fg-secondary) mt-3 leading-relaxed">
+        Both hostnames must resolve to crit-web. With Caddy, add the preview host to the same
+        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">reverse_proxy</code>
+        block as <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>.
+        No second container is needed.
+      </p>
     </section>
 
     <%!-- Behind an SSO reverse proxy --%>

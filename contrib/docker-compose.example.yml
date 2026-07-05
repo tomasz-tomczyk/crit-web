@@ -38,6 +38,7 @@ services:
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       SELFHOSTED: "true"
       PHX_HOST: ${PHX_HOST:-localhost}
+      # PREVIEW_HOST: ${PREVIEW_HOST}  # optional — isolate preview iframes on a separate host
       PORT: ${PORT:-4000}
       PHX_SERVER: "true"
     healthcheck:
