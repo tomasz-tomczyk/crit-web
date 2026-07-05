@@ -42,12 +42,16 @@ defmodule CritWeb.Plugs.HostGate do
 
   defp preview_path_allowed?(%Plug.Conn{method: method, request_path: path}) do
     method in ["GET", "HEAD"] and
-      (String.starts_with?(path, "/r/") or
+      (preview_raw_path?(path) or
          String.starts_with?(path, "/preview-agent/") or
          path == "/agent-marker.css" or
          path == "/health" or
          path == "/share-receiver")
   end
+
+  # Only sandboxed raw HTML belongs on the preview host — not the interactive
+  # ReviewLive at /r/:token (frameable there with no x-frame-options).
+  defp preview_raw_path?(path), do: String.match?(path, ~r{^/r/[^/]+/raw/})
 
   defp local_host?(host), do: host in ["localhost", "127.0.0.1", "[::1]"]
 end

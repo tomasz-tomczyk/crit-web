@@ -22,6 +22,7 @@ DST="$SCRIPT_DIR/../priv/static/preview-agent"
 FILES=(
   agent-protocol.js
   agent-anchor-utils.js
+  agent-scroll-utils.js
   agent-marker-overlay.js
   agent-mutation-batcher.js
   agent-resolution.js

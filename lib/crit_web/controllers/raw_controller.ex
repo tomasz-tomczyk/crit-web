@@ -6,15 +6,16 @@ defmodule CritWeb.RawController do
 
   plug :require_review_scope
 
-  # The 7 transport-agnostic agent scripts crit injects into preview iframes,
+  # The 8 transport-agnostic agent scripts crit injects into preview iframes,
   # vendored verbatim into priv/static/preview-agent/. Order matters and must
-  # match crit's `agentScriptFiles` (server.go): protocol first, helpers next,
+  # match crit's `AgentScriptFiles` (server.go): protocol first, helpers next,
   # the main agent entry point last. Keeping the order identical preserves
   # DOM-anchor compatibility across the crit (Go) and crit-web (Phoenix)
   # renderers. `agent-marker.css` is served separately and is NOT injected.
   @agent_script_files [
     "agent-protocol.js",
     "agent-anchor-utils.js",
+    "agent-scroll-utils.js",
     "agent-marker-overlay.js",
     "agent-mutation-batcher.js",
     "agent-resolution.js",
