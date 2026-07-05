@@ -302,8 +302,10 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "example.com"
+  preview_host = System.get_env("PREVIEW_HOST")
 
   config :crit, :canonical_host, host
+  config :crit, :preview_host, preview_host
   config :crit, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   scheme = System.get_env("PHX_SCHEME", "https")

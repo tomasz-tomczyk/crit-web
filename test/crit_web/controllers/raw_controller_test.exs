@@ -148,6 +148,75 @@ defmodule CritWeb.RawControllerTest do
       refute csp =~ "http"
     end
 
+    test "redirects preview raw from canonical host to preview host", %{conn: conn} do
+      Application.put_env(:crit, :canonical_host, "app.example.test")
+      Application.put_env(:crit, :preview_host, "preview.example.test")
+
+      on_exit(fn ->
+        Application.delete_env(:crit, :canonical_host)
+        Application.delete_env(:crit, :preview_host)
+      end)
+
+      html = "<html><head></head><body><h1>Hi</h1></body></html>"
+      review = review_fixture(%{review_type: :preview, files: [file("index.html", html)]})
+
+      conn =
+        conn
+        |> Map.put(:host, "app.example.test")
+        |> get(~p"/r/#{review.token}/raw/index.html")
+
+      assert response(conn, 308) == ""
+
+      [location] = get_resp_header(conn, "location")
+      assert location =~ "http://preview.example.test"
+      assert location =~ "/r/#{review.token}/raw/index.html"
+    end
+
+    test "files-mode raw on canonical host is not redirected when preview host is set", %{
+      conn: conn
+    } do
+      Application.put_env(:crit, :canonical_host, "app.example.test")
+      Application.put_env(:crit, :preview_host, "preview.example.test")
+
+      on_exit(fn ->
+        Application.delete_env(:crit, :canonical_host)
+        Application.delete_env(:crit, :preview_host)
+      end)
+
+      review = review_fixture(%{files: [file("lib/foo.ex", "defmodule Foo, do: :ok\n")]})
+
+      conn =
+        conn
+        |> Map.put(:host, "app.example.test")
+        |> get(~p"/r/#{review.token}/raw/lib/foo.ex")
+
+      assert response(conn, 200) == "defmodule Foo, do: :ok\n"
+    end
+
+    test "uses permissive CSP for isolated preview host", %{conn: conn} do
+      Application.put_env(:crit, :canonical_host, "app.example.test")
+      Application.put_env(:crit, :preview_host, "preview.example.test")
+
+      on_exit(fn ->
+        Application.delete_env(:crit, :canonical_host)
+        Application.delete_env(:crit, :preview_host)
+      end)
+
+      html = "<html><head></head><body><h1>Hi</h1></body></html>"
+      review = review_fixture(%{review_type: :preview, files: [file("index.html", html)]})
+
+      conn =
+        conn
+        |> Map.put(:host, "preview.example.test")
+        |> get(~p"/r/#{review.token}/raw/index.html")
+
+      [csp] = get_resp_header(conn, "content-security-policy")
+      assert csp =~ "script-src *"
+      assert csp =~ "connect-src *"
+      assert csp =~ "frame-ancestors 'self'"
+      assert csp =~ "app.example.test"
+    end
+
     test "appends agent scripts when there is no </body> tag", %{conn: conn} do
       review =
         review_fixture(%{

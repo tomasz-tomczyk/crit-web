@@ -19,6 +19,24 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
       assert get_resp_header(conn, "x-frame-options") == ["SAMEORIGIN"]
     end
 
+    test "omits x-frame-options on preview host", %{conn: conn} do
+      Application.put_env(:crit, :canonical_host, "app.example.test")
+      Application.put_env(:crit, :preview_host, "preview.example.test")
+
+      on_exit(fn ->
+        Application.delete_env(:crit, :canonical_host)
+        Application.delete_env(:crit, :preview_host)
+      end)
+
+      conn =
+        conn
+        |> Map.put(:host, "preview.example.test")
+        |> get(~p"/agent-marker.css")
+
+      assert get_resp_header(conn, "x-content-type-options") == ["nosniff"]
+      assert get_resp_header(conn, "x-frame-options") == []
+    end
+
     test "does not set HSTS when hsts_enabled is not configured", %{conn: conn} do
       Application.delete_env(:crit, :hsts_enabled)
 

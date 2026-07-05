@@ -58,6 +58,10 @@ config :crit, start_github_stars: false
 config :crit, CritWeb.Plugs.RateLimit, disabled: true
 config :crit, CritWeb.Plugs.AuthRateLimit, disabled: true
 
+# Preview isolation is prod-only (PREVIEW_HOST + PHX_HOST). Keep disabled in tests
+# unless a case opts in via Application.put_env/3.
+config :crit, :preview_host, nil
+
 config :crit, :oauth_provider,
   strategy: Assent.Strategy.Github,
   client_id: "test_github_client_id",

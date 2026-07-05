@@ -49,16 +49,16 @@ defmodule CritWeb.RawController do
   # crit-agent can fetch its same-origin marker CSS without a CSP violation —
   # external egress is still blocked since only 'self' is allowed. (crit local
   # serves this with no CSP at all; this is still far stricter.)
-  @preview_csp Enum.join(
-                 [
-                   "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
-                   "img-src 'self' data: blob:",
-                   "font-src 'self' data:",
-                   "connect-src 'self'",
-                   "frame-src 'none'"
-                 ],
-                 "; "
-               )
+  @preview_csp_restrictive Enum.join(
+                             [
+                               "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                               "img-src 'self' data: blob:",
+                               "font-src 'self' data:",
+                               "connect-src 'self'",
+                               "frame-src 'none'"
+                             ],
+                             "; "
+                           )
 
   def show(conn, %{"token" => token, "file_path" => path_segments})
       when is_list(path_segments) do
@@ -66,9 +66,19 @@ defmodule CritWeb.RawController do
     scope = conn.assigns[:current_scope] || %Crit.Accounts.Scope{}
 
     with %Review{} = review <- Reviews.get_by_token(token),
-         :ok <- Reviews.check_org_access(review, scope),
-         %{} = file <-
-           Enum.find(review.files, fn f -> f.file_path == file_path end),
+         :ok <- Reviews.check_org_access(review, scope) do
+      if redirect_preview_raw_from_canonical?(conn, review) do
+        redirect_preview_raw_to_preview_host(conn)
+      else
+        serve_raw(conn, review, file_path)
+      end
+    else
+      _ -> conn |> put_status(404) |> text("not found")
+    end
+  end
+
+  defp serve_raw(conn, %Review{} = review, file_path) do
+    with %{} = file <- Enum.find(review.files, fn f -> f.file_path == file_path end),
          basename when basename != :unsafe <- safe_basename(file.file_path),
          {:ok, content} <- decode_content(file) do
       preview? = review.review_type == :preview
@@ -92,6 +102,27 @@ defmodule CritWeb.RawController do
     else
       _ -> conn |> put_status(404) |> text("not found")
     end
+  end
+
+  # Preview HTML/JS must not execute on the canonical app host when a dedicated
+  # preview host is configured — redirect to PREVIEW_HOST so session cookies
+  # for crit.md are never visible to user-authored scripts.
+  defp redirect_preview_raw_from_canonical?(conn, %Review{review_type: :preview}) do
+    CritWeb.Hosts.preview_host_enabled?() && conn.host == CritWeb.Hosts.canonical_host()
+  end
+
+  defp redirect_preview_raw_from_canonical?(_conn, _review), do: false
+
+  defp redirect_preview_raw_to_preview_host(conn) do
+    url =
+      CritWeb.Hosts.preview_origin() <>
+        conn.request_path <>
+        maybe_query(conn.query_string)
+
+    conn
+    |> put_resp_header("location", url)
+    |> send_resp(308, "")
+    |> halt()
   end
 
   # The injected crit-agent fetches its marker overlay CSS from
@@ -161,10 +192,29 @@ defmodule CritWeb.RawController do
   # reloader is enabled (dev only) so the dev console stays clean; prod keeps the
   # strict `frame-src 'none'`.
   defp preview_csp do
-    if CritWeb.Endpoint.config(:code_reloader) do
-      String.replace(@preview_csp, "frame-src 'none'", "frame-src 'self'")
+    if CritWeb.Hosts.preview_host_enabled?() do
+      frame_ancestors = "frame-ancestors 'self' #{CritWeb.Hosts.canonical_origin()}"
+
+      Enum.join(
+        [
+          "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'",
+          "script-src * data: blob: 'unsafe-inline' 'unsafe-eval'",
+          "style-src * 'unsafe-inline'",
+          "img-src * data: blob:",
+          "font-src * data:",
+          "media-src * data: blob:",
+          "connect-src * data: blob:",
+          "frame-src *",
+          frame_ancestors
+        ],
+        "; "
+      )
     else
-      @preview_csp
+      if CritWeb.Endpoint.config(:code_reloader) do
+        String.replace(@preview_csp_restrictive, "frame-src 'none'", "frame-src 'self'")
+      else
+        @preview_csp_restrictive
+      end
     end
   end
 
