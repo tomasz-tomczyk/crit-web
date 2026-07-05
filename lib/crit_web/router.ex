@@ -250,6 +250,18 @@ defmodule CritWeb.Router do
       post "/test/seed-user", ApiController, :seed_user
       post "/test/seed-org", ApiController, :seed_org
     end
+
+    # Test-only helper endpoints that require a real browser session (cookie).
+    # Compiled out of :prod. GET (not POST) on purpose: Playwright's
+    # page.goto() can't trigger a browser-pipeline POST form submit with the
+    # CSRF token, and a session-stamping endpoint is harmless for GET in a
+    # test/dev environment (`/test/login-as/:user_id` only writes the cookie,
+    # it doesn't read or mutate anything).
+    scope "/test", CritWeb do
+      pipe_through [:browser, :noindex]
+
+      get "/login-as/:user_id", ApiController, :login_as
+    end
   end
 
   if Mix.env() == :dev do

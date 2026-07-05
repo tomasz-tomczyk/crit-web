@@ -23,13 +23,20 @@ config :crit, Crit.Repo,
 config :crit, CritWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "Sg3AbYy0ombvmL33BiB7bfASWI/y6HNgUzvV1JFennme5U8HK2EJBDouMeFYehBc",
-  # The endpoint :url host is "localhost" (config.exs), but the E2E Playwright
-  # harness loads the server over http://127.0.0.1 (avoids macOS resolving
-  # localhost to IPv6 ::1 while Bandit binds IPv4). With the default
+  # The endpoint :url host is "localhost" by default (config.exs), but the E2E
+  # Playwright harness loads the server over http://127.0.0.1 (avoids macOS
+  # resolving localhost to IPv6 ::1 while Bandit binds IPv4). With the default
   # check_origin: true, that origin mismatch 403s the LiveView socket (WS AND
   # longpoll) → the LiveView never connects and the review page never renders.
   # Disabling the origin check is safe in test (no real cross-origin risk) and
   # lets the socket accept both 127.0.0.1 and localhost.
+  #
+  # PHX_HOST opts the host in for the dedicated security/isolation E2E project
+  # (playwright.config.ts webServer #2 on port 4004) so the app builds
+  # canonical-host-aware URLs and HostGate can compare against conn.host. When
+  # unset (default for dev + the regular E2E suite),.Endpoint.url() host stays
+  # "localhost" — identical to the previous behavior.
+  url: [host: System.get_env("PHX_HOST") || "localhost"],
   check_origin: false,
   server: false
 
@@ -58,9 +65,13 @@ config :crit, start_github_stars: false
 config :crit, CritWeb.Plugs.RateLimit, disabled: true
 config :crit, CritWeb.Plugs.AuthRateLimit, disabled: true
 
-# Preview isolation is prod-only (PREVIEW_HOST + PHX_HOST). Keep disabled in tests
-# unless a case opts in via Application.put_env/3.
-config :crit, :preview_host, nil
+# Preview isolation is prod-only (PREVIEW_HOST + PHX_HOST) by default. The
+# dedicated security/isolation E2E project opts the test env in via env vars so
+# it can bring up a second Phoenix instance with isolation active; nothing
+# else exercises this path. When the env vars are unset (default), both stay
+# nil → HostGate no-ops and production tests behave identically.
+config :crit, :canonical_host, System.get_env("PHX_HOST")
+config :crit, :preview_host, System.get_env("PREVIEW_HOST")
 
 config :crit, :oauth_provider,
   strategy: Assent.Strategy.Github,
