@@ -597,7 +597,9 @@
       phx-hook="PreviewMode"
       phx-update="ignore"
       data-token={@review.token}
-      data-preview-origin={CritWeb.Hosts.preview_origin()}
+      data-preview-origin={
+        if CritWeb.Hosts.preview_host_enabled?(), do: CritWeb.Hosts.preview_origin()
+      }
       data-can-comment={to_string(@can_comment?)}
       data-identity={@current_scope.identity}
       data-user-id={Crit.Accounts.Scope.user_id(@current_scope)}

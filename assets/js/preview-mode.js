@@ -96,7 +96,11 @@ function makeAgentSender(post) {
 export const PreviewMode = {
   mounted() {
     this.token = this.el.dataset.token
-    this.previewOrigin = (this.el.dataset.previewOrigin || window.location.origin).replace(/\/$/, "")
+    const configuredOrigin = (this.el.dataset.previewOrigin || "").replace(/\/$/, "")
+    // When PREVIEW_HOST is unset (dev/E2E), load the iframe root-relative so the
+    // browser uses whatever host the user opened (127.0.0.1 vs localhost).
+    this.previewIsolated = configuredOrigin !== ""
+    this.previewOrigin = configuredOrigin || window.location.origin
     this.canComment = this.el.dataset.canComment === "true"
     // Viewer identity (server-rendered, same as files mode's #document-renderer)
     // so the panel can gate edit/delete/resolve to the comment's author.
@@ -472,12 +476,9 @@ export const PreviewMode = {
     // the postMessage bridge explicit and strict.
     const firstHtml = this.files.find((f) => /\.html?$/i.test(f.path || ""))
     this.htmlFile = (firstHtml && firstHtml.path) || "index.html"
-    this.iframe.src =
-      this.previewOrigin +
-      "/r/" +
-      encodeURIComponent(this.token) +
-      "/raw/" +
-      this.htmlFile
+    const rawPath =
+      "/r/" + encodeURIComponent(this.token) + "/raw/" + this.htmlFile
+    this.iframe.src = this.previewIsolated ? this.previewOrigin + rawPath : rawPath
 
     this.applyViewport(this.viewport)
     this.afterCommentsChanged()
