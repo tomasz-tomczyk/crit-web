@@ -67,7 +67,17 @@ defmodule CritWeb.Plugs.SecurityHeaders do
       "font-src 'self'; " <>
       "media-src 'self' https://assets.crit.md; " <>
       "connect-src 'self'#{sentry_origin}#{umami_connect}; " <>
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " <>
+      "frame-src #{frame_src()}; " <>
       "object-src 'none'"
+  end
+
+  defp frame_src do
+    base = "'self' https://www.youtube.com https://www.youtube-nocookie.com"
+
+    if CritWeb.Hosts.preview_host_enabled?() do
+      base <> " " <> CritWeb.Hosts.preview_origin()
+    else
+      base
+    end
   end
 end

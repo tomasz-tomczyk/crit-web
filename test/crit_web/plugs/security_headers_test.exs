@@ -79,6 +79,40 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
 
       refute csp =~ "cloud.umami.is"
     end
+
+    test "allows preview origin in frame-src when PREVIEW_HOST is set", %{conn: conn} do
+      Application.put_env(:crit, :canonical_host, "app.example.test")
+      Application.put_env(:crit, :preview_host, "preview.example.test")
+
+      on_exit(fn ->
+        Application.delete_env(:crit, :canonical_host)
+        Application.delete_env(:crit, :preview_host)
+      end)
+
+      conn =
+        conn
+        |> Map.put(:host, "app.example.test")
+        |> get(~p"/")
+
+      [csp] = get_resp_header(conn, "content-security-policy")
+
+      assert csp =~
+               "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com http://preview.example.test"
+
+      refute csp =~ "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;"
+    end
+
+    test "omits preview origin from frame-src when PREVIEW_HOST is unset", %{conn: conn} do
+      Application.delete_env(:crit, :preview_host)
+
+      on_exit(fn -> :ok end)
+
+      conn = get(conn, ~p"/")
+      [csp] = get_resp_header(conn, "content-security-policy")
+
+      assert csp =~
+               "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'"
+    end
   end
 
   describe "Umami analytics script" do
