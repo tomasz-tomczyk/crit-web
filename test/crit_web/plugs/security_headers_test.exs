@@ -1,5 +1,5 @@
 defmodule CritWeb.Plugs.SecurityHeadersTest do
-  use CritWeb.ConnCase, async: true
+  use CritWeb.ConnCase, async: false
 
   describe "security headers" do
     test "sets permissions-policy on browser requests", %{conn: conn} do
@@ -103,9 +103,14 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
     end
 
     test "omits preview origin from frame-src when PREVIEW_HOST is unset", %{conn: conn} do
+      old_preview = Application.get_env(:crit, :preview_host)
       Application.delete_env(:crit, :preview_host)
 
-      on_exit(fn -> :ok end)
+      on_exit(fn ->
+        if is_nil(old_preview),
+          do: Application.delete_env(:crit, :preview_host),
+          else: Application.put_env(:crit, :preview_host, old_preview)
+      end)
 
       conn = get(conn, ~p"/")
       [csp] = get_resp_header(conn, "content-security-policy")

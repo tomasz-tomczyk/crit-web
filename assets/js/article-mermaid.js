@@ -3,8 +3,11 @@ export async function initArticleMermaid() {
   if (!blocks.length) return
 
   const { default: mermaid } = await import("mermaid")
-  const theme =
-    document.documentElement.dataset.theme === "light" ? "default" : "dark"
+  const attr = document.documentElement.dataset.theme
+  const isLight =
+    attr === "light" ||
+    (!attr && window.matchMedia("(prefers-color-scheme: light)").matches)
+  const theme = isLight ? "default" : "dark"
 
   mermaid.initialize({ startOnLoad: false, theme })
 

@@ -748,17 +748,23 @@ defmodule CritWeb.PageController do
   end
 
   def articles(conn, _params) do
-    articles = Crit.Articles.list()
-    [featured | rest] = articles
+    case Crit.Articles.list() do
+      [] ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(CritWeb.ErrorHTML)
+        |> render(:"404")
 
-    render(conn, :articles,
-      featured: featured,
-      rest: rest,
-      canonical_url: canonical_url(conn),
-      page_title: "Articles - Crit",
-      meta_description:
-        "Essays on reviewing AI agent output, structured feedback loops, and shipping with more control."
-    )
+      [featured | rest] ->
+        render(conn, :articles,
+          featured: featured,
+          rest: rest,
+          canonical_url: canonical_url(conn),
+          page_title: "Articles - Crit",
+          meta_description:
+            "Essays on reviewing AI agent output, structured feedback loops, and shipping with more control."
+        )
+    end
   end
 
   def article(conn, %{"slug" => slug}) do

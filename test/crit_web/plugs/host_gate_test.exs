@@ -57,6 +57,59 @@ defmodule CritWeb.Plugs.HostGateTest do
     assert response(conn, 404)
   end
 
+  test "preview host blocks interactive review LiveView", %{conn: conn} do
+    review = review_fixture()
+
+    conn =
+      conn
+      |> Map.put(:host, "preview.example.test")
+      |> get(~p"/r/#{review.token}")
+
+    assert response(conn, 404)
+  end
+
+  test "preview host blocks non-GET to raw paths", %{conn: conn} do
+    review =
+      review_fixture(%{
+        review_type: :preview,
+        files: [%{"path" => "index.html", "content" => "<html></html>"}]
+      })
+
+    conn =
+      conn
+      |> Map.put(:host, "preview.example.test")
+      |> post(~p"/r/#{review.token}/raw/index.html")
+
+    assert response(conn, 404)
+  end
+
+  test "preview host allows /health", %{conn: conn} do
+    conn =
+      conn
+      |> Map.put(:host, "preview.example.test")
+      |> get("/health")
+
+    assert conn.status == 200
+  end
+
+  test "unknown host returns 404", %{conn: conn} do
+    conn =
+      conn
+      |> Map.put(:host, "evil.example.test")
+      |> get(~p"/")
+
+    assert response(conn, 404)
+  end
+
+  test "localhost bypasses host gate in dev/test", %{conn: conn} do
+    conn =
+      conn
+      |> Map.put(:host, "127.0.0.1")
+      |> get(~p"/")
+
+    assert html_response(conn, 200)
+  end
+
   test "canonical host keeps app routes reachable", %{conn: conn} do
     conn =
       conn
