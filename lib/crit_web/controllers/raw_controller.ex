@@ -67,7 +67,7 @@ defmodule CritWeb.RawController do
     scope = conn.assigns[:current_scope] || %Crit.Accounts.Scope{}
 
     with %Review{} = review <- Reviews.get_by_token(token),
-         :ok <- Reviews.check_org_access(review, scope) do
+         :ok <- check_raw_access(conn, review, scope) do
       if redirect_preview_raw_from_canonical?(conn, review) do
         redirect_preview_raw_to_preview_host(conn)
       else
@@ -77,6 +77,24 @@ defmodule CritWeb.RawController do
       _ -> conn |> put_status(404) |> text("not found")
     end
   end
+
+  defp check_raw_access(conn, %Review{} = review, scope) do
+    cond do
+      # The isolated preview host intentionally has no app-session cookie.
+      # Preview raw assets are token-addressed and may be served there, but do
+      # not allow files-mode source raw routes onto that origin.
+      preview_host_request?(conn) and review.review_type == :preview ->
+        :ok
+
+      preview_host_request?(conn) ->
+        {:error, :not_found}
+
+      true ->
+        Reviews.check_org_access(review, scope)
+    end
+  end
+
+  defp preview_host_request?(conn), do: conn.host == CritWeb.Hosts.preview_host()
 
   defp serve_raw(conn, %Review{} = review, file_path) do
     with %{} = file <- Enum.find(review.files, fn f -> f.file_path == file_path end),
@@ -221,10 +239,15 @@ defmodule CritWeb.RawController do
 
   # Mirrors `CritWeb.UserAuth.on_mount(:require_review_scope, ...)` for the
   # plain-controller raw endpoint. On selfhosted+OAuth instances, anonymous
-  # visitors must hit the OAuth login flow with `return_to` set to the raw URL
-  # so the LiveView gate's protection isn't bypassed by the raw endpoint.
+  # canonical-host visitors must hit the OAuth login flow with `return_to` set
+  # to the raw URL so the LiveView gate's protection isn't bypassed by the raw
+  # endpoint. The dedicated preview host is excluded because it cannot and
+  # should not receive the app-host session cookie.
   defp require_review_scope(conn, _opts) do
     cond do
+      conn.host == CritWeb.Hosts.preview_host() ->
+        conn
+
       conn.assigns.current_scope.user ->
         conn
 

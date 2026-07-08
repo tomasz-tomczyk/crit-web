@@ -48,6 +48,15 @@ defmodule CritWeb.Plugs.HostGateTest do
     assert get_resp_header(conn, "content-type") |> hd() =~ "javascript"
   end
 
+  test "preview host blocks generic static assets", %{conn: conn} do
+    conn =
+      conn
+      |> Map.put(:host, "preview.example.test")
+      |> get("/favicon.svg")
+
+    assert response(conn, 404) == "not found"
+  end
+
   test "preview host blocks app routes", %{conn: conn} do
     conn =
       conn
