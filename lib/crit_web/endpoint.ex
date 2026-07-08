@@ -22,6 +22,9 @@ defmodule CritWeb.Endpoint do
     websocket: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]],
     longpoll: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]]
 
+  plug CritWeb.Plugs.CanonicalHost
+  plug CritWeb.Plugs.HostGate
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # When code reloading is disabled (e.g., in production),
@@ -55,8 +58,6 @@ defmodule CritWeb.Endpoint do
 
   plug Plug.MethodOverride
   plug Plug.Head
-  plug CritWeb.Plugs.CanonicalHost
-  plug CritWeb.Plugs.HostGate
   plug :session
 
   # Drop request body and cookies — review documents and comment bodies must

@@ -4,9 +4,44 @@ defmodule CritWeb.RawControllerTest do
   use CritWeb.ConnCase, async: false
 
   import Crit.ReviewsFixtures
+  import Crit.OrganizationsFixtures
+
+  alias Crit.{Repo, Reviews}
+  alias Crit.Accounts.Scope
 
   defp file(path, content, extra \\ %{}) do
     Map.merge(%{"path" => path, "content" => content}, extra)
+  end
+
+  defp insert_user!(attrs \\ %{}) do
+    base = %{
+      provider: "test",
+      provider_uid: "uid-#{System.unique_integer([:positive])}",
+      email: "u-#{System.unique_integer([:positive])}@example.com",
+      name: "Raw User"
+    }
+
+    %Crit.User{}
+    |> Crit.User.oauth_changeset(Map.merge(base, attrs))
+    |> Repo.insert!()
+  end
+
+  defp with_preview_hosts do
+    original_canonical = Application.get_env(:crit, :canonical_host)
+    original_preview = Application.get_env(:crit, :preview_host)
+
+    Application.put_env(:crit, :canonical_host, "app.example.test")
+    Application.put_env(:crit, :preview_host, "preview.example.test")
+
+    on_exit(fn ->
+      if is_nil(original_canonical),
+        do: Application.delete_env(:crit, :canonical_host),
+        else: Application.put_env(:crit, :canonical_host, original_canonical)
+
+      if is_nil(original_preview),
+        do: Application.delete_env(:crit, :preview_host),
+        else: Application.put_env(:crit, :preview_host, original_preview)
+    end)
   end
 
   describe "GET /r/:token/raw/*file_path" do
@@ -316,6 +351,44 @@ defmodule CritWeb.RawControllerTest do
         |> get(~p"/r/#{review.token}/raw/lib/foo.ex")
 
       assert response(conn, 200) == "defmodule Foo, do: :ok\n"
+    end
+
+    test "serves preview raw on the isolated preview host without app session", %{conn: conn} do
+      with_preview_hosts()
+
+      user = insert_user!()
+      org = organization_fixture(user)
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [file("index.html", "<html><body><h1>Preview</h1></body></html>")],
+          0,
+          [],
+          [],
+          org: org.slug,
+          review_type: "preview"
+        )
+
+      conn =
+        conn
+        |> Map.put(:host, "preview.example.test")
+        |> get(~p"/r/#{review.token}/raw/index.html")
+
+      assert response(conn, 200) =~ "<h1>Preview</h1>"
+    end
+
+    test "does not expose files-mode raw on the isolated preview host", %{conn: conn} do
+      with_preview_hosts()
+
+      review = review_fixture(%{files: [file("lib/foo.ex", "secret")]})
+
+      conn =
+        conn
+        |> Map.put(:host, "preview.example.test")
+        |> get(~p"/r/#{review.token}/raw/lib/foo.ex")
+
+      assert response(conn, 404) == "not found"
     end
   end
 
