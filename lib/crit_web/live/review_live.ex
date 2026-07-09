@@ -4,6 +4,7 @@ defmodule CritWeb.ReviewLive do
   alias Crit.Accounts.Scope
   alias Crit.Review
   alias Crit.Reviews
+  alias Crit.Settings
 
   # Auth is gated by the router's :require_review_scope on_mount hook
   # (CritWeb.UserAuth), which also assigns :current_scope. On selfhosted+OAuth,
@@ -133,6 +134,7 @@ defmodule CritWeb.ReviewLive do
          |> assign(:canonical_url, canonical_url)
          |> assign(:owner?, owner?)
          |> assign(:comment_policy, review.comment_policy)
+         |> assign(:share_policy, Settings.share_policy())
          |> assign(:can_comment?, can_comment?(scope, review))
          |> assign(:current_path, ~p"/r/#{review.token}"), layout: {CritWeb.Layouts, :review}}
     end
@@ -156,6 +158,9 @@ defmodule CritWeb.ReviewLive do
 
       {:error, :already_public} ->
         {:noreply, put_flash(socket, :info, "Review is already public.")}
+
+      {:error, :visibility_not_allowed} ->
+        {:noreply, put_flash(socket, :error, "Public reviews are disabled on this instance.")}
 
       {:error, :unauthorized} ->
         {:noreply, put_flash(socket, :error, "Not allowed.")}
@@ -189,6 +194,9 @@ defmodule CritWeb.ReviewLive do
 
       {:error, :not_found} ->
         {:noreply, put_flash(socket, :error, "Review not found.")}
+
+      {:error, :comment_policy_not_allowed} ->
+        {:noreply, put_flash(socket, :error, "That comment mode is disabled on this instance.")}
 
       {:error, %Ecto.Changeset{}} ->
         {:noreply, put_flash(socket, :error, "Could not update the comment policy.")}

@@ -3,6 +3,7 @@ defmodule Crit.ReviewsCommentPolicyTest do
 
   alias Crit.Accounts.Scope
   alias Crit.Reviews
+  alias Crit.Settings
 
   defp owner_user_fixture do
     {:ok, user} =
@@ -25,6 +26,20 @@ defmodule Crit.ReviewsCommentPolicyTest do
       )
 
     review
+  end
+
+  defp update_share_policy(attrs) do
+    setting = Settings.get()
+
+    Settings.update(%{
+      "max_document_mb" => Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+      "max_comments_per_review" => setting.max_comments_per_review,
+      "max_comment_body_kb" => Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+      "allowed_comment_policies" =>
+        Map.get(attrs, :allowed_comment_policies, setting.allowed_comment_policies),
+      "allowed_review_visibilities" =>
+        Map.get(attrs, :allowed_review_visibilities, setting.allowed_review_visibilities)
+    })
   end
 
   # Subscribe to the review topic from a separate process and forward all
@@ -129,6 +144,19 @@ defmodule Crit.ReviewsCommentPolicyTest do
 
       assert {:error, %Ecto.Changeset{}} =
                Reviews.update_review(Scope.for_user(user), review.id, %{comment_policy: :bogus})
+    end
+
+    test "owner cannot change to a comment_policy disabled by instance policy" do
+      {:ok, _} = update_share_policy(%{allowed_comment_policies: ["open", "logged_in_only"]})
+      user = owner_user_fixture()
+      review = create_review_for(user)
+
+      assert {:error, :comment_policy_not_allowed} =
+               Reviews.update_review(Scope.for_user(user), review.id, %{
+                 comment_policy: :disallowed
+               })
+
+      assert Reviews.get_by_token(review.token).comment_policy == :open
     end
 
     test "unknown attrs keys are silently dropped by the changeset cast list" do

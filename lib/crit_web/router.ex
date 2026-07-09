@@ -205,6 +205,13 @@ defmodule CritWeb.Router do
     post "/token", DeviceApiController, :token
   end
 
+  scope "/api", CritWeb do
+    pipe_through [:device_api, :noindex, CritWeb.Plugs.LocalhostCors]
+
+    options "/share-policy", ApiController, :options
+    get "/share-policy", ApiController, :share_policy
+  end
+
   # Auth API — always requires Bearer token
   scope "/api/auth", CritWeb do
     pipe_through [:auth_api, :noindex]

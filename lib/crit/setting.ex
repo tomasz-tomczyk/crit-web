@@ -13,12 +13,22 @@ defmodule Crit.Setting do
 
   @kb 1024
   @mb 1_048_576
+  @comment_policies [:open, :logged_in_only, :disallowed]
+  @review_visibilities [:unlisted, :public, :organization]
 
   @primary_key {:id, :integer, autogenerate: false}
   schema "settings" do
     field :max_document_bytes, :integer
     field :max_comments_per_review, :integer
     field :max_comment_body_bytes, :integer
+
+    field :allowed_comment_policies, {:array, Ecto.Enum},
+      values: @comment_policies,
+      default: @comment_policies
+
+    field :allowed_review_visibilities, {:array, Ecto.Enum},
+      values: @review_visibilities,
+      default: @review_visibilities
 
     # Virtual fields that the form binds to. Converted to bytes by `changeset/2`.
     field :max_document_mb, :float, virtual: true
@@ -27,7 +37,13 @@ defmodule Crit.Setting do
     timestamps(type: :utc_datetime)
   end
 
-  @form_fields [:max_document_mb, :max_comments_per_review, :max_comment_body_kb]
+  @form_fields [
+    :max_document_mb,
+    :max_comments_per_review,
+    :max_comment_body_kb,
+    :allowed_comment_policies,
+    :allowed_review_visibilities
+  ]
 
   @doc """
   Changeset for updating instance settings via the admin form.
@@ -43,6 +59,10 @@ defmodule Crit.Setting do
     |> validate_number(:max_document_mb, greater_than: 0)
     |> validate_number(:max_comments_per_review, greater_than: 0)
     |> validate_number(:max_comment_body_kb, greater_than: 0)
+    |> validate_subset(:allowed_comment_policies, @comment_policies)
+    |> validate_length(:allowed_comment_policies, min: 1)
+    |> validate_subset(:allowed_review_visibilities, @review_visibilities)
+    |> validate_length(:allowed_review_visibilities, min: 1)
     |> put_byte_field(:max_document_mb, :max_document_bytes, @mb)
     |> put_byte_field(:max_comment_body_kb, :max_comment_body_bytes, @kb)
   end

@@ -141,6 +141,112 @@
         </p>
       </div>
 
+      <div class="border-t border-(--crit-border) pt-6">
+        <fieldset>
+          <legend class="block text-sm font-medium text-(--crit-fg-primary) mb-2">
+            Allowed comment modes for new shared reviews
+          </legend>
+          <% selected_comment_policies =
+            Enum.map(@form[:allowed_comment_policies].value || [], &to_string/1) %>
+          <div class="flex flex-col gap-2">
+            <label
+              :for={
+                {value, label} <- [
+                  {"open", "Open"},
+                  {"logged_in_only", "Login required"},
+                  {"disallowed", "Disabled"}
+                ]
+              }
+              class="flex items-center gap-2 text-sm text-(--crit-fg-secondary)"
+            >
+              <input
+                type="checkbox"
+                name="setting[allowed_comment_policies][]"
+                value={value}
+                checked={value in selected_comment_policies}
+                disabled={
+                  length(selected_comment_policies) == 1 and value in selected_comment_policies
+                }
+                class="size-4 rounded border-(--crit-border) bg-(--crit-bg-page) text-(--crit-brand) focus:ring-(--crit-brand)"
+              />
+              <input
+                :if={
+                  length(selected_comment_policies) == 1 and value in selected_comment_policies
+                }
+                type="hidden"
+                name="setting[allowed_comment_policies][]"
+                value={value}
+              />
+              <span>{label}</span>
+            </label>
+          </div>
+          <p class="mt-1.5 text-xs text-(--crit-fg-muted)">
+            Share clients should disable modes not selected here. At least one mode must remain allowed.
+          </p>
+          <p
+            :for={err <- @form[:allowed_comment_policies].errors}
+            :if={Phoenix.Component.used_input?(@form[:allowed_comment_policies])}
+            class="mt-1.5 text-xs text-red-500"
+          >
+            {CritWeb.CoreComponents.translate_error(err)}
+          </p>
+        </fieldset>
+      </div>
+
+      <div>
+        <fieldset>
+          <legend class="block text-sm font-medium text-(--crit-fg-primary) mb-2">
+            Allowed visibility for new shared reviews
+          </legend>
+          <% selected_review_visibilities =
+            Enum.map(@form[:allowed_review_visibilities].value || [], &to_string/1) %>
+          <div class="flex flex-col gap-2">
+            <label
+              :for={
+                {value, label} <- [
+                  {"unlisted", "Unlisted"},
+                  {"public", "Public"},
+                  {"organization", "Organization"}
+                ]
+              }
+              class="flex items-center gap-2 text-sm text-(--crit-fg-secondary)"
+            >
+              <input
+                type="checkbox"
+                name="setting[allowed_review_visibilities][]"
+                value={value}
+                checked={value in selected_review_visibilities}
+                disabled={
+                  length(selected_review_visibilities) == 1 and
+                    value in selected_review_visibilities
+                }
+                class="size-4 rounded border-(--crit-border) bg-(--crit-bg-page) text-(--crit-brand) focus:ring-(--crit-brand)"
+              />
+              <input
+                :if={
+                  length(selected_review_visibilities) == 1 and
+                    value in selected_review_visibilities
+                }
+                type="hidden"
+                name="setting[allowed_review_visibilities][]"
+                value={value}
+              />
+              <span>{label}</span>
+            </label>
+          </div>
+          <p class="mt-1.5 text-xs text-(--crit-fg-muted)">
+            Organization visibility applies only to reviews shared to an organization.
+          </p>
+          <p
+            :for={err <- @form[:allowed_review_visibilities].errors}
+            :if={Phoenix.Component.used_input?(@form[:allowed_review_visibilities])}
+            class="mt-1.5 text-xs text-red-500"
+          >
+            {CritWeb.CoreComponents.translate_error(err)}
+          </p>
+        </fieldset>
+      </div>
+
       <div>
         <button
           type="submit"

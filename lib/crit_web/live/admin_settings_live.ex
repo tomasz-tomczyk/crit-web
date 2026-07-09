@@ -20,6 +20,8 @@ defmodule CritWeb.AdminSettingsLive do
 
   @impl true
   def handle_event("validate", %{"setting" => params}, socket) do
+    params = normalize_policy_params(params)
+
     changeset =
       socket.assigns.setting
       |> Settings.change(params)
@@ -30,6 +32,8 @@ defmodule CritWeb.AdminSettingsLive do
 
   @impl true
   def handle_event("save", %{"setting" => params}, socket) do
+    params = normalize_policy_params(params)
+
     case Settings.update(params) do
       {:ok, setting} ->
         {:noreply,
@@ -53,5 +57,11 @@ defmodule CritWeb.AdminSettingsLive do
     }
 
     to_form(Settings.change(setting), as: "setting")
+  end
+
+  defp normalize_policy_params(params) do
+    params
+    |> Map.put_new("allowed_comment_policies", [])
+    |> Map.put_new("allowed_review_visibilities", [])
   end
 end
