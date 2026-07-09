@@ -3,8 +3,28 @@ defmodule CritWeb.ApiControllerTest do
 
   alias Crit.Accounts.Scope
   alias Crit.Reviews
+  alias Crit.Settings
 
   defp anon_scope, do: Scope.for_visitor("api-test-#{System.unique_integer([:positive])}")
+
+  defp unique_ip(conn) do
+    n = System.unique_integer([:positive])
+    %{conn | remote_ip: {10, rem(n, 250), rem(div(n, 250), 250), rem(div(n, 62_500), 250)}}
+  end
+
+  defp update_share_policy(attrs) do
+    setting = Settings.get()
+
+    Settings.update(%{
+      "max_document_mb" => Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+      "max_comments_per_review" => setting.max_comments_per_review,
+      "max_comment_body_kb" => Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+      "allowed_comment_policies" =>
+        Map.get(attrs, :allowed_comment_policies, setting.allowed_comment_policies),
+      "allowed_review_visibilities" =>
+        Map.get(attrs, :allowed_review_visibilities, setting.allowed_review_visibilities)
+    })
+  end
 
   defp create_review do
     {:ok, review} =
@@ -29,6 +49,23 @@ defmodule CritWeb.ApiControllerTest do
       assert %{"url" => url, "delete_token" => token} = json_response(conn, 201)
       assert String.contains?(url, "/r/")
       assert String.length(token) == 21
+    end
+  end
+
+  describe "GET /api/share-policy" do
+    test "returns instance share option allow-lists", %{conn: conn} do
+      {:ok, _} =
+        update_share_policy(%{
+          allowed_comment_policies: ["logged_in_only", "disallowed"],
+          allowed_review_visibilities: ["public", "organization"]
+        })
+
+      conn = get(conn, ~p"/api/share-policy")
+
+      assert json_response(conn, 200) == %{
+               "allowed_comment_policies" => ["logged_in_only", "disallowed"],
+               "allowed_review_visibilities" => ["public", "organization"]
+             }
     end
   end
 
@@ -845,6 +882,7 @@ defmodule CritWeb.ApiControllerTest do
 
       conn =
         conn
+        |> unique_ip()
         |> put_req_header("authorization", "Bearer " <> plaintext)
         |> put_req_header("content-type", "application/json")
         |> put("/api/reviews/#{review.token}", %{
@@ -857,6 +895,67 @@ defmodule CritWeb.ApiControllerTest do
 
       assert json_response(conn, 200)["comment_policy"] == "logged_in_only"
       assert Reviews.get_by_token(review.token).comment_policy == :logged_in_only
+    end
+
+    test "owner PUT rejects invalid comment_policy", %{conn: conn} do
+      {user, plaintext} = owner_with_token()
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          1,
+          []
+        )
+
+      conn =
+        conn
+        |> unique_ip()
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "p.md", content: "y"}],
+          comments: [],
+          review_round: 1,
+          comment_policy: "invalid"
+        })
+
+      assert json_response(conn, 422)["error"] =~ "Invalid comment policy"
+    end
+
+    test "owner PUT rejects disabled comment_policy before mutating review content", %{conn: conn} do
+      {user, plaintext} = owner_with_token()
+      {:ok, _} = update_share_policy(%{allowed_comment_policies: ["open", "logged_in_only"]})
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          1,
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "p.md", content: "y"}],
+          comments: [],
+          review_round: 1,
+          comment_policy: "disallowed"
+        })
+
+      assert json_response(conn, 422)["error"] =~ "Comment mode"
+
+      persisted = Reviews.get_by_token(review.token)
+      assert persisted.review_round == review.review_round
+      assert persisted.comment_policy == :open
+
+      conn = get(build_conn(), ~p"/api/reviews/#{review.token}/document")
+      assert %{"files" => [%{"content" => "x"}]} = json_response(conn, 200)
     end
 
     test "non-owner cannot set comment_policy via PUT (field silently ignored)", %{conn: conn} do
@@ -896,18 +995,104 @@ defmodule CritWeb.ApiControllerTest do
       assert Reviews.get_by_token(token).comment_policy == :logged_in_only
     end
 
-    test "anonymous POST /api/reviews silently ignores comment_policy", %{conn: conn} do
+    test "anonymous POST /api/reviews can set an allowed comment_policy at creation", %{
+      conn: conn
+    } do
       conn =
-        post(conn, ~p"/api/reviews", %{
+        conn
+        |> unique_ip()
+        |> post(~p"/api/reviews", %{
           files: [%{path: "a.md", content: "x"}],
           comments: [],
           comment_policy: "disallowed"
         })
 
       body = json_response(conn, 201)
-      assert body["comment_policy"] == "open"
+      assert body["comment_policy"] == "disallowed"
       token = body["url"] |> String.split("/r/") |> List.last()
-      assert Reviews.get_by_token(token).comment_policy == :open
+      assert Reviews.get_by_token(token).comment_policy == :disallowed
+    end
+
+    test "POST /api/reviews rejects a comment_policy disabled by instance policy", %{conn: conn} do
+      {:ok, _} = update_share_policy(%{allowed_comment_policies: ["open", "logged_in_only"]})
+
+      conn =
+        conn
+        |> unique_ip()
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          comments: [],
+          comment_policy: "disallowed"
+        })
+
+      assert json_response(conn, 422)["error"] =~ "Comment mode"
+    end
+
+    test "POST /api/reviews defaults to the first allowed comment_policy when open is disabled",
+         %{
+           conn: conn
+         } do
+      {:ok, _} =
+        update_share_policy(%{allowed_comment_policies: ["logged_in_only", "disallowed"]})
+
+      conn =
+        conn
+        |> unique_ip()
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          comments: []
+        })
+
+      body = json_response(conn, 201)
+      assert body["comment_policy"] == "logged_in_only"
+      token = body["url"] |> String.split("/r/") |> List.last()
+      assert Reviews.get_by_token(token).comment_policy == :logged_in_only
+    end
+
+    test "POST /api/reviews rejects visibility disabled by instance policy", %{conn: conn} do
+      {:ok, _} = update_share_policy(%{allowed_review_visibilities: ["unlisted"]})
+
+      conn =
+        conn
+        |> unique_ip()
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          comments: [],
+          visibility: "public"
+        })
+
+      assert json_response(conn, 422)["error"] =~ "visibility"
+    end
+
+    test "POST /api/reviews defaults to public when unlisted is disabled", %{conn: conn} do
+      {:ok, _} = update_share_policy(%{allowed_review_visibilities: ["public"]})
+
+      conn =
+        conn
+        |> unique_ip()
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          comments: []
+        })
+
+      body = json_response(conn, 201)
+      token = body["url"] |> String.split("/r/") |> List.last()
+      assert Reviews.get_by_token(token).visibility == :public
+    end
+
+    test "POST /api/reviews rejects personal share when only organization visibility is allowed",
+         %{conn: conn} do
+      {:ok, _} = update_share_policy(%{allowed_review_visibilities: ["organization"]})
+
+      conn =
+        conn
+        |> unique_ip()
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          comments: []
+        })
+
+      assert json_response(conn, 422)["error"] =~ "visibility"
     end
   end
 
@@ -1024,6 +1209,26 @@ defmodule CritWeb.ApiControllerTest do
         })
 
       assert json_response(conn, 403)["error"] =~ "not a member"
+    end
+
+    test "create returns 422 when organization visibility is disabled", %{
+      conn: conn,
+      admin: admin,
+      org: org
+    } do
+      {:ok, _} = update_share_policy(%{allowed_review_visibilities: ["unlisted", "public"]})
+      {:ok, {plaintext, _}} = Crit.Accounts.create_token(admin, "test")
+
+      conn =
+        conn
+        |> unique_ip()
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> post(~p"/api/reviews", %{
+          files: [%{path: "a.md", content: "x"}],
+          org: org.slug
+        })
+
+      assert json_response(conn, 422)["error"] =~ "visibility"
     end
   end
 

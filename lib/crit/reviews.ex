@@ -165,6 +165,7 @@ defmodule Crit.Reviews do
   """
   def make_public(%Scope{} = scope, review_id) do
     with {:ok, review} <- fetch_review_for_owner(scope, review_id),
+         :ok <- ensure_visibility_allowed(:public),
          :ok <- ensure_unlisted(review) do
       review
       |> Review.visibility_changeset(%{visibility: :public})
@@ -189,6 +190,7 @@ defmodule Crit.Reviews do
   """
   def update_review(%Scope{} = scope, review_id, attrs) when is_map(attrs) do
     with {:ok, review} <- fetch_review_for_owner(scope, review_id),
+         :ok <- ensure_comment_policy_update_allowed(review, attrs),
          {:ok, updated} <-
            review
            |> Review.update_changeset(attrs)
@@ -289,13 +291,16 @@ defmodule Crit.Reviews do
     review_type = Keyword.get(opts, :review_type) || "files"
     org_slug = Keyword.get(opts, :org)
     explicit_visibility = Keyword.get(opts, :visibility)
+    explicit_comment_policy = Keyword.get(opts, :comment_policy)
 
-    max_total_size = Settings.get().max_document_bytes
+    settings = Settings.get()
+    max_total_size = settings.max_document_bytes
 
     if total_bytes > max_total_size do
       {:error, :total_size_exceeded}
     else
-      with {:ok, org_attrs} <- resolve_org(scope, org_slug, explicit_visibility) do
+      with {:ok, comment_policy} <- resolve_comment_policy(explicit_comment_policy, settings),
+           {:ok, org_attrs} <- resolve_org(scope, org_slug, explicit_visibility, settings) do
         review_changeset =
           %Review{}
           |> Review.create_changeset(%{
@@ -303,6 +308,7 @@ defmodule Crit.Reviews do
             "cli_args" => cli_args,
             "review_type" => review_type
           })
+          |> Ecto.Changeset.put_change(:comment_policy, comment_policy)
           |> then(fn cs ->
             if user_id, do: Ecto.Changeset.put_change(cs, :user_id, user_id), else: cs
           end)
@@ -312,6 +318,9 @@ defmodule Crit.Reviews do
                 cs
                 |> Ecto.Changeset.put_change(:organization_id, org_id)
                 |> Ecto.Changeset.put_change(:visibility, vis)
+
+              %{visibility: vis} ->
+                Ecto.Changeset.put_change(cs, :visibility, vis)
 
               _ ->
                 cs
@@ -332,9 +341,25 @@ defmodule Crit.Reviews do
   end
 
   # Resolve org slug to org_id + visibility. Returns {:ok, map | nil} or {:error, reason}.
-  defp resolve_org(_scope, nil, _explicit_visibility), do: {:ok, nil}
+  defp resolve_org(_scope, nil, nil, settings) do
+    case Settings.default_visibility(settings) do
+      nil -> {:error, :visibility_not_allowed}
+      visibility -> {:ok, %{visibility: visibility}}
+    end
+  end
 
-  defp resolve_org(%Scope{} = scope, org_slug, explicit_visibility) do
+  defp resolve_org(_scope, nil, explicit_visibility, settings) do
+    visibility = Settings.normalize_visibility(explicit_visibility)
+
+    cond do
+      is_nil(visibility) -> {:error, :invalid_visibility}
+      visibility == :organization -> {:error, :visibility_not_allowed}
+      Settings.visibility_allowed?(visibility, settings) -> {:ok, %{visibility: visibility}}
+      true -> {:error, :visibility_not_allowed}
+    end
+  end
+
+  defp resolve_org(%Scope{} = scope, org_slug, explicit_visibility, settings) do
     user_id = Scope.user_id(scope)
 
     if is_nil(user_id) do
@@ -351,10 +376,60 @@ defmodule Crit.Reviews do
 
             {:ok, _membership} ->
               visibility = explicit_visibility || :organization
-              {:ok, %{organization_id: org.id, visibility: visibility}}
+
+              cond do
+                visibility == :organization and
+                    Settings.visibility_allowed?(:organization, settings) ->
+                  {:ok, %{organization_id: org.id, visibility: visibility}}
+
+                visibility == :organization ->
+                  {:error, :visibility_not_allowed}
+
+                is_nil(Settings.normalize_visibility(visibility)) ->
+                  {:error, :invalid_visibility}
+
+                Settings.visibility_allowed?(visibility, settings) ->
+                  {:ok, %{organization_id: org.id, visibility: visibility}}
+
+                true ->
+                  {:error, :visibility_not_allowed}
+              end
           end
       end
     end
+  end
+
+  defp resolve_comment_policy(nil, settings), do: {:ok, Settings.default_comment_policy(settings)}
+
+  defp resolve_comment_policy(raw, settings) do
+    policy = Settings.normalize_comment_policy(raw)
+
+    cond do
+      is_nil(policy) -> {:error, :invalid_comment_policy}
+      Settings.comment_policy_allowed?(policy, settings) -> {:ok, policy}
+      true -> {:error, :comment_policy_not_allowed}
+    end
+  end
+
+  defp ensure_comment_policy_update_allowed(%Review{} = review, attrs) do
+    case Map.get(attrs, :comment_policy) || Map.get(attrs, "comment_policy") do
+      nil ->
+        :ok
+
+      raw ->
+        policy = Settings.normalize_comment_policy(raw)
+
+        cond do
+          is_nil(policy) -> :ok
+          policy == review.comment_policy -> :ok
+          Settings.comment_policy_allowed?(policy) -> :ok
+          true -> {:error, :comment_policy_not_allowed}
+        end
+    end
+  end
+
+  defp ensure_visibility_allowed(visibility) do
+    if Settings.visibility_allowed?(visibility), do: :ok, else: {:error, :visibility_not_allowed}
   end
 
   defp do_create_review(

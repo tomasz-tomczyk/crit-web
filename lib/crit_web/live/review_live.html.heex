@@ -387,7 +387,7 @@
       >
         <:actions>
           <%= cond do %>
-            <% owner? and @review.visibility == :unlisted -> %>
+            <% owner? and @review.visibility == :unlisted and :public in @share_policy.allowed_review_visibilities -> %>
               <CritWeb.Components.PopoverMenu.popover_menu
                 id="visibility-menu"
                 test_prefix="visibility"
@@ -475,15 +475,23 @@
                   <.icon name="hero-chevron-down" class="size-3" />
                 </:trigger>
                 <%= for option <- [:open, :logged_in_only, :disallowed] do %>
+                  <% allowed? = option in @share_policy.allowed_comment_policies %>
                   <button
                     type="button"
                     phx-click={
-                      CritWeb.Components.PopoverMenu.close_js("comment-policy-menu")
-                      |> Phoenix.LiveView.JS.push("update_comment_policy")
+                      if allowed? do
+                        CritWeb.Components.PopoverMenu.close_js("comment-policy-menu")
+                        |> Phoenix.LiveView.JS.push("update_comment_policy")
+                      end
                     }
                     phx-value-policy={option}
                     data-test={"comment-policy-set-#{option}"}
-                    class="crit-comment-policy-option"
+                    disabled={!allowed?}
+                    title={if allowed?, do: nil, else: "Disabled by instance policy"}
+                    class={[
+                      "crit-comment-policy-option",
+                      if(!allowed?, do: "opacity-50 cursor-not-allowed")
+                    ]}
                     aria-current={@comment_policy == option}
                   >
                     <div class="crit-comment-policy-option-icon">

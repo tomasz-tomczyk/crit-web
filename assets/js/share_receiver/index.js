@@ -24,6 +24,7 @@ import * as handlers from './handlers.js';
 window.__handlers = {
   share: handlers.share,
   fetch: handlers.fetchComments,
+  sharePolicy: handlers.sharePolicy,
   upsert: handlers.upsert,
   unpublish: handlers.unpublish,
 };

@@ -16,6 +16,7 @@ defmodule CritWeb.ApiController do
     review_comments = params["review_comments"] || []
     org_slug = params["org"]
     visibility = parse_visibility(params["visibility"])
+    comment_policy = params["comment_policy"]
     review_type = parse_review_type(params["review_type"])
     scope = api_scope(conn)
     max_comments = Settings.get().max_comments_per_review
@@ -32,10 +33,10 @@ defmodule CritWeb.ApiController do
                cli_args: cli_args,
                org: org_slug,
                visibility: visibility,
+               comment_policy: comment_policy,
                review_type: review_type
              ) do
           {:ok, review} ->
-            review = maybe_update_comment_policy(scope, review, params)
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
 
             conn
@@ -55,6 +56,15 @@ defmodule CritWeb.ApiController do
           {:error, :not_a_member} ->
             conn |> put_status(403) |> json(%{error: "You are not a member of this organization"})
 
+          {:error, reason}
+          when reason in [
+                 :comment_policy_not_allowed,
+                 :visibility_not_allowed,
+                 :invalid_comment_policy,
+                 :invalid_visibility
+               ] ->
+            policy_error(conn, reason)
+
           {:error, %Ecto.Changeset{} = changeset} ->
             errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
             conn |> put_status(422) |> json(%{error: "Validation failed", details: errors})
@@ -70,6 +80,7 @@ defmodule CritWeb.ApiController do
     review_comments = params["review_comments"] || []
     org_slug = params["org"]
     visibility = parse_visibility(params["visibility"])
+    comment_policy = params["comment_policy"]
     review_type = parse_review_type(params["review_type"])
     scope = api_scope(conn)
 
@@ -94,10 +105,10 @@ defmodule CritWeb.ApiController do
                cli_args: cli_args,
                org: org_slug,
                visibility: visibility,
+               comment_policy: comment_policy,
                review_type: review_type
              ) do
           {:ok, review} ->
-            review = maybe_update_comment_policy(scope, review, params)
             url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
 
             conn
@@ -117,6 +128,15 @@ defmodule CritWeb.ApiController do
           {:error, :not_a_member} ->
             conn |> put_status(403) |> json(%{error: "You are not a member of this organization"})
 
+          {:error, reason}
+          when reason in [
+                 :comment_policy_not_allowed,
+                 :visibility_not_allowed,
+                 :invalid_comment_policy,
+                 :invalid_visibility
+               ] ->
+            policy_error(conn, reason)
+
           {:error, %Ecto.Changeset{} = changeset} ->
             errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
             conn |> put_status(422) |> json(%{error: "Validation failed", details: errors})
@@ -126,6 +146,15 @@ defmodule CritWeb.ApiController do
 
   def create(conn, _params) do
     conn |> put_status(422) |> json(%{error: "content is required"})
+  end
+
+  def share_policy(conn, _params) do
+    policy = Settings.share_policy()
+
+    json(conn, %{
+      allowed_comment_policies: policy.allowed_comment_policies,
+      allowed_review_visibilities: policy.allowed_review_visibilities
+    })
   end
 
   def document(conn, %{"token" => token}) do
@@ -219,53 +248,134 @@ defmodule CritWeb.ApiController do
     payload = Map.take(params, ["files", "comments", "review_round", "cli_args"])
     scope = api_scope(conn)
 
-    case Reviews.upsert_review(scope, token, delete_token, payload) do
-      {:ok, :updated, review} ->
-        review = maybe_update_comment_policy(scope, review, params)
-        url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
+    with {:ok, existing_review} <- get_upsert_review(token, delete_token),
+         :ok <- validate_upsert_comment_policy(scope, existing_review, params) do
+      case Reviews.upsert_review(scope, token, delete_token, payload) do
+        {:ok, :updated, review} ->
+          respond_with_upsert(conn, scope, review, params, true)
 
-        json(conn, %{
-          url: url,
-          review_round: review.review_round,
-          changed: true,
-          comment_policy: review.comment_policy
-        })
+        {:ok, :no_changes, review} ->
+          respond_with_upsert(conn, scope, review, params, false)
 
-      {:ok, :no_changes, review} ->
-        review = maybe_update_comment_policy(scope, review, params)
-        url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
+        {:error, :not_found} ->
+          not_found(conn)
 
-        json(conn, %{
-          url: url,
-          review_round: review.review_round,
-          changed: false,
-          comment_policy: review.comment_policy
-        })
-
+        {:error, :unauthorized} ->
+          conn |> put_status(401) |> json(%{error: "unauthorized"})
+      end
+    else
       {:error, :not_found} ->
         not_found(conn)
 
       {:error, :unauthorized} ->
         conn |> put_status(401) |> json(%{error: "unauthorized"})
+
+      {:error, :comment_policy_not_allowed} ->
+        policy_error(conn, :comment_policy_not_allowed)
+
+      {:error, :invalid_comment_policy} ->
+        policy_error(conn, :invalid_comment_policy)
+    end
+  end
+
+  defp get_upsert_review(token, delete_token) do
+    case Reviews.get_by_token(token) do
+      nil -> {:error, :not_found}
+      %{delete_token: ^delete_token} = review -> {:ok, review}
+      _review -> {:error, :unauthorized}
+    end
+  end
+
+  defp validate_upsert_comment_policy(scope, review, %{"comment_policy" => raw})
+       when is_binary(raw) do
+    if !can_manage_comment_policy?(scope, review) do
+      :ok
+    else
+      validate_owner_comment_policy(review, raw)
+    end
+  end
+
+  defp validate_upsert_comment_policy(_scope, _review, _params), do: :ok
+
+  defp validate_owner_comment_policy(review, raw) do
+    with {:ok, policy} <- parse_comment_policy(raw) do
+      cond do
+        policy == review.comment_policy -> :ok
+        Settings.comment_policy_allowed?(policy) -> :ok
+        true -> {:error, :comment_policy_not_allowed}
+      end
+    else
+      :error -> {:error, :invalid_comment_policy}
+    end
+  end
+
+  defp can_manage_comment_policy?(%Scope{} = scope, %{user_id: owner_id})
+       when not is_nil(owner_id),
+       do: Scope.user_id(scope) == owner_id
+
+  defp can_manage_comment_policy?(_scope, _review), do: false
+
+  defp respond_with_upsert(conn, scope, review, params, changed) do
+    case maybe_update_comment_policy(scope, review, params) do
+      {:ok, review} ->
+        url = CritWeb.Endpoint.url() <> ~p"/r/#{review.token}"
+
+        json(conn, %{
+          url: url,
+          review_round: review.review_round,
+          changed: changed,
+          comment_policy: review.comment_policy
+        })
+
+      {:error, :comment_policy_not_allowed} ->
+        policy_error(conn, :comment_policy_not_allowed)
+
+      {:error, :invalid_comment_policy} ->
+        policy_error(conn, :invalid_comment_policy)
     end
   end
 
   defp maybe_update_comment_policy(scope, review, %{"comment_policy" => raw})
        when is_binary(raw) do
-    with {:ok, policy} <- parse_comment_policy(raw),
-         {:ok, updated} <- Reviews.update_review(scope, review.id, %{comment_policy: policy}) do
-      updated
+    if !can_manage_comment_policy?(scope, review) do
+      {:ok, review}
     else
-      _ -> review
+      update_owner_comment_policy(scope, review, raw)
     end
   end
 
-  defp maybe_update_comment_policy(_scope, review, _params), do: review
+  defp maybe_update_comment_policy(_scope, review, _params), do: {:ok, review}
+
+  defp update_owner_comment_policy(scope, review, raw) do
+    with {:ok, policy} <- parse_comment_policy(raw),
+         {:ok, updated} <- Reviews.update_review(scope, review.id, %{comment_policy: policy}) do
+      {:ok, updated}
+    else
+      {:error, :comment_policy_not_allowed} -> {:error, :comment_policy_not_allowed}
+      :error -> {:error, :invalid_comment_policy}
+      _ -> {:ok, review}
+    end
+  end
 
   defp parse_comment_policy("open"), do: {:ok, :open}
   defp parse_comment_policy("logged_in_only"), do: {:ok, :logged_in_only}
   defp parse_comment_policy("disallowed"), do: {:ok, :disallowed}
   defp parse_comment_policy(_), do: :error
+
+  defp policy_error(conn, :comment_policy_not_allowed),
+    do: conn |> put_status(422) |> json(%{error: "Comment mode is not allowed on this instance"})
+
+  defp policy_error(conn, :visibility_not_allowed),
+    do:
+      conn
+      |> put_status(422)
+      |> json(%{error: "Review visibility is not allowed on this instance"})
+
+  defp policy_error(conn, :invalid_comment_policy),
+    do: conn |> put_status(422) |> json(%{error: "Invalid comment policy"})
+
+  defp policy_error(conn, :invalid_visibility),
+    do: conn |> put_status(422) |> json(%{error: "Invalid visibility"})
 
   def delete_review(conn, %{"delete_token" => delete_token})
       when is_binary(delete_token) and delete_token != "" do
@@ -442,7 +552,8 @@ defmodule CritWeb.ApiController do
   defp parse_visibility("unlisted"), do: :unlisted
   defp parse_visibility("public"), do: :public
   defp parse_visibility("organization"), do: :organization
-  defp parse_visibility(_), do: nil
+  defp parse_visibility(nil), do: nil
+  defp parse_visibility(value), do: value
 
   defp parse_review_type("preview"), do: "preview"
   defp parse_review_type(_), do: "files"
