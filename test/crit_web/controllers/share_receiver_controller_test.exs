@@ -25,5 +25,15 @@ defmodule CritWeb.ShareReceiverControllerTest do
       html = conn |> get(~p"/share-receiver") |> html_response(200)
       assert html =~ "/assets/js/share_receiver"
     end
+
+    test "source exposes share policy relay operation" do
+      root = File.cwd!()
+      index = File.read!(Path.join(root, "assets/js/share_receiver/index.js"))
+      handlers = File.read!(Path.join(root, "assets/js/share_receiver/handlers.js"))
+
+      assert index =~ "sharePolicy: handlers.sharePolicy"
+      assert handlers =~ "export async function sharePolicy"
+      assert handlers =~ "/api/share-policy"
+    end
   end
 end

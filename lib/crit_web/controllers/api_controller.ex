@@ -248,20 +248,72 @@ defmodule CritWeb.ApiController do
     payload = Map.take(params, ["files", "comments", "review_round", "cli_args"])
     scope = api_scope(conn)
 
-    case Reviews.upsert_review(scope, token, delete_token, payload) do
-      {:ok, :updated, review} ->
-        respond_with_upsert(conn, scope, review, params, true)
+    with {:ok, existing_review} <- get_upsert_review(token, delete_token),
+         :ok <- validate_upsert_comment_policy(scope, existing_review, params) do
+      case Reviews.upsert_review(scope, token, delete_token, payload) do
+        {:ok, :updated, review} ->
+          respond_with_upsert(conn, scope, review, params, true)
 
-      {:ok, :no_changes, review} ->
-        respond_with_upsert(conn, scope, review, params, false)
+        {:ok, :no_changes, review} ->
+          respond_with_upsert(conn, scope, review, params, false)
 
+        {:error, :not_found} ->
+          not_found(conn)
+
+        {:error, :unauthorized} ->
+          conn |> put_status(401) |> json(%{error: "unauthorized"})
+      end
+    else
       {:error, :not_found} ->
         not_found(conn)
 
       {:error, :unauthorized} ->
         conn |> put_status(401) |> json(%{error: "unauthorized"})
+
+      {:error, :comment_policy_not_allowed} ->
+        policy_error(conn, :comment_policy_not_allowed)
+
+      {:error, :invalid_comment_policy} ->
+        policy_error(conn, :invalid_comment_policy)
     end
   end
+
+  defp get_upsert_review(token, delete_token) do
+    case Reviews.get_by_token(token) do
+      nil -> {:error, :not_found}
+      %{delete_token: ^delete_token} = review -> {:ok, review}
+      _review -> {:error, :unauthorized}
+    end
+  end
+
+  defp validate_upsert_comment_policy(scope, review, %{"comment_policy" => raw})
+       when is_binary(raw) do
+    if !can_manage_comment_policy?(scope, review) do
+      :ok
+    else
+      validate_owner_comment_policy(review, raw)
+    end
+  end
+
+  defp validate_upsert_comment_policy(_scope, _review, _params), do: :ok
+
+  defp validate_owner_comment_policy(review, raw) do
+    with {:ok, policy} <- parse_comment_policy(raw) do
+      cond do
+        policy == review.comment_policy -> :ok
+        Settings.comment_policy_allowed?(policy) -> :ok
+        true -> {:error, :comment_policy_not_allowed}
+      end
+    else
+      :error -> {:error, :invalid_comment_policy}
+    end
+  end
+
+  defp can_manage_comment_policy?(%Scope{} = scope, %{user_id: owner_id})
+       when not is_nil(owner_id),
+       do: Scope.user_id(scope) == owner_id
+
+  defp can_manage_comment_policy?(_scope, _review), do: false
 
   defp respond_with_upsert(conn, scope, review, params, changed) do
     case maybe_update_comment_policy(scope, review, params) do
@@ -277,21 +329,33 @@ defmodule CritWeb.ApiController do
 
       {:error, :comment_policy_not_allowed} ->
         policy_error(conn, :comment_policy_not_allowed)
+
+      {:error, :invalid_comment_policy} ->
+        policy_error(conn, :invalid_comment_policy)
     end
   end
 
   defp maybe_update_comment_policy(scope, review, %{"comment_policy" => raw})
        when is_binary(raw) do
+    if !can_manage_comment_policy?(scope, review) do
+      {:ok, review}
+    else
+      update_owner_comment_policy(scope, review, raw)
+    end
+  end
+
+  defp maybe_update_comment_policy(_scope, review, _params), do: {:ok, review}
+
+  defp update_owner_comment_policy(scope, review, raw) do
     with {:ok, policy} <- parse_comment_policy(raw),
          {:ok, updated} <- Reviews.update_review(scope, review.id, %{comment_policy: policy}) do
       {:ok, updated}
     else
       {:error, :comment_policy_not_allowed} -> {:error, :comment_policy_not_allowed}
+      :error -> {:error, :invalid_comment_policy}
       _ -> {:ok, review}
     end
   end
-
-  defp maybe_update_comment_policy(_scope, review, _params), do: {:ok, review}
 
   defp parse_comment_policy("open"), do: {:ok, :open}
   defp parse_comment_policy("logged_in_only"), do: {:ok, :logged_in_only}

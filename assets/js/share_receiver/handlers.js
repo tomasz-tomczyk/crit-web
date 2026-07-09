@@ -27,6 +27,14 @@ export async function fetchComments(msg) {
   return await readResponse(resp);
 }
 
+export async function sharePolicy() {
+  const resp = await fetch('/api/share-policy', {
+    method: 'GET',
+    credentials: 'same-origin',
+  });
+  return await readResponse(resp);
+}
+
 export async function upsert(msg) {
   if (!msg.token) throw new Error('missing token');
   return await jsonOp(

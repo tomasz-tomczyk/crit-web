@@ -896,6 +896,66 @@ defmodule CritWeb.ApiControllerTest do
       assert Reviews.get_by_token(review.token).comment_policy == :logged_in_only
     end
 
+    test "owner PUT rejects invalid comment_policy", %{conn: conn} do
+      {user, plaintext} = owner_with_token()
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          1,
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "p.md", content: "y"}],
+          comments: [],
+          review_round: 1,
+          comment_policy: "invalid"
+        })
+
+      assert json_response(conn, 422)["error"] =~ "Invalid comment policy"
+    end
+
+    test "owner PUT rejects disabled comment_policy before mutating review content", %{conn: conn} do
+      {user, plaintext} = owner_with_token()
+      {:ok, _} = update_share_policy(%{allowed_comment_policies: ["open", "logged_in_only"]})
+
+      {:ok, review} =
+        Reviews.create_review(
+          Scope.for_user(user),
+          [%{"path" => "p.md", "content" => "x"}],
+          1,
+          []
+        )
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> plaintext)
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [%{path: "p.md", content: "y"}],
+          comments: [],
+          review_round: 1,
+          comment_policy: "disallowed"
+        })
+
+      assert json_response(conn, 422)["error"] =~ "Comment mode"
+
+      persisted = Reviews.get_by_token(review.token)
+      assert persisted.review_round == review.review_round
+      assert persisted.comment_policy == :open
+
+      conn = get(build_conn(), ~p"/api/reviews/#{review.token}/document")
+      assert %{"files" => [%{"content" => "x"}]} = json_response(conn, 200)
+    end
+
     test "non-owner cannot set comment_policy via PUT (field silently ignored)", %{conn: conn} do
       review = create_review()
 
