@@ -882,6 +882,7 @@ defmodule CritWeb.ApiControllerTest do
 
       conn =
         conn
+        |> unique_ip()
         |> put_req_header("authorization", "Bearer " <> plaintext)
         |> put_req_header("content-type", "application/json")
         |> put("/api/reviews/#{review.token}", %{
@@ -909,6 +910,7 @@ defmodule CritWeb.ApiControllerTest do
 
       conn =
         conn
+        |> unique_ip()
         |> put_req_header("authorization", "Bearer " <> plaintext)
         |> put_req_header("content-type", "application/json")
         |> put("/api/reviews/#{review.token}", %{
