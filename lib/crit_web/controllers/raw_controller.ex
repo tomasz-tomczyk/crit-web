@@ -23,11 +23,10 @@ defmodule CritWeb.RawController do
     "crit-agent.js"
   ]
 
-  # Marker overlay CSS, inlined into preview HTML. crit local serves this at
-  # `/agent-marker.css` and the vendored crit-agent.js fetches it from there —
-  # but the preview sandbox CSP sets `connect-src 'none'` (and crit-web serves
-  # it under /preview-agent/, not root), so that fetch fails. Inlining it as a
-  # `<style>` makes the agent's failed fetch harmless and the markers styled.
+  # Marker overlay CSS. crit local serves this at `/agent-marker.css` and the
+  # vendored crit-agent.js fetches it from the origin encoded in its own script
+  # URL. With an isolated PREVIEW_HOST that is the canonical chrome origin, so
+  # marker_css/2 grants that configured preview origin narrow read access.
   # Read at compile time; `@external_resource` triggers a recompile on change.
   @marker_css_path Path.join([
                      __DIR__,
@@ -150,9 +149,18 @@ defmodule CritWeb.RawController do
   # so the fetch succeeds instead of 404ing in the iframe console.
   def marker_css(conn, _params) do
     conn
+    |> maybe_allow_preview_origin()
     |> put_resp_content_type("text/css")
     |> put_resp_header("cache-control", "public, max-age=3600")
     |> send_resp(200, @marker_css)
+  end
+
+  defp maybe_allow_preview_origin(conn) do
+    if CritWeb.Hosts.preview_host_enabled?() do
+      put_resp_header(conn, "access-control-allow-origin", CritWeb.Hosts.preview_origin())
+    else
+      conn
+    end
   end
 
   # base64 snapshots (binary assets like images) are decoded back to raw bytes.
