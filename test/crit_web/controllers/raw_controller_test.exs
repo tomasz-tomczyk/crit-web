@@ -245,11 +245,18 @@ defmodule CritWeb.RawControllerTest do
         |> Map.put(:host, "preview.example.test")
         |> get(~p"/r/#{review.token}/raw/index.html")
 
+      body = response(conn, 200)
       [csp] = get_resp_header(conn, "content-security-policy")
       assert csp =~ "script-src *"
       assert csp =~ "connect-src *"
       assert csp =~ "frame-ancestors 'self'"
       assert csp =~ "app.example.test"
+
+      # The vendored agent derives the parent/chrome origin from its script
+      # URL. Loading it from the canonical host keeps postMessage strict while
+      # allowing the iframe itself to remain on the isolated preview host.
+      assert body =~
+               ~s(<script src="#{CritWeb.Hosts.canonical_origin()}/preview-agent/crit-agent.js"></script>)
     end
 
     test "appends agent scripts when there is no </body> tag", %{conn: conn} do

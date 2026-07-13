@@ -171,9 +171,16 @@ defmodule CritWeb.RawController do
   # `servePreviewHTML`: insert before the last `</body>`, falling back to an
   # append when no closing body tag exists.
   defp maybe_inject_agent_scripts(content, true, "text/html") do
+    # crit-agent derives the trusted chrome origin from its own script URL.
+    # On the isolated preview host, use canonical-host script URLs so the agent
+    # posts to (and accepts messages from) the parent ReviewLive origin rather
+    # than incorrectly targeting the iframe's preview origin.
+    script_origin =
+      if CritWeb.Hosts.preview_host_enabled?(), do: CritWeb.Hosts.canonical_origin(), else: ""
+
     scripts =
       Enum.map_join(@agent_script_files, fn name ->
-        ~s(<script src="/preview-agent/#{name}"></script>)
+        ~s(<script src="#{script_origin}/preview-agent/#{name}"></script>)
       end)
 
     inject_before_body_close(content, scripts)

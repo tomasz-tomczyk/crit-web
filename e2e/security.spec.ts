@@ -86,6 +86,59 @@ async function waitForProbe(
 }
 
 test.describe("Preview isolation: preview iframe cannot exfiltrate victim session", () => {
+  test("isolated preview agent enables pin mode and sends selections", async ({
+    page,
+    request,
+  }) => {
+    const res = await request.post(`${CANONICAL_ORIGIN}/api/reviews`, {
+      data: {
+        review_type: "preview",
+        review_round: 0,
+        files: [
+          {
+            path: "index.html",
+            content:
+              '<!doctype html><html><body><h1 id="hero">Pin me</h1></body></html>',
+            status: "modified",
+          },
+        ],
+      },
+    });
+    expect(res.status(), "preview review creation").toBe(201);
+    const body = await res.json();
+    const token = (body.url as string).split("/r/")[1];
+    const deleteToken = body.delete_token as string;
+
+    try {
+      await page.goto(`${CANONICAL_ORIGIN}/r/${token}`);
+      await page.waitForSelector("#critPreviewIframe", { timeout: 15_000 });
+
+      const iframeSrc = await page
+        .locator("#critPreviewIframe")
+        .getAttribute("src");
+      expect(iframeSrc).toBe(`${PREVIEW_ORIGIN}/r/${token}/raw/index.html`);
+
+      // agent-ready crosses preview → canonical and enables Pin. Switching
+      // mode crosses canonical → preview; the click selection then crosses
+      // back and opens the host-side composer.
+      const pinButton = page.locator(
+        '#critPreviewMode button[data-mode="pin"]',
+      );
+      await expect(pinButton).toBeEnabled({ timeout: 15_000 });
+      await pinButton.click();
+      await expect(pinButton).toHaveAttribute("aria-pressed", "true");
+
+      await page.frameLocator("#critPreviewIframe").locator("#hero").click();
+      await expect(page.locator(".crit-preview-composer-body")).toBeVisible({
+        timeout: 10_000,
+      });
+    } finally {
+      await request.delete(`${CANONICAL_ORIGIN}/api/reviews`, {
+        data: { delete_token: deleteToken },
+      });
+    }
+  });
+
   test("raw preview route 308-redirects from canonical to preview host", async ({
     request,
   }) => {
