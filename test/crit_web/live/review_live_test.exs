@@ -1284,6 +1284,56 @@ defmodule CritWeb.ReviewLiveTest do
       [updated] = Reviews.list_comments(review)
       assert updated.resolved == false
     end
+
+    test "reports authorization and missing-comment failures", %{conn: conn, review: review} do
+      other_scope = Scope.for_visitor(Ecto.UUID.generate())
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          other_scope,
+          review,
+          %{"start_line" => 1, "end_line" => 1, "body" => "Other's comment"}
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      renderer = element(view, "#document-renderer")
+
+      render_hook(renderer, "resolve_comment", %{"id" => comment.id, "resolved" => true})
+      assert render(view) =~ "Only the comment author or review owner can resolve this."
+
+      render_hook(renderer, "resolve_comment", %{
+        "id" => Ecto.UUID.generate(),
+        "resolved" => true
+      })
+
+      assert render(view) =~ "Failed to update comment."
+    end
+  end
+
+  describe "mutation failure replies" do
+    test "reports missing comment failures", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      renderer = element(view, "#document-renderer")
+      missing_id = Ecto.UUID.generate()
+
+      render_hook(renderer, "edit_comment", %{"id" => missing_id, "body" => "Updated"})
+      assert render(view) =~ "Failed to update comment."
+
+      render_hook(renderer, "delete_comment", %{"id" => missing_id})
+      assert render(view) =~ "Failed to delete comment."
+    end
+
+    test "reports missing reply failures", %{conn: conn, review: review} do
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+      renderer = element(view, "#document-renderer")
+      missing_id = Ecto.UUID.generate()
+
+      render_hook(renderer, "edit_reply", %{"id" => missing_id, "body" => "Updated"})
+      assert render(view) =~ "Failed to update reply."
+
+      render_hook(renderer, "delete_reply", %{"id" => missing_id})
+      assert render(view) =~ "Failed to delete reply."
+    end
   end
 
   describe "demo mode filtering in handle_info" do
