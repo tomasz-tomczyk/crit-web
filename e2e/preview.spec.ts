@@ -305,4 +305,89 @@ test.describe("Preview mode", () => {
     await expect(card).toBeVisible({ timeout: 10_000 });
     await expect(page.locator("#commentsPanelCountBadge")).toHaveText("1");
   });
+
+  test("pin composer survives a disconnected submit and retries after reconnect", async ({
+    page,
+    request,
+  }) => {
+    const pageErrors: Error[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error));
+
+    const review = await createPreviewReview(request);
+    token = review.token;
+    deleteToken = review.deleteToken;
+
+    const frame = await loadPreview(page, token);
+    const pinBtn = page.locator('#critPreviewMode button[data-mode="pin"]');
+    await expect(pinBtn).toBeEnabled({ timeout: 15_000 });
+    await pinBtn.click();
+    await frame.locator("#hero").click();
+
+    const composer = page.locator(".crit-preview-composer-body");
+    const save = page.locator(".crit-preview-composer-save");
+    await expect(composer).toBeVisible({ timeout: 10_000 });
+    await composer.fill("Keep this pinned comment through a disconnect");
+
+    await page.evaluate(() => (window as any).liveSocket.disconnect());
+    await expect(page.locator("#crit-preview-layout")).toHaveAttribute(
+      "data-connection-state",
+      "disconnected"
+    );
+    await save.click();
+
+    await expect(page.locator(".crit-preview-composer-error")).toContainText(
+      "couldn't confirm whether your change was saved",
+      { timeout: 12_000 }
+    );
+    await expect(composer).toHaveValue("Keep this pinned comment through a disconnect");
+    await expect(save).toBeEnabled();
+    expect(pageErrors).toEqual([]);
+
+    await page.evaluate(() => (window as any).liveSocket.connect());
+    await expect(page.locator("#crit-preview-layout")).toHaveAttribute(
+      "data-connection-state",
+      "connected",
+      { timeout: 12_000 }
+    );
+    await save.click();
+
+    await expect(
+      page.locator("#critPreviewPanelBody .comment-card").filter({
+        hasText: "Keep this pinned comment through a disconnect",
+      })
+    ).toBeVisible({ timeout: 10_000 });
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("pin composer ignores repeated keyboard submits while acknowledgement is pending", async ({
+    page,
+    request,
+  }) => {
+    const review = await createPreviewReview(request);
+    token = review.token;
+    deleteToken = review.deleteToken;
+
+    const frame = await loadPreview(page, token);
+    const pinBtn = page.locator('#critPreviewMode button[data-mode="pin"]');
+    await expect(pinBtn).toBeEnabled({ timeout: 15_000 });
+    await pinBtn.click();
+    await frame.locator("#hero").click();
+
+    const composer = page.locator(".crit-preview-composer-body");
+    await expect(composer).toBeVisible({ timeout: 10_000 });
+    await composer.fill("Only create this pinned comment once");
+    await page.evaluate(() => (window as any).liveSocket.enableLatencySim(750));
+
+    await composer.press("Control+Enter");
+    await page.locator('#critPreviewMode button[data-mode="navigate"]').click();
+    await expect(pinBtn).toHaveAttribute("aria-pressed", "true");
+    await expect(composer).toBeVisible();
+    await composer.press("Control+Enter");
+
+    const cards = page.locator("#critPreviewPanelBody .comment-card").filter({
+      hasText: "Only create this pinned comment once",
+    });
+    await expect(cards).toHaveCount(1, { timeout: 10_000 });
+    await page.evaluate(() => (window as any).liveSocket.disableLatencySim());
+  });
 });

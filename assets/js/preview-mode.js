@@ -29,6 +29,7 @@
 
 import { renderCommentCard, attachSidebarResizeHandle, escapeHtml, startInlineBodyEdit } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
+import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 
 // Preview-mode keyboard shortcuts (the shared settings overlay's Shortcuts tab).
 // Preview's interaction model is the Navigate/Pin header toggle + composer, so
@@ -117,6 +118,7 @@ export const PreviewMode = {
     this.viewport = { key: "desktop", w: 1280, h: 800 }
     this.htmlFile = "index.html"
     this.composerEl = null
+    this.composerSubmitting = false
     this.pendingAnchor = null
     // Per-comment collapse state + pin-number lookup, consumed by the shared
     // card renderer via the preview adapter.
@@ -166,6 +168,44 @@ export const PreviewMode = {
       this.canComment = !!can_comment
       this.renderPanel()
     })
+  },
+
+  pushMutation(event, payload, options = {}) {
+    return pushMutation(this, event, payload, {
+      ...options,
+      onError: (error) => {
+        if (options.onError) options.onError(error)
+        else this.showMutationError()
+      },
+    })
+  },
+
+  disconnected() {
+    this.el.dataset.connectionState = "disconnected"
+    window.dispatchEvent(new CustomEvent("crit:liveview-disconnected"))
+  },
+
+  reconnected() {
+    this.el.dataset.connectionState = "connected"
+    window.dispatchEvent(new CustomEvent("crit:liveview-connected"))
+  },
+
+  showMutationError() {
+    let host = document.querySelector('.mini-toast-host')
+    if (!host) {
+      host = document.createElement('div')
+      host.className = 'mini-toast-host'
+      document.body.appendChild(host)
+    }
+    const toast = document.createElement('div')
+    toast.className = 'mini-toast'
+    toast.textContent = mutationErrorMessage()
+    host.appendChild(toast)
+    requestAnimationFrame(() => toast.classList.add('mini-toast-visible'))
+    setTimeout(() => {
+      toast.classList.remove('mini-toast-visible')
+      setTimeout(() => toast.remove(), 300)
+    }, 5000)
   },
 
   destroyed() {
@@ -374,7 +414,7 @@ export const PreviewMode = {
 
   setMode(value) {
     const next = value === "pin" ? "pin" : "navigate"
-    if (this.mode === next) return
+    if (this.mode === next || this.composerSubmitting) return
     this.mode = next
     // Port of crit setMode: tell the agent the mode + flip marker tabindex so
     // Tab doesn't jump into the iframe while pinning.
@@ -560,6 +600,7 @@ export const PreviewMode = {
   },
 
   openComposer(anchor) {
+    if (this.composerSubmitting) return
     // closeComposer() nulls pendingAnchor, so set it AFTER closing any prior
     // composer — otherwise submitComposer sees a null anchor and silently
     // drops the comment (no pushEvent, nothing reaches the server).
@@ -591,20 +632,23 @@ export const PreviewMode = {
     const errEl = el.querySelector(".crit-preview-composer-error")
     const save = () => this.submitComposer(textarea, errEl)
     el.querySelector(".crit-preview-composer-save").addEventListener("click", save)
-    el.querySelector(".crit-preview-composer-cancel").addEventListener("click", () => this.closeComposer())
+    el.querySelector(".crit-preview-composer-cancel").addEventListener("click", () => {
+      if (!this.composerSubmitting) this.closeComposer()
+    })
     textarea.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
         save()
       } else if (e.key === "Escape") {
         e.preventDefault()
-        this.closeComposer()
+        if (!this.composerSubmitting) this.closeComposer()
       }
     })
     requestAnimationFrame(() => textarea.focus())
   },
 
   submitComposer(textarea, errEl) {
+    if (this.composerSubmitting) return
     const body = (textarea.value || "").trim()
     if (!body) {
       textarea.focus()
@@ -616,17 +660,34 @@ export const PreviewMode = {
     // start_line/end_line: ReviewLive's add_comment handler reads these (files
     // mode is line-anchored). DOM-anchored preview comments have no line, so
     // send 0/0 — the changeset only enforces > 0 when scope === "line".
-    this.pushEvent("add_comment", {
+    const submittedComposer = this.composerEl
+    const composerButtons = submittedComposer?.querySelectorAll("button") || []
+    this.composerSubmitting = true
+    composerButtons.forEach(button => { button.disabled = true })
+    errEl.textContent = ""
+    errEl.hidden = true
+    this.pushMutation("add_comment", {
       body,
       scope: "file",
       file_path: this.htmlFile,
       start_line: 0,
       end_line: 0,
       dom_anchor: anchor,
+    }, {
+      onSuccess: () => {
+        this.composerSubmitting = false
+        if (this.composerEl === submittedComposer) this.closeComposer()
+      },
+      onError: () => {
+        this.composerSubmitting = false
+        if (this.composerEl === submittedComposer) {
+          composerButtons.forEach(button => { button.disabled = false })
+          errEl.textContent = mutationErrorMessage()
+          errEl.hidden = false
+          textarea.focus()
+        }
+      },
     })
-    // The new comment arrives back via the comment_added push event, which
-    // re-renders the panel and re-pushes pins. Just close the composer.
-    this.closeComposer()
   },
 
   closeComposer() {
@@ -736,16 +797,16 @@ export const PreviewMode = {
         badge.textContent = String(n)
         return [badge]
       },
-      onResolve: (c, resolved) => this.pushEvent("resolve_comment", { id: c.id, resolved }),
-      onDelete: (c) => this.pushEvent("delete_comment", { id: c.id }),
-      onEditComment: (id, body) => this.pushEvent("edit_comment", { id, body }),
-      onAddReply: (commentId, body) => this.pushEvent("add_reply", { comment_id: commentId, body }),
-      onDeleteReply: (id) => this.pushEvent("delete_reply", { id }),
+      onResolve: (c, resolved) => this.pushMutation("resolve_comment", { id: c.id, resolved }),
+      onDelete: (c) => this.pushMutation("delete_comment", { id: c.id }),
+      onEditComment: (id, body) => this.pushMutation("edit_comment", { id, body }),
+      onAddReply: (commentId, body) => this.pushMutation("add_reply", { comment_id: commentId, body }),
+      onDeleteReply: (id) => this.pushMutation("delete_reply", { id }),
       onEditReply: (commentId, reply) => {
         const sel = window.CSS && CSS.escape ? CSS.escape(String(reply.id)) : reply.id
         const replyEl = this.panelBody.querySelector('[data-reply-id="' + sel + '"]')
         const bodyEl = replyEl && replyEl.querySelector(".reply-body")
-        if (bodyEl) startInlineBodyEdit(bodyEl, reply.body, (v) => this.pushEvent("edit_reply", { id: reply.id, body: v }))
+        if (bodyEl) startInlineBodyEdit(bodyEl, reply.body, (v) => this.pushMutation("edit_reply", { id: reply.id, body: v }))
       },
       scheduleTimeout: (fn, ms) => setTimeout(fn, ms),
       onCardClick: (c) => this.flashPin(c),

@@ -211,7 +211,10 @@ export function startInlineBodyEdit(bodyEl, rawText, onSave) {
     e.stopPropagation()
     const v = textarea.value.trim()
     if (!v) return
-    onSave(v)
+    saveBtn.disabled = true
+    Promise.resolve(onSave(v)).then(result => {
+      if (result?.ok === false) saveBtn.disabled = false
+    }).catch(() => { saveBtn.disabled = false })
   })
   textarea.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); saveBtn.click() }
@@ -262,7 +265,11 @@ export function renderReplyList(comment, adapter) {
         replyDeleteBtn.innerHTML = SVG_DELETE
         replyDeleteBtn.addEventListener('click', function(e) {
           e.stopPropagation()
-          adapter.onDeleteReply(reply.id)
+          if (replyDeleteBtn.disabled) return
+          replyDeleteBtn.disabled = true
+          Promise.resolve(adapter.onDeleteReply(reply.id)).then(result => {
+            if (result?.ok === false) replyDeleteBtn.disabled = false
+          }).catch(() => { replyDeleteBtn.disabled = false })
         })
         replyActions.appendChild(replyDeleteBtn)
       }
@@ -349,9 +356,18 @@ export function createReplyInput(commentId, adapter) {
     const body = textarea.value.trim()
     if (!body) return
     submitBtn.disabled = true
-    adapter.onAddReply(commentId, body)
-    collapse()
-    submitBtn.disabled = false
+    Promise.resolve(adapter.onAddReply(commentId, body)).then(result => {
+      if (result?.ok === false) {
+        submitBtn.disabled = false
+        textarea.focus()
+        return
+      }
+      collapse()
+      submitBtn.disabled = false
+    }).catch(() => {
+      submitBtn.disabled = false
+      textarea.focus()
+    })
   })
 
   textarea.addEventListener('keydown', function(e) {
@@ -457,7 +473,9 @@ export function renderCommentCard(comment, adapter) {
         e.stopPropagation()
         if (resolveBtn.disabled) return
         resolveBtn.disabled = true
-        adapter.onResolve(comment, !isResolved)
+        Promise.resolve(adapter.onResolve(comment, !isResolved)).then(result => {
+          if (result?.ok === false) resolveBtn.disabled = false
+        }).catch(() => { resolveBtn.disabled = false })
       })
       actions.appendChild(resolveBtn)
     }
@@ -468,7 +486,7 @@ export function renderCommentCard(comment, adapter) {
       editBtn.innerHTML = SVG_EDIT
       editBtn.addEventListener('click', function(e) {
         e.stopPropagation()
-        startInlineBodyEdit(bodyEl, comment.body, function(v) { adapter.onEditComment(comment.id, v) })
+        startInlineBodyEdit(bodyEl, comment.body, function(v) { return adapter.onEditComment(comment.id, v) })
       })
       actions.appendChild(editBtn)
     }
@@ -480,7 +498,11 @@ export function renderCommentCard(comment, adapter) {
       deleteBtn.innerHTML = SVG_DELETE
       deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation()
-        adapter.onDelete(comment)
+        if (deleteBtn.disabled) return
+        deleteBtn.disabled = true
+        Promise.resolve(adapter.onDelete(comment)).then(result => {
+          if (result?.ok === false) deleteBtn.disabled = false
+        }).catch(() => { deleteBtn.disabled = false })
       })
       actions.appendChild(deleteBtn)
     }
