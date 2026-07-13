@@ -77,6 +77,17 @@ defmodule CritWeb.Plugs.HostGateTest do
     assert response(conn, 404)
   end
 
+  test "equal canonical and preview hosts fail closed", %{conn: conn} do
+    Application.put_env(:crit, :preview_host, "app.example.test")
+
+    conn =
+      conn
+      |> Map.put(:host, "app.example.test")
+      |> get(~p"/")
+
+    assert response(conn, 404) == "not found"
+  end
+
   test "preview host blocks non-GET to raw paths", %{conn: conn} do
     review =
       review_fixture(%{

@@ -121,6 +121,28 @@ defmodule CritWeb.RawControllerTest do
     @png_signature <<137, 80, 78, 71, 13, 10, 26, 10>>
     @png_base64 Base.encode64(@png_signature)
 
+    test "allows the configured preview origin to fetch marker CSS", %{conn: conn} do
+      with_preview_hosts()
+
+      conn =
+        conn
+        |> Map.put(:host, "app.example.test")
+        |> get(~p"/agent-marker.css")
+
+      assert response(conn, 200) =~ ".crit-live-marker"
+
+      assert get_resp_header(conn, "access-control-allow-origin") == [
+               CritWeb.Hosts.preview_origin()
+             ]
+    end
+
+    test "does not add marker CSS CORS when preview isolation is disabled", %{conn: conn} do
+      conn = get(conn, ~p"/agent-marker.css")
+
+      assert response(conn, 200) =~ ".crit-live-marker"
+      assert get_resp_header(conn, "access-control-allow-origin") == []
+    end
+
     test "serves a base64 snapshot decoded with the correct MIME type", %{conn: conn} do
       review =
         review_fixture(%{
@@ -245,11 +267,18 @@ defmodule CritWeb.RawControllerTest do
         |> Map.put(:host, "preview.example.test")
         |> get(~p"/r/#{review.token}/raw/index.html")
 
+      body = response(conn, 200)
       [csp] = get_resp_header(conn, "content-security-policy")
       assert csp =~ "script-src *"
       assert csp =~ "connect-src *"
       assert csp =~ "frame-ancestors 'self'"
       assert csp =~ "app.example.test"
+
+      # The vendored agent derives the parent/chrome origin from its script
+      # URL. Loading it from the canonical host keeps postMessage strict while
+      # allowing the iframe itself to remain on the isolated preview host.
+      assert body =~
+               ~s(<script src="#{CritWeb.Hosts.canonical_origin()}/preview-agent/crit-agent.js"></script>)
     end
 
     test "appends agent scripts when there is no </body> tag", %{conn: conn} do

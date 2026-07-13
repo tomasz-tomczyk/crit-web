@@ -86,6 +86,100 @@ async function waitForProbe(
 }
 
 test.describe("Preview isolation: preview iframe cannot exfiltrate victim session", () => {
+  test("isolated preview agent enables pin mode and sends selections", async ({
+    page,
+    request,
+  }) => {
+    const files = [
+      {
+        path: "index.html",
+        content:
+          '<!doctype html><html><body><p id="existing">Existing marker target</p><h1 id="hero">Pin me</h1></body></html>',
+        status: "modified",
+      },
+    ];
+
+    const res = await request.post(`${CANONICAL_ORIGIN}/api/reviews`, {
+      data: {
+        review_type: "preview",
+        review_round: 0,
+        files,
+      },
+    });
+    expect(res.status(), "preview review creation").toBe(201);
+    const body = await res.json();
+    const token = (body.url as string).split("/r/")[1];
+    const deleteToken = body.delete_token as string;
+
+    // The stored anchor pathname is the iframe's actual raw route, which is
+    // only known after the API allocates the review token.
+    const updateRes = await request.put(
+      `${CANONICAL_ORIGIN}/api/reviews/${token}`,
+      {
+        data: {
+          delete_token: deleteToken,
+          review_round: 0,
+          files,
+          comments: [
+            {
+              start_line: 0,
+              end_line: 0,
+              body: "Existing pin",
+              scope: "file",
+              file_path: "index.html",
+              dom_anchor: {
+                pathname: `/r/${token}/raw/index.html`,
+                css_selector: "#existing",
+                tag_chain: ["body", "p"],
+                outer_html: '<p id="existing">Existing marker target</p>',
+              },
+            },
+          ],
+        },
+      },
+    );
+    expect(updateRes.status(), "preview review marker seed").toBe(200);
+
+    try {
+      await page.goto(`${CANONICAL_ORIGIN}/r/${token}`);
+      await page.waitForSelector("#critPreviewIframe", { timeout: 15_000 });
+
+      const iframeSrc = await page
+        .locator("#critPreviewIframe")
+        .getAttribute("src");
+      expect(iframeSrc).toBe(`${PREVIEW_ORIGIN}/r/${token}/raw/index.html`);
+
+      // agent-ready crosses preview → canonical and enables Pin. Switching
+      // mode crosses canonical → preview; the click selection then crosses
+      // back and opens the host-side composer.
+      const pinButton = page.locator(
+        '#critPreviewMode button[data-mode="pin"]',
+      );
+      await expect(pinButton).toBeEnabled({ timeout: 15_000 });
+
+      // The agent fetches marker CSS from the canonical host. Confirm the
+      // isolated preview origin receives that stylesheet through narrow CORS.
+      const marker = page
+        .frameLocator("#critPreviewIframe")
+        .locator(".crit-live-marker");
+      await expect(marker).toBeVisible({ timeout: 10_000 });
+      await expect(marker).toHaveCSS("width", "22px");
+      await expect(marker).toHaveCSS("background-color", "rgb(37, 99, 235)");
+
+      await pinButton.click();
+      await expect(pinButton).toHaveAttribute("aria-pressed", "true");
+
+      await page.frameLocator("#critPreviewIframe").locator("#hero").click();
+      await expect(page.locator(".crit-preview-composer-body")).toBeVisible({
+        timeout: 10_000,
+      });
+    } finally {
+      await request.delete(`${CANONICAL_ORIGIN}/api/reviews`, {
+        data: { delete_token: deleteToken },
+      });
+    }
+  });
+
   test("raw preview route 308-redirects from canonical to preview host", async ({
     request,
   }) => {
