@@ -72,33 +72,66 @@ function initSentry(liveSocket) {
     const socket = liveSocket?.getSocket?.()
     if (socket) {
       const PERSISTENCE_MS = 5000
-      const STALE_TAB_MS = 30 * 60 * 1000
       const MIN_CONSECUTIVE_ERRORS = 3
       let pendingTimer = null
       let consecutiveErrors = 0
       let firstErrorAt = null
       let lastOpenAt = Date.now()
+      let lastActivityAt = Date.now()
+      let reportedForOutage = false
+
+      const noteActivity = () => { lastActivityAt = Date.now() }
+      for (const event of ["pointerdown", "keydown", "touchstart", "focus"]) {
+        window.addEventListener(event, noteActivity, { passive: true })
+      }
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") noteActivity()
+      })
+
+      const resetOutage = () => {
+        consecutiveErrors = 0
+        firstErrorAt = null
+        reportedForOutage = false
+        if (pendingTimer !== null) {
+          clearTimeout(pendingTimer)
+          pendingTimer = null
+        }
+      }
+      window.addEventListener("crit:liveview-connected", resetOutage)
 
       socket.onError(err => {
         const msg = String(err?.message ?? err)
         if (msg === "410") return
         consecutiveErrors += 1
         if (firstErrorAt === null) firstErrorAt = Date.now()
-        if (pendingTimer !== null) return
+        if (pendingTimer !== null || reportedForOutage) return
         const errSnapshot = err
         pendingTimer = setTimeout(() => {
           pendingTimer = null
           const msSinceOpen = lastOpenAt ? Date.now() - lastOpenAt : null
-          if (msSinceOpen !== null && msSinceOpen > STALE_TAB_MS) return
+          const msSinceActivity = Date.now() - lastActivityAt
           if (consecutiveErrors < MIN_CONSECUTIVE_ERRORS) return
+          // Background tabs and offline devices routinely lose their socket.
+          // Capture only an active, online session and only once per outage.
+          if (document.visibilityState !== "visible" || !document.hasFocus() ||
+              !navigator.onLine || msSinceActivity > 30 * 60 * 1000) return
+          reportedForOutage = true
+          const transport = socket.transportName?.(socket.transport) ||
+            (socket.transport === LongPoll ? "longpoll" : "websocket")
           Sentry.captureMessage("LiveSocket transport error (persistent)", {
             level: "warning",
+            tags: { liveview_transport: transport },
             extra: {
               type: errSnapshot?.type,
               message: String(errSnapshot?.message ?? errSnapshot),
               consecutive_errors: consecutiveErrors,
+              failure_duration_ms: firstErrorAt ? Date.now() - firstErrorAt : null,
               ms_since_last_open: msSinceOpen,
-              transport: socket.transport?.name || socket.transport?.constructor?.name || null,
+              ms_since_last_activity: msSinceActivity,
+              transport,
+              visibility_state: document.visibilityState,
+              document_has_focus: document.hasFocus(),
+              navigator_online: navigator.onLine,
             },
           })
         }, PERSISTENCE_MS)
@@ -106,12 +139,9 @@ function initSentry(liveSocket) {
 
       socket.onOpen(() => {
         lastOpenAt = Date.now()
-        consecutiveErrors = 0
-        firstErrorAt = null
-        if (pendingTimer !== null) {
-          clearTimeout(pendingTimer)
-          pendingTimer = null
-        }
+        // Review hooks reset only after their LiveView has rejoined. Other
+        // pages have no review hook, so transport open is definitive there.
+        if (!isReviewPage) resetOutage()
       })
     }
   }).catch(() => {})
@@ -434,4 +464,3 @@ if (prefersReducedMotion) {
 if (/^\/articles\/[^/]+$/.test(window.location.pathname)) {
   import("./article-mermaid").then(({ initArticleMermaid }) => initArticleMermaid())
 }
-

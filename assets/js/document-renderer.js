@@ -15,6 +15,7 @@ import {
   attachSidebarResizeHandle,
 } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
+import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 
 // Re-register hljs 'markdown' with patched grammar. Must run before any
 // hljs.highlight() call. See highlight-markdown-patch.js for rationale.
@@ -306,6 +307,24 @@ function showToast(message, duration = 3000) {
     toast.classList.remove('mini-toast-visible')
     trackedSetTimeout(__activeCtx, () => toast.remove(), 300)
   }, duration)
+}
+
+function pushCommentMutation(ctx, event, payload, options = {}) {
+  return pushMutation(ctx, event, payload, {
+    ...options,
+    onError(error) {
+      showToast(mutationErrorMessage(), 5000)
+      if (options.onError) options.onError(error)
+    },
+  })
+}
+
+function setFormSubmitting(ctx, formObj, submitting) {
+  formObj.submitting = submitting
+  const form = ctx.el.querySelector('.comment-form[data-form-key="' + formObj.formKey + '"]')
+  if (!form) return
+  form.setAttribute('aria-busy', String(submitting))
+  form.querySelectorAll('button').forEach(button => { button.disabled = submitting })
 }
 
 // ---- Multi-form helpers -----------------------------------------------------
@@ -655,9 +674,13 @@ function restoreDrafts(ctx) {
         filePath: draft.filePath || null,
       }
       formObj.formKey = formKey(formObj)
+      // A reconnect can deliver init while this exact form is still open or
+      // awaiting acknowledgement. Keep its richer in-memory state (quote,
+      // scope, submitting flag) and retain the durable draft until the
+      // mutation's acknowledged success clears it.
+      if (ctx.activeForms.some(form => form.formKey === formObj.formKey)) continue
       addForm(ctx, formObj)
       restored = true
-      localStorage.removeItem(key)
     } catch (_) {
       localStorage.removeItem(key)
     }
@@ -2928,7 +2951,9 @@ function createCommentElement(comment, ctx) {
     resolveBtn.addEventListener('click', function() {
       if (resolveBtn.disabled) return;
       resolveBtn.disabled = true;
-      ctx.pushEvent("resolve_comment", { id: comment.id, resolved: true })
+      pushCommentMutation(ctx, "resolve_comment", { id: comment.id, resolved: true }, {
+        onError: () => { resolveBtn.disabled = false },
+      })
     })
     actions.appendChild(resolveBtn)
   }
@@ -2951,7 +2976,11 @@ function createCommentElement(comment, ctx) {
     deleteBtn.title = "Delete"
     deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
     deleteBtn.addEventListener("click", () => {
-      ctx.pushEvent("delete_comment", { id: comment.id })
+      if (deleteBtn.disabled) return
+      deleteBtn.disabled = true
+      pushCommentMutation(ctx, "delete_comment", { id: comment.id }, {
+        onError: () => { deleteBtn.disabled = false },
+      })
     })
     actions.appendChild(deleteBtn)
   }
@@ -3159,9 +3188,9 @@ function createInlineEditor(comment, formObj, ctx) {
 }
 
 function submitNewComment(body, formObj, ctx) {
-  if (!body.trim()) return
+  if (!body.trim() || formObj.submitting) return
   rememberKeyboardFocusFromForm(ctx, formObj)
-  clearDraft(ctx.reviewToken, formObj)
+  setFormSubmitting(ctx, formObj, true)
   const payload = {
     body: body.trim(),
     file_path: formObj.filePath || null,
@@ -3172,21 +3201,31 @@ function submitNewComment(body, formObj, ctx) {
     payload.end_line = formObj.endLine
   }
   if (formObj.quote) payload.quote = formObj.quote
-  ctx.pushEvent("add_comment", payload)
-  removeForm(ctx, formObj.formKey)
-  if (ctx.activeForms.length === 0) {
-    ctx.selectionStart = null
-    ctx.selectionEnd = null
-  }
-  render(ctx)
+  pushCommentMutation(ctx, "add_comment", payload, {
+    onSuccess: () => {
+      clearDraft(ctx.reviewToken, formObj)
+      removeForm(ctx, formObj.formKey)
+      if (ctx.activeForms.length === 0) {
+        ctx.selectionStart = null
+        ctx.selectionEnd = null
+      }
+      render(ctx)
+    },
+    onError: () => setFormSubmitting(ctx, formObj, false),
+  })
 }
 
 function submitEditComment(id, body, formObj, ctx) {
-  if (!body.trim()) return
+  if (!body.trim() || formObj.submitting) return
   rememberKeyboardFocusFromForm(ctx, formObj)
-  ctx.pushEvent("edit_comment", { id, body: body.trim() })
-  removeForm(ctx, formObj.formKey)
-  render(ctx)
+  setFormSubmitting(ctx, formObj, true)
+  pushCommentMutation(ctx, "edit_comment", { id, body: body.trim() }, {
+    onSuccess: () => {
+      removeForm(ctx, formObj.formKey)
+      render(ctx)
+    },
+    onError: () => setFormSubmitting(ctx, formObj, false),
+  })
 }
 
 // Returns true if the user confirms discarding (or the draft is empty).
@@ -3272,10 +3311,10 @@ function commentCardAdapter(ctx, filePath) {
     canDelete: (c) => canDeleteComment(c, ctx),
     displayName: ctx.displayName,
     collapseOverrides: commentCollapseOverrides,
-    onResolve: (c, resolved) => ctx.pushEvent('resolve_comment', { id: c.id, resolved }),
-    onDelete: (c) => ctx.pushEvent('delete_comment', { id: c.id }),
-    onAddReply: (commentId, body) => ctx.pushEvent('add_reply', { comment_id: commentId, body }),
-    onDeleteReply: (id) => ctx.pushEvent('delete_reply', { id }),
+    onResolve: (c, resolved) => pushCommentMutation(ctx, 'resolve_comment', { id: c.id, resolved }),
+    onDelete: (c) => pushCommentMutation(ctx, 'delete_comment', { id: c.id }),
+    onAddReply: (commentId, body) => pushCommentMutation(ctx, 'add_reply', { comment_id: commentId, body }),
+    onDeleteReply: (id) => pushCommentMutation(ctx, 'delete_reply', { id }),
     onEditReply: (commentId, reply) => editReply(commentId, reply, ctx),
     beforeReplyExpand: () => { closeEmptyReviewForm(ctx); closeEmptyForms(ctx, null) },
     scheduleTimeout: (fn, ms) => trackedSetTimeout(ctx, fn, ms),
@@ -3379,8 +3418,11 @@ function editReply(commentId, reply, ctx) {
 
   saveBtn.addEventListener('click', () => {
     const newBody = textarea.value.trim()
-    if (!newBody) return
-    ctx.pushEvent("edit_reply", { id: reply.id, body: newBody })
+    if (!newBody || saveBtn.disabled) return
+    saveBtn.disabled = true
+    pushCommentMutation(ctx, "edit_reply", { id: reply.id, body: newBody }, {
+      onError: () => { saveBtn.disabled = false },
+    })
   })
 
   textarea.addEventListener('keydown', function(e) {
@@ -3468,7 +3510,9 @@ function createResolvedElement(comment, ctx) {
     unresolveBtn.addEventListener('click', function() {
       if (unresolveBtn.disabled) return;
       unresolveBtn.disabled = true;
-      ctx.pushEvent("resolve_comment", { id: comment.id, resolved: false })
+      pushCommentMutation(ctx, "resolve_comment", { id: comment.id, resolved: false }, {
+        onError: () => { unresolveBtn.disabled = false },
+      })
     })
     actions.appendChild(unresolveBtn)
   }
@@ -3479,7 +3523,11 @@ function createResolvedElement(comment, ctx) {
     deleteBtn.title = 'Delete'
     deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
     deleteBtn.addEventListener('click', function() {
-      ctx.pushEvent("delete_comment", { id: comment.id })
+      if (deleteBtn.disabled) return
+      deleteBtn.disabled = true
+      pushCommentMutation(ctx, "delete_comment", { id: comment.id }, {
+        onError: () => { deleteBtn.disabled = false },
+      })
     })
     actions.appendChild(deleteBtn)
   }
@@ -5156,7 +5204,7 @@ export const DocumentRenderer = {
             c.end_line >= block.startLine && c.end_line <= block.endLine &&
             (c.file_path || null) === filePath
           )
-          if (comment) ctx.pushEvent('delete_comment', { id: comment.id })
+          if (comment) pushCommentMutation(ctx, 'delete_comment', { id: comment.id })
           break
         }
         case 't': {
@@ -5180,6 +5228,16 @@ export const DocumentRenderer = {
       }
     }
     document.addEventListener('keydown', ctx._keydownHandler)
+  },
+
+  disconnected() {
+    this.el.dataset.connectionState = 'disconnected'
+    window.dispatchEvent(new CustomEvent('crit:liveview-disconnected'))
+  },
+
+  reconnected() {
+    this.el.dataset.connectionState = 'connected'
+    window.dispatchEvent(new CustomEvent('crit:liveview-connected'))
   },
 
   destroyed() {

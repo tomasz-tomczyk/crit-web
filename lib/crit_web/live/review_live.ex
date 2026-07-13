@@ -281,10 +281,11 @@ defmodule CritWeb.ReviewLive do
         payload = %{comment: Reviews.serialize_comment(comment)}
         socket = push_event(socket, "comment_added", payload)
         broadcast_from_review(socket, {:comment_added, payload})
-        {:noreply, socket}
+        {:reply, %{ok: true}, socket}
 
       {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Failed to save comment.")}
+        message = "Failed to save comment."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
     end
   end
 
@@ -302,13 +303,15 @@ defmodule CritWeb.ReviewLive do
 
         socket = push_event(socket, "comment_updated", payload)
         broadcast_from_review(socket, {:comment_updated, payload})
-        {:noreply, socket}
+        {:reply, %{ok: true}, socket}
 
       {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "You can only edit your own comments.")}
+        message = "You can only edit your own comments."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to update comment.")}
+        message = "Failed to update comment."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
     end
   end
 
@@ -321,13 +324,15 @@ defmodule CritWeb.ReviewLive do
         payload = %{id: id}
         socket = push_event(socket, "comment_deleted", payload)
         broadcast_from_review(socket, {:comment_deleted, payload})
-        {:noreply, socket}
+        {:reply, %{ok: true}, socket}
 
       {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "You can only delete your own comments.")}
+        message = "You can only delete your own comments."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to delete comment.")}
+        message = "Failed to delete comment."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
     end
   end
 
@@ -366,10 +371,11 @@ defmodule CritWeb.ReviewLive do
         payload = %{parent_id: comment_id, reply: Reviews.serialize_reply(reply)}
         socket = push_event(socket, "reply_added", payload)
         broadcast_from_review(socket, {:reply_added, payload})
-        {:noreply, socket}
+        {:reply, %{ok: true}, socket}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to add reply.")}
+        message = "Failed to add reply."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
     end
   end
 
@@ -382,13 +388,15 @@ defmodule CritWeb.ReviewLive do
         payload = %{parent_id: reply.parent_id, id: reply.id, body: reply.body}
         socket = push_event(socket, "reply_updated", payload)
         broadcast_from_review(socket, {:reply_updated, payload})
-        {:noreply, socket}
+        {:reply, %{ok: true}, socket}
 
       {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "You can only edit your own replies.")}
+        message = "You can only edit your own replies."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to update reply.")}
+        message = "Failed to update reply."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
     end
   end
 
@@ -401,13 +409,15 @@ defmodule CritWeb.ReviewLive do
         payload = %{parent_id: deleted.parent_id, id: id}
         socket = push_event(socket, "reply_deleted", payload)
         broadcast_from_review(socket, {:reply_deleted, payload})
-        {:noreply, socket}
+        {:reply, %{ok: true}, socket}
 
       {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "You can only delete your own replies.")}
+        message = "You can only delete your own replies."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to delete reply.")}
+        message = "Failed to delete reply."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
     end
   end
 
@@ -420,14 +430,15 @@ defmodule CritWeb.ReviewLive do
         payload = %{id: comment.id, resolved: comment.resolved}
         socket = push_event(socket, "comment_resolved", payload)
         broadcast_from_review(socket, {:comment_resolved, payload})
-        {:noreply, socket}
+        {:reply, %{ok: true}, socket}
 
       {:error, :unauthorized} ->
-        {:noreply,
-         put_flash(socket, :error, "Only the comment author or review owner can resolve this.")}
+        message = "Only the comment author or review owner can resolve this."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to update comment.")}
+        message = "Failed to update comment."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
     end
   end
 
