@@ -36,6 +36,13 @@ function initSentry(liveSocket) {
       tracesSampleRate: 0,
       // Privacy: never attach personal data, never record DOM/inputs.
       sendDefaultPii: false,
+      // Homepage <video autoplay> on iOS Safari/Chrome iOS surfaces these as
+      // unhandled errors (play() policy / media element state). Not actionable.
+      ignoreErrors: [
+        /InvalidStateError/,
+        /AbortError/,
+        /NotAllowedError/,
+      ],
       // Replace the default Breadcrumbs integration with one that doesn't
       // capture console output or DOM text — review/comment content must not leak.
       integrations: defaults => [
@@ -282,7 +289,7 @@ document.addEventListener("click", e => {
         copiedIcon.classList.add("hidden")
       }
     }, 2000)
-  })
+  }).catch(() => {})
 })
 
 // Tab switchers: .install-tab / .agent-tab. Each clicked tab activates itself
