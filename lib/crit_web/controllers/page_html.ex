@@ -323,9 +323,9 @@ defmodule CritWeb.PageHTML do
     >
       <div
         class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)"
-        data-copy="go install github.com/tomasz-tomczyk/crit@latest"
+        data-copy="go install github.com/tomasz-tomczyk/crit/cmd/crit@latest"
       >
-        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>go install github.com/tomasz-tomczyk/crit@latest</pre>
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>go install github.com/tomasz-tomczyk/crit/cmd/crit@latest</pre>
         <div class="shrink-0 p-3">
           <.icon name="hero-clipboard" class="size-4 icon-default" />
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
