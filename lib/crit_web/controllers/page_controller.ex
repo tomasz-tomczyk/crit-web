@@ -842,6 +842,7 @@ defmodule CritWeb.PageController do
     {"/integrations/hermes", "monthly", "0.8"},
     {"/integrations/pi", "monthly", "0.8"},
     {"/integrations/grok", "monthly", "0.8"},
+    {"/integrations/ampcode", "monthly", "0.8"},
     {"/integrations/windsurf", "monthly", "0.8"},
     {"/integrations/cline", "monthly", "0.8"},
     {"/integrations/aider", "monthly", "0.8"},

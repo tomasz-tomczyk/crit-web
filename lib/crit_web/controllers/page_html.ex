@@ -484,6 +484,16 @@ defmodule CritWeb.PageHTML do
       ]
     },
     %{
+      id: "ampcode",
+      name: "Amp",
+      copy: "crit install ampcode",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install ampcode"},
+        %{type: :output, text: "Installed: .agents/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .agents/skills/crit-cli/SKILL.md"}
+      ]
+    },
+    %{
       id: "windsurf",
       name: "Windsurf",
       copy: "crit install windsurf",

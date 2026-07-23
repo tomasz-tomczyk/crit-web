@@ -203,31 +203,24 @@
 
       <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 mb-8">
         <a
-          :for={
-            id <-
-              ~w(claude-code cursor github-copilot opencode codex gemini qwen hermes windsurf cline grok aider pi)
-          }
-          href={"/integrations/#{id}"}
+          :for={tool <- Crit.Integrations.tools()}
+          href={"/integrations/#{tool.id}"}
           class="flex items-center gap-3 px-4 py-3 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg no-underline hover:border-(--crit-fg-muted) hover:bg-(--crit-bg-elevated) transition-all group"
         >
           <img
-            src={"/images/integrations/#{id}-dark.svg"}
+            src={"/images/integrations/#{tool.id}-dark.svg"}
             alt=""
             class="logo-dark size-7 object-contain shrink-0"
             loading="lazy"
           />
           <img
-            src={"/images/integrations/#{id}-light.svg"}
+            src={"/images/integrations/#{tool.id}-light.svg"}
             alt=""
             class="logo-light size-7 object-contain shrink-0"
             loading="lazy"
           />
           <span class="text-sm font-medium text-(--crit-fg-primary) flex-1">
-            {id
-            |> String.replace("-", " ")
-            |> String.split()
-            |> Enum.map(&String.capitalize/1)
-            |> Enum.join(" ")}
+            {tool.name}
           </span>
           <svg
             viewBox="0 0 20 20"
