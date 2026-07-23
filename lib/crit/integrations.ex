@@ -182,6 +182,22 @@ defmodule Crit.Integrations do
       components: [:crit_command, :crit_cli_skill]
     },
     %{
+      id: "ampcode",
+      name: "Amp",
+      tagline: "Crit as an Amp skill",
+      logo: %{
+        light: "/images/integrations/ampcode-light.svg",
+        dark: "/images/integrations/ampcode-dark.svg"
+      },
+      page_title: "Crit + Amp — review AI plans inline",
+      meta:
+        "Install crit's Amp skill. Drops .agents/skills/crit/ and .agents/skills/crit-cli/ (or ~/.config/agents/skills/ globally) so Amp auto-loads the review workflow.",
+      intro:
+        "Amp auto-discovers skills from .agents/skills/ (project) and ~/.config/agents/skills/ (global). The crit skill activates whenever Amp plans or reviews code.",
+      command: "crit install ampcode",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
       id: "windsurf",
       name: "Windsurf",
       tagline: "A Windsurf rule for Crit",

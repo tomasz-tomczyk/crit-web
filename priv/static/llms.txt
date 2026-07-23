@@ -44,6 +44,7 @@ For every other agent, `crit install <tool>` writes the integration files (skill
 - [GitHub Copilot](https://crit.md/integrations/github-copilot): `crit install github-copilot`. Installs as Agent Skills under `.github/skills/`.
 - [OpenCode](https://crit.md/integrations/opencode): `crit install opencode`. Skill auto-activates on plan and review requests.
 - [Codex](https://crit.md/integrations/codex): `crit install codex-plugin` globally (recommended, see above) or `crit install codex` per project for skills only.
+- [Amp](https://crit.md/integrations/ampcode): `crit install ampcode`. Skills under `.agents/skills/` (project) or `~/.config/agents/skills/` (global).
 - [Windsurf](https://crit.md/integrations/windsurf): `crit install windsurf`. Single rule under `.windsurf/rules/`.
 - [Cline](https://crit.md/integrations/cline): `crit install cline`. Single rule under `.clinerules/`.
 - [Aider](https://crit.md/integrations/aider): Append the crit conventions to your `CONVENTIONS.md`.
