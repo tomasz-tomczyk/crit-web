@@ -15,7 +15,7 @@ Install (pick one):
 
 ```
 brew install tomasz-tomczyk/tap/crit
-go install github.com/tomasz-tomczyk/crit@latest
+go install github.com/tomasz-tomczyk/crit/cmd/crit@latest
 nix run github:tomasz-tomczyk/crit
 ```
 

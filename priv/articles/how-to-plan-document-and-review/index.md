@@ -80,7 +80,7 @@ nix profile install github:tomasz-tomczyk/crit
 If you have Go installed on your machine you can also install Crit with:
 
 ```bash
-go install github.com/tomasz-tomczyk/crit@latest
+go install github.com/tomasz-tomczyk/crit/cmd/crit@latest
 ```
 
 And then simply run:
