@@ -102,6 +102,11 @@ export const PreviewMode = {
     // browser uses whatever host the user opened (127.0.0.1 vs localhost).
     this.previewIsolated = configuredOrigin !== ""
     this.previewOrigin = configuredOrigin || window.location.origin
+    // In isolated mode we intentionally keep the iframe sandboxed with an
+    // opaque origin (no allow-same-origin). This avoids the
+    // allow-scripts+allow-same-origin warning and still preserves the
+    // postMessage bridge via source checks.
+    this.iframeOpaqueOrigin = this.previewIsolated
     this.canComment = this.el.dataset.canComment === "true"
     // Viewer identity (server-rendered, same as files mode's #document-renderer)
     // so the panel can gate edit/delete/resolve to the comment's author.
@@ -230,10 +235,11 @@ export const PreviewMode = {
       '<div class="crit-preview-body">',
       '  <div class="crit-preview-iframe-pane">',
       '    <div class="crit-preview-iframe-frame" id="critPreviewFrame">',
-      // Sandbox runs on preview.crit.md (not crit.md). allow-same-origin restores the
-      // preview host origin for postMessage + relative assets; CSP on that host allows
-      // arbitrary CDNs (script-src *). No crit.md session crosses the host boundary.
-      '      <iframe id="critPreviewIframe" title="Preview" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>',
+      // Sandbox runs on preview.crit.md (not crit.md). In isolated mode we keep
+      // the iframe on an opaque origin (no allow-same-origin) while still
+      // allowing script execution. In non-isolated local mode we retain
+      // allow-same-origin for compatibility.
+      '      <iframe id="critPreviewIframe" title="Preview" referrerpolicy="no-referrer" sandbox="' + this.iframeSandboxValue() + '"></iframe>',
       "    </div>",
       "  </div>",
       '  <div class="sidebar-resize-handle" id="commentsPanelResizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize comments panel"></div>',
@@ -530,7 +536,9 @@ export const PreviewMode = {
     const iw = this.iframe && this.iframe.contentWindow
     if (!iw) return
     try {
-      iw.postMessage(msg, this.previewOrigin)
+      // Opaque-origin iframes (sandbox without allow-same-origin) can only be
+      // targeted with "*". Source checks in both directions remain strict.
+      iw.postMessage(msg, this.iframeOpaqueOrigin ? "*" : this.previewOrigin)
     } catch (_) {
       /* noop */
     }
@@ -540,7 +548,8 @@ export const PreviewMode = {
     // Accept only messages from our iframe's content window and from the
     // configured preview origin.
     if (!this.iframe || event.source !== this.iframe.contentWindow) return
-    if (event.origin !== this.previewOrigin) return
+    const expectedOrigin = this.iframeOpaqueOrigin ? "null" : this.previewOrigin
+    if (event.origin !== expectedOrigin) return
     const msg = event.data
     if (!msg || typeof msg.type !== "string") return
 
@@ -565,6 +574,12 @@ export const PreviewMode = {
       default:
         break
     }
+  },
+
+  iframeSandboxValue() {
+    return this.iframeOpaqueOrigin
+      ? "allow-scripts allow-forms"
+      : "allow-scripts allow-same-origin allow-forms"
   },
 
   handleAgentReady() {

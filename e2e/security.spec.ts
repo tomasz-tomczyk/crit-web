@@ -311,11 +311,11 @@ test.describe("Preview isolation: preview iframe cannot exfiltrate victim sessio
         `iframe src = ${iframeSrc}`,
       ).toBe(true);
 
-      // Receive the origin beacon from inside the iframe. The beacon proves
-      // the iframe's document.origin is the preview host, not the canonical
-      // host.
+      // Receive the origin beacon from inside the iframe. In isolated mode the
+      // iframe is intentionally sandboxed without allow-same-origin, so JS sees
+      // an opaque origin ("null") while still loading from PREVIEW_ORIGIN.
       const beacon = await waitForProbe(page, "iframe-origin-beacon");
-      expect(beacon.msg, "iframe origin beacon").toBe(PREVIEW_ORIGIN);
+      expect(beacon.msg, "iframe origin beacon").toBe("null");
 
       // Receive the session-ride probe. Assert the attack did NOT reach
       // authenticated canonical content.

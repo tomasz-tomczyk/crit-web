@@ -77,11 +77,9 @@ export function previewSessionRidePayload(): string {
 }
 
 /**
- * Sanity payload: a probe that just reports its own document origin back to
- * the parent. Use it to assert the iframe really is on the preview host when
- * isolation is configured, and on the canonical host when it isn't — so a
- * misconfiguration (e.g. PREVIEW_HOST unset) is detected as a setup error
- * rather than as a pass.
+ * Sanity payload: a probe that reports its own `location.origin` back to the
+ * parent. With isolated sandboxing (no allow-same-origin), this is "null"
+ * (opaque origin) even though the iframe URL is on PREVIEW_HOST.
  */
 export function previewOriginBeaconPayload(): string {
   return `<script>
