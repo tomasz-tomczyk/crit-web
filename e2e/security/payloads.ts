@@ -78,8 +78,8 @@ export function previewSessionRidePayload(): string {
 
 /**
  * Sanity payload: a probe that reports its own `location.origin` back to the
- * parent. With isolated sandboxing (no allow-same-origin), this is "null"
- * (opaque origin) even though the iframe URL is on PREVIEW_HOST.
+ * parent. The isolation check asserts this is PREVIEW_HOST (never the
+ * canonical app host).
  */
 export function previewOriginBeaconPayload(): string {
   return `<script>
