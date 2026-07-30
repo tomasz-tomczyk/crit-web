@@ -134,6 +134,18 @@ defmodule CritWeb.RawControllerTest do
       assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
     end
 
+    test "serves marker CSS on the preview host for agent relative fetches", %{conn: conn} do
+      with_preview_hosts()
+
+      conn =
+        conn
+        |> Map.put(:host, "preview.example.test")
+        |> get(~p"/agent-marker.css")
+
+      assert response(conn, 200) =~ ".crit-live-marker"
+      assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
+    end
+
     test "does not add marker CSS CORS when preview isolation is disabled", %{conn: conn} do
       conn = get(conn, ~p"/agent-marker.css")
 

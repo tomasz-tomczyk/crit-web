@@ -23,10 +23,10 @@ defmodule CritWeb.RawController do
     "crit-agent.js"
   ]
 
-  # Marker overlay CSS. crit local serves this at `/agent-marker.css` and the
-  # vendored crit-agent.js fetches it from the origin encoded in its own script
-  # URL. With an isolated PREVIEW_HOST that is the canonical chrome origin, so
-  # marker_css/2 grants that configured preview origin narrow read access.
+  # Marker overlay CSS. crit local serves this at `/agent-marker.css`. The
+  # vendored crit-agent.js tries a relative URL first (preview host when
+  # PREVIEW_HOST is set), then falls back to the API/app origin. CORS on this
+  # endpoint allows opaque-origin sandboxed iframes to read the body.
   # Read at compile time; `@external_resource` triggers a recompile on change.
   @marker_css_path Path.join([
                      __DIR__,
@@ -143,10 +143,11 @@ defmodule CritWeb.RawController do
     |> halt()
   end
 
-  # The injected crit-agent fetches its marker overlay CSS from
-  # `<origin>/agent-marker.css` (hard-coded in the vendored, byte-identical
-  # crit-agent.js — crit local serves it at this same root path). Serve it here
-  # so the fetch succeeds instead of 404ing in the iframe console.
+  # The injected crit-agent prefers relative `/agent-marker.css` (document host
+  # — the preview host when PREVIEW_HOST is set), falling back to the app
+  # origin. Relative keeps the stylesheet off an SSO-gated PHX_HOST; HostGate
+  # allows this path on the preview origin. CORS `*` is still required because
+  # isolated preview iframes are opaque-origin sandboxes (`Origin: null`).
   def marker_css(conn, _params) do
     conn
     |> maybe_allow_preview_origin()
@@ -157,9 +158,6 @@ defmodule CritWeb.RawController do
 
   defp maybe_allow_preview_origin(conn) do
     if CritWeb.Hosts.preview_host_enabled?() do
-      # In isolated mode, the preview iframe is sandboxed without
-      # allow-same-origin, so subresource requests originate from an opaque
-      # "null" origin. Use wildcard CORS for this static marker stylesheet.
       put_resp_header(conn, "access-control-allow-origin", "*")
     else
       conn
