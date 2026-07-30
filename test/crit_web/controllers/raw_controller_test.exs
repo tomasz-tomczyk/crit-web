@@ -134,7 +134,7 @@ defmodule CritWeb.RawControllerTest do
       assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
     end
 
-    test "serves marker CSS on the preview host for relative agent fetches", %{conn: conn} do
+    test "serves marker CSS on the preview host for agent relative fetches", %{conn: conn} do
       with_preview_hosts()
 
       conn =

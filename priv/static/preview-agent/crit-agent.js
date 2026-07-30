@@ -64,22 +64,26 @@
 
   // ---------- Phase D: marker overlay + MutationObserver ----------
   function bootMarkers() {
-    // Marker CSS is resolved against the iframe document URL (relative), not
-    // expectedApiOrigin. On crit-web with PREVIEW_HOST the document lives on
-    // the preview host while agent scripts are loaded from the canonical app
-    // origin for postMessage trust — fetching CSS from the app host breaks
-    // behind SSO (credential-less fetch gets a 302 login redirect). Relative
-    // keeps the stylesheet on the same host as the preview document.
+    // Marker CSS: try the iframe document host first (relative), then the
+    // API origin. Hosted PREVIEW_HOST previews need relative — scripts load
+    // from the app origin for postMessage trust, but credential-less CSS
+    // fetches to that origin 302 behind SSO. Local live mode needs the
+    // fallback — the iframe document is the user app, CSS is on the API port.
+    function loadMarkerCss(url) {
+      return fetch(url, { credentials: 'omit' })
+        .then(function (res) { return res.ok ? res.text() : Promise.reject(); });
+    }
+    function injectMarkerCss(css) {
+      if (!css) return;
+      var style = document.createElement('style');
+      style.setAttribute('data-crit-marker-css', '1');
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
     try {
-      fetch('/agent-marker.css', { credentials: 'omit' })
-        .then(function (res) { return res.ok ? res.text() : ''; })
-        .then(function (css) {
-          if (!css) return;
-          var style = document.createElement('style');
-          style.setAttribute('data-crit-marker-css', '1');
-          style.textContent = css;
-          document.head.appendChild(style);
-        })
+      loadMarkerCss('/agent-marker.css')
+        .catch(function () { return loadMarkerCss(expectedApiOrigin + '/agent-marker.css'); })
+        .then(injectMarkerCss)
         .catch(function () { /* non-fatal */ });
     } catch (_) { /* ignore */ }
     if (markersAPI && markersAPI.createOverlay && document.body) {

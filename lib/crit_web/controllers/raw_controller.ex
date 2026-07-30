@@ -24,9 +24,9 @@ defmodule CritWeb.RawController do
   ]
 
   # Marker overlay CSS. crit local serves this at `/agent-marker.css`. The
-  # vendored crit-agent.js fetches it with a relative URL so the request hits
-  # the iframe document host (preview host when PREVIEW_HOST is set). CORS on
-  # this endpoint allows opaque-origin sandboxed iframes to read the body.
+  # vendored crit-agent.js tries a relative URL first (preview host when
+  # PREVIEW_HOST is set), then falls back to the API/app origin. CORS on this
+  # endpoint allows opaque-origin sandboxed iframes to read the body.
   # Read at compile time; `@external_resource` triggers a recompile on change.
   @marker_css_path Path.join([
                      __DIR__,
@@ -143,11 +143,11 @@ defmodule CritWeb.RawController do
     |> halt()
   end
 
-  # The injected crit-agent fetches marker CSS via relative `/agent-marker.css`
-  # (document URL host — the preview host when PREVIEW_HOST is set). That keeps
-  # the stylesheet off the SSO-gated canonical app host; HostGate allows this
-  # path on the preview origin. CORS `*` is still required because isolated
-  # preview iframes are opaque-origin sandboxes (`Origin: null`).
+  # The injected crit-agent prefers relative `/agent-marker.css` (document host
+  # — the preview host when PREVIEW_HOST is set), falling back to the app
+  # origin. Relative keeps the stylesheet off an SSO-gated PHX_HOST; HostGate
+  # allows this path on the preview origin. CORS `*` is still required because
+  # isolated preview iframes are opaque-origin sandboxes (`Origin: null`).
   def marker_css(conn, _params) do
     conn
     |> maybe_allow_preview_origin()
