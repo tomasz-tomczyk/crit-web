@@ -157,8 +157,8 @@ test.describe("Preview isolation: preview iframe cannot exfiltrate victim sessio
       );
       await expect(pinButton).toBeEnabled({ timeout: 15_000 });
 
-      // The agent fetches marker CSS from the canonical host. Confirm the
-      // isolated preview origin receives that stylesheet through narrow CORS.
+      // The agent fetches marker CSS relative to the iframe document (preview
+      // host). Confirm styled markers render through preview-host CORS.
       const marker = page
         .frameLocator("#critPreviewIframe")
         .locator(".crit-live-marker");

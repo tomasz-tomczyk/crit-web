@@ -686,7 +686,11 @@
         Both hostnames must resolve to crit-web. With Caddy, add the preview host to the same
         <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">reverse_proxy</code>
         block as <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>.
-        No second container is needed.
+        No second container is needed. Preview pin styles load from
+        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PREVIEW_HOST/agent-marker.css</code>
+        (not the app host), so an SSO proxy on
+        <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>
+        does not need to allowlist that path — keep the preview host reachable without a login wall.
       </p>
     </section>
 
