@@ -311,9 +311,8 @@ test.describe("Preview isolation: preview iframe cannot exfiltrate victim sessio
         `iframe src = ${iframeSrc}`,
       ).toBe(true);
 
-      // Receive the origin beacon from inside the iframe. The beacon proves
-      // the iframe's document.origin is the preview host, not the canonical
-      // host.
+      // Receive the origin beacon from inside the iframe. This confirms the
+      // preview executes on PREVIEW_ORIGIN (not the canonical app host).
       const beacon = await waitForProbe(page, "iframe-origin-beacon");
       expect(beacon.msg, "iframe origin beacon").toBe(PREVIEW_ORIGIN);
 

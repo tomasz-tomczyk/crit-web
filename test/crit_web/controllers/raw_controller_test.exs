@@ -121,7 +121,7 @@ defmodule CritWeb.RawControllerTest do
     @png_signature <<137, 80, 78, 71, 13, 10, 26, 10>>
     @png_base64 Base.encode64(@png_signature)
 
-    test "allows the configured preview origin to fetch marker CSS", %{conn: conn} do
+    test "allows isolated preview iframe origin to fetch marker CSS", %{conn: conn} do
       with_preview_hosts()
 
       conn =
@@ -131,9 +131,7 @@ defmodule CritWeb.RawControllerTest do
 
       assert response(conn, 200) =~ ".crit-live-marker"
 
-      assert get_resp_header(conn, "access-control-allow-origin") == [
-               CritWeb.Hosts.preview_origin()
-             ]
+      assert get_resp_header(conn, "access-control-allow-origin") == ["*"]
     end
 
     test "does not add marker CSS CORS when preview isolation is disabled", %{conn: conn} do

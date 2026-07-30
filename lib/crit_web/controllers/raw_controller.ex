@@ -157,7 +157,10 @@ defmodule CritWeb.RawController do
 
   defp maybe_allow_preview_origin(conn) do
     if CritWeb.Hosts.preview_host_enabled?() do
-      put_resp_header(conn, "access-control-allow-origin", CritWeb.Hosts.preview_origin())
+      # In isolated mode, the preview iframe is sandboxed without
+      # allow-same-origin, so subresource requests originate from an opaque
+      # "null" origin. Use wildcard CORS for this static marker stylesheet.
+      put_resp_header(conn, "access-control-allow-origin", "*")
     else
       conn
     end
