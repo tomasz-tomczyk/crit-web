@@ -98,9 +98,10 @@ export const PreviewMode = {
   mounted() {
     this.token = this.el.dataset.token
     const configuredOrigin = (this.el.dataset.previewOrigin || "").replace(/\/$/, "")
+    const datasetIsolated = this.el.dataset.previewIsolated === "true"
     // When PREVIEW_HOST is unset (dev/E2E), load the iframe root-relative so the
     // browser uses whatever host the user opened (127.0.0.1 vs localhost).
-    this.previewIsolated = configuredOrigin !== ""
+    this.previewIsolated = datasetIsolated || configuredOrigin !== ""
     this.previewOrigin = configuredOrigin || window.location.origin
     // In isolated mode we intentionally keep the iframe sandboxed with an
     // opaque origin (no allow-same-origin). This avoids the

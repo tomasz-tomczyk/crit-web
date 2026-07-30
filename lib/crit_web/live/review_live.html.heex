@@ -605,6 +605,7 @@
       phx-hook="PreviewMode"
       phx-update="ignore"
       data-token={@review.token}
+      data-preview-isolated={to_string(CritWeb.Hosts.preview_host_enabled?())}
       data-preview-origin={
         if CritWeb.Hosts.preview_host_enabled?(), do: CritWeb.Hosts.preview_origin()
       }
