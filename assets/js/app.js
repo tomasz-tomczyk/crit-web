@@ -42,6 +42,7 @@ function initSentry(liveSocket) {
         /InvalidStateError/,
         /AbortError/,
         /NotAllowedError/,
+        /^The media resource indicated by the src attribute or assigned media provider object was not suitable\.$/,
       ],
       // Replace the default Breadcrumbs integration with one that doesn't
       // capture console output or DOM text — review/comment content must not leak.
