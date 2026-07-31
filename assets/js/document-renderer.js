@@ -4382,35 +4382,37 @@ function getInlineCommentCards(ctx) {
 }
 
 function navigateToComment(ctx, direction) {
-  const cards = getInlineCommentCards(ctx)
+  const allCards = getInlineCommentCards(ctx)
+  const isEligible = card => !isHideResolved(ctx) || !card.classList.contains('resolved-card')
+  const cards = allCards.filter(isEligible)
   if (cards.length === 0) return
 
   const header = document.querySelector('.crit-header')
   const headerHeight = header ? header.offsetHeight : 52
 
-  // Find current position by stored comment ID (immune to smooth-scroll race conditions)
+  // Keep the current position in the full order even when that card becomes
+  // hidden, then scan in the requested direction for the next eligible card.
   let idx = ctx._navCommentId
-    ? cards.findIndex(c => c.dataset.commentId === ctx._navCommentId)
+    ? allCards.findIndex(c => c.dataset.commentId === ctx._navCommentId)
     : -1
 
-  let targetIdx
-  if (direction === 1) {
-    if (idx < 0) {
-      // First use: pick first card below the header area by viewport position
-      const firstBelow = cards.findIndex(c => c.getBoundingClientRect().top > headerHeight + 8)
-      targetIdx = firstBelow >= 0 ? firstBelow : 0
-    } else {
-      targetIdx = idx >= cards.length - 1 ? 0 : idx + 1
+  let target
+  if (idx >= 0) {
+    for (let step = 1; step <= allCards.length; step++) {
+      const candidateIdx = (idx + direction * step + allCards.length) % allCards.length
+      if (isEligible(allCards[candidateIdx])) {
+        target = allCards[candidateIdx]
+        break
+      }
     }
+  } else if (direction === 1) {
+    // First use: pick first card below the header area by viewport position
+    const firstBelow = cards.findIndex(c => c.getBoundingClientRect().top > headerHeight + 8)
+    target = cards[firstBelow >= 0 ? firstBelow : 0]
   } else {
-    if (idx < 0) {
-      targetIdx = cards.length - 1
-    } else {
-      targetIdx = idx <= 0 ? cards.length - 1 : idx - 1
-    }
+    target = cards[cards.length - 1]
   }
 
-  const target = cards[targetIdx]
   ctx._navCommentId = target.dataset.commentId
 
   const rect = target.getBoundingClientRect()
@@ -4894,6 +4896,7 @@ export const DocumentRenderer = {
         const newEl = createCommentElement(comment, ctx)
         block.replaceWith(newEl)
       }
+      applyHideResolved(ctx)
       updateCommentCount(ctx)
       updateTreeBadge(ctx, comment.file_path)
       rerenderPanel(ctx)
