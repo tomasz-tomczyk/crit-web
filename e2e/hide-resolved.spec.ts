@@ -4,6 +4,7 @@ import {
   deleteReview,
   loadReview,
   addCommentViaUI,
+  seedComment,
 } from "./helpers";
 
 /**
@@ -127,6 +128,73 @@ test.describe("Hide Resolved", () => {
     // Press h again to show
     await page.keyboard.press("h");
     await expect(resolvedBlock).toBeVisible();
+  });
+
+  test("comment arrows skip hidden resolved comments in both directions", async ({
+    page,
+    request,
+  }) => {
+    await seedComment(request, token, {
+      body: "Open A",
+      startLine: 1,
+    });
+    await seedComment(request, token, {
+      body: "Open C",
+      startLine: 6,
+    });
+    await loadReview(page, token);
+    await addAndResolveComment(page, "Resolved B", {
+      lineIndex: 1,
+    });
+
+    const openA = page
+      .locator(".comment-card:not(.resolved-card)")
+      .filter({ hasText: "Open A" });
+    const resolvedCard = page
+      .locator(".comment-card.resolved-card")
+      .filter({ hasText: "Resolved B" });
+    const openC = page
+      .locator(".comment-card:not(.resolved-card)")
+      .filter({ hasText: "Open C" });
+
+    await page.locator("#comment-nav-next").click();
+    await expect(openA).toHaveClass(/comment-nav-highlight/);
+    await page.locator("#comment-nav-next").click();
+    await expect(resolvedCard).toHaveClass(/comment-nav-highlight/);
+
+    await page.keyboard.press("h");
+    await expect(resolvedCard).not.toBeVisible();
+    await page.locator("#comment-nav-prev").click();
+    await expect(openA).toHaveClass(/comment-nav-highlight/);
+    await expect(openC).not.toHaveClass(/comment-nav-highlight/);
+    await expect(resolvedCard).not.toHaveClass(/comment-nav-highlight/);
+
+    await page.keyboard.press("h");
+    await page.locator("#comment-nav-next").click();
+    await expect(resolvedCard).toHaveClass(/comment-nav-highlight/);
+
+    await page.keyboard.press("h");
+    await page.locator("#comment-nav-next").click();
+    await expect(openC).toHaveClass(/comment-nav-highlight/);
+    await expect(resolvedCard).not.toHaveClass(/comment-nav-highlight/);
+  });
+
+  test("resolving a comment while hide resolved is enabled hides it", async ({
+    page,
+  }) => {
+    await loadReview(page, token);
+    await addCommentViaUI(page, "Resolve while hidden");
+    await page.keyboard.press("h");
+
+    const card = page
+      .locator(".comment-card")
+      .filter({ hasText: "Resolve while hidden" });
+    await card.locator(".resolve-btn").click();
+
+    const resolvedBlock = page
+      .locator(".comment-block:not(.panel-comment-block)")
+      .filter({ has: page.locator(".resolved-card") });
+    await expect(resolvedBlock).not.toBeVisible();
   });
 
   test("persists via localStorage across reload", async ({ page }) => {
