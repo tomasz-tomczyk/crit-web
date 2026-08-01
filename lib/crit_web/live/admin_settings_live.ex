@@ -12,6 +12,7 @@ defmodule CritWeb.AdminSettingsLive do
       |> assign(:page_title, "Admin — Settings")
       |> assign(:noindex, true)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
+      |> assign(:smtp_configured, smtp_configured?())
       |> assign(:setting, setting)
       |> assign(:form, build_form(setting))
 
@@ -63,5 +64,10 @@ defmodule CritWeb.AdminSettingsLive do
     params
     |> Map.put_new("allowed_comment_policies", [])
     |> Map.put_new("allowed_review_visibilities", [])
+  end
+
+  defp smtp_configured? do
+    mailer_config = Application.get_env(:crit, Crit.Mailer, [])
+    Keyword.get(mailer_config, :adapter) == Swoosh.Adapters.SMTP
   end
 end

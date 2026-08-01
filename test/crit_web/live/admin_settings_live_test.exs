@@ -44,6 +44,32 @@ defmodule CritWeb.AdminSettingsLiveTest do
       assert html =~ "Max comment body"
     end
 
+    test "notification timing fields are disabled until notifications are enabled", %{conn: conn} do
+      conn = login(conn, create_admin!())
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      assert has_element?(view, "#setting_notification_batch_minutes[disabled]")
+      assert has_element?(view, "#setting_notification_max_wait_minutes[disabled]")
+      assert has_element?(view, "#setting_notification_retention_days[disabled]")
+
+      render_change(view, "validate", %{"setting" => %{"notifications_enabled" => "true"}})
+
+      refute has_element?(view, "#setting_notification_batch_minutes[disabled]")
+      refute has_element?(view, "#setting_notification_max_wait_minutes[disabled]")
+      refute has_element?(view, "#setting_notification_retention_days[disabled]")
+    end
+
+    test "SMTP setup guidance is hidden when SMTP is configured", %{conn: conn} do
+      original = Application.get_env(:crit, Crit.Mailer)
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      on_exit(fn -> Application.put_env(:crit, Crit.Mailer, original) end)
+
+      conn = login(conn, create_admin!())
+      {:ok, _view, html} = live(conn, ~p"/admin/settings")
+
+      refute html =~ "SMTP_HOST and SMTP_FROM"
+    end
+
     test "save converts MB/KB to bytes and updates the settings row", %{conn: conn} do
       conn = login(conn, create_admin!())
       {:ok, view, _html} = live(conn, ~p"/admin/settings")

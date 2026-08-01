@@ -381,12 +381,12 @@ defmodule CritWeb.SettingsLiveTest do
       assert has_element?(view, "#keep-reviews-toggle[aria-checked='true']")
 
       {:ok, updated} = Crit.Accounts.get_user(user.id)
-      assert updated.keep_reviews == true
+      assert updated.preferences.keep_reviews == true
     end
 
     test "toggling off after on", %{conn: conn} do
       {conn, user} = login_user(conn)
-      {:ok, _} = Crit.Accounts.update_keep_reviews(user, true)
+      {:ok, _} = Crit.Accounts.update_preferences(user, %{keep_reviews: true})
 
       {:ok, view, _html} = live(conn, ~p"/settings")
 
@@ -399,7 +399,7 @@ defmodule CritWeb.SettingsLiveTest do
       assert has_element?(view, "#keep-reviews-toggle[aria-checked='false']")
 
       {:ok, updated} = Crit.Accounts.get_user(user.id)
-      assert updated.keep_reviews == false
+      assert updated.preferences.keep_reviews == false
     end
 
     test "is hidden in selfhosted mode", %{conn: conn} do
@@ -412,6 +412,30 @@ defmodule CritWeb.SettingsLiveTest do
 
       refute has_element?(view, "#keep-reviews-toggle")
       refute html =~ "Keep reviews"
+    end
+  end
+
+  describe "discussion notification toggle" do
+    test "is hidden when notifications are disabled for the instance", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      refute has_element?(view, "#discussion-notifications-toggle")
+    end
+
+    test "is shown and updates the preference when notifications are enabled", %{conn: conn} do
+      enable_notifications!()
+      {conn, user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+      assert has_element?(view, "#discussion-notifications-toggle[aria-checked='true']")
+
+      view |> element("#discussion-notifications-toggle") |> render_click()
+
+      assert has_element?(view, "#discussion-notifications-toggle[aria-checked='false']")
+      {:ok, updated} = Crit.Accounts.get_user(user.id)
+      refute updated.preferences.discussion_notifications_enabled
     end
   end
 
@@ -463,5 +487,17 @@ defmodule CritWeb.SettingsLiveTest do
 
       refute has_element?(view, "#marketing-consent-toggle")
     end
+  end
+
+  defp enable_notifications! do
+    setting = Crit.Settings.get()
+
+    {:ok, _setting} =
+      Crit.Settings.update(%{
+        max_document_mb: Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+        max_comments_per_review: setting.max_comments_per_review,
+        max_comment_body_kb: Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+        notifications_enabled: true
+      })
   end
 end

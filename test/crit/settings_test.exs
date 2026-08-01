@@ -100,6 +100,20 @@ defmodule Crit.SettingsTest do
       refute changeset.valid?
       assert {_msg, _} = changeset.errors[:max_comment_body_kb]
     end
+
+    test "allows zero notification retention to keep terminal records forever" do
+      setting = Settings.get()
+
+      assert {:ok, updated} =
+               Settings.update(%{
+                 max_document_mb: Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+                 max_comments_per_review: setting.max_comments_per_review,
+                 max_comment_body_kb: Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+                 notification_retention_days: 0
+               })
+
+      assert updated.notification_retention_days == 0
+    end
   end
 
   describe "singleton invariant" do

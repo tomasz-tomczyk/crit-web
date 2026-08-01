@@ -8,7 +8,7 @@ defmodule Crit.User do
     field :name, :string
     field :avatar_url, :string
     field :role, Ecto.Enum, values: [:admin, :user], default: :user
-    field :keep_reviews, :boolean, default: false
+    embeds_one :preferences, Crit.User.Preferences, on_replace: :update, defaults_to_struct: true
     field :hashed_password, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :current_password, :string, virtual: true, redact: true
@@ -82,9 +82,11 @@ defmodule Crit.User do
     |> validate_password(opts)
   end
 
-  @doc "Changeset for user-controlled settings (e.g. `keep_reviews`)."
+  @doc "Changeset for typed user-controlled preferences."
   def settings_changeset(user, attrs) do
-    user |> cast(attrs, [:keep_reviews])
+    user
+    |> cast(attrs, [])
+    |> cast_embed(:preferences, with: &Crit.User.Preferences.changeset/2, required: true)
   end
 
   @doc """

@@ -97,7 +97,7 @@ defmodule Crit.ReviewsInactiveTest do
           "name" => "Keeper"
         })
 
-      {:ok, user} = Accounts.update_keep_reviews(user, true)
+      {:ok, user} = Accounts.update_preferences(user, %{keep_reviews: true})
 
       review = review_fixture(%{user_id: user.id})
       set_last_activity(review, 31)
@@ -127,7 +127,7 @@ defmodule Crit.ReviewsInactiveTest do
           "name" => "Keeper"
         })
 
-      {:ok, _user} = Accounts.update_keep_reviews(user, true)
+      {:ok, _user} = Accounts.update_preferences(user, %{keep_reviews: true})
 
       anon_review = review_fixture()
       set_last_activity(anon_review, 31)

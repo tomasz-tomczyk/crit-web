@@ -185,28 +185,36 @@ end
 config :crit, CritWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
-  smtp_host = System.get_env("SMTP_HOST", "localhost")
+  smtp_host = System.get_env("SMTP_HOST")
+  smtp_from = System.get_env("SMTP_FROM")
+  smtp_configured? = smtp_host not in [nil, ""] and smtp_from not in [nil, ""]
 
-  config :crit, Crit.Mailer,
-    adapter: Swoosh.Adapters.SMTP,
-    relay: smtp_host,
-    port: String.to_integer(System.get_env("SMTP_PORT", "587")),
-    username: System.get_env("SMTP_USERNAME"),
-    password: System.get_env("SMTP_PASSWORD"),
-    tls: :if_available,
-    auth: :if_available,
-    tls_options: [
-      verify: :verify_peer,
-      cacerts: :public_key.cacerts_get(),
-      server_name_indication: String.to_charlist(smtp_host),
-      customize_hostname_check: [
-        match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
-      ],
-      depth: 3
-    ]
+  if smtp_configured? do
+    config :crit, Crit.Mailer,
+      adapter: Swoosh.Adapters.SMTP,
+      relay: smtp_host,
+      port: String.to_integer(System.get_env("SMTP_PORT", "587")),
+      username: System.get_env("SMTP_USERNAME"),
+      password: System.get_env("SMTP_PASSWORD"),
+      tls: :if_available,
+      auth: :if_available,
+      timeout: 60_000,
+      tls_options: [
+        verify: :verify_peer,
+        cacerts: :public_key.cacerts_get(),
+        server_name_indication: String.to_charlist(smtp_host),
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ],
+        depth: 3
+      ]
 
-  if from = System.get_env("SMTP_FROM") do
-    config :crit, :smtp_from, from
+    config :crit, :smtp_from, smtp_from
+  else
+    # Explicitly retain the local mailbox when SMTP is absent. Organization
+    # invites use the same mailer and remain inspectable instead of attempting
+    # an implicit localhost SMTP connection.
+    config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Local
   end
 
   database_url =

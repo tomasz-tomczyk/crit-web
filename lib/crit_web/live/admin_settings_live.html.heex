@@ -247,6 +247,52 @@
         </fieldset>
       </div>
 
+      <div class="border-t border-(--crit-border) pt-6">
+        <h2 class="text-base font-semibold text-(--crit-fg-primary) mb-4">
+          Discussion notifications
+        </h2>
+        <label class="flex items-center gap-3 text-sm text-(--crit-fg-secondary)">
+          <input type="hidden" name={@form[:notifications_enabled].name} value="false" />
+          <input
+            type="checkbox"
+            id={@form[:notifications_enabled].id}
+            name={@form[:notifications_enabled].name}
+            value="true"
+            checked={@form[:notifications_enabled].value}
+            class="size-4 rounded border-(--crit-border) bg-(--crit-bg-page) text-(--crit-brand) focus:ring-(--crit-brand)"
+          /> Enable batched discussion email notifications
+        </label>
+        <p :if={!@smtp_configured} class="mt-1.5 text-xs text-(--crit-fg-muted)">
+          SMTP_HOST and SMTP_FROM must be configured before enabling this in production.
+        </p>
+
+        <% notifications_enabled =
+          Phoenix.HTML.Form.normalize_value("checkbox", @form[:notifications_enabled].value) %>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
+          <.input
+            field={@form[:notification_batch_minutes]}
+            type="number"
+            min="1"
+            label="Quiet window (minutes)"
+            disabled={!notifications_enabled}
+          />
+          <.input
+            field={@form[:notification_max_wait_minutes]}
+            type="number"
+            min="1"
+            label="Maximum wait (minutes)"
+            disabled={!notifications_enabled}
+          />
+          <.input
+            field={@form[:notification_retention_days]}
+            type="number"
+            min="0"
+            label="Retention days (0 keeps forever)"
+            disabled={!notifications_enabled}
+          />
+        </div>
+      </div>
+
       <div>
         <button
           type="submit"

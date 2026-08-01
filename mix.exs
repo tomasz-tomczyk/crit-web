@@ -75,6 +75,7 @@ defmodule Crit.MixProject do
       {:swoosh, "~> 1.25"},
       {:phoenix_swoosh, "~> 1.2"},
       {:gen_smtp, "~> 1.3"},
+      {:oban, "~> 2.20"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test}
