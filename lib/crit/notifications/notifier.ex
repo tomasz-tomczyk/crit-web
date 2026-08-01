@@ -13,7 +13,12 @@ defmodule Crit.Notifications.Notifier do
     more = max(length(items) - length(shown), 0)
     review_url = CritWeb.Endpoint.url() <> "/r/" <> batch.review.token
     settings_url = CritWeb.Endpoint.url() <> "/settings"
-    subject = "#{length(items)} new updates on your Crit review"
+    count = length(items)
+
+    subject =
+      if count == 1,
+        do: "1 new update on your Crit review",
+        else: "#{count} new updates on your Crit review"
 
     new()
     |> to(batch.recipient.email)

@@ -49,6 +49,7 @@ defmodule Crit.Repo.Migrations.AddNotificationSystem do
       add :review_id, references(:reviews, type: :binary_id, on_delete: :delete_all), null: false
       add :status, :string, null: false, default: "pending"
       add :first_event_at, :utc_datetime_usec, null: false
+      add :deliver_after, :utc_datetime_usec, null: false
       add :finished_at, :utc_datetime_usec
       timestamps(type: :utc_datetime_usec)
     end
@@ -58,10 +59,12 @@ defmodule Crit.Repo.Migrations.AddNotificationSystem do
              name: :notification_batches_pending_recipient_review_idx
            )
 
+    create index(:notification_batches, [:status, :deliver_after])
     create index(:notification_batches, [:status, :finished_at])
 
     create constraint(:notification_batches, :notification_batches_status_check,
-             check: "status IN ('pending', 'delivering', 'sent', 'cancelled', 'failed')"
+             check:
+               "status IN ('pending', 'delivering', 'retryable', 'sent', 'cancelled', 'failed')"
            )
 
     create constraint(:notification_batches, :notification_batches_finished_check,

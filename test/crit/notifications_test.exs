@@ -135,13 +135,17 @@ defmodule Crit.NotificationsTest do
 
     batch = Repo.one!(NotificationBatch)
 
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
     assert :ok =
              perform_job(DeliverBatchWorker, %{
                batch_id: batch.id
              })
 
     assert_email_sent(fn email ->
-      assert email.subject == "1 new updates on your Crit review"
+      assert email.subject == "1 new update on your Crit review"
       assert email.to == [{"", owner.email}]
       assert email.text_body =~ "Actor"
       assert email.html_body =~ "&lt;script&gt;"
@@ -160,6 +164,10 @@ defmodule Crit.NotificationsTest do
     review = review_fixture(%{user_id: owner.id})
     {:ok, _comment} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
     batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
 
     {:ok, _owner} =
       Crit.Accounts.update_preferences(owner, %{discussion_notifications_enabled: false})
@@ -196,6 +204,104 @@ defmodule Crit.NotificationsTest do
 
     assert Repo.aggregate(NotificationBatch, :count) == 0
     refute_enqueued(worker: DeliverBatchWorker)
+  end
+
+  test "later activity extends deliver_after without exceeding the max wait" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = Repo.one!(NotificationBatch)
+    first_deadline = batch.deliver_after
+
+    # Simulate time advancing a few minutes inside the quiet window.
+    past = DateTime.add(DateTime.utc_now(), -3 * 60, :second)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [first_event_at: past, deliver_after: DateTime.add(past, 10 * 60, :second)]
+    )
+
+    {:ok, _} =
+      Reviews.create_comment(
+        Scope.for_user(actor),
+        review,
+        valid_comment_attrs(%{"start_line" => 2, "end_line" => 2, "body" => "second"})
+      )
+
+    updated = Repo.get!(NotificationBatch, batch.id)
+
+    assert DateTime.after?(updated.deliver_after, first_deadline) or
+             DateTime.compare(updated.deliver_after, first_deadline) != :lt
+
+    max_deadline = DateTime.add(updated.first_event_at, 60 * 60, :second)
+    refute DateTime.after?(updated.deliver_after, max_deadline)
+    assert Repo.aggregate(NotificationItem, :count) == 2
+    assert Repo.aggregate(NotificationBatch, :count) == 1
+  end
+
+  test "worker snoozes when deliver_after is still in the future" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = Repo.one!(NotificationBatch)
+
+    assert {:snooze, seconds} =
+             perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+
+    assert seconds >= 1
+    assert Repo.get!(NotificationBatch, batch.id).status == :pending
+    refute_email_sent()
+  end
+
+  test "deleted comments empty a batch and cancel without sending" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, comment} =
+      Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
+    assert {:ok, _} = Reviews.delete_comment(Scope.for_user(actor), comment.id)
+    assert Repo.aggregate(NotificationItem, :count) == 0
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+    assert Repo.get!(NotificationBatch, batch.id).status == :cancelled
+    refute_email_sent()
+  end
+
+  test "activity while delivering opens a new pending batch" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [
+        status: :delivering,
+        deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)
+      ]
+    )
+
+    {:ok, _} =
+      Reviews.create_comment(
+        Scope.for_user(actor),
+        review,
+        valid_comment_attrs(%{"start_line" => 3, "end_line" => 3, "body" => "while sending"})
+      )
+
+    batches = Repo.all(from b in NotificationBatch, order_by: [asc: b.inserted_at])
+    assert length(batches) == 2
+    assert Enum.map(batches, & &1.status) == [:delivering, :pending]
   end
 
   defp enable_notifications! do

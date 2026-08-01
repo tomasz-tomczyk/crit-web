@@ -2,6 +2,9 @@ defmodule Crit.Notifications.DeliverBatchWorker do
   use Oban.Worker,
     queue: :notifications,
     max_attempts: 3,
+    # :incomplete (not the plan's narrower list) is correct here: uniqueness is
+    # keyed on batch_id, and each new pending digest gets a fresh batch_id. Oban
+    # also warns when in-flight states are omitted from unique checks.
     unique: [
       period: :infinity,
       fields: [:worker, :queue, :args],
@@ -20,17 +23,29 @@ defmodule Crit.Notifications.DeliverBatchWorker do
       nil ->
         :ok
 
-      %{status: status} when status in [:pending, :delivering] ->
-        deliver(job, id)
+      %{status: status} = batch when status in [:pending, :retryable, :delivering] ->
+        maybe_deliver(job, batch)
 
       _terminal ->
         :ok
     end
   end
 
-  defp deliver(job, id) do
-    Notifications.mark_delivering(id)
-    do_deliver(job, id)
+  defp maybe_deliver(job, batch) do
+    now = DateTime.utc_now()
+
+    if DateTime.after?(batch.deliver_after, now) do
+      {:snooze, max(DateTime.diff(batch.deliver_after, now, :second), 1)}
+    else
+      claim_and_deliver(job, batch.id)
+    end
+  end
+
+  defp claim_and_deliver(job, id) do
+    case Notifications.claim_for_delivery(id, job.attempt) do
+      {:ok, _batch} -> do_deliver(job, id)
+      :already_claimed -> :ok
+    end
   end
 
   defp do_deliver(job, id) do
@@ -80,6 +95,8 @@ defmodule Crit.Notifications.DeliverBatchWorker do
 
     if final? do
       Notifications.finish(batch.id, :failed)
+    else
+      Notifications.mark_retryable(batch.id)
     end
 
     Logger.warning("notification delivery failed",
