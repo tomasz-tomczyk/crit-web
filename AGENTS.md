@@ -92,7 +92,7 @@ Tests use `DataCase` (database) or `ConnCase` (HTTP). Test database: `crit_test`
 
 **E2E** (Playwright): `mise run e2e` is the one command — idempotent and self-bootstrapping, so a fresh worktree runs the suite without any manual `npm install`. It runs `npm ci` (root Playwright deps, which `wt step copy-ignored` can't copy because the source checkout never installs them), `npx playwright install chromium`, `npm install --prefix assets`, `mix assets.build`, ensures the DB is up, then `npx playwright test`. `playwright.config.ts`'s managed `webServer` starts Phoenix and runs ecto.create/migrate itself. Mirrors `.github/workflows/e2e.yml`.
 
-CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, Elixir 1.19 / OTP 28), with `mix coveralls.json` instead of plain `mix test` for Codecov upload.
+CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, Elixir 1.19 / OTP 28), with `mix coveralls.json` instead of plain `mix test` for Codecov upload. `.github/workflows/coverage.yml` uploads the same coverage on push to `main`.
 </important>
 
 <important if="you need to know the route surface or are adding/modifying a route">
