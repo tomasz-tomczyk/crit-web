@@ -25,6 +25,19 @@ defmodule Crit.ReviewsTest do
 
   defp default_files, do: [%{"path" => "test.md", "content" => "# Hello"}]
 
+  describe "display_filename/1" do
+    test "prefers embedded files, then snapshot, then Review fallback" do
+      assert Reviews.display_filename(%{files: [%{file_path: "embedded.md"}]}) == "embedded.md"
+      assert Reviews.display_filename(%{files: [%{"file_path" => "string-key.md"}]}) == "string-key.md"
+      assert Reviews.display_filename(%{}) == "Review"
+
+      review = review_fixture()
+      # Drop the in-memory files assoc so the snapshot/DB path runs.
+      bare = %{review | files: nil}
+      assert Reviews.display_filename(bare) == "test.md"
+    end
+  end
+
   describe "create_review/6" do
     test "anonymous → user_id nil" do
       scope = anon_scope()

@@ -1,3 +1,9 @@
+defmodule Crit.NotificationsTest.FailingMailer do
+  use Swoosh.Adapter
+
+  def deliver(_email, _config), do: {:error, :smtp_down}
+end
+
 defmodule Crit.NotificationsTest do
   use Crit.DataCase, async: false
   use Oban.Testing, repo: Crit.Repo
@@ -381,6 +387,240 @@ defmodule Crit.NotificationsTest do
     batches = Repo.all(from b in NotificationBatch, order_by: [asc: b.inserted_at])
     assert length(batches) == 2
     assert Enum.map(batches, & &1.status) == [:delivering, :pending]
+  end
+
+  test "instance notifications disabled skips enqueue" do
+    setting = Settings.get()
+
+    {:ok, _} =
+      Settings.update(%{
+        max_document_mb: Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+        max_comments_per_review: setting.max_comments_per_review,
+        max_comment_body_kb: Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+        allowed_comment_policies: setting.allowed_comment_policies,
+        allowed_review_visibilities: setting.allowed_review_visibilities,
+        notifications_enabled: false
+      })
+
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    assert {:ok, _} =
+             Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+
+    assert Repo.aggregate(NotificationBatch, :count) == 0
+  end
+
+  test "missing or terminal batches are no-ops" do
+    assert :ok =
+             perform_job(DeliverBatchWorker, %{batch_id: Ecto.UUID.generate()})
+
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [
+        status: :sent,
+        finished_at: DateTime.utc_now(),
+        deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)
+      ]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+    refute_email_sent()
+  end
+
+  test "already-claimed delivering batch is skipped on first attempt" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [
+        status: :delivering,
+        deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)
+      ]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id}, attempt: 1)
+    refute_email_sent()
+    assert Repo.get!(NotificationBatch, batch.id).status == :delivering
+  end
+
+  test "retry attempt reclaims a delivering batch" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [
+        status: :delivering,
+        deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)
+      ]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id}, attempt: 2)
+    assert Repo.get!(NotificationBatch, batch.id).status == :sent
+  end
+
+  test "delivery failure marks retryable then failed on final attempt" do
+    original = Application.get_env(:crit, Crit.Mailer)
+    Application.put_env(:crit, Crit.Mailer, adapter: Crit.NotificationsTest.FailingMailer)
+
+    on_exit(fn -> Application.put_env(:crit, Crit.Mailer, original) end)
+
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = make_due!(Repo.one!(NotificationBatch))
+
+    assert {:error, :smtp_down} =
+             perform_job(DeliverBatchWorker, %{batch_id: batch.id}, attempt: 1)
+
+    assert Repo.get!(NotificationBatch, batch.id).status == :retryable
+
+    assert {:error, :smtp_down} =
+             perform_job(DeliverBatchWorker, %{batch_id: batch.id}, attempt: 3)
+
+    assert Repo.get!(NotificationBatch, batch.id).status == :failed
+  end
+
+  test "instance disabled at delivery cancels without sending" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = make_due!(Repo.one!(NotificationBatch))
+
+    setting = Settings.get()
+
+    {:ok, _} =
+      Settings.update(%{
+        max_document_mb: Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+        max_comments_per_review: setting.max_comments_per_review,
+        max_comment_body_kb: Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+        allowed_comment_policies: setting.allowed_comment_policies,
+        allowed_review_visibilities: setting.allowed_review_visibilities,
+        notifications_enabled: false
+      })
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+    assert Repo.get!(NotificationBatch, batch.id).status == :cancelled
+    refute_email_sent()
+  end
+
+  test "digest names three-plus actors, truncates long names, and caps items" do
+    owner = user_fixture(%{name: "Owner"})
+    a = user_fixture(%{name: "Alex Example"})
+    b = user_fixture(%{name: "Blair Example"})
+    c = user_fixture(%{name: "Casey Example"})
+
+    review =
+      review_fixture(%{
+        user_id: owner.id,
+        files: [
+          %{
+            "path" => "very-long-document-name-for-truncation.md",
+            "content" => Enum.map_join(1..30, "\n", &"line #{&1}")
+          }
+        ]
+      })
+
+    long_body = String.duplicate("word ", 80)
+
+    for {actor, line} <- [{a, 1}, {b, 2}, {c, 3}] do
+      assert {:ok, _} =
+               Reviews.create_comment(
+                 Scope.for_user(actor),
+                 review,
+                 valid_comment_attrs(%{
+                   "start_line" => line,
+                   "end_line" => line,
+                   "body" => long_body
+                 })
+               )
+    end
+
+    # Extra activity past the digest cap (20 shown).
+    for line <- 4..22 do
+      assert {:ok, _} =
+               Reviews.create_comment(
+                 Scope.for_user(a),
+                 review,
+                 valid_comment_attrs(%{
+                   "start_line" => line,
+                   "end_line" => line,
+                   "body" => "extra #{line}"
+                 })
+               )
+    end
+
+    batch = make_due!(Repo.one!(NotificationBatch))
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+
+    assert_email_sent(fn email ->
+      assert email.subject =~ "Alex and 2 others on"
+      assert email.subject =~ "…"
+      assert email.html_body =~ "Alex and 2 others commented on"
+      assert email.html_body =~ "Open review — and"
+      assert email.text_body =~ "…and"
+      assert email.html_body =~ "…"
+      true
+    end)
+  end
+
+  test "cleanup worker deletes old terminal batches and no-ops when retention is forever" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+    {:ok, _} = Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+    batch = Repo.one!(NotificationBatch)
+
+    old = DateTime.add(DateTime.utc_now(), -40, :day)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [status: :sent, finished_at: old, deliver_after: old]
+    )
+
+    assert :ok = perform_job(Crit.Notifications.CleanupWorker, %{})
+    assert Repo.get(NotificationBatch, batch.id) == nil
+
+    setting = Settings.get()
+
+    {:ok, _} =
+      Settings.update(%{
+        max_document_mb: Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+        max_comments_per_review: setting.max_comments_per_review,
+        max_comment_body_kb: Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+        allowed_comment_policies: setting.allowed_comment_policies,
+        allowed_review_visibilities: setting.allowed_review_visibilities,
+        notifications_enabled: true,
+        notification_retention_days: 0
+      })
+
+    assert :ok = perform_job(Crit.Notifications.CleanupWorker, %{})
+  end
+
+  test "notification batch changeset validates required fields" do
+    changeset = Crit.Notifications.NotificationBatch.changeset(%Crit.Notifications.NotificationBatch{}, %{})
+    refute changeset.valid?
+  end
+
+  defp make_due!(batch) do
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
+    Repo.get!(NotificationBatch, batch.id)
   end
 
   defp enable_notifications! do

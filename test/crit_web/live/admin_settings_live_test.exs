@@ -139,5 +139,34 @@ defmodule CritWeb.AdminSettingsLiveTest do
 
       assert html =~ "must be greater than"
     end
+
+    test "save refuses enabling notifications without a mailer", %{conn: conn} do
+      original = Application.get_env(:crit, Crit.Mailer)
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      System.delete_env("SMTP_HOST")
+      System.delete_env("SMTP_FROM")
+      on_exit(fn -> Application.put_env(:crit, Crit.Mailer, original) end)
+
+      conn = login(conn, create_admin!())
+      {:ok, view, _html} = live(conn, ~p"/admin/settings")
+
+      html =
+        render_submit(view, "save", %{
+          "setting" => %{
+            "max_document_mb" => "10",
+            "max_comments_per_review" => "100",
+            "max_comment_body_kb" => "50",
+            "allowed_comment_policies" => ["open"],
+            "allowed_review_visibilities" => ["unlisted"],
+            "notifications_enabled" => "true",
+            "notification_batch_minutes" => "10",
+            "notification_max_wait_minutes" => "60",
+            "notification_retention_days" => "30"
+          }
+        })
+
+      assert html =~ "Configure a mailer"
+      refute Settings.get().notifications_enabled
+    end
   end
 end
