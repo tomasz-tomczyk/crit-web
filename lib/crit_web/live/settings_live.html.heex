@@ -329,11 +329,11 @@
         </section>
 
         <%!-- Reviews section --%>
-        <section :if={!@selfhosted} id="reviews" class="mb-12">
+        <section :if={!@selfhosted or @notifications_enabled} id="reviews" class="mb-12">
           <h2 class="text-lg font-semibold text-(--crit-fg-primary) pb-3 border-b border-(--crit-border) mb-6">
             Reviews
           </h2>
-          <div class="flex items-start justify-between gap-4">
+          <div :if={!@selfhosted} class="flex items-start justify-between gap-4">
             <div>
               <div class="text-sm font-medium text-(--crit-fg-primary)">
                 Keep reviews
@@ -362,7 +362,48 @@
             </button>
           </div>
 
-          <div class="flex items-start justify-between gap-4 mt-6 pt-6 border-t border-(--crit-border)">
+          <div
+            :if={@notifications_enabled}
+            class={[
+              "flex items-start justify-between gap-4",
+              !@selfhosted && "mt-6 pt-6 border-t border-(--crit-border)"
+            ]}
+          >
+            <div>
+              <div class="text-sm font-medium text-(--crit-fg-primary)">
+                Discussion notification emails
+              </div>
+              <div class="text-xs text-(--crit-fg-muted) mt-1">
+                Receive batched updates when other people comment or reply on your reviews.
+              </div>
+            </div>
+            <button
+              id="discussion-notifications-toggle"
+              phx-click="toggle_discussion_notifications"
+              role="switch"
+              aria-checked={to_string(@discussion_notifications_enabled)}
+              class={[
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                if(@discussion_notifications_enabled,
+                  do: "bg-(--crit-brand)",
+                  else: "bg-(--crit-border)"
+                )
+              ]}
+            >
+              <span class={[
+                "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out",
+                if(@discussion_notifications_enabled,
+                  do: "translate-x-5",
+                  else: "translate-x-0"
+                )
+              ]} />
+            </button>
+          </div>
+
+          <div
+            :if={!@selfhosted}
+            class="flex items-start justify-between gap-4 mt-6 pt-6 border-t border-(--crit-border)"
+          >
             <div>
               <div class="text-sm font-medium text-(--crit-fg-primary)">
                 Email me about new features and releases

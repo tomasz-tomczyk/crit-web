@@ -12,6 +12,17 @@ config :crit,
   generators: [timestamp_type: :utc_datetime, binary_id: true],
   smtp_from: "test@localhost"
 
+config :crit, Oban,
+  repo: Crit.Repo,
+  queues: [notifications: 10],
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"17 3 * * *", Crit.Notifications.CleanupWorker}
+     ]},
+    {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7}
+  ]
+
 # Swoosh: we only use SMTP / Local / Test adapters, no HTTP-based delivery,
 # so the optional :hackney api_client dependency isn't needed.
 config :swoosh, :api_client, false

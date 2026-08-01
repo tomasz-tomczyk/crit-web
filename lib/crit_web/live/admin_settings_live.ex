@@ -12,6 +12,7 @@ defmodule CritWeb.AdminSettingsLive do
       |> assign(:page_title, "Admin — Settings")
       |> assign(:noindex, true)
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
+      |> assign(:mailer_configured, Settings.mailer_configured?())
       |> assign(:setting, setting)
       |> assign(:form, build_form(setting))
 
@@ -34,13 +35,21 @@ defmodule CritWeb.AdminSettingsLive do
   def handle_event("save", %{"setting" => params}, socket) do
     params = normalize_policy_params(params)
 
-    case Settings.update(params) do
-      {:ok, setting} ->
+    with :ok <- validate_notifications_mailer(params, socket.assigns.mailer_configured),
+         {:ok, setting} <- Settings.update(params) do
+      {:noreply,
+       socket
+       |> assign(:setting, setting)
+       |> assign(:form, build_form(setting))
+       |> put_flash(:info, "Settings updated.")}
+    else
+      {:error, :mailer_required} ->
         {:noreply,
-         socket
-         |> assign(:setting, setting)
-         |> assign(:form, build_form(setting))
-         |> put_flash(:info, "Settings updated.")}
+         put_flash(
+           socket,
+           :error,
+           "Configure a mailer (Local adapter, or SMTP_HOST and SMTP_FROM) before enabling notifications."
+         )}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, as: "setting"))}
@@ -64,4 +73,18 @@ defmodule CritWeb.AdminSettingsLive do
     |> Map.put_new("allowed_comment_policies", [])
     |> Map.put_new("allowed_review_visibilities", [])
   end
+
+  defp validate_notifications_mailer(params, mailer_configured?) do
+    if notifications_enabled_param?(params) and not mailer_configured? do
+      {:error, :mailer_required}
+    else
+      :ok
+    end
+  end
+
+  defp notifications_enabled_param?(%{"notifications_enabled" => value})
+       when value in [true, "true"],
+       do: true
+
+  defp notifications_enabled_param?(_), do: false
 end

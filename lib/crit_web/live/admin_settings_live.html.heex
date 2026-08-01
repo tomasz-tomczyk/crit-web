@@ -247,6 +247,180 @@
         </fieldset>
       </div>
 
+      <div class="border-t border-(--crit-border) pt-6">
+        <h2 class="text-base font-semibold text-(--crit-fg-primary) mb-4">
+          Discussion notifications
+        </h2>
+        <label class={[
+          "flex items-center gap-3 text-sm text-(--crit-fg-secondary)",
+          not @mailer_configured && "opacity-60"
+        ]}>
+          <input
+            type="hidden"
+            name={@form[:notifications_enabled].name}
+            value={
+              if @mailer_configured,
+                do: "false",
+                else: to_string(!!@form[:notifications_enabled].value)
+            }
+          />
+          <input
+            type="checkbox"
+            id={@form[:notifications_enabled].id}
+            name={@form[:notifications_enabled].name}
+            value="true"
+            checked={@form[:notifications_enabled].value}
+            disabled={!@mailer_configured}
+            class="size-4 rounded border-(--crit-border) bg-(--crit-bg-page) text-(--crit-brand) focus:ring-(--crit-brand)"
+          /> Enable batched discussion email notifications
+        </label>
+        <p :if={!@mailer_configured} class="mt-1.5 text-xs text-(--crit-fg-muted)">
+          Configure the Local mailer adapter, or set SMTP_HOST and SMTP_FROM, then restart.
+        </p>
+
+        <% notifications_enabled =
+          Phoenix.HTML.Form.normalize_value("checkbox", @form[:notifications_enabled].value) %>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
+          <div class={not notifications_enabled && "opacity-60"}>
+            <label
+              for={@form[:notification_batch_minutes].id}
+              class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+            >
+              Quiet window (minutes)
+            </label>
+            <input
+              type="number"
+              id={@form[:notification_batch_minutes].id}
+              name={@form[:notification_batch_minutes].name}
+              value={
+                Phoenix.HTML.Form.normalize_value(
+                  "number",
+                  @form[:notification_batch_minutes].value
+                )
+              }
+              min="1"
+              required
+              disabled={!notifications_enabled}
+              class={[
+                "w-full rounded-md px-3 py-2 text-sm border focus:outline-none focus:border-(--crit-brand)",
+                if(notifications_enabled,
+                  do: "bg-(--crit-bg-page) text-(--crit-fg-primary) cursor-text",
+                  else:
+                    "bg-(--crit-bg-elevated) text-(--crit-fg-muted) cursor-not-allowed pointer-events-none"
+                ),
+                if(
+                  Phoenix.Component.used_input?(@form[:notification_batch_minutes]) and
+                    @form[:notification_batch_minutes].errors != [],
+                  do: "border-red-500",
+                  else: "border-(--crit-border)"
+                )
+              ]}
+            />
+            <p class="mt-1.5 text-xs text-(--crit-fg-muted)">
+              Wait this long after the latest activity before sending a digest.
+            </p>
+            <p
+              :for={err <- @form[:notification_batch_minutes].errors}
+              :if={Phoenix.Component.used_input?(@form[:notification_batch_minutes])}
+              class="mt-1.5 text-xs text-red-500"
+            >
+              {CritWeb.CoreComponents.translate_error(err)}
+            </p>
+          </div>
+
+          <div class={not notifications_enabled && "opacity-60"}>
+            <label
+              for={@form[:notification_max_wait_minutes].id}
+              class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+            >
+              Maximum wait (minutes)
+            </label>
+            <input
+              type="number"
+              id={@form[:notification_max_wait_minutes].id}
+              name={@form[:notification_max_wait_minutes].name}
+              value={
+                Phoenix.HTML.Form.normalize_value(
+                  "number",
+                  @form[:notification_max_wait_minutes].value
+                )
+              }
+              min="1"
+              required
+              disabled={!notifications_enabled}
+              class={[
+                "w-full rounded-md px-3 py-2 text-sm border focus:outline-none focus:border-(--crit-brand)",
+                if(notifications_enabled,
+                  do: "bg-(--crit-bg-page) text-(--crit-fg-primary) cursor-text",
+                  else:
+                    "bg-(--crit-bg-elevated) text-(--crit-fg-muted) cursor-not-allowed pointer-events-none"
+                ),
+                if(
+                  Phoenix.Component.used_input?(@form[:notification_max_wait_minutes]) and
+                    @form[:notification_max_wait_minutes].errors != [],
+                  do: "border-red-500",
+                  else: "border-(--crit-border)"
+                )
+              ]}
+            />
+            <p class="mt-1.5 text-xs text-(--crit-fg-muted)">
+              Cap how long continuous activity can postpone a digest.
+            </p>
+            <p
+              :for={err <- @form[:notification_max_wait_minutes].errors}
+              :if={Phoenix.Component.used_input?(@form[:notification_max_wait_minutes])}
+              class="mt-1.5 text-xs text-red-500"
+            >
+              {CritWeb.CoreComponents.translate_error(err)}
+            </p>
+          </div>
+
+          <div class={not notifications_enabled && "opacity-60"}>
+            <label
+              for={@form[:notification_retention_days].id}
+              class="block text-sm font-medium text-(--crit-fg-primary) mb-1.5"
+            >
+              Retention days (0 keeps forever)
+            </label>
+            <input
+              type="number"
+              id={@form[:notification_retention_days].id}
+              name={@form[:notification_retention_days].name}
+              value={
+                Phoenix.HTML.Form.normalize_value(
+                  "number",
+                  @form[:notification_retention_days].value
+                )
+              }
+              min="0"
+              required
+              disabled={!notifications_enabled}
+              class={[
+                "w-full rounded-md px-3 py-2 text-sm border focus:outline-none focus:border-(--crit-brand)",
+                if(notifications_enabled,
+                  do: "bg-(--crit-bg-page) text-(--crit-fg-primary) cursor-text",
+                  else:
+                    "bg-(--crit-bg-elevated) text-(--crit-fg-muted) cursor-not-allowed pointer-events-none"
+                ),
+                if(
+                  Phoenix.Component.used_input?(@form[:notification_retention_days]) and
+                    @form[:notification_retention_days].errors != [],
+                  do: "border-red-500",
+                  else: "border-(--crit-border)"
+                )
+              ]}
+            />
+            <p
+              :for={err <- @form[:notification_retention_days].errors}
+              :if={Phoenix.Component.used_input?(@form[:notification_retention_days])}
+              class="mt-1.5 text-xs text-red-500"
+            >
+              {CritWeb.CoreComponents.translate_error(err)}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div>
         <button
           type="submit"

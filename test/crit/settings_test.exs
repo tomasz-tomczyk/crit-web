@@ -100,6 +100,20 @@ defmodule Crit.SettingsTest do
       refute changeset.valid?
       assert {_msg, _} = changeset.errors[:max_comment_body_kb]
     end
+
+    test "allows zero notification retention to keep terminal records forever" do
+      setting = Settings.get()
+
+      assert {:ok, updated} =
+               Settings.update(%{
+                 max_document_mb: Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+                 max_comments_per_review: setting.max_comments_per_review,
+                 max_comment_body_kb: Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+                 notification_retention_days: 0
+               })
+
+      assert updated.notification_retention_days == 0
+    end
   end
 
   describe "singleton invariant" do
@@ -143,6 +157,68 @@ defmodule Crit.SettingsTest do
         })
 
       assert Settings.default_visibility(setting) == nil
+    end
+  end
+
+  describe "mailer_configured?/0" do
+    setup do
+      original = Application.get_env(:crit, Crit.Mailer)
+      on_exit(fn -> Application.put_env(:crit, Crit.Mailer, original) end)
+      :ok
+    end
+
+    test "true for Local adapter" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.Local)
+      assert Settings.mailer_configured?()
+    end
+
+    test "true for Test adapter" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.Test)
+      assert Settings.mailer_configured?()
+    end
+
+    test "true for SMTP adapter when SMTP_HOST and SMTP_FROM are set" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      System.put_env("SMTP_HOST", "smtp.example.com")
+      System.put_env("SMTP_FROM", "crit@example.com")
+
+      on_exit(fn ->
+        System.delete_env("SMTP_HOST")
+        System.delete_env("SMTP_FROM")
+      end)
+
+      assert Settings.mailer_configured?()
+    end
+
+    test "false for SMTP adapter when env vars are missing" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      System.delete_env("SMTP_HOST")
+      System.delete_env("SMTP_FROM")
+
+      refute Settings.mailer_configured?()
+    end
+
+    test "false for unknown adapters" do
+      Application.put_env(:crit, Crit.Mailer, adapter: SomeUnknownAdapter)
+      refute Settings.mailer_configured?()
+    end
+  end
+
+  describe "notification timing validation" do
+    test "rejects max wait shorter than the batch window" do
+      setting = Settings.get()
+
+      assert {:error, changeset} =
+               Settings.update(%{
+                 max_document_mb: Crit.Setting.bytes_to_mb(setting.max_document_bytes),
+                 max_comments_per_review: setting.max_comments_per_review,
+                 max_comment_body_kb: Crit.Setting.bytes_to_kb(setting.max_comment_body_bytes),
+                 notification_batch_minutes: 30,
+                 notification_max_wait_minutes: 10
+               })
+
+      assert {"must be at least the batch window", _} =
+               changeset.errors[:notification_max_wait_minutes]
     end
   end
 end

@@ -81,3 +81,5 @@ config :crit, :oauth_provider,
 config :bcrypt_elixir, :log_rounds, 4
 
 config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Test
+
+config :crit, Oban, testing: :manual, queues: false, plugins: false

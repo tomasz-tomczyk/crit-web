@@ -277,13 +277,10 @@ defmodule Crit.Accounts do
     :ok
   end
 
-  @doc """
-  Updates the keep_reviews setting for a user.
-  Returns `{:ok, user}` or `{:error, changeset}`.
-  """
-  def update_keep_reviews(%User{} = user, keep_reviews) when is_boolean(keep_reviews) do
+  @doc "Updates typed user preferences. Returns `{:ok, user}` or `{:error, changeset}`."
+  def update_preferences(%User{} = user, preferences) when is_map(preferences) do
     user
-    |> User.settings_changeset(%{keep_reviews: keep_reviews})
+    |> User.settings_changeset(%{preferences: preferences})
     |> Repo.update()
   end
 

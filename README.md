@@ -78,11 +78,11 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 | `SECRET_KEY_BASE` | Yes | — | Session signing key. Generate with `openssl rand -base64 64` |
 | `SELFHOSTED` | Yes | — | Set to `true` to enable self-hosted mode (dashboard, no marketing pages) |
 | `LOCAL_REGISTRATION_ENABLED` | No | `true` | Set to `false` to close `/users/register` after creating the accounts you trust |
-| `SMTP_HOST` | No | — | SMTP relay hostname. When set, password-reset and email-change confirmations are sent via SMTP; when unset, those emails go to the local Swoosh adapter |
+| `SMTP_HOST` | No† | — | SMTP relay hostname. Required with `SMTP_FROM` when discussion notifications are enabled; when unset, outgoing mail stays in the local Swoosh adapter |
 | `SMTP_PORT` | No | `587` | SMTP port. `465` uses implicit TLS; other ports use STARTTLS |
 | `SMTP_USERNAME` | No | — | SMTP auth username |
 | `SMTP_PASSWORD` | No | — | SMTP auth password |
-| `SMTP_FROM` | No† | — | From address for outgoing email (e.g. `noreply@yourdomain.com`). Required when `SMTP_HOST` is set |
+| `SMTP_FROM` | No† | — | From address for outgoing email (e.g. `noreply@yourdomain.com`). Required when `SMTP_HOST` is set or discussion notifications are enabled |
 | `GITHUB_CLIENT_ID` | No | — | GitHub OAuth App client ID. Set with `GITHUB_CLIENT_SECRET` to enable GitHub login. When set, OAuth is required to access the dashboard and view reviews |
 | `GITHUB_CLIENT_SECRET` | No | — | GitHub OAuth App client secret |
 | `OAUTH_CLIENT_ID` | No | — | Generic OIDC/OAuth2 client ID for Google, GitLab, Okta, etc. Use with `OAUTH_CLIENT_SECRET` and `OAUTH_BASE_URL`. Mutually exclusive with `GITHUB_CLIENT_ID` |
@@ -101,6 +101,20 @@ export CRIT_SHARE_URL=https://reviews.yourdomain.com
 
 \* Set either `DATABASE_URL` **or** all four of `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
 | `POOL_SIZE` | No | `10` | Database connection pool size |
+
+### Discussion notification email
+
+Review discussion digests are disabled by default. Configure `SMTP_HOST` and
+`SMTP_FROM` (plus credentials when required), then enable notifications in
+**Admin → Settings**. The same page controls the quiet window, maximum batching
+delay, and terminal-record retention. Users can opt out under **Settings →
+Reviews** when notifications are enabled for the instance. Set retention to
+`0` to keep terminal notification records indefinitely.
+
+Digests and organization invitations share `Crit.Mailer`. With no SMTP host,
+mail uses the local Swoosh adapter. Delivery is durable and at-least-once: an
+uncommon crash after SMTP accepts a message but before Crit records success can
+result in a duplicate email.
 
 ### Behind a reverse proxy
 

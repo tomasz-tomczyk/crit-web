@@ -124,10 +124,10 @@ defmodule CritWeb.ReviewLive do
          |> assign(:show_round_diff, false)
          |> assign(:prev_round_snapshots, %{})
          |> assign(:diff_mode, "split")
-         |> assign(:page_title, display_filename(review))
+         |> assign(:page_title, Reviews.display_filename(review))
          |> assign(
            :meta_description,
-           "Shared review of #{display_filename(review)} on Crit. View inline comments and add your own feedback."
+           "Shared review of #{Reviews.display_filename(review)} on Crit. View inline comments and add your own feedback."
          )
          |> assign(:noindex, not public?)
          |> assign(:og_type, "article")
@@ -589,9 +589,6 @@ defmodule CritWeb.ReviewLive do
       "request_path" => conn.request_path
     }
   end
-
-  defp display_filename(%{files: [first | _]}), do: first.file_path
-  defp display_filename(_), do: "Review"
 
   defp can_comment?(_scope, %Review{comment_policy: :disallowed}), do: false
   defp can_comment?(%Scope{user: nil}, %Review{comment_policy: :logged_in_only}), do: false

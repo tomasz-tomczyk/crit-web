@@ -127,6 +127,12 @@ defmodule Crit.Statistics do
     :ok
   end
 
+  @doc false
+  def increment_comment(_repo, _changes) do
+    :ok = increment_comment()
+    {:ok, :incremented}
+  end
+
   @doc "Returns aggregate stats for the self-hosted dashboard."
   def dashboard_stats do
     totals = totals()

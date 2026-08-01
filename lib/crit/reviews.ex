@@ -2,9 +2,36 @@ defmodule Crit.Reviews do
   @moduledoc "Context for reviews and comments."
 
   import Ecto.Query
-  alias Crit.{Repo, Review, Comment, ReviewRoundSnapshot, Settings, Statistics, User}
+
+  alias Crit.{
+    Repo,
+    Review,
+    Comment,
+    Notifications,
+    ReviewRoundSnapshot,
+    Settings,
+    Statistics,
+    User
+  }
+
   alias Crit.Accounts.Scope
   alias Crit.Organizations
+
+  @doc "Returns the review-page label used for titles and notification digests."
+  def display_filename(%{files: [%{file_path: path} | _]}) when is_binary(path), do: path
+  def display_filename(%{files: [%{"file_path" => path} | _]}) when is_binary(path), do: path
+
+  def display_filename(%Review{id: id, review_round: round}) do
+    Repo.one(
+      from s in ReviewRoundSnapshot,
+        where: s.review_id == ^id and s.round_number == ^round,
+        order_by: [asc: s.position],
+        limit: 1,
+        select: s.file_path
+    ) || "Review"
+  end
+
+  def display_filename(_review), do: "Review"
 
   @doc "Fetch a review by its token, preloading comments sorted by start_line."
   def get_by_token(token) do
@@ -79,26 +106,32 @@ defmodule Crit.Reviews do
     end
   end
 
-  defp do_create_comment(%Scope{} = scope, %Review{id: review_id}, attrs, opts) do
+  defp do_create_comment(%Scope{} = scope, %Review{id: review_id} = review, attrs, opts) do
     user_id = Scope.user_id(scope)
     identity = scope.identity
     display_name = scope.display_name
     file_path = Keyword.get(opts, :file_path)
 
-    %Comment{}
-    |> Comment.create_changeset(attrs)
-    |> Ecto.Changeset.put_change(:review_id, review_id)
-    |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
-    |> Ecto.Changeset.put_change(:author_display_name, display_name)
-    |> Ecto.Changeset.put_change(:user_id, user_id)
-    |> then(fn cs ->
-      if file_path, do: Ecto.Changeset.put_change(cs, :file_path, file_path), else: cs
-    end)
-    |> Repo.insert()
-    |> tap(fn
-      {:ok, _} -> Statistics.increment_comment()
-      _ -> :ok
-    end)
+    changeset =
+      %Comment{}
+      |> Comment.create_changeset(attrs)
+      |> Ecto.Changeset.put_change(:review_id, review_id)
+      |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
+      |> Ecto.Changeset.put_change(:author_display_name, display_name)
+      |> Ecto.Changeset.put_change(:user_id, user_id)
+      |> then(fn cs ->
+        if file_path, do: Ecto.Changeset.put_change(cs, :file_path, file_path), else: cs
+      end)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:comment, changeset)
+    |> add_comment_side_effects(scope, review)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{comment: comment}} -> {:ok, comment}
+      {:error, :comment, changeset, _changes} -> {:error, changeset}
+      {:error, _step, reason, _changes} -> {:error, reason}
+    end
   end
 
   defp check_comment_policy(_scope, %Review{comment_policy: :disallowed}),
@@ -855,7 +888,8 @@ defmodule Crit.Reviews do
         on: u.id == r.user_id,
         where:
           r.last_activity_at < ^cutoff and
-            (is_nil(u.id) or u.keep_reviews == false),
+            (is_nil(u.id) or
+               fragment("COALESCE((?->>'keep_reviews')::boolean, false)", u.preferences) == false),
         select: r.id
 
     ids_query =
@@ -1246,32 +1280,42 @@ defmodule Crit.Reviews do
 
       {parent, review} ->
         with :ok <- check_comment_policy(scope, review) do
-          do_create_reply(scope, parent, attrs)
+          do_create_reply(scope, review, parent, attrs)
         end
     end
   end
 
-  defp do_create_reply(%Scope{} = scope, %Comment{} = parent, attrs) do
+  defp do_create_reply(%Scope{} = scope, %Review{} = review, %Comment{} = parent, attrs) do
     user_id = Scope.user_id(scope)
     identity = scope.identity
     display_name = scope.display_name
 
-    %Comment{}
-    |> Comment.reply_changeset(attrs)
-    |> Ecto.Changeset.put_change(:parent_id, parent.id)
-    |> Ecto.Changeset.put_change(:review_id, parent.review_id)
-    |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
-    |> Ecto.Changeset.put_change(:user_id, user_id)
-    |> Ecto.Changeset.put_change(:author_display_name, display_name)
-    |> Repo.insert()
-    |> case do
-      {:ok, reply} ->
-        Statistics.increment_comment()
-        {:ok, Repo.preload(reply, :user)}
+    changeset =
+      %Comment{}
+      |> Comment.reply_changeset(attrs)
+      |> Ecto.Changeset.put_change(:parent_id, parent.id)
+      |> Ecto.Changeset.put_change(:review_id, parent.review_id)
+      |> Ecto.Changeset.put_change(:author_identity, if(user_id, do: nil, else: identity))
+      |> Ecto.Changeset.put_change(:user_id, user_id)
+      |> Ecto.Changeset.put_change(:author_display_name, display_name)
 
-      other ->
-        other
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:comment, changeset)
+    |> add_comment_side_effects(scope, review)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{comment: reply}} -> {:ok, Repo.preload(reply, :user)}
+      {:error, :comment, changeset, _changes} -> {:error, changeset}
+      {:error, _step, reason, _changes} -> {:error, reason}
     end
+  end
+
+  defp add_comment_side_effects(multi, scope, review) do
+    multi
+    |> Ecto.Multi.run(:statistics, &Statistics.increment_comment/2)
+    |> Ecto.Multi.run(:notifications, fn _repo, %{comment: comment} ->
+      Notifications.record_activity(scope, review, comment)
+    end)
   end
 
   @doc "Update a reply's body if the caller's scope owns it. See `update_comment/3` for ownership rules."

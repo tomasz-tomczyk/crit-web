@@ -23,7 +23,12 @@ defmodule CritWeb.SettingsLive do
       |> assign(:new_token_plaintext, nil)
       |> assign(:new_token_name, "")
       |> assign(:delete_confirmation, "")
-      |> assign(:keep_reviews, user.keep_reviews)
+      |> assign(:keep_reviews, user.preferences.keep_reviews)
+      |> assign(
+        :discussion_notifications_enabled,
+        user.preferences.discussion_notifications_enabled
+      )
+      |> assign(:notifications_enabled, Crit.Settings.get().notifications_enabled)
       |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
       |> assign(:orgs, Organizations.list_user_organizations(socket.assigns.current_scope))
@@ -123,7 +128,7 @@ defmodule CritWeb.SettingsLive do
     user = scope.user
     new_value = !socket.assigns.keep_reviews
 
-    case Accounts.update_keep_reviews(user, new_value) do
+    case Accounts.update_preferences(user, %{keep_reviews: new_value}) do
       {:ok, updated_user} ->
         {:noreply,
          socket
@@ -142,6 +147,23 @@ defmodule CritWeb.SettingsLive do
         {:noreply, assign(socket, :marketing_opted_in, new_value)}
 
       {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update preference.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_discussion_notifications", _params, socket) do
+    %{current_scope: scope} = socket.assigns
+    enabled = !socket.assigns.discussion_notifications_enabled
+
+    case Accounts.update_preferences(scope.user, %{discussion_notifications_enabled: enabled}) do
+      {:ok, updated_user} ->
+        {:noreply,
+         socket
+         |> assign(:discussion_notifications_enabled, enabled)
+         |> assign(:current_scope, Scope.put_user(scope, updated_user))}
+
+      {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to update preference.")}
     end
   end

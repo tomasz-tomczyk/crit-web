@@ -38,6 +38,12 @@ services:
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       SELFHOSTED: "true"
       PHX_HOST: ${PHX_HOST:-localhost}
+      # Configure both before enabling discussion notifications in Admin → Settings.
+      # SMTP_HOST: ${SMTP_HOST}
+      # SMTP_PORT: ${SMTP_PORT:-587}
+      # SMTP_USERNAME: ${SMTP_USERNAME}
+      # SMTP_PASSWORD: ${SMTP_PASSWORD}
+      # SMTP_FROM: ${SMTP_FROM}
       # PREVIEW_HOST: ${PREVIEW_HOST}  # optional — isolate preview iframes on a separate host
       PORT: ${PORT:-4000}
       PHX_SERVER: "true"

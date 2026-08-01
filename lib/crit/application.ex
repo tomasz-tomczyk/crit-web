@@ -13,6 +13,7 @@ defmodule Crit.Application do
       [
         CritWeb.Telemetry,
         Crit.Repo,
+        {Oban, Application.fetch_env!(:crit, Oban)},
         {DNSCluster, query: Application.get_env(:crit, :dns_cluster_query) || :ignore},
         {Phoenix.PubSub, name: Crit.PubSub},
         {Crit.RateLimit, clean_period: :timer.minutes(10)}

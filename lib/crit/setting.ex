@@ -21,6 +21,10 @@ defmodule Crit.Setting do
     field :max_document_bytes, :integer
     field :max_comments_per_review, :integer
     field :max_comment_body_bytes, :integer
+    field :notifications_enabled, :boolean, default: false
+    field :notification_batch_minutes, :integer, default: 10
+    field :notification_max_wait_minutes, :integer, default: 60
+    field :notification_retention_days, :integer, default: 30
 
     field :allowed_comment_policies, {:array, Ecto.Enum},
       values: @comment_policies,
@@ -41,6 +45,10 @@ defmodule Crit.Setting do
     :max_document_mb,
     :max_comments_per_review,
     :max_comment_body_kb,
+    :notifications_enabled,
+    :notification_batch_minutes,
+    :notification_max_wait_minutes,
+    :notification_retention_days,
     :allowed_comment_policies,
     :allowed_review_visibilities
   ]
@@ -59,6 +67,10 @@ defmodule Crit.Setting do
     |> validate_number(:max_document_mb, greater_than: 0)
     |> validate_number(:max_comments_per_review, greater_than: 0)
     |> validate_number(:max_comment_body_kb, greater_than: 0)
+    |> validate_number(:notification_batch_minutes, greater_than: 0)
+    |> validate_number(:notification_max_wait_minutes, greater_than: 0)
+    |> validate_number(:notification_retention_days, greater_than_or_equal_to: 0)
+    |> validate_max_wait()
     |> validate_subset(:allowed_comment_policies, @comment_policies)
     |> validate_length(:allowed_comment_policies, min: 1)
     |> validate_subset(:allowed_review_visibilities, @review_visibilities)
@@ -79,6 +91,17 @@ defmodule Crit.Setting do
     case get_change(changeset, virtual) do
       nil -> changeset
       value -> put_change(changeset, real, round(value * multiplier))
+    end
+  end
+
+  defp validate_max_wait(changeset) do
+    quiet = get_field(changeset, :notification_batch_minutes)
+    max_wait = get_field(changeset, :notification_max_wait_minutes)
+
+    if is_integer(quiet) and is_integer(max_wait) and max_wait < quiet do
+      add_error(changeset, :notification_max_wait_minutes, "must be at least the batch window")
+    else
+      changeset
     end
   end
 end
