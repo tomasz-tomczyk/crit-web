@@ -29,17 +29,8 @@
 
 import { renderCommentCard, attachSidebarResizeHandle, escapeHtml, startInlineBodyEdit } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
+import { actionForEvent } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
-
-// Preview-mode keyboard shortcuts (the shared settings overlay's Shortcuts tab).
-// Preview's interaction model is the Navigate/Pin header toggle + composer, so
-// the list is short and honest (no vim keys like files mode).
-const PREVIEW_SHORTCUT_GROUPS = [
-  { label: "Commenting", shortcuts: [
-    { key: "<kbd>Ctrl</kbd>+<kbd>Enter</kbd>", action: "Submit the open comment or reply" },
-    { key: "<kbd>Esc</kbd>", action: "Cancel the open composer or reply" },
-  ]},
-]
 
 // Chrome → Agent message types (copied verbatim from agent-protocol.js C2A).
 const C2A = {
@@ -60,6 +51,10 @@ const A2C = {
   PIN_CLICKED: "pin-clicked",
   FOCUS_STATE: "focus-state",
 }
+
+// Crit Web-only companion script forwards shortcuts pressed inside the
+// sandboxed preview iframe. Keep this outside the vendored Crit protocol.
+const WEB_A2C_SHORTCUT_KEY = "crit-web-shortcut-key"
 
 // Viewport presets — mirrors crit live-mode.js VIEWPORTS.
 const VIEWPORTS = [
@@ -141,8 +136,48 @@ export const PreviewMode = {
     this.settings = createSettingsPanel({
       showWidth: false,
       showHideResolved: false,
-      shortcutGroups: PREVIEW_SHORTCUT_GROUPS,
+      shortcutMode: "preview",
     })
+
+    this.handleShortcut = (event) => {
+      const target = event.target
+      const tag = target?.tagName
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) return
+      const interactive = target?.closest?.(
+        'button, a[href], summary, [role="button"], [role="link"], [role="radio"], [role="checkbox"], [role="switch"], [role="tab"], [role="menuitem"], [role="option"], [role="slider"]'
+      )
+
+      if (event.key === "?") {
+        event.preventDefault()
+        this.settings.toggle("shortcuts")
+        return
+      }
+      if (this.settings.isOpen()) {
+        if (event.key === "Escape") {
+          event.preventDefault()
+          this.settings.close()
+        }
+        return
+      }
+      if (event.key === "Escape" && this.mode === "pin") {
+        event.preventDefault()
+        this.setMode("navigate")
+        return
+      }
+      // Preserve keys with native widget semantics while still allowing
+      // letter shortcuts after a toolbar button was clicked and retained focus.
+      if (interactive && [" ", "Enter", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return
+
+      const action = actionForEvent(event, "preview")
+      if (action === "toggle_pin_mode") {
+        event.preventDefault()
+        const pinButton = this.modeToggle?.querySelector('[data-mode="pin"]')
+        if (this.mode !== "pin" && pinButton?.hasAttribute("disabled")) return
+        this.setMode(this.mode === "pin" ? "navigate" : "pin")
+      }
+    }
+    this.onShortcut = (event) => this.handleShortcut(event)
+    document.addEventListener("keydown", this.onShortcut)
 
     // Agent bridge. The agent posts from the iframe's content window; we only
     // accept messages whose source is our iframe and whose origin is ours
@@ -215,6 +250,7 @@ export const PreviewMode = {
   },
 
   destroyed() {
+    if (this.onShortcut) document.removeEventListener("keydown", this.onShortcut)
     if (this.onMessage) window.removeEventListener("message", this.onMessage)
     if (this.onResize) window.removeEventListener("resize", this.onResize)
     if (this.onToggleComments) this.el.removeEventListener("crit:toggle-comments", this.onToggleComments)
@@ -571,6 +607,20 @@ export const PreviewMode = {
       case A2C.FOCUS_STATE:
         // No-op: crit uses this to suppress shortcuts while typing in the
         // iframe; preview-mode has no global shortcuts to suppress.
+        break
+      case WEB_A2C_SHORTCUT_KEY:
+        if (typeof msg.key !== "string" || typeof msg.code !== "string") break
+        if (![msg.ctrlKey, msg.altKey, msg.shiftKey, msg.metaKey].every(value => typeof value === "boolean")) break
+        this.handleShortcut({
+          key: msg.key,
+          code: msg.code,
+          ctrlKey: msg.ctrlKey,
+          altKey: msg.altKey,
+          shiftKey: msg.shiftKey,
+          metaKey: msg.metaKey,
+          target: null,
+          preventDefault() {},
+        })
         break
       default:
         break

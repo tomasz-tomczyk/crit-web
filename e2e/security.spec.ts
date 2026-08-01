@@ -166,10 +166,18 @@ test.describe("Preview isolation: preview iframe cannot exfiltrate victim sessio
       await expect(marker).toHaveCSS("width", "22px");
       await expect(marker).toHaveCSS("background-color", "rgb(37, 99, 235)");
 
-      await pinButton.click();
+      await page.locator("#settingsToggle").click();
+      await page.locator('.settings-tab[data-tab="shortcuts"]').click();
+      await page.locator('[data-shortcut-id="toggle_pin_mode"]').click();
+      await page.keyboard.press("x");
+      await page.locator("#settingsOverlay").click({ position: { x: 10, y: 10 } });
+
+      const previewFrame = page.frameLocator("#critPreviewIframe");
+      await previewFrame.locator("#hero").click();
+      await page.keyboard.press("x");
       await expect(pinButton).toHaveAttribute("aria-pressed", "true");
 
-      await page.frameLocator("#critPreviewIframe").locator("#hero").click();
+      await previewFrame.locator("#hero").click();
       await expect(page.locator(".crit-preview-composer-body")).toBeVisible({
         timeout: 10_000,
       });
