@@ -100,5 +100,3 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Local
-# Local mailbox at /dev/mailbox — enough to enable discussion notifications in dev.
-config :crit, :mail_delivery_ready, true

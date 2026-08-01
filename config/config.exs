@@ -10,9 +10,7 @@ import Config
 config :crit,
   ecto_repos: [Crit.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true],
-  smtp_from: "test@localhost",
-  # Overridden per env: true when digests can be delivered (SMTP, Local mailbox, or Test).
-  mail_delivery_ready: false
+  smtp_from: "test@localhost"
 
 config :crit, Oban,
   repo: Crit.Repo,

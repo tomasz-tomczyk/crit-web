@@ -74,31 +74,40 @@ defmodule Crit.Notifications do
       deliver_after: quiet_after
     }
 
-    {:ok, origin, batch} = get_or_insert_pending(attrs)
+    case get_or_insert_pending(attrs) do
+      {:ok, origin, batch} ->
+        max_after =
+          DateTime.add(batch.first_event_at, setting.notification_max_wait_minutes * 60, :second)
 
-    max_after =
-      DateTime.add(batch.first_event_at, setting.notification_max_wait_minutes * 60, :second)
+        deliver_after = Enum.min([quiet_after, max_after], DateTime)
 
-    deliver_after = Enum.min([quiet_after, max_after], DateTime)
+        case bump_deliver_after(origin, batch, deliver_after, now) do
+          :ok ->
+            %NotificationItem{}
+            |> NotificationItem.changeset(%{batch_id: batch.id, comment_id: comment.id})
+            |> Repo.insert(on_conflict: :nothing, conflict_target: [:batch_id, :comment_id])
+            |> case do
+              {:ok, _item} -> enqueue_delivery(batch, deliver_after)
+              {:error, changeset} -> {:error, changeset}
+            end
 
-    case bump_deliver_after(origin, batch, deliver_after, now) do
-      :ok ->
-        %NotificationItem{}
-        |> NotificationItem.changeset(%{batch_id: batch.id, comment_id: comment.id})
-        |> Repo.insert(on_conflict: :nothing, conflict_target: [:batch_id, :comment_id])
-        |> case do
-          {:ok, _item} -> enqueue_delivery(batch, deliver_after)
-          {:error, changeset} -> {:error, changeset}
+          :claimed ->
+            retry_queue_item(recipient, review, comment, setting, retries)
         end
 
-      :claimed when retries > 0 ->
-        # Batch was claimed for delivery; the pending unique index now allows a
-        # fresh digest for this activity.
-        queue_item(recipient, review, comment, setting, retries - 1)
-
-      :claimed ->
-        {:error, :batch_race}
+      {:error, :claimed} ->
+        retry_queue_item(recipient, review, comment, setting, retries)
     end
+  end
+
+  defp retry_queue_item(recipient, review, comment, setting, retries) when retries > 0 do
+    # Batch was claimed for delivery; the pending unique index now allows a
+    # fresh digest for this activity.
+    queue_item(recipient, review, comment, setting, retries - 1)
+  end
+
+  defp retry_queue_item(_recipient, _review, _comment, _setting, _retries) do
+    {:error, :batch_race}
   end
 
   # Fresh insert already stored the correct first-event deadline.
@@ -128,16 +137,21 @@ defmodule Crit.Notifications do
         {:ok, :inserted, batch}
 
       {0, []} ->
-        batch =
-          Repo.one!(
-            from b in NotificationBatch,
-              where:
-                b.recipient_user_id == ^attrs.recipient_user_id and
-                  b.review_id == ^attrs.review_id and b.status == :pending,
-              lock: "FOR UPDATE"
-          )
+        case Repo.one(
+               from b in NotificationBatch,
+                 where:
+                   b.recipient_user_id == ^attrs.recipient_user_id and
+                     b.review_id == ^attrs.review_id and b.status == :pending,
+                 lock: "FOR UPDATE"
+             ) do
+          %NotificationBatch{} = batch ->
+            {:ok, :existing, batch}
 
-        {:ok, :existing, batch}
+          nil ->
+            # Pending row was claimed between the conflict and this select.
+            # Caller retries so a fresh pending batch can be inserted.
+            {:error, :claimed}
+        end
     end
   end
 
