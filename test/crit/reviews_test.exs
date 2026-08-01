@@ -28,7 +28,10 @@ defmodule Crit.ReviewsTest do
   describe "display_filename/1" do
     test "prefers embedded files, then snapshot, then Review fallback" do
       assert Reviews.display_filename(%{files: [%{file_path: "embedded.md"}]}) == "embedded.md"
-      assert Reviews.display_filename(%{files: [%{"file_path" => "string-key.md"}]}) == "string-key.md"
+
+      assert Reviews.display_filename(%{files: [%{"file_path" => "string-key.md"}]}) ==
+               "string-key.md"
+
       assert Reviews.display_filename(%{}) == "Review"
 
       review = review_fixture()

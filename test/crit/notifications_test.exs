@@ -611,7 +611,9 @@ defmodule Crit.NotificationsTest do
   end
 
   test "notification batch changeset validates required fields" do
-    changeset = Crit.Notifications.NotificationBatch.changeset(%Crit.Notifications.NotificationBatch{}, %{})
+    changeset =
+      Crit.Notifications.NotificationBatch.changeset(%Crit.Notifications.NotificationBatch{}, %{})
+
     refute changeset.valid?
   end
 
