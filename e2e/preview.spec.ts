@@ -57,6 +57,44 @@ test.describe("Preview mode", () => {
     await expect(frame.locator("#counter")).toHaveText("Clicked 0 times");
   });
 
+  test("custom pin shortcut can be set and used from preview mode", async ({
+    page,
+    request,
+  }) => {
+    const review = await createPreviewReview(request);
+    token = review.token;
+    deleteToken = review.deleteToken;
+
+    await loadPreview(page, token);
+    const pin = page.locator('#critPreviewMode button[data-mode="pin"]');
+    await expect(pin).toBeEnabled({ timeout: 10_000 });
+
+    await pin.click();
+    await page.keyboard.press("Escape");
+    await expect(pin).not.toHaveClass(/crit-toggle-btn--active/);
+
+    await page.locator("#settingsToggle").click();
+    await page.locator('.settings-tab[data-tab="shortcuts"]').click();
+    await page.locator('[data-shortcut-id="toggle_pin_mode"]').click();
+    await page.keyboard.press("x");
+    await page.locator("#settingsOverlay").click({ position: { x: 10, y: 10 } });
+
+    await page.keyboard.press("p");
+    await expect(pin).not.toHaveClass(/crit-toggle-btn--active/);
+    await page.keyboard.press("x");
+    await expect(pin).toHaveClass(/crit-toggle-btn--active/);
+
+    const frame = page.frameLocator("#critPreviewIframe");
+    await page.keyboard.press("x");
+    await frame.locator("#hero").click();
+    await page.keyboard.press("x");
+    await expect(pin).toHaveClass(/crit-toggle-btn--active/);
+
+    await page.keyboard.press("?");
+    await expect(page.locator('[data-shortcut-id="toggle_pin_mode"]')).toContainText("x");
+    await page.locator(".shortcut-reset-all").click();
+  });
+
   test("existing dom-anchored comment shows as a card and matches the badge", async ({
     page,
     request,

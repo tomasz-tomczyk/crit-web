@@ -15,6 +15,7 @@ import {
   attachSidebarResizeHandle,
 } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
+import { actionForEvent } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 
 // Re-register hljs 'markdown' with patched grammar. Must run before any
@@ -4443,32 +4444,6 @@ function applyWidth(choice) {
 // mode supplies the per-mode bits: content-width, hide-resolved, and the files
 // keyboard-shortcut list. createSettingsPanel() is called from mounted().
 
-const FILES_SHORTCUT_GROUPS = [
-  { label: 'Navigation', shortcuts: [
-    { key: '<kbd>j</kbd>', action: 'Next block' },
-    { key: '<kbd>k</kbd>', action: 'Previous block' },
-    { key: '<kbd>Shift</kbd>+<kbd>V</kbd>', action: 'Visual line mode (extend with j/k, then c to comment)' },
-    { key: '<kbd>]</kbd>', action: 'Next comment' },
-    { key: '<kbd>[</kbd>', action: 'Previous comment' },
-  ]},
-  { label: 'Comments', shortcuts: [
-    { key: '<kbd>c</kbd>', action: 'Comment on focused block (or text selection, with quote)' },
-    { key: '<kbd>e</kbd>', action: 'Edit comment on focused block' },
-    { key: '<kbd>d</kbd>', action: 'Delete comment on focused block' },
-    { key: '<kbd>Shift</kbd>+<kbd>G</kbd>', action: 'General comment' },
-    { key: '<kbd>Ctrl</kbd>+<kbd>Enter</kbd>', action: 'Comment' },
-  ]},
-  { label: 'Review', shortcuts: [
-    { key: '<kbd>Shift</kbd>+<kbd>C</kbd>', action: 'Toggle comments panel' },
-  ]},
-  { label: 'View', shortcuts: [
-    { key: '<kbd>t</kbd>', action: 'Toggle table of contents' },
-    { key: '<kbd>h</kbd>', action: 'Toggle hide resolved' },
-    { key: '<kbd>Esc</kbd>', action: 'Cancel / clear focus' },
-    { key: '<kbd>?</kbd>', action: 'Toggle shortcuts' },
-  ]},
-]
-
 function filesSettingsAdapter(ctx) {
   return {
     showWidth: true,
@@ -4477,7 +4452,7 @@ function filesSettingsAdapter(ctx) {
     showHideResolved: true,
     readHideResolved: () => isHideResolved(ctx),
     setHideResolved: (v) => setHideResolved(ctx, v),
-    shortcutGroups: FILES_SHORTCUT_GROUPS,
+    shortcutMode: 'files',
   }
 }
 
@@ -5047,13 +5022,13 @@ export const DocumentRenderer = {
 
     ctx._keydownHandler = (e) => {
       const tag = e.target.tagName
-      if (tag === 'TEXTAREA' || tag === 'INPUT' || e.target.isContentEditable) {
+      if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT' || e.target.isContentEditable) {
         // Textarea keydown is handled by per-form handlers with stopPropagation
         return
       }
-      // Allow Shift (for Shift+C) but block other modifiers
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-
+      const interactive = e.target.closest?.(
+        'button, a[href], summary, [role="button"], [role="link"], [role="radio"], [role="checkbox"], [role="switch"], [role="tab"], [role="menuitem"], [role="option"], [role="slider"]'
+      )
       // Settings panel (shortcuts tab via ?)
       if (e.key === '?') {
         e.preventDefault()
@@ -5068,16 +5043,22 @@ export const DocumentRenderer = {
         }
         return
       }
+      // Preserve keys with native widget semantics while still allowing
+      // letter shortcuts after a toolbar button was clicked and retained focus.
+      if (interactive && [' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return
+
+      const shortcutAction = actionForEvent(e, 'files')
+      if (!shortcutAction && (e.metaKey || e.ctrlKey || e.altKey)) return
 
       // Comments panel toggle
-      if (e.key === 'C' && e.shiftKey) {
+      if (shortcutAction === 'toggle_comments') {
         e.preventDefault()
         toggleCommentsPanel(ctx)
         return
       }
 
       // Hide resolved toggle
-      if (e.key === 'h') {
+      if (shortcutAction === 'toggle_resolved') {
         e.preventDefault()
         const current = isHideResolved(ctx)
         setHideResolved(ctx, !current)
@@ -5088,11 +5069,11 @@ export const DocumentRenderer = {
       }
 
       // Comment navigation
-      if (e.key === '[') { e.preventDefault(); navigateToComment(ctx, -1); return }
-      if (e.key === ']') { e.preventDefault(); navigateToComment(ctx, 1); return }
+      if (shortcutAction === 'previous_comment') { e.preventDefault(); navigateToComment(ctx, -1); return }
+      if (shortcutAction === 'next_comment') { e.preventDefault(); navigateToComment(ctx, 1); return }
 
       // Review comment form
-      if (e.key === 'G' && e.shiftKey) {
+      if (shortcutAction === 'general_comment') {
         e.preventDefault()
         openReviewCommentForm(ctx)
         return
@@ -5101,23 +5082,22 @@ export const DocumentRenderer = {
       const blocks = ctx.el.querySelectorAll('.line-block')
       const blockCount = blocks.length
 
-      switch (e.key) {
-        case 'j': {
+      switch (shortcutAction || e.key) {
+        case 'next_block': {
           e.preventDefault()
           const next = ctx.focusedBlockIndex < blockCount - 1 ? ctx.focusedBlockIndex + 1 : 0
           focusBlock(ctx, next)
           if (ctx.visualMode) extendVisualSelection(ctx)
           break
         }
-        case 'k': {
+        case 'previous_block': {
           e.preventDefault()
           const prev = ctx.focusedBlockIndex > 0 ? ctx.focusedBlockIndex - 1 : blockCount - 1
           focusBlock(ctx, prev)
           if (ctx.visualMode) extendVisualSelection(ctx)
           break
         }
-        case 'V': {
-          if (!e.shiftKey) break
+        case 'visual_mode': {
           e.preventDefault()
           if (ctx.visualMode) {
             exitVisualMode(ctx, true)
@@ -5126,7 +5106,7 @@ export const DocumentRenderer = {
           }
           break
         }
-        case 'c': {
+        case 'comment': {
           e.preventDefault()
           // Visual mode: comment on the active selection.
           if (ctx.visualMode && ctx.selectionStart !== null && ctx.selectionEnd !== null) {
@@ -5171,7 +5151,7 @@ export const DocumentRenderer = {
           })
           break
         }
-        case 'e': {
+        case 'edit_comment': {
           e.preventDefault()
           if (ctx.focusedBlockIndex < 0) break
           const lineBlocks = getFocusedLineBlocks(ctx)
@@ -5195,7 +5175,7 @@ export const DocumentRenderer = {
           render(ctx)
           break
         }
-        case 'd': {
+        case 'delete_comment': {
           e.preventDefault()
           if (ctx.focusedBlockIndex < 0) break
           const lineBlocks = getFocusedLineBlocks(ctx)
@@ -5210,7 +5190,7 @@ export const DocumentRenderer = {
           if (comment) pushCommentMutation(ctx, 'delete_comment', { id: comment.id })
           break
         }
-        case 't': {
+        case 'toggle_toc': {
           e.preventDefault()
           const tocToggle = document.getElementById('crit-toc-toggle')
           if (tocToggle) tocToggle.click()

@@ -178,7 +178,7 @@ defmodule CritWeb.RawControllerTest do
       body = response(conn, 200)
       assert response_content_type(conn, :html) =~ "text/html"
 
-      # All 7 agent scripts injected, in crit's exact order.
+      # Vendored agent scripts plus the Crit Web shortcut bridge are injected.
       expected_scripts = [
         "agent-protocol.js",
         "agent-anchor-utils.js",
@@ -186,7 +186,8 @@ defmodule CritWeb.RawControllerTest do
         "agent-mutation-batcher.js",
         "agent-resolution.js",
         "agent-reanchor-state.js",
-        "crit-agent.js"
+        "crit-agent.js",
+        "crit-web-shortcuts.js"
       ]
 
       for name <- expected_scripts do
