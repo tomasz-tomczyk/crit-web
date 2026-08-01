@@ -159,4 +159,43 @@ defmodule Crit.SettingsTest do
       assert Settings.default_visibility(setting) == nil
     end
   end
+
+  describe "mailer_configured?/0" do
+    setup do
+      original = Application.get_env(:crit, Crit.Mailer)
+      on_exit(fn -> Application.put_env(:crit, Crit.Mailer, original) end)
+      :ok
+    end
+
+    test "true for Local adapter" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.Local)
+      assert Settings.mailer_configured?()
+    end
+
+    test "true for Test adapter" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.Test)
+      assert Settings.mailer_configured?()
+    end
+
+    test "true for SMTP adapter when SMTP_HOST and SMTP_FROM are set" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      System.put_env("SMTP_HOST", "smtp.example.com")
+      System.put_env("SMTP_FROM", "crit@example.com")
+
+      on_exit(fn ->
+        System.delete_env("SMTP_HOST")
+        System.delete_env("SMTP_FROM")
+      end)
+
+      assert Settings.mailer_configured?()
+    end
+
+    test "false for SMTP adapter when env vars are missing" do
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      System.delete_env("SMTP_HOST")
+      System.delete_env("SMTP_FROM")
+
+      refute Settings.mailer_configured?()
+    end
+  end
 end

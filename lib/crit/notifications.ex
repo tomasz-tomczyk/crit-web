@@ -7,8 +7,6 @@ defmodule Crit.Notifications do
   alias Crit.Notifications.{DeliverBatchWorker, NotificationBatch, NotificationItem}
   alias Crit.{Comment, Repo, Review, Settings, User}
 
-  @pending_conflict {:unsafe_fragment, "(recipient_user_id, review_id) WHERE status = 'pending'"}
-
   @doc "Records eligible notification items inside the caller's transaction."
   def record_activity(%Scope{} = scope, %Review{} = review, %Comment{} = comment) do
     setting = Settings.get()
@@ -76,37 +74,43 @@ defmodule Crit.Notifications do
       deliver_after: quiet_after
     }
 
-    {:ok, batch} = get_or_insert_pending(attrs)
+    {:ok, origin, batch} = get_or_insert_pending(attrs)
 
     max_after =
       DateTime.add(batch.first_event_at, setting.notification_max_wait_minutes * 60, :second)
 
-    deliver_after =
-      if DateTime.after?(quiet_after, max_after), do: max_after, else: quiet_after
+    deliver_after = Enum.min([quiet_after, max_after], DateTime)
 
-    {count, _} =
-      Repo.update_all(
-        from(b in NotificationBatch, where: b.id == ^batch.id and b.status == :pending),
-        set: [deliver_after: deliver_after, updated_at: now]
-      )
-
-    cond do
-      count == 1 ->
+    case bump_deliver_after(origin, batch, deliver_after, now) do
+      :ok ->
         %NotificationItem{}
         |> NotificationItem.changeset(%{batch_id: batch.id, comment_id: comment.id})
         |> Repo.insert(on_conflict: :nothing, conflict_target: [:batch_id, :comment_id])
         |> case do
-          {:ok, _item} -> enqueue_delivery(%{batch | deliver_after: deliver_after}, deliver_after)
+          {:ok, _item} -> enqueue_delivery(batch, deliver_after)
           {:error, changeset} -> {:error, changeset}
         end
 
-      retries > 0 ->
+      :claimed when retries > 0 ->
         # Batch was claimed for delivery; the pending unique index now allows a
         # fresh digest for this activity.
         queue_item(recipient, review, comment, setting, retries - 1)
 
-      true ->
+      :claimed ->
         {:error, :batch_race}
+    end
+  end
+
+  # Fresh insert already stored the correct first-event deadline.
+  defp bump_deliver_after(:inserted, _batch, _deliver_after, _now), do: :ok
+
+  defp bump_deliver_after(:existing, batch, deliver_after, now) do
+    case Repo.update_all(
+           from(b in NotificationBatch, where: b.id == ^batch.id and b.status == :pending),
+           set: [deliver_after: deliver_after, updated_at: now]
+         ) do
+      {1, _} -> :ok
+      {0, _} -> :claimed
     end
   end
 
@@ -116,21 +120,24 @@ defmodule Crit.Notifications do
 
     case Repo.insert_all(NotificationBatch, [attrs],
            on_conflict: :nothing,
-           conflict_target: @pending_conflict,
+           conflict_target:
+             {:unsafe_fragment, "(recipient_user_id, review_id) WHERE status = 'pending'"},
            returning: true
          ) do
       {1, [batch]} ->
-        {:ok, batch}
+        {:ok, :inserted, batch}
 
       {0, []} ->
-        {:ok,
-         Repo.one!(
-           from b in NotificationBatch,
-             where:
-               b.recipient_user_id == ^attrs.recipient_user_id and
-                 b.review_id == ^attrs.review_id and b.status == :pending,
-             lock: "FOR UPDATE"
-         )}
+        batch =
+          Repo.one!(
+            from b in NotificationBatch,
+              where:
+                b.recipient_user_id == ^attrs.recipient_user_id and
+                  b.review_id == ^attrs.review_id and b.status == :pending,
+              lock: "FOR UPDATE"
+          )
+
+        {:ok, :existing, batch}
     end
   end
 
@@ -154,16 +161,16 @@ defmodule Crit.Notifications do
 
   def get_batch(id), do: Repo.get(NotificationBatch, id)
 
-  def load_batch(id) do
+  def load_batch(%NotificationBatch{} = batch) do
     items_query = from i in NotificationItem, order_by: [asc: i.inserted_at]
+    Repo.preload(batch, [:recipient, :review, items: {items_query, [comment: :user]}])
+  end
 
-    NotificationBatch
-    |> Repo.get(id)
-    |> Repo.preload([
-      :recipient,
-      :review,
-      items: {items_query, [comment: [:user, parent: :user]]}
-    ])
+  def load_batch(id) when is_binary(id) do
+    case get_batch(id) do
+      nil -> nil
+      batch -> load_batch(batch)
+    end
   end
 
   @doc """
@@ -187,24 +194,26 @@ defmodule Crit.Notifications do
       end
 
     case Repo.update_all(
-           from(b in NotificationBatch, where: b.id == ^id and b.status in ^statuses),
+           from(b in NotificationBatch,
+             where: b.id == ^id and b.status in ^statuses,
+             select: b
+           ),
            set: [status: :delivering, finished_at: nil, updated_at: now]
          ) do
-      {1, _} -> {:ok, get_batch(id)}
+      {1, [batch]} -> {:ok, batch}
       {0, _} -> :already_claimed
     end
   end
 
   def finish(id, status) when status in [:sent, :cancelled, :failed] do
-    case Repo.get(NotificationBatch, id) do
-      %NotificationBatch{status: :delivering} = batch ->
-        batch
-        |> NotificationBatch.changeset(%{status: status, finished_at: DateTime.utc_now()})
-        |> Repo.update()
+    now = DateTime.utc_now()
 
-      _missing_or_finished ->
-        {:ok, nil}
-    end
+    Repo.update_all(
+      from(b in NotificationBatch, where: b.id == ^id and b.status == :delivering),
+      set: [status: status, finished_at: now, updated_at: now]
+    )
+
+    :ok
   end
 
   @doc "Returns a soft-failed batch to `:retryable` so Oban can retry it."

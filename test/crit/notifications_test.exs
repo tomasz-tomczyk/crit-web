@@ -145,17 +145,96 @@ defmodule Crit.NotificationsTest do
              })
 
     assert_email_sent(fn email ->
-      assert email.subject == "1 new update on your Crit review"
+      assert email.subject == "<Actor> commented on test.md"
+      assert email.from == {"<Actor> via Crit", "test@localhost"}
       assert email.to == [{"", owner.email}]
       assert email.text_body =~ "Actor"
+      assert email.html_body =~ "&lt;Actor&gt; left a comment on test.md"
       assert email.html_body =~ "&lt;script&gt;"
-      refute email.html_body =~ "<script>"
+      refute email.html_body =~ "<script>alert"
+      assert email.html_body =~ "display:none"
+      assert email.html_body =~ "Notification settings"
+      refute email.text_body =~ "quiet period"
+      refute email.html_body =~ "quiet period"
       true
     end)
 
     sent = Repo.get!(NotificationBatch, batch.id)
     assert sent.status == :sent
     assert sent.finished_at
+  end
+
+  test "digest names multiple actors and includes avatars for logged-in users" do
+    owner = user_fixture(%{name: "Owner"})
+    alex = oauth_user_fixture(%{name: "Alex Example", picture: "https://example.com/alex.png"})
+    sam = oauth_user_fixture(%{name: "Sam Other", picture: "https://example.com/sam.png"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, _} =
+      Reviews.create_comment(
+        Scope.for_user(alex),
+        review,
+        valid_comment_attrs(%{"body" => "from alex"})
+      )
+
+    {:ok, _} =
+      Reviews.create_comment(
+        Scope.for_user(sam),
+        review,
+        valid_comment_attrs(%{"start_line" => 2, "end_line" => 2, "body" => "from sam"})
+      )
+
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+
+    assert_email_sent(fn email ->
+      assert email.subject == "Alex and Sam on test.md"
+      assert email.from == {"Alex Example via Crit", "test@localhost"}
+      assert email.html_body =~ "Alex and Sam commented on test.md"
+      assert email.html_body =~ "https://example.com/alex.png"
+      assert email.html_body =~ "https://example.com/sam.png"
+      assert email.html_body =~ "from alex"
+      assert email.html_body =~ "from sam"
+      assert email.html_body =~ "Open review"
+      refute email.html_body =~ "<ul"
+      refute email.html_body =~ "On Crit since"
+      true
+    end)
+  end
+
+  test "anonymous-only digest keeps brand from and uses visitor name in subject" do
+    owner = user_fixture(%{name: "Owner"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, _} =
+      Reviews.create_comment(
+        Scope.for_visitor(Ecto.UUID.generate(), "Visitor"),
+        review,
+        valid_comment_attrs(%{"body" => "hello from visitor"})
+      )
+
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+
+    assert_email_sent(fn email ->
+      assert email.subject == "Visitor commented on test.md"
+      assert email.from == {"", "test@localhost"} or email.from == "test@localhost"
+      assert email.html_body =~ "Visitor left a comment on test.md"
+      assert email.html_body =~ "email-avatar-fallback"
+      assert email.html_body =~ "hello from visitor"
+      refute email.html_body =~ "On Crit since"
+      true
+    end)
   end
 
   test "delivery-time preference change cancels without sending" do

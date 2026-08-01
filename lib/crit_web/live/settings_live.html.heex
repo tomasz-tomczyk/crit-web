@@ -364,7 +364,10 @@
 
           <div
             :if={@notifications_enabled}
-            class="flex items-start justify-between gap-4 mt-6 pt-6 border-t border-(--crit-border)"
+            class={[
+              "flex items-start justify-between gap-4",
+              !@selfhosted && "mt-6 pt-6 border-t border-(--crit-border)"
+            ]}
           >
             <div>
               <div class="text-sm font-medium text-(--crit-fg-primary)">

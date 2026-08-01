@@ -89,4 +89,30 @@ defmodule Crit.Settings do
   def normalize_visibility("public"), do: :public
   def normalize_visibility("organization"), do: :organization
   def normalize_visibility(_), do: nil
+
+  @doc """
+  Returns true when the mailer can deliver email for notifications.
+
+  True for `Swoosh.Adapters.Local` (dev mailbox) and `Swoosh.Adapters.Test`,
+  or for `Swoosh.Adapters.SMTP` when `SMTP_HOST` and `SMTP_FROM` are set.
+  """
+  def mailer_configured? do
+    case Keyword.get(Application.get_env(:crit, Crit.Mailer, []), :adapter) do
+      Swoosh.Adapters.Local -> true
+      Swoosh.Adapters.Test -> true
+      Swoosh.Adapters.SMTP -> smtp_env_configured?()
+      _ -> false
+    end
+  end
+
+  defp smtp_env_configured? do
+    present_env?("SMTP_HOST") and present_env?("SMTP_FROM")
+  end
+
+  defp present_env?(name) do
+    case System.get_env(name) do
+      value when is_binary(value) and value != "" -> true
+      _ -> false
+    end
+  end
 end

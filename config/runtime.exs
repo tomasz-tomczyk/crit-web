@@ -210,11 +210,14 @@ if config_env() == :prod do
       ]
 
     config :crit, :smtp_from, smtp_from
+    config :crit, :mail_delivery_ready, true
   else
     # Explicitly retain the local mailbox when SMTP is absent. Organization
     # invites use the same mailer and remain inspectable instead of attempting
-    # an implicit localhost SMTP connection.
+    # an implicit localhost SMTP connection. Discussion notifications stay
+    # disabled until real SMTP is configured.
     config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Local
+    config :crit, :mail_delivery_ready, false
   end
 
   database_url =

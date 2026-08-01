@@ -59,15 +59,46 @@ defmodule CritWeb.AdminSettingsLiveTest do
       refute has_element?(view, "#setting_notification_retention_days[disabled]")
     end
 
-    test "SMTP setup guidance is hidden when SMTP is configured", %{conn: conn} do
+    test "mailer setup guidance is hidden when the mailer is configured", %{conn: conn} do
+      # Test adapter counts as configured.
+      conn = login(conn, create_admin!())
+      {:ok, view, html} = live(conn, ~p"/admin/settings")
+
+      refute html =~ "Configure the Local mailer adapter"
+      refute has_element?(view, "#setting_notifications_enabled[disabled]")
+    end
+
+    test "notifications toggle is disabled when the mailer is not configured", %{conn: conn} do
       original = Application.get_env(:crit, Crit.Mailer)
       Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      System.delete_env("SMTP_HOST")
+      System.delete_env("SMTP_FROM")
       on_exit(fn -> Application.put_env(:crit, Crit.Mailer, original) end)
 
       conn = login(conn, create_admin!())
-      {:ok, _view, html} = live(conn, ~p"/admin/settings")
+      {:ok, view, html} = live(conn, ~p"/admin/settings")
 
-      refute html =~ "SMTP_HOST and SMTP_FROM"
+      assert has_element?(view, "#setting_notifications_enabled[disabled]")
+      assert html =~ "Configure the Local mailer adapter"
+    end
+
+    test "notifications toggle is enabled when SMTP env is configured", %{conn: conn} do
+      original = Application.get_env(:crit, Crit.Mailer)
+      Application.put_env(:crit, Crit.Mailer, adapter: Swoosh.Adapters.SMTP)
+      System.put_env("SMTP_HOST", "smtp.example.com")
+      System.put_env("SMTP_FROM", "crit@example.com")
+
+      on_exit(fn ->
+        Application.put_env(:crit, Crit.Mailer, original)
+        System.delete_env("SMTP_HOST")
+        System.delete_env("SMTP_FROM")
+      end)
+
+      conn = login(conn, create_admin!())
+      {:ok, view, html} = live(conn, ~p"/admin/settings")
+
+      refute html =~ "Configure the Local mailer adapter"
+      refute has_element?(view, "#setting_notifications_enabled[disabled]")
     end
 
     test "save converts MB/KB to bytes and updates the settings row", %{conn: conn} do

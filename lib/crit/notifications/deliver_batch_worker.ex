@@ -2,9 +2,6 @@ defmodule Crit.Notifications.DeliverBatchWorker do
   use Oban.Worker,
     queue: :notifications,
     max_attempts: 3,
-    # :incomplete (not the plan's narrower list) is correct here: uniqueness is
-    # keyed on batch_id, and each new pending digest gets a fresh batch_id. Oban
-    # also warns when in-flight states are omitted from unique checks.
     unique: [
       period: :infinity,
       fields: [:worker, :queue, :args],
@@ -16,6 +13,7 @@ defmodule Crit.Notifications.DeliverBatchWorker do
 
   alias Crit.Accounts.Scope
   alias Crit.Notifications
+  alias Crit.Notifications.Notifier
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"batch_id" => id}} = job) do
@@ -43,32 +41,30 @@ defmodule Crit.Notifications.DeliverBatchWorker do
 
   defp claim_and_deliver(job, id) do
     case Notifications.claim_for_delivery(id, job.attempt) do
-      {:ok, _batch} -> do_deliver(job, id)
+      {:ok, batch} -> do_deliver(job, Notifications.load_batch(batch))
       :already_claimed -> :ok
     end
   end
 
-  defp do_deliver(job, id) do
-    batch = Notifications.load_batch(id)
-
+  defp do_deliver(job, batch) do
     cond do
       is_nil(batch) ->
         :ok
 
       not delivery_enabled?(batch) ->
-        Notifications.finish(id, :cancelled)
+        Notifications.finish(batch.id, :cancelled)
         :ok
 
       batch.items == [] ->
-        Notifications.finish(id, :cancelled)
+        Notifications.finish(batch.id, :cancelled)
         :ok
 
       true ->
-        email = Crit.Notifications.Notifier.email(batch, batch.items)
+        email = Notifier.email(batch)
 
         case Crit.Mailer.deliver(email) do
           {:ok, _metadata} ->
-            Notifications.finish(id, :sent)
+            Notifications.finish(batch.id, :sent)
             :ok
 
           {:error, reason} ->
@@ -76,7 +72,7 @@ defmodule Crit.Notifications.DeliverBatchWorker do
         end
     end
   rescue
-    error -> fail(job, Notifications.get_batch(id), error)
+    error -> fail(job, batch, error)
   end
 
   defp delivery_enabled?(batch) do
