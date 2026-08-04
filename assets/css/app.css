@@ -2021,6 +2021,12 @@ body.dragging { user-select: none; cursor: grabbing; }
   border-top: 1px solid var(--crit-border);
 }
 
+/* Compact shape: the form already supplies the padding. */
+.reply-form:not(.expanded) .reply-form-buttons {
+  padding: 8px 0 0;
+  border-top: none;
+}
+
 /* ===== highlight.js Dark Theme (Tokyo Night Dark) ===== */
 .hljs{color:#9aa5ce;background:#1a1b26}
 .hljs-tag,.hljs-doctag,.hljs-selector-id,.hljs-selector-class,.hljs-regexp,.hljs-template-tag,.hljs-selector-pseudo,.hljs-selector-attr,.hljs-variable.language_,.hljs-deletion{color:#f7768e}
@@ -3177,7 +3183,7 @@ body.sidebar-resizing * {
   height: 22px;
   line-height: 18px;
   padding: 1px 6px;
-  font-family: monospace;
+  font-family: var(--crit-font-mono);
   font-size: 12px;
   color: var(--crit-editor-fg);
   min-width: 24px;

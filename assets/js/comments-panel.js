@@ -320,6 +320,12 @@ export function createReplyInput(commentId, adapter) {
 
   buttons.appendChild(cancelBtn)
   buttons.appendChild(submitBtn)
+  // Always mounted; CSS hides the whole form when the card is collapsed.
+  form.appendChild(buttons)
+
+  function activeField() {
+    return form.classList.contains('expanded') ? textarea : input
+  }
 
   function expand() {
     if (form.classList.contains('expanded')) return
@@ -329,14 +335,17 @@ export function createReplyInput(commentId, adapter) {
     input.replaceWith(textarea)
     form.appendChild(buttons)
     textarea.focus()
+    // The taller textarea can push the actions off screen, and focusing it
+    // does not bring them along.
+    buttons.scrollIntoView({ block: 'nearest' })
   }
 
   function collapse() {
+    textarea.value = ''
+    input.value = ''
     if (!form.classList.contains('expanded')) return
     form.classList.remove('expanded')
     textarea.replaceWith(input)
-    input.value = ''
-    if (buttons.parentNode) buttons.remove()
   }
 
   input.addEventListener('focus', expand)
@@ -353,20 +362,21 @@ export function createReplyInput(commentId, adapter) {
   })
 
   submitBtn.addEventListener('click', function() {
-    const body = textarea.value.trim()
-    if (!body) return
+    const field = activeField()
+    const body = field.value.trim()
+    if (!body) { field.focus(); return }
     submitBtn.disabled = true
     Promise.resolve(adapter.onAddReply(commentId, body)).then(result => {
       if (result?.ok === false) {
         submitBtn.disabled = false
-        textarea.focus()
+        activeField().focus()
         return
       }
       collapse()
       submitBtn.disabled = false
     }).catch(() => {
       submitBtn.disabled = false
-      textarea.focus()
+      activeField().focus()
     })
   })
 

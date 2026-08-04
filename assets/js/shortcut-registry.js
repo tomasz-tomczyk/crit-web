@@ -44,9 +44,30 @@ function readOverrides() {
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
     if (!value || typeof value !== "object" || Array.isArray(value)) return {}
-    return Object.fromEntries(Object.entries(value).filter(([id, binding]) => (
-      byId.has(id) && typeof binding === "string"
-    )))
+    const candidates = {}
+    for (const [id, binding] of Object.entries(value)) {
+      if (byId.has(id) && typeof binding === "string" && !isReservedBinding(binding)) {
+        candidates[id] = binding
+      }
+    }
+    const valid = {}
+    for (const [id, binding] of Object.entries(candidates)) {
+      const target = byId.get(id)
+      let conflict = false
+      for (const group of shortcutGroups) {
+        for (const other of group.shortcuts) {
+          if (!other.id || other.id === id) continue
+          if (!other.modes.some(mode => target.modes.includes(mode))) continue
+          const otherBinding = Object.prototype.hasOwnProperty.call(candidates, other.id)
+            ? candidates[other.id]
+            : other.binding
+          if (otherBinding === binding) { conflict = true; break }
+        }
+        if (conflict) break
+      }
+      if (!conflict) valid[id] = binding
+    }
+    return valid
   } catch (_) {
     return {}
   }
@@ -66,6 +87,8 @@ export function getBinding(id) {
 export function setBinding(id, binding) {
   const shortcut = byId.get(id)
   if (!shortcut) return false
+  if (binding && isReservedBinding(binding)) return false
+  if (binding && findConflict(id, binding)) return false
   const saved = readOverrides()
   if (binding === shortcut.binding) delete saved[id]
   else saved[id] = binding
@@ -156,8 +179,9 @@ export function groupsForMode(mode) {
 }
 
 export function isReservedBinding(binding) {
+  // Digits 1–9 stay unreserved on hosted (story chapter jumps are CLI-only).
   if (["Esc", "Tab", "Enter"].includes(binding)) return true
-  const parts = binding.split("+")
+  const parts = binding ? binding.split("+") : []
   if (parts[parts.length - 1] === "/" && parts.includes("Shift")) return true
   return parts[parts.length - 1] === "Enter" && (parts.includes("Ctrl") || parts.includes("Meta"))
 }
