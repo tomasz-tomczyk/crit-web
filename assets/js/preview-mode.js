@@ -83,6 +83,13 @@ function makeAgentSender(post) {
       ready = true
       while (queue.length) post(queue.shift())
     },
+    // Called when the frame navigates: the document we handshook with is gone.
+    // Dropping the queue is safe because handleAgentReady re-pushes mode,
+    // viewport, and pins whenever the next document announces itself.
+    reset() {
+      ready = false
+      queue.length = 0
+    },
     isReady() {
       return ready
     },
@@ -186,6 +193,19 @@ export const PreviewMode = {
     this.onMessage = (event) => this.handleAgentMessage(event)
     window.addEventListener("message", this.onMessage)
 
+    // Preview content can navigate its own frame (a link, or a hostile
+    // location.replace). Opaque-origin frames can only be targeted with "*", so
+    // a handshake that stayed valid across navigation would keep posting pins
+    // into whatever document now occupies the frame. The agent announces itself
+    // while its document parses — before this load event — so a load with no
+    // announcement since the previous one means the current document is not ours.
+    this.agentAnnounced = false
+    this.onIframeLoad = () => {
+      if (!this.agentAnnounced) this.sender.reset()
+      this.agentAnnounced = false
+    }
+    this.iframe.addEventListener("load", this.onIframeLoad)
+
     // Header comment-count button toggles the panel via JS.dispatch (survives
     // LiveView patches), same contract as files mode.
     this.onToggleComments = () => this.togglePanel()
@@ -252,6 +272,7 @@ export const PreviewMode = {
   destroyed() {
     if (this.onShortcut) document.removeEventListener("keydown", this.onShortcut)
     if (this.onMessage) window.removeEventListener("message", this.onMessage)
+    if (this.onIframeLoad && this.iframe) this.iframe.removeEventListener("load", this.onIframeLoad)
     if (this.onResize) window.removeEventListener("resize", this.onResize)
     if (this.onToggleComments) this.el.removeEventListener("crit:toggle-comments", this.onToggleComments)
     if (this.settings) this.settings.destroy()
@@ -634,6 +655,7 @@ export const PreviewMode = {
   },
 
   handleAgentReady() {
+    this.agentAnnounced = true
     this.sender.markReady()
     this.enablePinButton()
     // Push current mode, viewport, and pins now that the agent can receive them.

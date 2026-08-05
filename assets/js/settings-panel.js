@@ -183,7 +183,6 @@ export function createSettingsPanel(adapter) {
       html += '<div class="shortcuts-group-label">' + group.label + '</div>'
       html += '<table class="shortcuts-table">'
       group.shortcuts.forEach(function(s) {
-        const modeTag = s.mode ? '<span class="shortcut-mode-badge">' + s.mode + '</span>' : ''
         const binding = s.id ? getBinding(s.id) : s.binding
         let key = bindingHtml(binding)
         if (s.id && !s.fixed) {
@@ -191,7 +190,7 @@ export function createSettingsPanel(adapter) {
           key = '<button type="button" class="shortcut-binding' + customized + '" data-shortcut-id="' + escapeHtml(s.id) +
             '" aria-label="Change shortcut for ' + escapeHtml(s.action) + '">' + key + '</button>'
         }
-        html += '<tr><td>' + key + '</td><td>' + escapeHtml(s.action) + modeTag + '</td></tr>'
+        html += '<tr><td>' + key + '</td><td>' + escapeHtml(s.action) + '</td></tr>'
       })
       html += '</table>'
     })
