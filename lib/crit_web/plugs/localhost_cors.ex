@@ -7,6 +7,12 @@ defmodule CritWeb.Plugs.LocalhostCors do
   router must also declare an `options` route for each path the browser sends a
   preflight to (e.g. PUT /reviews/:token), otherwise the preflight 404s before
   this plug runs.
+
+  Must run BEFORE `CritWeb.Plugs.ApiAuth` in the `:api` pipeline. Browsers never
+  send `Authorization` on CORS preflight, so an early ApiAuth 401 would omit
+  `Access-Control-Allow-Origin` and surface as a CORS failure in the console
+  instead of a readable 401. Running first also stamps CORS headers onto any
+  subsequent error response (401/429/etc.) for localhost origins.
   """
   import Plug.Conn
 

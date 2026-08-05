@@ -20,6 +20,11 @@ defmodule CritWeb.Router do
     plug :accepts, ["json"]
     plug CritWeb.Plugs.SecurityHeaders
     plug CritWeb.Plugs.RateLimit, response: :json
+    # LocalhostCors must run BEFORE ApiAuth: browsers never send Authorization
+    # on CORS preflight (OPTIONS), and a 401 from ApiAuth must still carry
+    # Access-Control-Allow-Origin so the browser surfaces the real status
+    # instead of a opaque CORS failure. LocalhostCors halts OPTIONS itself.
+    plug CritWeb.Plugs.LocalhostCors
     plug CritWeb.Plugs.ApiAuth
   end
 
@@ -222,7 +227,8 @@ defmodule CritWeb.Router do
   end
 
   scope "/api", CritWeb do
-    pipe_through [:api, :noindex, CritWeb.Plugs.LocalhostCors]
+    # LocalhostCors lives in the :api pipeline (before ApiAuth) — see pipeline.
+    pipe_through [:api, :noindex]
 
     options "/reviews", ApiController, :options
     post "/reviews", ApiController, :create
