@@ -77,9 +77,15 @@ export function previewSessionRidePayload(): string {
 }
 
 /**
- * Sanity payload: a probe that reports its own `location.origin` back to the
- * parent. The isolation check asserts this is PREVIEW_HOST (never the
- * canonical app host).
+ * Sanity payload: a probe that reports both of the iframe's notions of "origin"
+ * back to the parent.
+ *
+ *   - `msg` is `location.origin`, derived from the document's URL. It stays
+ *     PREVIEW_HOST whether or not the sandbox grants allow-same-origin, so the
+ *     isolation check uses it to prove the preview loads off the canonical host.
+ *   - `documentOrigin` is `window.origin`, the document's *security* origin.
+ *     It is "null" exactly when the sandbox withholds allow-same-origin, which
+ *     is what makes the frame opaque.
  */
 export function previewOriginBeaconPayload(): string {
   return `<script>
@@ -87,6 +93,7 @@ parent.postMessage({
   type: "CRIT_SEC_PROBE",
   variant: "iframe-origin-beacon",
   msg: location.origin,
+  documentOrigin: String(window.origin),
 }, "*");
 </script>`;
 }

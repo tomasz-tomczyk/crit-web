@@ -324,6 +324,18 @@ test.describe("Preview isolation: preview iframe cannot exfiltrate victim sessio
       const beacon = await waitForProbe(page, "iframe-origin-beacon");
       expect(beacon.msg, "iframe origin beacon").toBe(PREVIEW_ORIGIN);
 
+      // Isolation also rests on the frame having an *opaque* origin, which the
+      // beacon above cannot show (location.origin comes from the URL and reads
+      // PREVIEW_ORIGIN either way). Assert both halves so a sandbox that grants
+      // allow-same-origin again — handing preview JS the preview host's storage
+      // and same-origin fetch identity — fails here instead of passing silently.
+      const sandbox = await page
+        .locator("#critPreviewIframe")
+        .getAttribute("sandbox");
+      expect(sandbox ?? "", "iframe sandbox").toContain("allow-scripts");
+      expect(sandbox ?? "", "iframe sandbox").not.toContain("allow-same-origin");
+      expect(beacon.documentOrigin, "iframe document origin").toBe("null");
+
       // Receive the session-ride probe. Assert the attack did NOT reach
       // authenticated canonical content.
       const probe = await waitForProbe(page, "session-ride-via-dash-route");

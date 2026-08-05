@@ -3432,17 +3432,6 @@ body.sidebar-resizing * {
   font-size: 12px;
   font-style: italic;
 }
-.shortcut-mode-badge {
-  display: inline-block;
-  font-size: 11px;
-  color: var(--crit-editor-fg-muted);
-  background: var(--crit-editor-bg-elevated);
-  border: 1px solid var(--crit-border);
-  border-radius: 4px;
-  padding: 1px 6px;
-  margin-left: 6px;
-  font-weight: 500;
-}
 
 /* About tab */
 .about-header {
