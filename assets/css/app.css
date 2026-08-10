@@ -51,6 +51,7 @@
   /* ---- Fonts ---- */
   --crit-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --crit-font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  --crit-font-code: var(--crit-font-mono);
 
   /* ---- Content width ---- */
   --crit-content-width: 1040px;
@@ -188,6 +189,8 @@
 [data-width="wide"]    { --crit-content-width: 1280px; }
 
 [data-theme="dark"] {
+  --crit-font-code: var(--crit-font-mono);
+
   /* ---- Surfaces ---- */
   --crit-bg-page:     #0e0f13;
   --crit-bg-card:     #171922;
@@ -314,6 +317,8 @@
 }
 
 [data-theme="light"] {
+  --crit-font-code: var(--crit-font-mono);
+
   /* ---- Surfaces ---- */
   --crit-bg-page:     #ffffff;
   --crit-bg-card:     #f6f8fa;
@@ -442,6 +447,8 @@
 /* System preference: light — overrides dark :root defaults when OS is light */
 @media (prefers-color-scheme: light) {
   html:not([data-theme]) {
+    --crit-font-code: var(--crit-font-mono);
+
     /* ---- Surfaces ---- */
     --crit-bg-page:     #ffffff;
     --crit-bg-card:     #f6f8fa;
@@ -996,7 +1003,7 @@ body.dragging { user-select: none; cursor: grabbing; }
 .line-content a { color: var(--crit-brand); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
 .line-content a:hover { border-bottom-color: var(--crit-brand); }
 .line-content code {
-  font-family: var(--crit-font-mono); font-size: 0.88em;
+  font-family: var(--crit-font-code); font-size: 0.88em;
   background: var(--crit-editor-code-bg); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--crit-border);
 }
 .line-content pre { margin: 6px 0; padding: 16px; background: var(--crit-editor-code-bg); border: 1px solid var(--crit-border); border-radius: 8px; overflow-x: auto; line-height: 1.5; }
@@ -1028,7 +1035,7 @@ body.dragging { user-select: none; cursor: grabbing; }
 
 /* Per-line code blocks */
 .line-content.code-line {
-  background: var(--crit-editor-code-bg); font-family: var(--crit-font-mono); font-size: 0.875rem; line-height: 1.5;
+  background: var(--crit-editor-code-bg); font-family: var(--crit-font-code); font-size: 0.875rem; line-height: 1.5;
   padding-left: 16px; padding-right: 16px; border-left: 1px solid var(--crit-border); border-right: 1px solid var(--crit-border);
   overflow-x: auto; white-space: pre; scrollbar-width: none;
 }
@@ -1104,7 +1111,7 @@ body.dragging { user-select: none; cursor: grabbing; }
 .comment-body { padding: 10px 14px; color: var(--crit-editor-fg); font-size: 14px; line-height: 1.6; word-break: break-word; }
 .comment-body p { margin: 0 0 0.5em; }
 .comment-body p:last-child { margin-bottom: 0; }
-.comment-body code { background: var(--crit-editor-bg-elevated); padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+.comment-body code { background: var(--crit-editor-bg-elevated); padding: 1px 5px; border-radius: 3px; font-family: var(--crit-font-code); font-size: 0.9em; }
 .comment-body pre { background: var(--crit-editor-bg-elevated); padding: 8px 10px; border-radius: 4px; overflow-x: auto; margin: 0.5em 0; }
 .comment-body pre code { background: none; padding: 0; }
 .comment-body img { max-width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--crit-border); margin: 4px 0; display: block; }
@@ -1115,7 +1122,7 @@ body.dragging { user-select: none; cursor: grabbing; }
   border-radius: 6px;
   overflow: hidden;
   margin: 8px 0;
-  font-family: var(--crit-font-mono);
+  font-family: var(--crit-font-code);
   font-size: 12px;
   line-height: 20px;
 }
@@ -3330,6 +3337,38 @@ body.sidebar-resizing * {
   font-weight: 500;
   color: var(--crit-editor-fg);
 }
+.settings-display-label--sub {
+  padding-left: 12px;
+  color: var(--crit-editor-fg-muted);
+  font-size: 12px;
+}
+.settings-display-row[hidden] { display: none; }
+.settings-select,
+.settings-text-input {
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+  background: var(--crit-editor-bg-elevated);
+  color: var(--crit-editor-fg);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+}
+.settings-select {
+  max-width: 60%;
+  cursor: pointer;
+}
+.settings-text-input {
+  width: 260px;
+  max-width: 60%;
+  font-family: var(--crit-font-mono);
+}
+.settings-text-input::placeholder { color: var(--crit-editor-fg-muted); }
+.settings-select:focus-visible,
+.settings-text-input:focus-visible {
+  outline: 2px solid var(--crit-brand);
+  outline-offset: 1px;
+}
+.settings-text-input.is-invalid { border-color: var(--crit-red); }
 
 /* Pill toggles for theme and width inside the panel */
 .settings-pill {
@@ -4058,7 +4097,9 @@ body.sidebar-resizing * {
 
   /* iOS Safari zooms any focused input below 16px. */
   .comment-form textarea,
-  .reply-input {
+  .reply-input,
+  .settings-select,
+  .settings-text-input {
     font-size: 16px;
   }
 

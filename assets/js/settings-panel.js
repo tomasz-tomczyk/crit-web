@@ -32,8 +32,68 @@ const THEME_ICONS = {
   dark: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M14.438 10.148c.19-.425-.321-.787-.748-.601A5.5 5.5 0 0 1 6.453 2.31c.186-.427-.176-.938-.6-.748a6.501 6.501 0 1 0 8.585 8.586Z"/></svg>',
 }
 
+const CODE_FONT_STORAGE_KEY = 'crit:code-font'
+const MAX_CODE_FONT_LENGTH = 256
+const CODE_FONT_PRESETS = [
+  { id: 'default', label: 'Default (JetBrains Mono)', stack: '' },
+  { id: 'system', label: 'System monospace', stack: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
+]
+
+function sanitizeCodeFont(value) {
+  const font = String(value ?? '').trim()
+  if (!font) return ''
+  if (font.length > MAX_CODE_FONT_LENGTH || /[;{}<>@]/.test(font)) return ''
+  if (/url\s*\(/i.test(font) || /expression\s*\(/i.test(font)) return ''
+  if (typeof CSS !== 'undefined' && CSS.supports && !CSS.supports('font-family', font)) return ''
+  return font
+}
+
+function readCodeFont() {
+  try { return localStorage.getItem(CODE_FONT_STORAGE_KEY) || '' } catch (_) { return '' }
+}
+
+function applyCodeFont(value) {
+  const font = sanitizeCodeFont(value)
+  if (font) document.documentElement.style.setProperty('--crit-font-code', font)
+  else document.documentElement.style.removeProperty('--crit-font-code')
+  return font
+}
+
+function setCodeFont(value) {
+  const font = applyCodeFont(value)
+  try { localStorage.setItem(CODE_FONT_STORAGE_KEY, font) } catch (_) {}
+  return font
+}
+
+function showError(message) {
+  let host = document.querySelector('.mini-toast-host')
+  if (!host) {
+    host = document.createElement('div')
+    host.className = 'mini-toast-host'
+    document.body.appendChild(host)
+  }
+  const toast = document.createElement('div')
+  toast.className = 'mini-toast mini-toast--error'
+  toast.textContent = message
+  host.appendChild(toast)
+  requestAnimationFrame(() => toast.classList.add('mini-toast-visible'))
+  setTimeout(() => {
+    toast.addEventListener('transitionend', () => toast.remove(), { once: true })
+    toast.classList.remove('mini-toast-visible')
+  }, 3000)
+}
+
 function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 function updatePillIndicator(indicatorId, values, current) {
@@ -68,6 +128,8 @@ export function createSettingsPanel(adapter) {
     listeners.push([el, ev, fn])
   }
 
+  if (adapter.shortcutMode === 'files') applyCodeFont(readCodeFont())
+
   function renderSettingsPane() {
     const pane = document.getElementById('settingsPane')
     if (!pane) return
@@ -87,6 +149,27 @@ export function createSettingsPanel(adapter) {
       html += '<button class="settings-pill-btn' + active + '" data-settings-theme="' + theme + '" title="' + cap(theme) + ' theme">' + THEME_ICONS[theme] + '</button>'
     })
     html += '</div></div>'
+
+    // The hosted viewer cannot discover browser-local fonts without a
+    // permission-gated API, so keep the portable presets plus Custom here.
+    if (adapter.shortcutMode === 'files') {
+      const currentCodeFont = readCodeFont()
+      const preset = CODE_FONT_PRESETS.find(option => option.stack === currentCodeFont)
+      const selectedId = preset ? preset.id : 'custom'
+      html += '<div class="settings-display-row">'
+      html += '<span class="settings-display-label">Code font</span>'
+      html += '<select class="settings-select" id="codeFontSelect" aria-label="Code font">'
+      CODE_FONT_PRESETS.forEach(function(option) {
+        html += '<option value="' + option.id + '"' + (option.id === selectedId ? ' selected' : '') + '>' + option.label + '</option>'
+      })
+      html += '<option value="custom"' + (selectedId === 'custom' ? ' selected' : '') + '>Custom…</option>'
+      html += '</select></div>'
+      html += '<div class="settings-display-row" id="codeFontCustomRow"' + (selectedId === 'custom' ? '' : ' hidden') + '>'
+      html += '<label class="settings-display-label settings-display-label--sub" for="codeFontCustomInput">Custom font-family</label>'
+      html += '<input type="text" class="settings-text-input" id="codeFontCustomInput" spellcheck="false" autocomplete="off" maxlength="256"'
+      html += ' placeholder="\'Fira Code\', monospace" value="' + escapeHtml(selectedId === 'custom' ? currentCodeFont : '') + '">'
+      html += '</div>'
+    }
 
     // Content width row (files mode only)
     if (adapter.showWidth) {
@@ -131,6 +214,33 @@ export function createSettingsPanel(adapter) {
     })
     updatePillIndicator('settingsThemeIndicator', ['system', 'light', 'dark'], currentTheme)
 
+    const fontSelect = pane.querySelector('#codeFontSelect')
+    const fontCustomRow = pane.querySelector('#codeFontCustomRow')
+    const fontCustomInput = pane.querySelector('#codeFontCustomInput')
+    function markInvalidFont(invalid) {
+      if (!fontCustomInput) return
+      fontCustomInput.classList.toggle('is-invalid', invalid)
+      fontCustomInput.setAttribute('aria-invalid', invalid ? 'true' : 'false')
+    }
+    fontSelect?.addEventListener('change', function() {
+      if (fontSelect.value === 'custom') {
+        if (fontCustomRow) fontCustomRow.hidden = false
+        fontCustomInput?.focus()
+        if (fontCustomInput?.value.trim()) setCodeFont(fontCustomInput.value)
+        return
+      }
+      if (fontCustomRow) fontCustomRow.hidden = true
+      markInvalidFont(false)
+      const preset = CODE_FONT_PRESETS.find(option => option.id === fontSelect.value)
+      setCodeFont(preset?.stack || '')
+    })
+    fontCustomInput?.addEventListener('change', function() {
+      const raw = fontCustomInput.value
+      const rejected = !!raw.trim() && !setCodeFont(raw)
+      markInvalidFont(rejected)
+      if (rejected) showError('Not a valid font-family value — using the default.')
+    })
+
     // Width pill (files only)
     if (adapter.showWidth) {
       pane.querySelectorAll('[data-settings-width]').forEach(function(btn) {
@@ -165,15 +275,6 @@ export function createSettingsPanel(adapter) {
     html += '<button type="button" class="shortcut-reset-all">Reset all</button>'
     html += '</div>'
 
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-    }
-
     function bindingHtml(binding) {
       if (!binding) return '<span class="shortcut-unassigned">Unassigned</span>'
       return binding.split('+').map(part => '<kbd>' + escapeHtml(part) + '</kbd>').join('+')
@@ -195,24 +296,6 @@ export function createSettingsPanel(adapter) {
       html += '</table>'
     })
     pane.innerHTML = html
-
-    function showError(message) {
-      let host = document.querySelector('.mini-toast-host')
-      if (!host) {
-        host = document.createElement('div')
-        host.className = 'mini-toast-host'
-        document.body.appendChild(host)
-      }
-      const toast = document.createElement('div')
-      toast.className = 'mini-toast mini-toast--error'
-      toast.textContent = message
-      host.appendChild(toast)
-      requestAnimationFrame(() => toast.classList.add('mini-toast-visible'))
-      setTimeout(() => {
-        toast.addEventListener('transitionend', () => toast.remove(), { once: true })
-        toast.classList.remove('mini-toast-visible')
-      }, 3000)
-    }
 
     const rerender = () => renderShortcutsPane()
     pane.querySelector('.shortcut-reset-all')?.addEventListener('click', () => {
