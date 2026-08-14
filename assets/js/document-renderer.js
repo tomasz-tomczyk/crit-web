@@ -1288,6 +1288,18 @@ function buildLineBlocks(md, rawContent) {
       const preferredWidths = []
       const alignments = []
       let columnIndex = 0
+      const inlineVisibleLength = inlineToken => {
+        if (!inlineToken.children || inlineToken.children.length === 0) {
+          return Array.from(inlineToken.content || "").length
+        }
+
+        return inlineToken.children.reduce((length, child) => {
+          if (child.nesting !== 0) return length
+          let content = child.content || ""
+          if (child.type === "html_inline") content = content.replace(/<[^>]*>/g, "")
+          return length + Array.from(content).length
+        }, 0)
+      }
       for (let j = i + 1; j < tableCloseIdx; j++) {
         const tableToken = tokens[j]
         if (tableToken.type === "tr_open") {
@@ -1296,7 +1308,7 @@ function buildLineBlocks(md, rawContent) {
           let contentLength = 0
           for (let k = j + 1; k < tableCloseIdx &&
                tokens[k].type !== "th_close" && tokens[k].type !== "td_close"; k++) {
-            if (tokens[k].type === "inline") contentLength += Array.from(tokens[k].content || "").length
+            if (tokens[k].type === "inline") contentLength += inlineVisibleLength(tokens[k])
           }
           preferredWidths[columnIndex] = Math.max(preferredWidths[columnIndex] || 0, contentLength)
           if (tableToken.type === "th_open") alignments[columnIndex] = tableToken.attrGet("style") || ""

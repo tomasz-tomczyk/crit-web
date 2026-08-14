@@ -95,3 +95,46 @@ test.describe("Review Page — Display Name", () => {
     await expect(nameBtn).toContainText("Test Reviewer");
   });
 });
+
+test.describe("Review Page — Rendered Tables", () => {
+  let token: string;
+  let deleteToken: string;
+
+  test.beforeEach(async ({ request }) => {
+    const review = await createReview(request, {
+      files: [{
+        path: "table.md",
+        content:
+          "| Link | Status |\n" +
+          "| --- | --- |\n" +
+          "| [x](https://example.com/a/very/very/very/long/hidden/path) | available |\n",
+      }],
+    });
+    token = review.token;
+    deleteToken = review.deleteToken;
+  });
+
+  test.afterEach(async ({ request }) => {
+    await deleteReview(request, deleteToken);
+  });
+
+  test("sizes every split row from visible cell content", async ({ page }) => {
+    await loadReview(page, token);
+
+    const tables = page.locator("table.split-table");
+    await expect(tables).toHaveCount(2);
+    const widths = await tables.evaluateAll(rows =>
+      rows.map(row =>
+        Array.from(
+          row.querySelectorAll("col"),
+          col => (col as HTMLElement).style.width
+        )
+      )
+    );
+
+    expect(widths).toEqual([
+      ["30.77%", "69.23%"],
+      ["30.77%", "69.23%"],
+    ]);
+  });
+});
