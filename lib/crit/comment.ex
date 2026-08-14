@@ -10,6 +10,7 @@ defmodule Crit.Comment do
     field :review_round, :integer, default: 0
     field :file_path, :string
     field :quote, :string
+    field :quote_offset, :integer
 
     field :scope, :string, default: "line"
     field :resolved, :boolean, default: false
@@ -37,6 +38,7 @@ defmodule Crit.Comment do
       :review_round,
       :file_path,
       :quote,
+      :quote_offset,
       :resolved,
       :resolved_round,
       :scope,
