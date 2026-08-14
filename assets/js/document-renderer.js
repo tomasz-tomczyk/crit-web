@@ -1288,16 +1288,23 @@ function buildLineBlocks(md, rawContent) {
       const preferredWidths = []
       const alignments = []
       let columnIndex = 0
+      const graphemeSegmenter = typeof Intl !== "undefined" && Intl.Segmenter
+        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+        : null
+      const visibleTextLength = content => {
+        const normalized = String(content || "").normalize("NFC")
+        if (graphemeSegmenter) return Array.from(graphemeSegmenter.segment(normalized)).length
+        return Array.from(normalized).length
+      }
       const inlineVisibleLength = inlineToken => {
         if (!inlineToken.children || inlineToken.children.length === 0) {
-          return Array.from(inlineToken.content || "").length
+          return visibleTextLength(inlineToken.content)
         }
 
         return inlineToken.children.reduce((length, child) => {
           if (child.nesting !== 0) return length
-          let content = child.content || ""
-          if (child.type === "html_inline") content = content.replace(/<[^>]*>/g, "")
-          return length + Array.from(content).length
+          if (child.type === "html_inline") return length
+          return length + visibleTextLength(child.content)
         }, 0)
       }
       for (let j = i + 1; j < tableCloseIdx; j++) {
@@ -1317,11 +1324,16 @@ function buildLineBlocks(md, rawContent) {
       }
       const weights = preferredWidths.map(length => Math.max(4, Math.min(48, length)))
       const totalWeight = weights.reduce((total, weight) => total + weight, 0)
+      let remainingPercent = 100
       const colgroup = preferredWidths.length === 0 ? "" : "<colgroup>" + weights.map((weight, index) => {
         let alignment = alignments[index] || ""
         if (alignment && !alignment.endsWith(";")) alignment += ";"
+        const percent = index === weights.length - 1
+          ? remainingPercent
+          : Number((weight / totalWeight * 100).toFixed(2))
+        remainingPercent -= percent
         return '<col style="' + escapeAttr(alignment) + "width:" +
-          (weight / totalWeight * 100).toFixed(2) + '%">'
+          percent.toFixed(2) + '%">'
       }).join("") + "</colgroup>"
 
       let rowIndex = 0
