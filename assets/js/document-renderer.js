@@ -1280,16 +1280,37 @@ function buildLineBlocks(md, rawContent) {
       continue
     }
 
-    // Tables: split per row
+    // Tables: split per row. Since every source row becomes its own table,
+    // share content-aware column widths across them to keep boundaries aligned
+    // without forcing every column to be equal.
     if (token.type === "table_open") {
       const tableCloseIdx = findClose(i)
-      let numCols = 0
+      const preferredWidths = []
+      const alignments = []
+      let columnIndex = 0
       for (let j = i + 1; j < tableCloseIdx; j++) {
-        if (tokens[j].type === "th_open") numCols++
-        if (tokens[j].type === "tr_close") break
+        const tableToken = tokens[j]
+        if (tableToken.type === "tr_open") {
+          columnIndex = 0
+        } else if (tableToken.type === "th_open" || tableToken.type === "td_open") {
+          let contentLength = 0
+          for (let k = j + 1; k < tableCloseIdx &&
+               tokens[k].type !== "th_close" && tokens[k].type !== "td_close"; k++) {
+            if (tokens[k].type === "inline") contentLength += Array.from(tokens[k].content || "").length
+          }
+          preferredWidths[columnIndex] = Math.max(preferredWidths[columnIndex] || 0, contentLength)
+          if (tableToken.type === "th_open") alignments[columnIndex] = tableToken.attrGet("style") || ""
+          columnIndex++
+        }
       }
-      const colWidth = numCols > 0 ? (100 / numCols).toFixed(2) + "%" : "auto"
-      const colgroup = "<colgroup>" + ('<col style="width:' + colWidth + '">').repeat(numCols) + "</colgroup>"
+      const weights = preferredWidths.map(length => Math.max(4, Math.min(48, length)))
+      const totalWeight = weights.reduce((total, weight) => total + weight, 0)
+      const colgroup = preferredWidths.length === 0 ? "" : "<colgroup>" + weights.map((weight, index) => {
+        let alignment = alignments[index] || ""
+        if (alignment && !alignment.endsWith(";")) alignment += ";"
+        return '<col style="' + escapeAttr(alignment) + "width:" +
+          (weight / totalWeight * 100).toFixed(2) + '%">'
+      }).join("") + "</colgroup>"
 
       let rowIndex = 0
       let bodyRowIndex = 0

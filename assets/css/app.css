@@ -1062,7 +1062,7 @@ body.dragging { user-select: none; cursor: grabbing; }
 .line-content.mermaid-block { background: var(--crit-editor-bg-card); border: 1px solid var(--crit-border); border-radius: 8px; padding: 16px; margin: 6px 0; text-align: center; min-height: 60px; }
 .mermaid-rendered svg { max-width: 100%; height: auto; }
 
-/* Table rows */
+/* Table rows — each row shares a content-aware colgroup from the renderer. */
 .line-content.table-row table.split-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.925rem; margin: 0; }
 .line-content.table-row th { text-align: left; font-weight: 600; padding: 10px 14px; color: var(--crit-editor-fg-secondary); border-bottom: 2px solid var(--crit-border); }
 .line-content.table-row td { padding: 8px 14px; border-bottom: 1px solid var(--crit-border); }
