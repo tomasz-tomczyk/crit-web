@@ -4533,6 +4533,9 @@ export const DocumentRenderer = {
         return ""
       },
     })
+    // Disable (c)/(r)/(tm) → ©/®/™ replacements so enumerated options render
+    // literally. Keep typographer (smart quotes) and disable only replacements.
+    md.disable('replacements')
 
     // Task list support
     const defaultListItemOpen = md.renderer.rules.list_item_open ||

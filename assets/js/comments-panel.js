@@ -73,6 +73,9 @@ export const commentMd = markdownit({
     return ''
   },
 })
+// Disable (c)/(r)/(tm) → ©/®/™ replacements so enumerated options render
+// literally. Keep typographer (smart quotes) and disable only replacements.
+commentMd.disable('replacements')
 
 // ===== File Reference Inline Rule ===== (@path/to/file renders as a chip)
 commentMd.inline.ruler.push('file_ref', function(state, silent) {
