@@ -28,7 +28,8 @@ const ALLOWED_ATTR = [
   "summary", "tabindex", "title", "type", "usemap", "valign", "value",
   "width", "itemprop", "class", "data-ref-id",
 ]
-const SAFE_CLASS = /^(?:hljs(?:-[\w-]+)?|file-ref|comment-ref|comment-ref-code)$/
+// Crit-generated classes only — suggestion diffs + highlight/ref spans.
+const SAFE_CLASS = /^(?:hljs(?:-[\w-]+)?|file-ref|comment-ref|comment-ref-code|suggestion(?:-[\w-]+)+|diff-word-(?:del|add))$/
 const SAFE_COMMENT_REF = /^(?:c|r|rp)_[a-f0-9]{6,}$/
 const SAFE_URL = /^(?:(?:https?|mailto):|(?:\/|\.{1,2}\/|#))/i
 
