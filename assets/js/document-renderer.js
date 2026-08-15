@@ -1017,12 +1017,29 @@ async function renderMermaidBlocks(container) {
 
 // ---- Markdown parsing & line-block building ---------------------------------
 
+// Turn valid document frontmatter into a YAML fence without shifting maps.
+// Callers retain the original content for source line display.
+function rewriteFrontmatterAsYamlFence(content) {
+  const lines = content.split("\n")
+  if (!/^\uFEFF?---[ \t]*\r?$/.test(lines[0])) return content
+
+  for (let i = 1; i < lines.length; i++) {
+    if (/^(?:---|\.\.\.)[ \t]*\r?$/.test(lines[i])) {
+      lines[0] = "```yaml" + (lines[0].endsWith("\r") ? "\r" : "")
+      lines[i] = "```" + (lines[i].endsWith("\r") ? "\r" : "")
+      return lines.join("\n")
+    }
+  }
+
+  return content
+}
+
 function buildLineBlocks(md, rawContent) {
   // Reset per-render heading-slug dedup state (see heading_open rule). Scoping
   // the counter to one buildLineBlocks() call prevents collisions accumulating
   // across renders and keeps prev/current diff renders independent.
   md.__headingSlugCounter = new Map()
-  const tokens = md.parse(rawContent, {})
+  const tokens = md.parse(rewriteFrontmatterAsYamlFence(rawContent), {})
   const sourceLines = rawContent.split("\n")
   const totalLines = sourceLines.length
   const blocks = []
@@ -3576,7 +3593,7 @@ function createResolvedElement(comment, ctx) {
 // ---- Table of Contents ------------------------------------------------------
 
 function extractTocItems(md, rawContent) {
-  const tokens = md.parse(rawContent, {})
+  const tokens = md.parse(rewriteFrontmatterAsYamlFence(rawContent), {})
   const items = []
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i]
