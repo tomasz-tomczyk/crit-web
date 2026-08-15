@@ -3,6 +3,7 @@ import hljs from "highlight.js"
 import { registerMarkdownPatch } from "./highlight-markdown-patch"
 import { heex } from "highlightjs-heex"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
+import { sanitizeCommentHtml } from "./comment-html"
 import {
   commentMd,
   escapeHtml,
@@ -3022,7 +3023,7 @@ function createCommentElement(comment, ctx) {
       }
     }
   }
-  body.innerHTML = commentMd.render(comment.body, env)
+  body.innerHTML = sanitizeCommentHtml(commentMd.render(comment.body, env))
   linkifyCommentRefsInDom(body)
 
   card.appendChild(header)
@@ -3570,7 +3571,7 @@ function createResolvedElement(comment, ctx) {
       }
     }
   }
-  body.innerHTML = commentMd.render(comment.body, env)
+  body.innerHTML = sanitizeCommentHtml(commentMd.render(comment.body, env))
   linkifyCommentRefsInDom(body)
 
   card.appendChild(header)
@@ -4862,7 +4863,7 @@ export const DocumentRenderer = {
       const card = ctx.el.querySelector(`.comment-card[data-comment-id="${id}"]`)
       if (card) {
         const bodyEl = card.querySelector('.comment-body')
-        if (bodyEl) { bodyEl.innerHTML = commentMd.render(body); linkifyCommentRefsInDom(bodyEl) }
+        if (bodyEl) { bodyEl.innerHTML = sanitizeCommentHtml(commentMd.render(body)); linkifyCommentRefsInDom(bodyEl) }
       }
       rerenderPanel(ctx)
     })
@@ -4930,7 +4931,7 @@ export const DocumentRenderer = {
         const bodyEl = replyEl.querySelector('.reply-body')
         if (bodyEl) {
           bodyEl.dataset.rawBody = body
-          bodyEl.innerHTML = commentMd.render(body)
+          bodyEl.innerHTML = sanitizeCommentHtml(commentMd.render(body))
           linkifyCommentRefsInDom(bodyEl)
         }
       }

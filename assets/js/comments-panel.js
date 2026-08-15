@@ -17,6 +17,7 @@
 
 import markdownit from "markdown-it"
 import hljs from "highlight.js"
+import { sanitizeCommentHtml } from "./comment-html"
 
 // ---- Shared helpers ---------------------------------------------------------
 
@@ -63,7 +64,7 @@ export function authorColorIndex(author) {
 // same instance at runtime; that rule is inert for preview comments.
 
 export const commentMd = markdownit({
-  html: false,
+  html: true,
   linkify: true,
   typographer: true,
   highlight(str, lang) {
@@ -145,7 +146,7 @@ export function linkifyCommentRefsInDom(el) {
 // Render markdown into `el` and linkify comment-ref ids. `env` carries
 // originalLines for the ```suggestion fence rule (files mode); {} for preview.
 export function renderMarkdown(el, body, env) {
-  el.innerHTML = commentMd.render(body || "", env || {})
+  el.innerHTML = sanitizeCommentHtml(commentMd.render(body || "", env || {}))
   linkifyCommentRefsInDom(el)
 }
 

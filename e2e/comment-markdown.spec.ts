@@ -56,6 +56,29 @@ test.describe("Comment Markdown Rendering", () => {
     await expect(link).toHaveAttribute("href", "https://example.com");
   });
 
+  test("renders safe HTML while stripping unsafe markup from comments", async ({
+    page,
+  }) => {
+    await loadReview(page, token);
+    await addCommentViaUI(
+      page,
+      '<details open><summary>More context</summary>Safe content</details><!-- agent metadata --><img src=x onerror="window.__commentXss = true"><a href="javascript:alert(1)">unsafe</a>',
+      { waitText: "Safe content" },
+    );
+
+    const body = page.locator(".comment-card .comment-body");
+    await expect(body.locator("details[open] > summary")).toHaveText("More context");
+    await expect(body).toContainText("Safe content");
+    await expect(body.locator("script, [onerror], [onclick]")).toHaveCount(0);
+    await expect(body.locator('a[href^="javascript:"]')).toHaveCount(0);
+    await expect(
+      await body.evaluate((el) => {
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_COMMENT);
+        return walker.nextNode();
+      }),
+    ).toBeNull();
+  });
+
   test("renders fenced code blocks with syntax highlighting", async ({
     page,
   }) => {
