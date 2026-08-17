@@ -243,6 +243,43 @@ test.describe("Review Page — Rendered Tables", () => {
     expect(await tables.first().evaluate(table => getComputedStyle(table).marginTop)).toBe("0px");
   });
 
+  test("n and Shift+N navigate and flash rendered table diff changes", async ({ page, request }) => {
+    const update = async (content: string) => {
+      const response = await request.put(`${API_ORIGIN}/api/reviews/${token}`, {
+        data: {
+          delete_token: deleteToken,
+          files: [
+            { path: "table.md", content },
+            { path: "notes.md", content: "# Notes\n\nA second file exercises the multi-file renderer.\n" },
+          ],
+          comments: [],
+        },
+      });
+      expect(response.ok()).toBeTruthy();
+    };
+    await update(TABLE_MARKDOWN.replace("| beta | waiting for review |", "| beta | changed once |"));
+    await update(
+      TABLE_MARKDOWN
+        .replace("| beta | waiting for review |", "| beta | changed twice |")
+        .replace("| gamma | ready |", "| gamma | changed separately |")
+    );
+
+    await loadReview(page, token);
+    const tableSection = page.locator(".file-section").filter({ hasText: "table.md" });
+    await page.locator("button.crit-round-diff-btn").click();
+    await expect(tableSection.locator(".diff-view")).toBeVisible();
+
+    await page.keyboard.press("n");
+    const firstTarget = page.locator(".change-flash");
+    await expect(firstTarget).toHaveCount(1);
+    const firstText = await firstTarget.textContent();
+
+    await page.keyboard.press("Shift+N");
+    const previousTarget = page.locator(".change-flash");
+    await expect(previousTarget).toHaveCount(1);
+    expect(await previousTarget.textContent()).not.toBe(firstText);
+  });
+
   test("drag selection has continuous row-height gutter segments", async ({ page }) => {
     await loadReview(page, token);
     const first = page.getByRole("cell", { name: "x", exact: true }).locator("..").locator(".line-gutter");

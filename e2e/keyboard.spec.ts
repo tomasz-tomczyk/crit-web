@@ -268,11 +268,11 @@ test.describe("Keyboard Shortcuts", () => {
     const textarea = page.locator(".comment-form textarea");
     await expect(textarea).toBeVisible({ timeout: 5_000 });
 
-    // Type 'j' in the textarea — should NOT trigger navigation
-    await textarea.type("j");
-    await expect(textarea).toHaveValue("j");
+    // Type navigation shortcuts in the textarea — they must not leave the editor.
+    await textarea.type("jn");
+    await expect(textarea).toHaveValue("jn");
 
-    // No block should get focused from the shortcut
+    // No block should get focused from the shortcut.
     await expect(page.locator(".line-block.focused")).toHaveCount(0);
   });
 });
