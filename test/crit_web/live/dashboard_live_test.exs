@@ -41,6 +41,26 @@ defmodule CritWeb.DashboardLiveTest do
   end
 
   describe "personal dashboard" do
+    test "shows the original path for preview reviews", %{conn: conn} do
+      {conn, user} = login_user_with_record(conn)
+
+      review =
+        review_fixture(
+          user_id: user.id,
+          review_type: :preview,
+          cli_args: ["preview", "artifacts/reports/checkout.html"],
+          files: [%{"path" => "index.html", "content" => "<h1>Checkout</h1>"}]
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      assert has_element?(
+               view,
+               ~s(a[href="/r/#{review.token}"]),
+               "artifacts/reports/checkout.html"
+             )
+    end
+
     test "shows only the current user's reviews", %{conn: conn} do
       {conn, user} = login_user_with_record(conn)
       review = review_fixture(user_id: user.id)

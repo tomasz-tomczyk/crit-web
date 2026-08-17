@@ -2,7 +2,7 @@ defmodule CritWeb.Org.OverviewLive do
   use CritWeb, :live_view
 
   alias Crit.Accounts.Scope
-  alias Crit.Organizations
+  alias Crit.{Organizations, Reviews}
 
   @impl true
   def mount(_params, _session, socket) do

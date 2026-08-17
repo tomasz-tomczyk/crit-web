@@ -18,10 +18,26 @@ defmodule Crit.Reviews do
   alias Crit.Organizations
 
   @doc "Returns the review-page label used for titles and notification digests."
-  def display_filename(%{files: [%{file_path: path} | _]}) when is_binary(path), do: path
-  def display_filename(%{files: [%{"file_path" => path} | _]}) when is_binary(path), do: path
+  def display_filename(review) when is_map(review) do
+    case Map.get(review, :title) do
+      title when is_binary(title) ->
+        if String.trim(title) == "", do: fallback_filename(review), else: title
 
-  def display_filename(%Review{id: id, review_round: round}) do
+      _ ->
+        fallback_filename(review)
+    end
+  end
+
+  def display_filename(_review), do: "Review"
+
+  defp fallback_filename(%{files: [%{file_path: path} | _]}) when is_binary(path), do: path
+
+  defp fallback_filename(%{files: [%{"file_path" => path} | _]}) when is_binary(path),
+    do: path
+
+  defp fallback_filename(%{first_file_path: path}) when is_binary(path), do: path
+
+  defp fallback_filename(%Review{id: id, review_round: round}) do
     Repo.one(
       from s in ReviewRoundSnapshot,
         where: s.review_id == ^id and s.round_number == ^round,
@@ -31,7 +47,7 @@ defmodule Crit.Reviews do
     ) || "Review"
   end
 
-  def display_filename(_review), do: "Review"
+  defp fallback_filename(_review), do: "Review"
 
   @doc "Fetch a review by its token, preloading comments sorted by start_line."
   def get_by_token(token) do
@@ -341,6 +357,7 @@ defmodule Crit.Reviews do
             "cli_args" => cli_args,
             "review_type" => review_type
           })
+          |> put_preview_title(review_type, cli_args)
           |> Ecto.Changeset.put_change(:comment_policy, comment_policy)
           |> then(fn cs ->
             if user_id, do: Ecto.Changeset.put_change(cs, :user_id, user_id), else: cs
@@ -999,6 +1016,17 @@ defmodule Crit.Reviews do
     |> Repo.aggregate(:count)
   end
 
+  defp put_preview_title(changeset, review_type, ["preview", path])
+       when review_type in [:preview, "preview"] and is_binary(path) do
+    if String.trim(path) == "" do
+      changeset
+    else
+      Ecto.Changeset.put_change(changeset, :title, path)
+    end
+  end
+
+  defp put_preview_title(changeset, _review_type, _cli_args), do: changeset
+
   defp apply_review_filter(query, :all), do: query
 
   defp apply_review_filter(query, {:user, user_id}) do
@@ -1063,6 +1091,7 @@ defmodule Crit.Reviews do
         r.user_id,
         r.visibility,
         r.organization_id,
+        r.title,
         fp.file_path,
         fp.content,
         u.name,
@@ -1079,6 +1108,7 @@ defmodule Crit.Reviews do
         user_id: r.user_id,
         visibility: r.visibility,
         organization_id: r.organization_id,
+        title: r.title,
         org_name: o.name,
         org_slug: o.slug,
         comment_count: count(c.id, :distinct),

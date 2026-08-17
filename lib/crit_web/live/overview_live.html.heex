@@ -152,7 +152,7 @@
             >
               <div class="mb-2 px-0.5">
                 <.review_listing_header
-                  path={review.first_file_path}
+                  path={Reviews.display_filename(review)}
                   last_activity_at={review.last_activity_at}
                   file_count={review.file_count}
                   comment_count={review.comment_count}

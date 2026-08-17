@@ -7,6 +7,7 @@ defmodule Crit.Review do
     field :last_activity_at, :utc_datetime
     field :review_round, :integer, default: 0
     field :cli_args, {:array, :string}, default: []
+    field :title, :string
     field :visibility, Ecto.Enum, values: [:unlisted, :public, :organization], default: :unlisted
 
     field :comment_policy, Ecto.Enum,
