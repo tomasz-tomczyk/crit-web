@@ -11,6 +11,8 @@ export const shortcutGroups = [
     { id: "next_block", binding: "j", action: "Next block", modes: FILES },
     { id: "previous_block", binding: "k", action: "Previous block", modes: FILES },
     { id: "visual_mode", binding: "Shift+V", action: "Visual line mode (extend with next/previous block, then comment)", modes: FILES },
+    { id: "next_change", binding: "n", action: "Next change", modes: FILES },
+    { id: "previous_change", binding: "Shift+N", action: "Previous change", modes: FILES },
     { id: "next_comment", binding: "]", action: "Next comment", modes: FILES },
     { id: "previous_comment", binding: "[", action: "Previous comment", modes: FILES },
   ] },

@@ -815,6 +815,137 @@ function clearFocus(ctx) {
   if (prev) prev.classList.remove('focused')
 }
 
+function changeNavAnchor(ctx) {
+  if (ctx.currentChangeIdx < 0 || ctx.currentChangeIdx >= ctx.changeGroups.length) return null
+  const group = ctx.changeGroups[ctx.currentChangeIdx]
+  let fileGroupIdx = 0
+  for (let i = 0; i < ctx.currentChangeIdx; i++) {
+    if (ctx.changeGroups[i].filePath === group.filePath) fileGroupIdx++
+  }
+  return { filePath: group.filePath, fileGroupIdx }
+}
+
+function changeIndexForAnchor(ctx, anchor) {
+  if (!anchor) return -1
+  let fileGroupIdx = 0
+  let last = -1
+  for (let i = 0; i < ctx.changeGroups.length; i++) {
+    if (ctx.changeGroups[i].filePath !== anchor.filePath) continue
+    if (fileGroupIdx === anchor.fileGroupIdx) return i
+    fileGroupIdx++
+    last = i
+  }
+  return last
+}
+
+function nextLogicalChangeSibling(node) {
+  if (node.nextElementSibling) return node.nextElementSibling
+  const section = node.parentElement
+  if (!section || section.tagName !== 'THEAD') return null
+  const table = section.closest('table.native-table')
+  return table && table.tBodies.length ? table.tBodies[0].firstElementChild : null
+}
+
+function areConsecutiveChangeSiblings(a, b) {
+  let node = nextLogicalChangeSibling(a)
+  while (node && node !== b) {
+    if (node.classList.contains('line-block') &&
+        !node.classList.contains('line-block-added') &&
+        !node.classList.contains('line-block-modified') &&
+        !node.classList.contains('diff-added') &&
+        !node.classList.contains('diff-removed')) return false
+    if (node.classList.contains('deletion-marker')) {
+      node = nextLogicalChangeSibling(node)
+      continue
+    }
+    node = nextLogicalChangeSibling(node)
+  }
+  return node === b
+}
+
+function buildChangeGroups(ctx) {
+  const anchor = changeNavAnchor(ctx)
+  const documentChanges = Array.from(ctx.el.querySelectorAll(
+    '.line-block-added, .line-block-modified, .deletion-marker'
+  )).map(el => el.closest('.native-table-annotation') || el)
+    .filter((el, index, elements) => elements.indexOf(el) === index)
+  const diffChanges = Array.from(ctx.el.querySelectorAll(
+    '.diff-view .line-block.diff-added, .diff-view .line-block.diff-removed, .diff-view-unified .line-block.diff-added, .diff-view-unified .line-block.diff-removed'
+  ))
+  const changes = documentChanges.length > 0 ? documentChanges : diffChanges
+
+  ctx.changeGroups = []
+  let group = null
+  changes.forEach(el => {
+    const filePath = el.dataset.filePath || ''
+    if (!group || group.filePath !== filePath || !areConsecutiveChangeSiblings(group.elements[group.elements.length - 1], el)) {
+      group = { elements: [el], filePath }
+      ctx.changeGroups.push(group)
+    } else {
+      group.elements.push(el)
+    }
+  })
+  ctx.currentChangeIdx = changeIndexForAnchor(ctx, anchor)
+}
+
+function navigateToChange(ctx, direction) {
+  if (ctx.changeGroups.length === 0) return
+
+  ctx.el.querySelectorAll('.change-flash').forEach(el => el.classList.remove('change-flash'))
+
+  const viewportCenter = window.innerHeight / 2
+  const threshold = 50
+  let targetIdx = -1
+  const current = ctx.changeGroups[ctx.currentChangeIdx]
+  const currentRect = current?.elements[0].getBoundingClientRect()
+  const currentCenter = currentRect ? (currentRect.top + currentRect.bottom) / 2 : null
+
+  if (currentCenter !== null && Math.abs(currentCenter - viewportCenter) < threshold * 3) {
+    targetIdx = (ctx.currentChangeIdx + direction + ctx.changeGroups.length) % ctx.changeGroups.length
+  } else if (direction > 0) {
+    targetIdx = ctx.changeGroups.findIndex(group => {
+      const rect = group.elements[0].getBoundingClientRect()
+      return (rect.top + rect.bottom) / 2 > viewportCenter + threshold
+    })
+    if (targetIdx === -1) targetIdx = 0
+  } else {
+    for (let i = ctx.changeGroups.length - 1; i >= 0; i--) {
+      const rect = ctx.changeGroups[i].elements[0].getBoundingClientRect()
+      if ((rect.top + rect.bottom) / 2 < viewportCenter - threshold) {
+        targetIdx = i
+        break
+      }
+    }
+    if (targetIdx === -1) targetIdx = ctx.changeGroups.length - 1
+  }
+
+  ctx.currentChangeIdx = targetIdx
+  const target = ctx.changeGroups[targetIdx]
+  target.elements[0].scrollIntoView({ block: 'center', behavior: 'instant' })
+  target.elements.forEach(el => el.classList.add('change-flash'))
+
+  // Keep j/k/c keyboard focus aligned with the landed change (crit local parity).
+  const focusRoot = target.elements[0]
+  const blockEl = focusRoot.classList.contains('line-block')
+    ? focusRoot
+    : focusRoot.querySelector('.line-block')
+  if (blockEl) {
+    const blocks = ctx.el.querySelectorAll('.line-block')
+    for (let i = 0; i < blocks.length; i++) {
+      if (blocks[i] !== blockEl) continue
+      const prev = ctx.el.querySelector('.line-block.focused')
+      if (prev) prev.classList.remove('focused')
+      ctx.focusedBlockIndex = i
+      ctx.focusedFilePath = target.filePath || blockEl.dataset.filePath || ctx.focusedFilePath
+      if (ctx.activeForms.length === 0) blockEl.classList.add('focused')
+      rememberKeyboardFocusFromBlock(ctx, blockEl)
+      break
+    }
+  } else if (target.filePath) {
+    ctx.focusedFilePath = target.filePath
+  }
+}
+
 // Vim-style visual line mode: anchor on the focused block, extend with j/k.
 function enterVisualMode(ctx) {
   if (ctx.focusedBlockIndex < 0) return
@@ -1776,6 +1907,7 @@ function render(ctx) {
   renderReviewConversation(ctx)
   applyHideResolved(ctx)
   restoreKeyboardFocus(ctx)
+  buildChangeGroups(ctx)
 }
 
 // ---- Multi-file rendering ---------------------------------------------------
@@ -4634,6 +4766,8 @@ export const DocumentRenderer = {
     ctx.visualMode = null
     ctx.focusedBlockIndex = -1
     ctx.keyboardFocusTarget = null
+    ctx.changeGroups = []
+    ctx.currentChangeIdx = -1
     ctx.identity = ctx.el.dataset.identity || ""
     ctx.userId = ctx.el.dataset.userId || ""
     ctx.reviewOwnerId = ctx.el.dataset.reviewOwnerId || ""
@@ -5263,6 +5397,10 @@ export const DocumentRenderer = {
       // Comment navigation
       if (shortcutAction === 'previous_comment') { e.preventDefault(); navigateToComment(ctx, -1); return }
       if (shortcutAction === 'next_comment') { e.preventDefault(); navigateToComment(ctx, 1); return }
+
+      // Review diff navigation
+      if (shortcutAction === 'previous_change') { e.preventDefault(); navigateToChange(ctx, -1); return }
+      if (shortcutAction === 'next_change') { e.preventDefault(); navigateToChange(ctx, 1); return }
 
       // Review comment form
       if (shortcutAction === 'general_comment') {

@@ -873,6 +873,14 @@
   box-shadow: inset 2px 0 0 var(--crit-brand);
 }
 .line-block.focused .line-gutter { background: var(--crit-line-focus-bg); }
+@keyframes change-flash {
+  0%, 15% { background-color: var(--crit-change-flash-bg); }
+  100% { background-color: transparent; }
+}
+.line-block.change-flash,
+.deletion-marker.change-flash {
+  animation: change-flash 1s ease-out;
+}
 
 /* Visual line mode: recolor the focused block's left accent so it's clearly
    distinct from the default j/k cursor, signalling that j/k now extends the
@@ -1076,6 +1084,12 @@ body.dragging { user-select: none; cursor: grabbing; }
 .native-table .line-block.selected > .line-content,
 .native-table .line-block.form-selected > .line-content { background: var(--crit-brand-subtle); }
 .native-table .line-block.focused > .line-content { background: var(--crit-line-focus-bg); }
+.native-table .line-block.change-flash > .line-content {
+  animation: change-flash 1s ease-out;
+}
+.native-table-annotation.change-flash .deletion-marker {
+  animation: change-flash 1s ease-out;
+}
 .native-table .table-last td { border-bottom: none; }
 .native-table-separator { display: none !important; }
 .native-table-annotation > td { padding: 0 24px 0 64px; }
