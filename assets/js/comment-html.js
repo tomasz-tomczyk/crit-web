@@ -29,7 +29,8 @@ const ALLOWED_ATTR = [
   "width", "itemprop", "class", "data-ref-id",
 ]
 // Crit-generated classes only — suggestion diffs + highlight/ref spans.
-const SAFE_CLASS = /^(?:hljs(?:-[\w-]+)?|file-ref|comment-ref|comment-ref-code|suggestion(?:-[\w-]+)+|diff-word-(?:del|add))$/
+// language-* survives so markdown-it fenced-code classes remain after sanitize.
+const SAFE_CLASS = /^(?:hljs(?:-[\w-]+)?|language-[\w-]+|file-ref|comment-ref|comment-ref-code|suggestion(?:-[\w-]+)+|diff-word-(?:del|add))$/
 const SAFE_COMMENT_REF = /^(?:c|r|rp)_[a-f0-9]{6,}$/
 const SAFE_URL = /^(?:(?:https?|mailto):|(?:\/|\.{1,2}\/|#))/i
 
@@ -37,9 +38,38 @@ function isSafeUrl(value) {
   return value === "" || SAFE_URL.test(String(value).trim())
 }
 
+// Split srcset candidates (comma-separated), keep only entries whose URL
+// passes the same SAFE_URL check used for src/href.
+function sanitizeSrcset(value) {
+  const kept = []
+  for (const entry of String(value).split(",")) {
+    const trimmed = entry.trim()
+    if (!trimmed) continue
+    const url = trimmed.split(/\s+/)[0]
+    if (isSafeUrl(url)) kept.push(trimmed)
+  }
+  return kept.join(", ")
+}
+
+function sanitizeSrcsetAttributes(html) {
+  return String(html).replace(/\ssrcset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, (_match, doubleQuoted, singleQuoted, unquoted) => {
+    const cleaned = sanitizeSrcset(doubleQuoted ?? singleQuoted ?? unquoted)
+    return cleaned ? ` srcset="${cleaned}"` : ""
+  })
+}
+
 purify.addHook("afterSanitizeAttributes", node => {
   for (const attr of ["href", "src", "longdesc", "cite"]) {
     if (node.hasAttribute(attr) && !isSafeUrl(node.getAttribute(attr))) node.removeAttribute(attr)
+  }
+  if (node.hasAttribute("srcset")) {
+    const cleaned = sanitizeSrcset(node.getAttribute("srcset"))
+    if (cleaned) node.setAttribute("srcset", cleaned)
+    else node.removeAttribute("srcset")
+  }
+  if (node.tagName === "IMG" && !node.hasAttribute("src") && node.hasAttribute("srcset")) {
+    const firstUrl = node.getAttribute("srcset").split(/\s+/)[0]
+    if (isSafeUrl(firstUrl)) node.setAttribute("src", firstUrl)
   }
   if (node.hasAttribute("class")) {
     const classes = node.getAttribute("class").split(/\s+/).filter(value => SAFE_CLASS.test(value))
@@ -52,7 +82,7 @@ purify.addHook("afterSanitizeAttributes", node => {
 })
 
 export function sanitizeCommentHtml(html) {
-  return purify.sanitize(html, {
+  return purify.sanitize(sanitizeSrcsetAttributes(html), {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
     ALLOW_DATA_ATTR: false,

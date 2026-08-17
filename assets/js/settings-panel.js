@@ -70,10 +70,12 @@ function showError(message) {
   if (!host) {
     host = document.createElement('div')
     host.className = 'mini-toast-host'
+    host.setAttribute('aria-live', 'assertive')
     document.body.appendChild(host)
   }
   const toast = document.createElement('div')
   toast.className = 'mini-toast mini-toast--error'
+  toast.setAttribute('role', 'alert')
   toast.textContent = message
   host.appendChild(toast)
   requestAnimationFrame(() => toast.classList.add('mini-toast-visible'))
@@ -157,8 +159,8 @@ export function createSettingsPanel(adapter) {
       const preset = CODE_FONT_PRESETS.find(option => option.stack === currentCodeFont)
       const selectedId = preset ? preset.id : 'custom'
       html += '<div class="settings-display-row">'
-      html += '<span class="settings-display-label">Code font</span>'
-      html += '<select class="settings-select" id="codeFontSelect" aria-label="Code font">'
+      html += '<label class="settings-display-label" for="codeFontSelect">Code font</label>'
+      html += '<select class="settings-select" id="codeFontSelect">'
       CODE_FONT_PRESETS.forEach(function(option) {
         html += '<option value="' + option.id + '"' + (option.id === selectedId ? ' selected' : '') + '>' + option.label + '</option>'
       })
