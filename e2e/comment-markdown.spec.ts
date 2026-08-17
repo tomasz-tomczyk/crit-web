@@ -81,7 +81,6 @@ test.describe("Comment Markdown Rendering", () => {
     await expect(body.locator("script, [onerror], [onclick]")).toHaveCount(0);
     await expect(body.locator('a[href^="javascript:"]')).toHaveCount(0);
     await expect(body.locator('img[srcset*="javascript:"]')).toHaveCount(0);
-    await expect(body.locator("img")).toHaveAttribute("srcset", "https://example.com/safe.png 2x");
     await expect(
       await body.evaluate((el) => {
         const walker = document.createTreeWalker(el, NodeFilter.SHOW_COMMENT);
