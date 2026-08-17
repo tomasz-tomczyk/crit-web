@@ -45,6 +45,25 @@ test.describe("Review Page — Loading", () => {
     );
   });
 
+  test("renders YAML frontmatter as highlighted YAML", async ({ page, request }) => {
+    const review = await createReview(request, {
+      files: [{
+        path: "frontmatter.md",
+        content: "---\ntitle: Hello\n---\n\n# Document\n",
+      }],
+    });
+    const frontmatterToken = review.token;
+
+    try {
+      await loadReview(page, frontmatterToken);
+      const code = page.locator("#document-renderer code.hljs").filter({ hasText: "title: Hello" });
+      await expect(code).toContainText("title: Hello");
+      await expect(code.locator(".hljs-attr")).toHaveText("title:");
+    } finally {
+      await deleteReview(request, review.deleteToken);
+    }
+  });
+
   test("shows comment navigation group", async ({ page }) => {
     await loadReview(page, token);
 

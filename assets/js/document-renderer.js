@@ -10,6 +10,7 @@ import {
   formatTime,
   authorColorIndex,
   linkifyCommentRefsInDom,
+  renderMarkdown,
   renderReplyList as sharedRenderReplyList,
   createReplyInput as sharedCreateReplyInput,
   renderCommentCard,
@@ -3006,6 +3007,46 @@ function attachGutterTouchHandler(container, ctx) {
 
 // ---- Comment elements -------------------------------------------------------
 
+function commentMarkdownEnv(comment, ctx) {
+  const env = {}
+  if (ctx && comment.start_line && comment.end_line && !comment.side) {
+    if (comment.quote) {
+      env.originalLines = comment.quote.split('\n')
+    } else {
+      let fileContent = ctx.rawContent
+      if (ctx.multiFile && comment.file_path) {
+        const file = ctx.files && ctx.files.find(f => f.path === comment.file_path)
+        if (file) fileContent = file.content
+      }
+      if (fileContent) {
+        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+      }
+    }
+  }
+  return env
+}
+
+function markdownEnvForComment(comment, ctx, fallbackFilePath = null, includeSide = false) {
+  const env = {}
+  if (!ctx || !comment.start_line || !comment.end_line || (!includeSide && comment.side)) return env
+
+  if (comment.quote) {
+    env.originalLines = comment.quote.split('\n')
+    return env
+  }
+
+  let fileContent = ctx.rawContent
+  const filePath = comment.file_path || fallbackFilePath
+  if (ctx.multiFile && filePath) {
+    const file = ctx.files && ctx.files.find(f => f.path === filePath)
+    if (file) fileContent = file.content
+  }
+  if (fileContent) {
+    env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
+  }
+  return env
+}
+
 function createCommentElement(comment, ctx) {
   // Dispatch resolved comments to their own renderer
   if (comment.resolved) {
@@ -3133,23 +3174,7 @@ function createCommentElement(comment, ctx) {
 
   const body = document.createElement("div")
   body.className = "comment-body"
-  const env = {}
-  if (ctx && comment.start_line && comment.end_line && !comment.side) {
-    if (comment.quote) {
-      env.originalLines = comment.quote.split('\n')
-    } else {
-      let fileContent = ctx.rawContent
-      if (ctx.multiFile && comment.file_path) {
-        const file = ctx.files && ctx.files.find(f => f.path === comment.file_path)
-        if (file) fileContent = file.content
-      }
-      if (fileContent) {
-        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
-      }
-    }
-  }
-  body.innerHTML = sanitizeCommentHtml(commentMd.render(comment.body, env))
-  linkifyCommentRefsInDom(body)
+  renderMarkdown(body, comment.body, commentMarkdownEnv(comment, ctx))
 
   card.appendChild(header)
   card.appendChild(body)
@@ -3484,24 +3509,7 @@ function commentCardAdapter(ctx, filePath) {
       }
       return badges
     },
-    markdownEnv: (c) => {
-      const env = {}
-      if (c.start_line && c.end_line) {
-        if (c.quote) {
-          env.originalLines = c.quote.split('\n')
-        } else {
-          let fileContent = ctx.rawContent
-          if (ctx.multiFile && filePath) {
-            const file = ctx.files.find(f => f.path === filePath)
-            if (file) fileContent = file.content
-          }
-          if (fileContent) {
-            env.originalLines = fileContent.split('\n').slice(c.start_line - 1, c.end_line)
-          }
-        }
-      }
-      return env
-    },
+    markdownEnv: (c) => commentMarkdownEnv(c, ctx),
     onCardClick: (c) => {
       if (c.scope === 'review') {
         scrollToReviewComment(ctx, c.id)
@@ -3682,23 +3690,7 @@ function createResolvedElement(comment, ctx) {
 
   const body = document.createElement('div')
   body.className = 'comment-body'
-  const env = {}
-  if (ctx && comment.start_line && comment.end_line && !comment.side) {
-    if (comment.quote) {
-      env.originalLines = comment.quote.split('\n')
-    } else {
-      let fileContent = ctx.rawContent
-      if (ctx.multiFile && comment.file_path) {
-        const file = ctx.files && ctx.files.find(f => f.path === comment.file_path)
-        if (file) fileContent = file.content
-      }
-      if (fileContent) {
-        env.originalLines = fileContent.split('\n').slice(comment.start_line - 1, comment.end_line)
-      }
-    }
-  }
-  body.innerHTML = sanitizeCommentHtml(commentMd.render(comment.body, env))
-  linkifyCommentRefsInDom(body)
+  renderMarkdown(body, comment.body, commentMarkdownEnv(comment, ctx))
 
   card.appendChild(header)
   card.appendChild(body)
@@ -4996,7 +4988,7 @@ export const DocumentRenderer = {
       const card = ctx.el.querySelector(`.comment-card[data-comment-id="${id}"]`)
       if (card) {
         const bodyEl = card.querySelector('.comment-body')
-        if (bodyEl) { bodyEl.innerHTML = sanitizeCommentHtml(commentMd.render(body)); linkifyCommentRefsInDom(bodyEl) }
+        if (bodyEl) renderMarkdown(bodyEl, body, commentMarkdownEnv(comment, ctx))
       }
       rerenderPanel(ctx)
     })
@@ -5064,8 +5056,7 @@ export const DocumentRenderer = {
         const bodyEl = replyEl.querySelector('.reply-body')
         if (bodyEl) {
           bodyEl.dataset.rawBody = body
-          bodyEl.innerHTML = sanitizeCommentHtml(commentMd.render(body))
-          linkifyCommentRefsInDom(bodyEl)
+          renderMarkdown(bodyEl, body)
         }
       }
       rerenderPanel(ctx)

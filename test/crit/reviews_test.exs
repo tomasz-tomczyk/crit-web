@@ -283,6 +283,50 @@ defmodule Crit.ReviewsTest do
       assert serialized.external_id == "local-abc"
     end
 
+    test "quote_offset round-trips through import, serialize, and export" do
+      alias Crit.Output
+
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(
+          scope,
+          [%{"path" => "plan.md", "content" => "first\nsecond\nthird"}],
+          1,
+          [
+            %{
+              "file" => "plan.md",
+              "start_line" => 2,
+              "end_line" => 2,
+              "body" => "fix this",
+              "quote" => "second",
+              "quote_offset" => 14
+            }
+          ],
+          []
+        )
+
+      review = Reviews.get_by_token(review.token)
+      comment = hd(review.comments)
+
+      assert comment.quote == "second"
+      assert comment.quote_offset == 14
+
+      serialized = Reviews.serialize_comment(comment)
+      assert serialized.quote_offset == 14
+
+      export =
+        Output.multi_file_comments_json(
+          review,
+          [%{path: "plan.md"}],
+          review.comments,
+          "http://localhost:4000"
+        )
+
+      exported = hd(export.files["plan.md"].comments)
+      assert exported.quote_offset == 14
+    end
+
     test "comments referencing non-existent files are still inserted" do
       scope = anon_scope()
       files = [%{"path" => "a.go", "content" => "a"}]

@@ -56,13 +56,22 @@ test.describe("Comment Markdown Rendering", () => {
     await expect(link).toHaveAttribute("href", "https://example.com");
   });
 
+  test("keeps typographer replacements literal", async ({ page }) => {
+    await loadReview(page, token);
+    await addCommentViaUI(page, "Choose (c), (r), or (tm)");
+
+    await expect(page.locator(".comment-card .comment-body")).toHaveText(
+      "Choose (c), (r), or (tm)",
+    );
+  });
+
   test("renders safe HTML while stripping unsafe markup from comments", async ({
     page,
   }) => {
     await loadReview(page, token);
     await addCommentViaUI(
       page,
-      '<details open><summary>More context</summary>Safe content</details><!-- agent metadata --><img src=x onerror="window.__commentXss = true"><a href="javascript:alert(1)">unsafe</a>',
+      '<details open><summary>More context</summary>Safe content</details><!-- agent metadata --><img src=x srcset="javascript:alert(1) 1x, https://example.com/safe.png 2x" onerror="window.__commentXss = true"><a href="javascript:alert(1)">unsafe</a>',
       { waitText: "Safe content" },
     );
 
@@ -71,6 +80,8 @@ test.describe("Comment Markdown Rendering", () => {
     await expect(body).toContainText("Safe content");
     await expect(body.locator("script, [onerror], [onclick]")).toHaveCount(0);
     await expect(body.locator('a[href^="javascript:"]')).toHaveCount(0);
+    await expect(body.locator('img[srcset*="javascript:"]')).toHaveCount(0);
+    await expect(body.locator("img")).toHaveAttribute("srcset", "https://example.com/safe.png 2x");
     await expect(
       await body.evaluate((el) => {
         const walker = document.createTreeWalker(el, NodeFilter.SHOW_COMMENT);
