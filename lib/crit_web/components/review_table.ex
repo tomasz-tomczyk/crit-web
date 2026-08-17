@@ -2,6 +2,8 @@ defmodule CritWeb.Components.ReviewTable do
   use Phoenix.Component
   use Phoenix.VerifiedRoutes, endpoint: CritWeb.Endpoint, router: CritWeb.Router
 
+  alias Crit.Reviews
+
   import CritWeb.CoreComponents, only: [icon: 1]
   import CritWeb.Helpers, only: [split_path: 1, date_label: 1, time_ago: 1]
 
@@ -51,12 +53,13 @@ defmodule CritWeb.Components.ReviewTable do
               class="size-[18px] text-(--crit-fg-muted) shrink-0"
             />
             <div class="min-w-0">
-              <% {dir, file} = split_path(review.first_file_path) %>
+              <% display_path = Reviews.display_filename(review) %>
+              <% {dir, file} = split_path(display_path) %>
               <div class="font-semibold text-sm text-(--crit-fg-primary) leading-tight truncate">
                 <span class="text-(--crit-fg-muted) font-normal">{dir}</span>{file}
               </div>
               <div class="text-xs text-(--crit-fg-muted) mt-0.5 truncate font-mono">
-                {review.first_file_path || "Untitled"}
+                {display_path}
               </div>
             </div>
           </div>

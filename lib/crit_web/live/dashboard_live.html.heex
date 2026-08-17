@@ -175,7 +175,7 @@
                     :stale -> "bg-(--crit-fg-muted)"
                   end
                 ]} />
-                <% {dir, file} = split_path(review.first_file_path) %>
+                <% {dir, file} = split_path(Reviews.display_filename(review)) %>
                 <div class="flex-1 min-w-0">
                   <div class="font-semibold text-sm text-(--crit-fg-primary) leading-tight truncate">
                     <span class="text-(--crit-fg-muted) font-normal">{dir}</span>{file}

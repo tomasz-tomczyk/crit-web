@@ -457,6 +457,19 @@ defmodule CritWeb.ApiControllerTest do
   end
 
   describe "POST /api/reviews with cli_args" do
+    test "ignores an arbitrary client-supplied title", %{conn: conn} do
+      payload = %{
+        "files" => [%{"path" => "plan.md", "content" => "# Plan"}],
+        "title" => "client-controlled.html"
+      }
+
+      conn = post(conn, ~p"/api/reviews", payload)
+      assert %{"url" => url} = json_response(conn, 201)
+      token = url |> String.split("/") |> List.last()
+
+      assert Reviews.get_by_token(token).title == nil
+    end
+
     test "stores cli_args through multi-file create", %{conn: conn} do
       payload = %{
         "files" => [%{"path" => "plan.md", "content" => "# Plan"}],

@@ -80,6 +80,19 @@ defmodule CritWeb.ReviewLiveTest do
 
       assert_push_event view, "init", %{review_type: "preview"}
     end
+
+    test "sets page title to the original preview path", %{conn: conn} do
+      review =
+        review_fixture(
+          files: [%{"path" => "index.html", "content" => "<h1>Hi</h1>"}],
+          review_type: :preview,
+          cli_args: ["preview", "artifacts/reports/checkout.html"]
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/r/#{review.token}")
+
+      assert page_title(view) =~ "artifacts/reports/checkout.html"
+    end
   end
 
   describe "mount with multi-file review" do

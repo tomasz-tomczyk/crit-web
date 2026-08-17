@@ -26,6 +26,21 @@ defmodule Crit.ReviewsTest do
   defp default_files, do: [%{"path" => "test.md", "content" => "# Hello"}]
 
   describe "display_filename/1" do
+    test "prefers a persisted nonblank title" do
+      review = %Review{
+        title: "artifacts/reports/checkout.html",
+        files: [%{file_path: "index.html"}]
+      }
+
+      assert Reviews.display_filename(review) == "artifacts/reports/checkout.html"
+    end
+
+    test "ignores a blank persisted title" do
+      review = %Review{title: "   ", files: [%{file_path: "index.html"}]}
+
+      assert Reviews.display_filename(review) == "index.html"
+    end
+
     test "prefers embedded files, then snapshot, then Review fallback" do
       assert Reviews.display_filename(%{files: [%{file_path: "embedded.md"}]}) == "embedded.md"
 
@@ -42,6 +57,50 @@ defmodule Crit.ReviewsTest do
   end
 
   describe "create_review/6" do
+    test "stores the original path as the title for preview reviews" do
+      assert {:ok, review} =
+               Reviews.create_review(
+                 anon_scope(),
+                 [%{"path" => "index.html", "content" => "<h1>Checkout</h1>"}],
+                 0,
+                 [],
+                 [],
+                 review_type: "preview",
+                 cli_args: ["preview", "artifacts/reports/checkout.html"]
+               )
+
+      assert review.title == "artifacts/reports/checkout.html"
+      assert Reviews.display_filename(Reviews.get_by_token(review.token)) == review.title
+    end
+
+    test "does not store a title for non-preview reviews" do
+      assert {:ok, review} =
+               Reviews.create_review(anon_scope(), default_files(), 0, [], [],
+                 review_type: "files",
+                 cli_args: ["preview", "artifacts/reports/checkout.html"]
+               )
+
+      assert review.title == nil
+    end
+
+    test "does not store empty or whitespace-only preview paths" do
+      for path <- ["", "   "] do
+        assert {:ok, review} =
+                 Reviews.create_review(
+                   anon_scope(),
+                   [%{"path" => "index.html", "content" => "<h1>Preview</h1>"}],
+                   0,
+                   [],
+                   [],
+                   review_type: "preview",
+                   cli_args: ["preview", path]
+                 )
+
+        assert review.title == nil
+        assert Reviews.display_filename(Reviews.get_by_token(review.token)) == "index.html"
+      end
+    end
+
     test "anonymous → user_id nil" do
       scope = anon_scope()
       assert {:ok, review} = Reviews.create_review(scope, default_files(), 0, [])
@@ -1043,6 +1102,57 @@ defmodule Crit.ReviewsTest do
   end
 
   describe "upsert_review/4 (scope)" do
+    test "cannot change a preview title through updated cli_args when content is unchanged" do
+      scope = anon_scope()
+      files = [%{"path" => "index.html", "content" => "same"}]
+
+      assert {:ok, review} =
+               Reviews.create_review(scope, files, 1, [], [],
+                 review_type: "preview",
+                 cli_args: ["preview", "artifacts/original.html"]
+               )
+
+      assert {:ok, :no_changes, updated} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => files,
+                 "comments" => [],
+                 "cli_args" => ["preview", "artifacts/renamed.html"],
+                 "title" => "api-supplied.html"
+               })
+
+      assert updated.cli_args == ["preview", "artifacts/renamed.html"]
+      assert updated.title == "artifacts/original.html"
+      assert Reviews.display_filename(updated) == "artifacts/original.html"
+    end
+
+    test "cannot change a preview title when updated content creates a new round" do
+      scope = anon_scope()
+
+      assert {:ok, review} =
+               Reviews.create_review(
+                 scope,
+                 [%{"path" => "index.html", "content" => "first"}],
+                 1,
+                 [],
+                 [],
+                 review_type: "preview",
+                 cli_args: ["preview", "artifacts/original.html"]
+               )
+
+      assert {:ok, :updated, updated} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "index.html", "content" => "second"}],
+                 "comments" => [],
+                 "cli_args" => ["preview", "artifacts/renamed.html"],
+                 "title" => "api-supplied.html"
+               })
+
+      assert updated.review_round == 2
+      assert updated.cli_args == ["preview", "artifacts/renamed.html"]
+      assert updated.title == "artifacts/original.html"
+      assert Reviews.display_filename(updated) == "artifacts/original.html"
+    end
+
     test "rejects upsert with oversize cli_args" do
       scope = anon_scope()
 

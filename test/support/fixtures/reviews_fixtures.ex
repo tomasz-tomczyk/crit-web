@@ -26,10 +26,19 @@ defmodule Crit.ReviewsFixtures do
       end
 
     opts =
-      case attrs[:review_type] do
-        nil -> []
-        review_type -> [review_type: to_string(review_type)]
-      end
+      []
+      |> then(fn opts ->
+        case attrs[:review_type] do
+          nil -> opts
+          review_type -> Keyword.put(opts, :review_type, to_string(review_type))
+        end
+      end)
+      |> then(fn opts ->
+        case attrs[:cli_args] do
+          nil -> opts
+          cli_args -> Keyword.put(opts, :cli_args, cli_args)
+        end
+      end)
 
     {:ok, review} =
       Reviews.create_review(
