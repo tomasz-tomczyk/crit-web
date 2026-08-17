@@ -612,6 +612,7 @@ defmodule CritWeb.ReviewLiveTest do
           :end_line,
           :body,
           :quote,
+          :quote_offset,
           :scope,
           :author_identity,
           :author_display_name,

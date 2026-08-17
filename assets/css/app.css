@@ -1062,13 +1062,28 @@ body.dragging { user-select: none; cursor: grabbing; }
 .line-content.mermaid-block { background: var(--crit-editor-bg-card); border: 1px solid var(--crit-border); border-radius: 8px; padding: 16px; margin: 6px 0; text-align: center; min-height: 60px; }
 .mermaid-rendered svg { max-width: 100%; height: auto; }
 
-/* Table rows */
+/* Native rendered tables */
+.native-table-wrapper { width: 100%; overflow-x: auto; margin: 8px 0; }
+.native-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; font-size: 0.925rem; margin: 0; }
+.native-table .line-block { display: table-row; }
+.native-table-gutter { position: relative; width: 52px; min-width: 52px; padding: 0; vertical-align: top; }
+.native-table-gutter > .line-gutter { position: absolute; inset: 0; box-sizing: border-box; width: 52px; }
+.native-table th.line-content { text-align: left; font-weight: 600; padding: 10px 14px; color: var(--crit-editor-fg-secondary); border-bottom: 2px solid var(--crit-border); }
+.native-table td.line-content { padding: 8px 14px; border-bottom: 1px solid var(--crit-border); }
+.native-table tbody tr.table-even td.line-content { background: var(--crit-table-stripe); }
+.native-table .line-block.has-comment > .line-content { background: var(--crit-comment-range-bg); }
+.native-table .line-block:hover > .line-content { background: var(--crit-selection-bg); }
+.native-table .line-block.selected > .line-content,
+.native-table .line-block.form-selected > .line-content { background: var(--crit-brand-subtle); }
+.native-table .line-block.focused > .line-content { background: var(--crit-line-focus-bg); }
+.native-table .table-last td { border-bottom: none; }
+.native-table-separator { display: none !important; }
+.native-table-annotation > td { padding: 0 24px 0 64px; }
+
+/* Rendered round diffs keep rows on independent diff lines. Their fallback
+   tables share renderer-generated widths so columns stay aligned. */
 .line-content.table-row table.split-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.925rem; margin: 0; }
-.line-content.table-row th { text-align: left; font-weight: 600; padding: 10px 14px; color: var(--crit-editor-fg-secondary); border-bottom: 2px solid var(--crit-border); }
-.line-content.table-row td { padding: 8px 14px; border-bottom: 1px solid var(--crit-border); }
 .line-content.table-even td { background: var(--crit-table-stripe); }
-.line-content.table-first { border-top: 1px solid var(--crit-border); border-top-left-radius: 8px; border-top-right-radius: 8px; overflow: hidden; }
-.line-content.table-last { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; overflow: hidden; }
 .line-content.table-last td { border-bottom: none; }
 .line-content.table-separator { height: 0; padding: 0; overflow: hidden; }
 .line-block:has(.table-separator) { height: 0; overflow: hidden; min-height: 0; }

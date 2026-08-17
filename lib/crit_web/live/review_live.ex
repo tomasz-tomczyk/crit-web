@@ -273,6 +273,11 @@ defmodule CritWeb.ReviewLive do
         if q = params["quote"], do: Map.put(a, "quote", q), else: a
       end)
       |> then(fn a ->
+        if is_integer(params["quote_offset"]),
+          do: Map.put(a, "quote_offset", params["quote_offset"]),
+          else: a
+      end)
+      |> then(fn a ->
         if da = params["dom_anchor"], do: Map.put(a, "dom_anchor", da), else: a
       end)
 

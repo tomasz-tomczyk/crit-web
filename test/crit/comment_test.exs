@@ -72,5 +72,12 @@ defmodule Crit.CommentTest do
       changeset = Comment.create_changeset(%Comment{}, attrs)
       assert changeset.valid?
     end
+
+    test "accepts an optional quote offset" do
+      attrs = @valid_attrs |> Map.put(:quote, "second") |> Map.put(:quote_offset, 14)
+      changeset = Comment.create_changeset(%Comment{}, attrs)
+      assert changeset.valid?
+      assert Ecto.Changeset.get_change(changeset, :quote_offset) == 14
+    end
   end
 end

@@ -1280,16 +1280,48 @@ function buildLineBlocks(md, rawContent) {
       continue
     }
 
-    // Tables: split per row
+    // Keep source rows independently commentable, but group them so document
+    // view can render every row in one native browser-laid-out table.
     if (token.type === "table_open") {
       const tableCloseIdx = findClose(i)
-      let numCols = 0
-      for (let j = i + 1; j < tableCloseIdx; j++) {
-        if (tokens[j].type === "th_open") numCols++
-        if (tokens[j].type === "tr_close") break
+      const tableId = "table-" + (token.map ? token.map[0] : i)
+      const preferredWidths = []
+      const alignments = []
+      let columnIndex = 0
+      const inlineVisibleLength = inlineToken => {
+        if (!inlineToken.children || inlineToken.children.length === 0) {
+          return Array.from(inlineToken.content || "").length
+        }
+        return inlineToken.children.reduce((length, child) => {
+          if (child.nesting !== 0) return length
+          let content = child.content || ""
+          if (child.type === "html_inline") content = content.replace(/<[^>]*>/g, "")
+          return length + Array.from(content).length
+        }, 0)
       }
-      const colWidth = numCols > 0 ? (100 / numCols).toFixed(2) + "%" : "auto"
-      const colgroup = "<colgroup>" + ('<col style="width:' + colWidth + '">').repeat(numCols) + "</colgroup>"
+      for (let widthIdx = i + 1; widthIdx < tableCloseIdx; widthIdx++) {
+        const tableToken = tokens[widthIdx]
+        if (tableToken.type === "tr_open") {
+          columnIndex = 0
+        } else if (tableToken.type === "th_open" || tableToken.type === "td_open") {
+          let contentLength = 0
+          for (let contentIdx = widthIdx + 1; contentIdx < tableCloseIdx &&
+               tokens[contentIdx].type !== "th_close" && tokens[contentIdx].type !== "td_close"; contentIdx++) {
+            if (tokens[contentIdx].type === "inline") contentLength += inlineVisibleLength(tokens[contentIdx])
+          }
+          preferredWidths[columnIndex] = Math.max(preferredWidths[columnIndex] || 0, contentLength)
+          if (tableToken.type === "th_open") alignments[columnIndex] = tableToken.attrGet("style") || ""
+          columnIndex++
+        }
+      }
+      const weights = preferredWidths.map(length => Math.max(4, Math.min(48, length)))
+      const totalWeight = weights.reduce((total, weight) => total + weight, 0)
+      const fallbackColgroup = preferredWidths.length === 0 ? "" : "<colgroup>" + weights.map((weight, index) => {
+        let alignment = alignments[index] || ""
+        if (alignment && !alignment.endsWith(";")) alignment += ";"
+        return '<col style="' + escapeAttr(alignment) + "width:" +
+          (weight / totalWeight * 100).toFixed(2) + '%">'
+      }).join("") + "</colgroup>"
 
       let rowIndex = 0
       let bodyRowIndex = 0
@@ -1307,7 +1339,7 @@ function buildLineBlocks(md, rawContent) {
             for (let ln = coveredUpTo; ln < trMap[0]; ln++) {
               const lineText = sourceLines[ln].trim()
               if (/^\|[\s\-:|]+\|$/.test(lineText) || /^[-:|][\s\-:|]*$/.test(lineText)) {
-                blocks.push({ startLine: ln + 1, endLine: ln + 1, html: "", isEmpty: false, cssClass: "table-separator" })
+                blocks.push({ startLine: ln + 1, endLine: ln + 1, html: "", isEmpty: false, cssClass: "table-separator", tableId, tableSection: "tbody" })
               } else {
                 blocks.push({ startLine: ln + 1, endLine: ln + 1, html: lineText === "" ? "" : escapeHtml(lineText), isEmpty: lineText === "" })
               }
@@ -1316,13 +1348,24 @@ function buildLineBlocks(md, rawContent) {
 
             const trTokens = tokens.slice(j, trCloseIdx + 1)
             const section = inThead ? "thead" : "tbody"
-            const rowHtml = '<table class="split-table">' + colgroup +
-              "<" + section + ">" + md.renderer.render(trTokens, md.options, {}) + "</" + section + "></table>"
+            const nativeRowHtml = md.renderer.render(trTokens, md.options, {})
+            const rowHtml = '<table class="split-table" data-table-id="' + escapeAttr(tableId) + '">' +
+              fallbackColgroup + '<' + section + ">" +
+              nativeRowHtml + "</" + section + "></table>"
 
             let cls = "table-row"
             if (rowIndex === 0) cls += " table-first"
             if (!inThead && bodyRowIndex % 2 === 1) cls += " table-even"
-            blocks.push({ startLine: trMap[0] + 1, endLine: trMap[1], html: rowHtml, isEmpty: false, cssClass: cls })
+            blocks.push({
+              startLine: trMap[0] + 1,
+              endLine: trMap[1],
+              html: rowHtml,
+              nativeRowHtml,
+              isEmpty: false,
+              cssClass: cls,
+              tableId,
+              tableSection: section,
+            })
             coveredUpTo = trMap[1]
             rowIndex++
             if (!inThead) bodyRowIndex++
@@ -2311,13 +2354,7 @@ function renderFileSection(ctx, file) {
     } else {
       const commentsMap = buildCommentsMap(file.comments)
       const commentedLineSet = buildCommentedLineSet(file.comments, ctx)
-      const lineBlocks = file.lineBlocks
-
-      for (let i = 0; i < lineBlocks.length; i++) {
-        const block = lineBlocks[i]
-        const blockEl = renderBlock(ctx, block, i, commentsMap, commentedLineSet, file.path)
-        body.appendChild(blockEl)
-      }
+      appendDocumentBlocks(ctx, body, file.lineBlocks, commentsMap, commentedLineSet, file.path)
     }
 
     if (file.fileType !== 'code') {
@@ -2360,29 +2397,35 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
         var s = parseInt(el.dataset.startLine)
         var e = parseInt(el.dataset.endLine)
         if (s <= ln && e >= ln) {
-          var content = el.querySelector('.line-content')
-          if (content && contentEls.indexOf(content) === -1) contentEls.push(content)
+          el.querySelectorAll('.line-content').forEach(function(content) {
+            if (contentEls.indexOf(content) === -1) contentEls.push(content)
+          })
         }
       })
     }
 
     if (contentEls.length === 0) return
 
-    // Collect all text nodes across the content elements
-    var textNodes = []
-    contentEls.forEach(function(el) {
+    // Preserve a whitespace boundary between cells/line blocks while retaining
+    // each real text node's offsets for DOM highlighting.
+    var nodeRanges = []
+    var fullText = ''
+    contentEls.forEach(function(el, contentIndex) {
+      if (contentIndex > 0) fullText += ' '
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null)
       var node
       while ((node = walker.nextNode())) {
-        if (node.textContent.length > 0) textNodes.push(node)
+        if (node.textContent.length === 0) continue
+        var start = fullText.length
+        fullText += node.textContent
+        nodeRanges.push({ node: node, start: start, end: fullText.length })
       }
     })
 
-    if (textNodes.length === 0) return
+    if (nodeRanges.length === 0) return
 
     // Build concatenated text and find the quote within it.
     // Normalize the quote: collapse whitespace/newlines so cross-line selections match.
-    var fullText = textNodes.map(function(n) { return n.textContent }).join('')
     var normalizedQuote = comment.quote.replace(/\s+/g, ' ')
     var normalizedFull = fullText.replace(/\s+/g, ' ')
     var quoteIdx = -1
@@ -2425,22 +2468,21 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
       }
     }
 
-    // Walk text nodes to find which ones overlap with the quote range
+    // Walk text nodes to find which ones overlap with the quote range.
     var quoteEnd = quoteIdx + matchLen
-    var pos = 0
-    for (var i = 0; i < textNodes.length; i++) {
-      var node = textNodes[i]
-      var nodeEnd = pos + node.textContent.length
-      if (nodeEnd <= quoteIdx) { pos = nodeEnd; continue }
-      if (pos >= quoteEnd) break
+    for (var i = 0; i < nodeRanges.length; i++) {
+      var nodeRange = nodeRanges[i]
+      var node = nodeRange.node
+      if (nodeRange.end <= quoteIdx) continue
+      if (nodeRange.start >= quoteEnd) break
 
       // This node overlaps with the quote range
-      var startInNode = Math.max(0, quoteIdx - pos)
-      var endInNode = Math.min(node.textContent.length, quoteEnd - pos)
+      var startInNode = Math.max(0, quoteIdx - nodeRange.start)
+      var endInNode = Math.min(node.textContent.length, quoteEnd - nodeRange.start)
 
       // Skip wrapping whitespace-only matches (e.g. newlines between blocks)
       var matchText = node.textContent.slice(startInNode, endInNode)
-      if (!matchText.trim()) { pos = nodeEnd; continue }
+      if (!matchText.trim()) continue
 
       if (startInNode === 0 && endInNode === node.textContent.length) {
         // Wrap entire text node
@@ -2464,7 +2506,6 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
         if (after) frag.appendChild(document.createTextNode(after))
         node.parentNode.replaceChild(frag, node)
       }
-      pos = nodeEnd
     }
   })
 }
@@ -2539,11 +2580,28 @@ function blockHasComment(block, commentedLineSet) {
   return false
 }
 
+function wrapNativeTableAnnotation(element) {
+  const row = document.createElement("tr")
+  row.className = "native-table-annotation"
+  if (element.dataset.filePath) row.dataset.filePath = element.dataset.filePath
+  const cell = document.createElement("td")
+  cell.colSpan = 100
+  cell.appendChild(element)
+  row.appendChild(cell)
+  return row
+}
+
 function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath) {
   const fragment = document.createDocumentFragment()
+  const isTableBlock = !!block.tableId
 
-  const lineBlockEl = document.createElement("div")
+  const lineBlockEl = document.createElement(isTableBlock ? "tr" : "div")
   lineBlockEl.className = "line-block"
+  if (isTableBlock && block.cssClass) {
+    block.cssClass.split(/\s+/).forEach(className => {
+      if (className) lineBlockEl.classList.add(className)
+    })
+  }
   lineBlockEl.dataset.blockIndex = index
   lineBlockEl.dataset.startLine = block.startLine
   lineBlockEl.dataset.endLine = block.endLine
@@ -2598,24 +2656,56 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
   gutter.appendChild(commentGutter)
   // mousedown handled by delegated attachGutterMouseHandler on the container
 
-  // Content
-  const content = document.createElement("div")
   let contentClasses = "line-content"
   if (block.isEmpty) contentClasses += " empty-line"
   if (block.cssClass) contentClasses += " " + block.cssClass
-  content.className = contentClasses
-  let html = block.html
-  html = processTaskLists(html)
-  html = rewriteImageSrcs(html, filePath, ctx.reviewToken)
-  content.innerHTML = html
+  if (isTableBlock) {
+    const gutterCell = document.createElement("td")
+    gutterCell.className = "native-table-gutter"
+    gutterCell.appendChild(gutter)
+    lineBlockEl.appendChild(gutterCell)
 
-  lineBlockEl.appendChild(gutter)
-  lineBlockEl.appendChild(content)
+    if (block.cssClass?.includes("table-separator")) {
+      lineBlockEl.classList.add("native-table-separator")
+      const separatorCell = document.createElement("td")
+      separatorCell.colSpan = 100
+      lineBlockEl.appendChild(separatorCell)
+    } else {
+      let html = processTaskLists(block.nativeRowHtml || block.html)
+      html = rewriteImageSrcs(html, filePath, ctx.reviewToken)
+      const scratch = document.createElement("table")
+      scratch.innerHTML = "<tbody>" + html + "</tbody>"
+      const renderedRow = scratch.querySelector("tr")
+      if (renderedRow) {
+        while (renderedRow.firstChild) {
+          const cell = renderedRow.firstChild
+          cell.className = contentClasses + (cell.className ? " " + cell.className : "")
+          lineBlockEl.appendChild(cell)
+        }
+      }
+    }
+  } else {
+    const content = document.createElement("div")
+    content.className = contentClasses
+    let html = processTaskLists(block.html)
+    html = rewriteImageSrcs(html, filePath, ctx.reviewToken)
+    content.innerHTML = html
+    lineBlockEl.appendChild(gutter)
+    lineBlockEl.appendChild(content)
+  }
   fragment.appendChild(lineBlockEl)
+
+  const appendAnnotation = element => {
+    if (!isTableBlock) {
+      fragment.appendChild(element)
+      return
+    }
+    fragment.appendChild(wrapNativeTableAnnotation(element))
+  }
 
   // Comments after this block
   for (const comment of blockComments) {
-    fragment.appendChild(createCommentElement(comment, ctx))
+    appendAnnotation(createCommentElement(comment, ctx))
   }
 
   // New comment forms after this block
@@ -2624,10 +2714,41 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
     (f.filePath || null) === (filePath || null)
   )
   for (const formObj of formsHere) {
-    fragment.appendChild(createCommentForm(formObj, ctx))
+    appendAnnotation(createCommentForm(formObj, ctx))
   }
 
   return fragment
+}
+
+function appendDocumentBlocks(ctx, container, lineBlocks, commentsMap, commentedLineSet, filePath) {
+  let activeTableId = null
+  let activeTableHead = null
+  let activeTableBody = null
+  for (let index = 0; index < lineBlocks.length; index++) {
+    const block = lineBlocks[index]
+    const isTableBlock = !!block.tableId
+    if (isTableBlock && block.tableId !== activeTableId) {
+      const wrapper = document.createElement("div")
+      wrapper.className = "native-table-wrapper"
+      const table = document.createElement("table")
+      table.className = "native-table"
+      activeTableHead = document.createElement("thead")
+      activeTableBody = document.createElement("tbody")
+      table.appendChild(activeTableHead)
+      table.appendChild(activeTableBody)
+      wrapper.appendChild(table)
+      container.appendChild(wrapper)
+      activeTableId = block.tableId
+    } else if (!isTableBlock) {
+      activeTableId = null
+      activeTableHead = null
+      activeTableBody = null
+    }
+    const parent = isTableBlock
+      ? (block.tableSection === "thead" ? activeTableHead : activeTableBody)
+      : container
+    parent.appendChild(renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath))
+  }
 }
 
 function renderDocument(ctx) {
@@ -2665,10 +2786,14 @@ function renderDocument(ctx) {
   const commentsMap = buildCommentsMap(ctx.comments)
   const commentedLineSet = buildCommentedLineSet(ctx.comments, ctx)
 
-  for (let bi = 0; bi < ctx.lineBlocks.length; bi++) {
-    const block = ctx.lineBlocks[bi]
-    container.appendChild(renderBlock(ctx, block, bi, commentsMap, commentedLineSet, ctx.singleFilePath || null))
-  }
+  appendDocumentBlocks(
+    ctx,
+    container,
+    ctx.lineBlocks,
+    commentsMap,
+    commentedLineSet,
+    ctx.singleFilePath || null,
+  )
 
   // Attach delegated mouse + touch handlers for comment initiation
   attachGutterMouseHandler(container, ctx)
@@ -3220,6 +3345,7 @@ function submitNewComment(body, formObj, ctx) {
     payload.end_line = formObj.endLine
   }
   if (formObj.quote) payload.quote = formObj.quote
+  if (formObj.quoteOffset != null) payload.quote_offset = formObj.quoteOffset
   pushCommentMutation(ctx, "add_comment", payload, {
     onSuccess: () => {
       clearDraft(ctx.reviewToken, formObj)
@@ -3857,15 +3983,20 @@ function insertInlineComment(ctx, comment) {
     }
   }
 
-  // Insert after any existing comment blocks following the target line block
+  // Insert after any existing comments/forms following the target line block.
+  // Native table annotations must remain valid tbody/thead children.
   let insertAfter = targetBlock
-  while (insertAfter.nextElementSibling &&
-         (insertAfter.nextElementSibling.classList.contains('comment-block') ||
-          insertAfter.nextElementSibling.classList.contains('comment-form-wrapper'))) {
-    insertAfter = insertAfter.nextElementSibling
+  const inNativeTable = !!targetBlock.closest('table.native-table')
+  while (insertAfter.nextElementSibling) {
+    const next = insertAfter.nextElementSibling
+    const isAnnotation = inNativeTable
+      ? next.classList.contains('native-table-annotation')
+      : (next.classList.contains('comment-block') || next.classList.contains('comment-form-wrapper'))
+    if (!isAnnotation) break
+    insertAfter = next
   }
   const newEl = createCommentElement(comment, ctx)
-  insertAfter.after(newEl)
+  insertAfter.after(inNativeTable ? wrapNativeTableAnnotation(newEl) : newEl)
 }
 
 function removeInlineComment(ctx, comment) {
@@ -3877,7 +4008,9 @@ function removeInlineComment(ctx, comment) {
       // Don't remove panel cards, only inline ones
       const panel = ctx._commentsPanel
       if (!panel || !panel.contains(block)) {
-        block.remove()
+        const annotation = block.closest('.native-table-annotation')
+        if (annotation) annotation.remove()
+        else block.remove()
       }
     }
   }
@@ -5006,17 +5139,23 @@ export const DocumentRenderer = {
       if (!range) return false
 
       let quote = null
+      let quoteOffset = null
       try {
         let selectedText = selection.toString().trim()
         if (selectedText) {
           let fullText = ''
+          const contentEls = []
           for (let ln = range.startLine; ln <= range.endLine; ln++) {
             ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el) {
               if (el.dataset.filePath !== range.filePath) return
               const s = parseInt(el.dataset.startLine), endLn = parseInt(el.dataset.endLine)
               if (s <= ln && endLn >= ln) {
-                const content = el.querySelector('.line-content')
-                if (content) fullText += (fullText ? '\n' : '') + content.textContent.trim()
+                el.querySelectorAll('.line-content').forEach(function(content) {
+                  if (contentEls.indexOf(content) === -1) {
+                    fullText += (fullText ? '\n' : '') + content.textContent.trim()
+                    contentEls.push(content)
+                  }
+                })
               }
             })
           }
@@ -5024,6 +5163,37 @@ export const DocumentRenderer = {
           const normalizedFull = fullText.trim().replace(/\s+/g, ' ')
           if (normalizedSelected !== normalizedFull && selectedText.length <= 300) {
             quote = selectedText
+
+            try {
+              const selectedRange = selection.getRangeAt(0)
+              const startContainer = selectedRange.startContainer
+              const startOffset = selectedRange.startOffset
+              let charsBefore = 0
+              let foundElement = false
+
+              for (let contentIndex = 0; contentIndex < contentEls.length; contentIndex++) {
+                if (contentIndex > 0) charsBefore++
+                if (contentEls[contentIndex].contains(startContainer)) {
+                  const walker = document.createTreeWalker(contentEls[contentIndex], NodeFilter.SHOW_TEXT)
+                  let textNode
+                  while ((textNode = walker.nextNode())) {
+                    if (textNode === startContainer) {
+                      charsBefore += startOffset
+                      break
+                    }
+                    charsBefore += textNode.textContent.length
+                  }
+                  foundElement = true
+                  break
+                }
+                charsBefore += contentEls[contentIndex].textContent.length
+              }
+
+              if (foundElement) {
+                const rawText = contentEls.map(element => element.textContent).join(' ')
+                quoteOffset = rawText.slice(0, charsBefore).replace(/\s+/g, ' ').trimStart().length
+              }
+            } catch (_) { /* offset is a nice-to-have */ }
           }
         }
       } catch (_) { /* quote is a nice-to-have, don't break form opening */ }
@@ -5036,6 +5206,7 @@ export const DocumentRenderer = {
         endLine: range.endLine,
         editingId: null,
         quote: quote,
+        quoteOffset: quoteOffset,
       })
       return true
     }
