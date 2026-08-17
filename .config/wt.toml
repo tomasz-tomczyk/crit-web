@@ -1,3 +1,14 @@
+# Local main is often stale (checked out in the primary worktree, rarely
+# pulled). When creating from the default base, tip the new branch at
+# origin/main so plain `wt switch -c` matches an explicit `-b origin/main`.
+# Skipped for stacked creates (`-b @`, `-b other-feature`).
+[[pre-start]]
+sync-origin = """
+{% if base and base == default_branch %}
+git fetch origin {{ default_branch }} && git reset --hard origin/{{ default_branch }}
+{% endif %}
+"""
+
 [[pre-start]]
 mise-trust = "mise trust ."
 
@@ -11,4 +22,3 @@ copy = "wt step copy-ignored"
 # Ensure the shared Postgres container is running so `mix test` works without
 # anyone running `mise run db:start` first. Idempotent and machine-global.
 db = "mise run db:start"
-
