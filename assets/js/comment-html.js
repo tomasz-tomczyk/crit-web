@@ -51,6 +51,13 @@ function sanitizeSrcset(value) {
   return kept.join(", ")
 }
 
+function sanitizeSrcsetAttributes(html) {
+  return String(html).replace(/\ssrcset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, (_match, doubleQuoted, singleQuoted, unquoted) => {
+    const cleaned = sanitizeSrcset(doubleQuoted ?? singleQuoted ?? unquoted)
+    return cleaned ? ` srcset="${cleaned}"` : ""
+  })
+}
+
 purify.addHook("afterSanitizeAttributes", node => {
   for (const attr of ["href", "src", "longdesc", "cite"]) {
     if (node.hasAttribute(attr) && !isSafeUrl(node.getAttribute(attr))) node.removeAttribute(attr)
@@ -59,6 +66,10 @@ purify.addHook("afterSanitizeAttributes", node => {
     const cleaned = sanitizeSrcset(node.getAttribute("srcset"))
     if (cleaned) node.setAttribute("srcset", cleaned)
     else node.removeAttribute("srcset")
+  }
+  if (node.tagName === "IMG" && !node.hasAttribute("src") && node.hasAttribute("srcset")) {
+    const firstUrl = node.getAttribute("srcset").split(/\s+/)[0]
+    if (isSafeUrl(firstUrl)) node.setAttribute("src", firstUrl)
   }
   if (node.hasAttribute("class")) {
     const classes = node.getAttribute("class").split(/\s+/).filter(value => SAFE_CLASS.test(value))
@@ -71,7 +82,7 @@ purify.addHook("afterSanitizeAttributes", node => {
 })
 
 export function sanitizeCommentHtml(html) {
-  return purify.sanitize(html, {
+  return purify.sanitize(sanitizeSrcsetAttributes(html), {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
     ALLOW_DATA_ATTR: false,

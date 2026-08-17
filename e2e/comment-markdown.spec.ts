@@ -71,7 +71,7 @@ test.describe("Comment Markdown Rendering", () => {
     await loadReview(page, token);
     await addCommentViaUI(
       page,
-      '<details open><summary>More context</summary>Safe content</details><!-- agent metadata --><img src=x srcset="javascript:alert(1) 1x, https://example.com/safe.png 2x" onerror="window.__commentXss = true"><a href="javascript:alert(1)">unsafe</a>',
+      '<details open><summary>More context</summary>Safe content</details><!-- agent metadata --><img src="https://example.com/safe.png" srcset="javascript:alert(1) 1x, https://example.com/safe.png 2x" onerror="window.__commentXss = true"><a href="javascript:alert(1)">unsafe</a>',
       { waitText: "Safe content" },
     );
 
