@@ -2713,12 +2713,22 @@ function blockHasComment(block, commentedLineSet) {
   return false
 }
 
-function wrapNativeTableAnnotation(element) {
+function nativeTableColCount(hint) {
+  if (hint && hint.tagName === "TR" && hint.classList.contains("line-block") &&
+      !hint.classList.contains("native-table-separator") && hint.cells.length) {
+    return hint.cells.length
+  }
+  const table = hint && hint.closest && hint.closest("table.native-table")
+  const sample = table && table.querySelector("tr.line-block:not(.native-table-separator)")
+  return (sample && sample.cells.length) || 1
+}
+
+function wrapNativeTableAnnotation(element, colHint) {
   const row = document.createElement("tr")
   row.className = "native-table-annotation"
   if (element.dataset.filePath) row.dataset.filePath = element.dataset.filePath
   const cell = document.createElement("td")
-  cell.colSpan = 100
+  cell.colSpan = nativeTableColCount(colHint)
   cell.appendChild(element)
   row.appendChild(cell)
   return row
@@ -2833,7 +2843,7 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
       fragment.appendChild(element)
       return
     }
-    fragment.appendChild(wrapNativeTableAnnotation(element))
+    fragment.appendChild(wrapNativeTableAnnotation(element, lineBlockEl))
   }
 
   // Comments after this block
@@ -4120,7 +4130,7 @@ function insertInlineComment(ctx, comment) {
     insertAfter = next
   }
   const newEl = createCommentElement(comment, ctx)
-  insertAfter.after(inNativeTable ? wrapNativeTableAnnotation(newEl) : newEl)
+  insertAfter.after(inNativeTable ? wrapNativeTableAnnotation(newEl, insertAfter) : newEl)
 }
 
 function removeInlineComment(ctx, comment) {

@@ -1072,12 +1072,15 @@ body.dragging { user-select: none; cursor: grabbing; }
 
 /* Native rendered tables */
 .native-table-wrapper { width: 100%; overflow-x: auto; margin: 8px 0; }
-.native-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; font-size: 0.925rem; margin: 0; }
+.native-table { width: 100%; max-width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; font-size: 0.925rem; margin: 0; }
 .native-table .line-block { display: table-row; }
 .native-table-gutter { position: relative; width: 52px; min-width: 52px; padding: 0; vertical-align: top; }
 .native-table-gutter > .line-gutter { position: absolute; inset: 0; box-sizing: border-box; width: 52px; }
+.native-table th.line-content,
+.native-table td.line-content { overflow-wrap: break-word; }
 .native-table th.line-content { text-align: left; font-weight: 600; padding: 10px 14px; color: var(--crit-editor-fg-secondary); border-bottom: 2px solid var(--crit-border); }
 .native-table td.line-content { padding: 8px 14px; border-bottom: 1px solid var(--crit-border); }
+.native-table .line-content code { white-space: pre-wrap; overflow-wrap: break-word; }
 .native-table tbody tr.table-even td.line-content { background: var(--crit-table-stripe); }
 .native-table .line-block.has-comment > .line-content { background: var(--crit-comment-range-bg); }
 .native-table .line-block:hover > .line-content { background: var(--crit-selection-bg); }
