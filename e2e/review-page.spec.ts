@@ -156,6 +156,8 @@ test.describe("Review Page — Rendered Tables", () => {
     await expect(table.locator("tbody tr.table-row")).toHaveCount(4);
     await expect(table.locator("colgroup")).toHaveCount(0);
     expect(await table.evaluate(element => getComputedStyle(element).tableLayout)).toBe("auto");
+    expect(await table.locator("thead th.line-content").first()
+      .evaluate(element => getComputedStyle(element).overflowWrap)).toBe("break-word");
     expect(await table.locator("..").evaluate(element => getComputedStyle(element).borderTopWidth)).toBe("0px");
   });
 
