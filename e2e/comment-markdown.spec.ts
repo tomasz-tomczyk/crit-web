@@ -126,4 +126,42 @@ test.describe("Comment Markdown Rendering", () => {
     await expect(link).toHaveText("a link");
     await expect(link).toHaveAttribute("href", "https://example.com");
   });
+
+  test("draws a border on every cell of a markdown table in a comment", async ({
+    page,
+  }) => {
+    const tableMd = [
+      "| Field | Type | Notes |",
+      "| --- | --- | --- |",
+      "| id | string | primary key |",
+      "| name | string | display name |",
+    ].join("\n");
+
+    await loadReview(page, token);
+    await addCommentViaUI(page, tableMd, { waitText: "primary key" });
+
+    const table = page.locator(".comment-card .comment-body table");
+    await expect(table).toBeVisible();
+    await expect(table).toHaveCSS("border-collapse", "collapse");
+    await expect(table.locator("th")).toHaveCount(3);
+
+    for (const side of ["top", "right", "bottom", "left"] as const) {
+      await expect(table.locator("th").first()).toHaveCSS(
+        `border-${side}-style`,
+        "solid",
+      );
+      await expect(table.locator("th").first()).toHaveCSS(
+        `border-${side}-width`,
+        "1px",
+      );
+      await expect(table.locator("td").first()).toHaveCSS(
+        `border-${side}-style`,
+        "solid",
+      );
+      await expect(table.locator("td").first()).toHaveCSS(
+        `border-${side}-width`,
+        "1px",
+      );
+    }
+  });
 });
