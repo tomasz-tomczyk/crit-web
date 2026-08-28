@@ -1,10 +1,28 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import {
   createReview,
   deleteReview,
   loadReview,
   addCommentViaUI,
 } from "./helpers";
+
+const TABLE_MD = [
+  "| Field | Type | Notes |",
+  "| --- | --- | --- |",
+  "| id | string | primary key |",
+  "| name | string | display name |",
+].join("\n");
+
+async function expectAllTableCellBorders(table: Locator) {
+  const cells = table.locator("th, td");
+  await expect(cells).not.toHaveCount(0);
+  for (const cell of await cells.all()) {
+    for (const side of ["top", "right", "bottom", "left"] as const) {
+      await expect(cell).toHaveCSS(`border-${side}-style`, "solid");
+      await expect(cell).toHaveCSS(`border-${side}-width`, "1px");
+    }
+  }
+}
 
 test.describe("Comment Markdown Rendering", () => {
   let token: string;
@@ -130,38 +148,38 @@ test.describe("Comment Markdown Rendering", () => {
   test("draws a border on every cell of a markdown table in a comment", async ({
     page,
   }) => {
-    const tableMd = [
-      "| Field | Type | Notes |",
-      "| --- | --- | --- |",
-      "| id | string | primary key |",
-      "| name | string | display name |",
-    ].join("\n");
-
     await loadReview(page, token);
-    await addCommentViaUI(page, tableMd, { waitText: "primary key" });
+    await addCommentViaUI(page, TABLE_MD, { waitText: "primary key" });
 
     const table = page.locator(".comment-card .comment-body table");
     await expect(table).toBeVisible();
     await expect(table).toHaveCSS("border-collapse", "collapse");
     await expect(table.locator("th")).toHaveCount(3);
+    await expect(table.locator("tbody tr")).toHaveCount(2);
 
-    for (const side of ["top", "right", "bottom", "left"] as const) {
-      await expect(table.locator("th").first()).toHaveCSS(
-        `border-${side}-style`,
-        "solid",
-      );
-      await expect(table.locator("th").first()).toHaveCSS(
-        `border-${side}-width`,
-        "1px",
-      );
-      await expect(table.locator("td").first()).toHaveCSS(
-        `border-${side}-style`,
-        "solid",
-      );
-      await expect(table.locator("td").first()).toHaveCSS(
-        `border-${side}-width`,
-        "1px",
-      );
-    }
+    await expectAllTableCellBorders(table);
+  });
+
+  test("draws a border on every cell of a markdown table in a reply", async ({
+    page,
+  }) => {
+    await loadReview(page, token);
+    await addCommentViaUI(page, "Which fields does this cover?", {
+      waitText: "Which fields",
+    });
+
+    const card = page.locator(".comment-card").filter({
+      hasText: "Which fields does this cover?",
+    });
+    await card.locator(".reply-input").click();
+    const replyTextarea = card.locator(".reply-textarea");
+    await expect(replyTextarea).toBeVisible({ timeout: 5_000 });
+    await replyTextarea.fill(TABLE_MD);
+    await card.locator(".reply-form-buttons .btn-primary").click();
+
+    const table = card.locator(".reply-body table");
+    await expect(table).toBeVisible();
+    await expect(table.locator("th")).toHaveCount(3);
+    await expectAllTableCellBorders(table);
   });
 });
