@@ -14,7 +14,7 @@
     "@sanity/diff-match-patch": "^3.2.0",
     "@sentry/browser": "^10.51.0",
     "@tailwindcss/typography": "^0.5.19",
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.14",
     "highlight.js": "^11.11.2",
     "highlightjs-heex": "^1.0.1",
     "markdown-it": "^15.0.0",
