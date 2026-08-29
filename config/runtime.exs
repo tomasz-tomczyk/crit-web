@@ -34,6 +34,21 @@ if System.get_env("SELFHOSTED") in ~w(true 1) do
   config :crit, :selfhosted, true
 end
 
+# The hosted site's background fetchers (GitHub star count + release
+# changelog) poll api.github.com during application boot. CI and offline
+# environments must be able to switch them off so startup never blocks on an
+# external API. Only applied when the env vars are set, so the existing
+# config.exs / test.exs defaults are preserved otherwise.
+case System.get_env("START_GITHUB_STARS") do
+  nil -> :ok
+  value -> config :crit, :start_github_stars, value in ~w(true 1)
+end
+
+case System.get_env("START_CHANGELOG") do
+  nil -> :ok
+  value -> config :crit, :start_changelog, value in ~w(true 1)
+end
+
 # HSTS + secure cookies — off by default to protect self-hosters on plain HTTP.
 # When enabled, browsers remember "always use HTTPS" for this domain and cookies
 # are only sent over HTTPS. Only enable when the deployment is behind HTTPS
