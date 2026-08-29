@@ -11,6 +11,15 @@ export PORT="$smoke_port"
 export DATABASE_URL="${DATABASE_URL:?DATABASE_URL is required}"
 export SECRET_KEY_BASE="${SECRET_KEY_BASE:-$(openssl rand -base64 64)}"
 
+# Keep the smoke run hermetic: the prod release boots GithubStars/Changelog,
+# which block startup on api.github.com and retry with backoff. When the API
+# is slow (common under concurrent CI runs), boot stalls past the health
+# window below and the job fails spuriously — unrelated to the diff under
+# test. These fetchers are marketing-site features; the smoke test doesn't
+# exercise them.
+export START_GITHUB_STARS=false
+export START_CHANGELOG=false
+
 mix local.hex --force >/dev/null
 mix local.rebar --force >/dev/null
 mix deps.get --only prod

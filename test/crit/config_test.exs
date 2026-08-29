@@ -160,4 +160,14 @@ defmodule Crit.ConfigTest do
       refute Config.ip_in_cidrs?({192, 168, 1, 6}, cidrs)
     end
   end
+
+  # Regression guard: config/test.exs disables the background GitHub API
+  # fetchers (star count + changelog) so tests never touch api.github.com.
+  # config/runtime.exs is evaluated after test.exs and must not clobber these
+  # keys when its env vars are unset — otherwise the test suite would start
+  # making external HTTP calls and flake when the API is slow.
+  test "background GitHub API fetchers are disabled in the test environment" do
+    assert Application.get_env(:crit, :start_github_stars) == false
+    assert Application.get_env(:crit, :start_changelog) == false
+  end
 end
