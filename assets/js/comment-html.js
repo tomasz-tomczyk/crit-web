@@ -92,3 +92,12 @@ export function sanitizeCommentHtml(html) {
     FORBID_ATTR: ["style"],
   })
 }
+
+// Agents often quote review questions as **> text** instead of markdown
+// blockquotes. Normalize those lines before markdown-it runs.
+const BOLD_BLOCKQUOTE_LINE = /^\*\*\s*>\s*(.+?)\s*\*\*$/gm
+
+export function normalizeCommentMarkdown(src) {
+  if (!src) return src
+  return String(src).replace(BOLD_BLOCKQUOTE_LINE, "> $1")
+}

@@ -1140,7 +1140,7 @@ body.dragging { user-select: none; cursor: grabbing; }
   border-radius: 1px;
   padding: 1px 0;
 }
-.comment-body { padding: 10px 14px; color: var(--crit-editor-fg); font-size: 14px; line-height: 1.6; word-break: break-word; overflow-x: auto; }
+.comment-body { padding: 10px 14px; color: var(--crit-editor-fg); font-size: 14px; line-height: 1.6; word-break: break-word; }
 .comment-body p { margin: 0 0 0.5em; }
 .comment-body p:last-child { margin-bottom: 0; }
 .comment-body code { background: var(--crit-editor-bg-elevated); padding: 1px 5px; border-radius: 3px; font-family: var(--crit-font-code); font-size: 0.9em; }
@@ -1551,10 +1551,28 @@ body.dragging { user-select: none; cursor: grabbing; }
 }
 
 /* ===== Diff Gutter Backgrounds ===== */
-/* Round-diff gutter colors use .line-block / .diff-view-unified in JS. */
+/* Unified diff */
+.diff-container.unified .addition .diff-gutter-num:last-child { background: var(--crit-diff-add-gutter); }
+.diff-container.unified .deletion .diff-gutter-num:first-child { background: var(--crit-diff-del-gutter); }
+/* Split diff */
+.diff-split-side.deletion .diff-gutter-num { background: var(--crit-diff-del-gutter); }
+.diff-split-side.addition .diff-gutter-num { background: var(--crit-diff-add-gutter); }
 
 .comment-body a { color: var(--crit-brand); text-decoration: none; border-bottom: 1px solid var(--crit-brand-subtle); }
 .comment-body a:hover { color: var(--crit-brand-hover); }
+
+.comment-body blockquote {
+  margin: 6px 0;
+  padding: 8px 16px;
+  border-left: 3px solid var(--crit-blockquote-border);
+  background: var(--crit-blockquote-bg);
+  border-radius: 0 6px 6px 0;
+  color: var(--crit-editor-fg-secondary);
+}
+
+.comment-body blockquote p {
+  margin: 2px 0;
+}
 
 .comment-body hr,
 .reply-body hr {
@@ -1912,7 +1930,7 @@ body.dragging { user-select: none; cursor: grabbing; }
   font-family: var(--crit-font-body);
   font-size: 14px;
   line-height: 1.6;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .reply-body ul, .reply-body ol {
@@ -1921,10 +1939,16 @@ body.dragging { user-select: none; cursor: grabbing; }
 }
 
 .reply-body blockquote {
-  margin: 0.3em 0;
-  padding-left: 0.8em;
-  border-left: 3px solid var(--crit-border);
+  margin: 6px 0;
+  padding: 8px 16px;
+  border-left: 3px solid var(--crit-blockquote-border);
+  background: var(--crit-blockquote-bg);
+  border-radius: 0 6px 6px 0;
   color: var(--crit-editor-fg-secondary);
+}
+
+.reply-body blockquote p {
+  margin: 2px 0;
 }
 
 .reply-body p {
@@ -4047,6 +4071,7 @@ body.sidebar-resizing * {
      the union of all its line boxes. Converting these spans to inline-block +
      max-width:100% + overflow:hidden constrains each span's bounding rect to
      its container, which stops Chrome from expanding the scrollable viewport. */
+  .diff-container,
   .diff-view,
   .diff-view-unified { overflow-x: auto; }
 
