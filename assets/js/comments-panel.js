@@ -17,7 +17,7 @@
 
 import markdownit from "markdown-it"
 import hljs from "highlight.js"
-import { sanitizeCommentHtml } from "./comment-html"
+import { sanitizeCommentHtml, normalizeCommentMarkdown } from "./comment-html"
 
 // ---- Shared helpers ---------------------------------------------------------
 
@@ -146,7 +146,8 @@ export function linkifyCommentRefsInDom(el) {
 // Render markdown into `el` and linkify comment-ref ids. `env` carries
 // originalLines for the ```suggestion fence rule (files mode); {} for preview.
 export function renderMarkdown(el, body, env) {
-  el.innerHTML = sanitizeCommentHtml(commentMd.render(body || "", env || {}))
+  const normalized = normalizeCommentMarkdown(body || "")
+  el.innerHTML = sanitizeCommentHtml(commentMd.render(normalized, env || {}))
   linkifyCommentRefsInDom(el)
 }
 
