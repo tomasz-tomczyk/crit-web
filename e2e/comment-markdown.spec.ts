@@ -182,4 +182,14 @@ test.describe("Comment Markdown Rendering", () => {
     await expect(table.locator("th")).toHaveCount(3);
     await expectAllTableCellBorders(table);
   });
+
+  test("styles horizontal rules in comments", async ({ page }) => {
+    await loadReview(page, token);
+    await addCommentViaUI(page, "Above\n\n---\n\nBelow", { waitText: "Below" });
+
+    const hr = page.locator(".comment-card .comment-body hr");
+    await expect(hr).toHaveCount(1);
+    await expect(hr).toHaveCSS("height", "1px");
+    await expect(hr).toHaveCSS("border-top-width", "0px");
+  });
 });

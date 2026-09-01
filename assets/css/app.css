@@ -1556,6 +1556,14 @@ body.dragging { user-select: none; cursor: grabbing; }
 .comment-body a { color: var(--crit-brand); text-decoration: none; border-bottom: 1px solid var(--crit-brand-subtle); }
 .comment-body a:hover { color: var(--crit-brand-hover); }
 
+.comment-body hr,
+.reply-body hr {
+  border: none;
+  height: 1px;
+  background: var(--crit-border);
+  margin: 24px 0;
+}
+
 /* Sanitized comment markdown keeps no classes, so key off the elements.
    A comment card is narrow: cells take a full border, not row rules alone.
    Keep in sync with crit/web/style.css (.comment-body / .reply-body tables). */
