@@ -2,6 +2,8 @@ import markdownit from "markdown-it"
 import hljs from "highlight.js"
 import { registerMarkdownPatch } from "./highlight-markdown-patch"
 import { heex } from "highlightjs-heex"
+import hljsAstro from "highlightjs-astro-js"
+import { vue } from "./highlightjs-vue"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 import { sanitizeCommentHtml } from "./comment-html"
 import {
@@ -24,6 +26,8 @@ import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 // hljs.highlight() call. See highlight-markdown-patch.js for rationale.
 registerMarkdownPatch(hljs)
 hljs.registerLanguage('heex', heex)
+hljs.registerLanguage('vue', vue)
+hljs.registerLanguage('astro', hljsAstro)
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -1053,6 +1057,8 @@ const EXT_OVERRIDES = {
   md: 'markdown',    // normalize: callers compare lang against 'markdown'
   heex: 'heex',
   leex: 'heex',
+  vue: 'vue',        // third-party grammar (highlightjs-vue shim)
+  astro: 'astro',    // third-party grammar (highlightjs-astro-js)
 }
 // Files identified by basename rather than extension.
 const BASENAME_LANG = {
