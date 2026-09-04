@@ -15,11 +15,11 @@
     "@sentry/browser": "^10.51.0",
     "@tailwindcss/typography": "^0.5.19",
     "dompurify": "3.4.14",
-    "highlight.js": "^11.11.2",
+    "highlight.js": "^11.12.0",
     "highlightjs-astro-js": "^1.0.0",
     "highlightjs-heex": "^1.0.1",
     "highlightjs-vue": "^1.0.0",
     "markdown-it": "^15.0.0",
-    "mermaid": "^11.16.1"
+    "mermaid": "^11.17.2"
   }
 }

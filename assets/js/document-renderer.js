@@ -1122,6 +1122,313 @@ function buildCodeLineBlocks(content, filePath) {
 let mermaidReady = false
 let mermaidCounter = 0
 
+// Mermaid fullscreen overlay (GitHub-style pan/zoom). Expand on each rendered
+// diagram opens #mermaidOverlay with a detached SVG clone. Pan via drag, zoom
+// via wheel / pinch / buttons. Pure CSS transform — no new dependencies.
+// LiveView: install listeners once per mount; teardownMermaidOverlay() on
+// destroy clears listeners, body overflow, and focus state.
+const mermaidOverlayState = {
+  open: false,
+  trigger: null,
+  scale: 1,
+  x: 0,
+  y: 0,
+  installed: false,
+}
+const MERMAID_ZOOM_MIN = 0.1
+const MERMAID_ZOOM_MAX = 8
+let mermaidOverlayAbort = null
+
+function mermaidOverlayNodes() {
+  return {
+    overlay: document.getElementById("mermaidOverlay"),
+    viewport: document.getElementById("mermaidOverlayViewport"),
+    canvas: document.getElementById("mermaidOverlayCanvas"),
+    label: document.getElementById("mermaidZoomLabel"),
+    closeBtn: document.getElementById("mermaidOverlayClose"),
+    zoomIn: document.getElementById("mermaidZoomIn"),
+    zoomOut: document.getElementById("mermaidZoomOut"),
+    zoomReset: document.getElementById("mermaidZoomReset"),
+  }
+}
+
+function mermaidOverlayApply() {
+  const nodes = mermaidOverlayNodes()
+  if (!nodes.canvas) return
+  nodes.canvas.style.transform =
+    "translate(" + mermaidOverlayState.x + "px, " + mermaidOverlayState.y +
+    "px) scale(" + mermaidOverlayState.scale + ")"
+  if (nodes.label) nodes.label.textContent = Math.round(mermaidOverlayState.scale * 100) + "%"
+}
+
+function mermaidOverlayZoomAt(factor, clientX, clientY) {
+  const nodes = mermaidOverlayNodes()
+  if (!nodes.viewport) return
+  const rect = nodes.viewport.getBoundingClientRect()
+  const px = clientX - rect.left
+  const py = clientY - rect.top
+  const next = Math.min(
+    MERMAID_ZOOM_MAX,
+    Math.max(MERMAID_ZOOM_MIN, mermaidOverlayState.scale * factor),
+  )
+  if (next === mermaidOverlayState.scale) return
+  const ratio = next / mermaidOverlayState.scale
+  mermaidOverlayState.x = px - (px - mermaidOverlayState.x) * ratio
+  mermaidOverlayState.y = py - (py - mermaidOverlayState.y) * ratio
+  mermaidOverlayState.scale = next
+  mermaidOverlayApply()
+}
+
+function mermaidOverlayZoomCenter(factor) {
+  const nodes = mermaidOverlayNodes()
+  if (!nodes.viewport) return
+  const rect = nodes.viewport.getBoundingClientRect()
+  mermaidOverlayZoomAt(factor, rect.left + rect.width / 2, rect.top + rect.height / 2)
+}
+
+function mermaidOverlayFit() {
+  const nodes = mermaidOverlayNodes()
+  if (!nodes.viewport || !nodes.canvas) return
+  const svg = nodes.canvas.querySelector("svg")
+  mermaidOverlayState.scale = 1
+  mermaidOverlayState.x = 0
+  mermaidOverlayState.y = 0
+  if (svg) {
+    let w = 0
+    let h = 0
+    const vb = svg.getAttribute("viewBox")
+    if (vb) {
+      const parts = vb.trim().split(/[\s,]+/)
+      w = parseFloat(parts[2])
+      h = parseFloat(parts[3])
+    }
+    if (!(w > 0) || !(h > 0)) {
+      const r = svg.getBoundingClientRect()
+      w = r.width
+      h = r.height
+    }
+    if (w > 0 && h > 0) {
+      const vw = nodes.viewport.clientWidth - 48
+      const vh = nodes.viewport.clientHeight - 48
+      if (vw > 0 && vh > 0) {
+        mermaidOverlayState.scale = Math.min(vw / w, vh / h, 2)
+        mermaidOverlayState.x = (nodes.viewport.clientWidth - w * mermaidOverlayState.scale) / 2
+        mermaidOverlayState.y = (nodes.viewport.clientHeight - h * mermaidOverlayState.scale) / 2
+      }
+    }
+  }
+  mermaidOverlayApply()
+}
+
+function openMermaidOverlay(sourceSvg, trigger) {
+  const nodes = mermaidOverlayNodes()
+  if (!nodes.overlay || !sourceSvg || !nodes.canvas) return
+  nodes.canvas.innerHTML = ""
+  const clone = sourceSvg.cloneNode(true)
+  // Mermaid emits width="100%" + a max-width cap. Inside the overlay the
+  // canvas sizes to content (width: max-content), which makes a percentage
+  // width resolve circularly and the diagram collapse. Pin the clone to its
+  // natural size so fit/center math holds.
+  let natW = 0
+  let natH = 0
+  const vb = clone.getAttribute("viewBox")
+  if (vb) {
+    const parts = vb.trim().split(/[\s,]+/)
+    natW = parseFloat(parts[2])
+    natH = parseFloat(parts[3])
+  }
+  if (!(natW > 0) || !(natH > 0)) {
+    const srcRect = sourceSvg.getBoundingClientRect()
+    natW = srcRect.width
+    natH = srcRect.height
+  }
+  if (natW > 0 && natH > 0) {
+    clone.setAttribute("width", String(natW))
+    clone.setAttribute("height", String(natH))
+    if (clone.style) clone.style.removeProperty("max-width")
+  }
+  nodes.canvas.appendChild(clone)
+  mermaidOverlayState.open = true
+  mermaidOverlayState.trigger = trigger || null
+  installMermaidOverlay()
+  nodes.overlay.classList.add("active")
+  document.body.style.overflow = "hidden"
+  mermaidOverlayFit()
+  if (nodes.closeBtn && nodes.closeBtn.focus) nodes.closeBtn.focus()
+}
+
+function closeMermaidOverlay() {
+  const nodes = mermaidOverlayNodes()
+  if (!mermaidOverlayState.open) return
+  mermaidOverlayState.open = false
+  if (nodes.overlay) nodes.overlay.classList.remove("active")
+  if (nodes.canvas) nodes.canvas.innerHTML = ""
+  document.body.style.overflow = ""
+  const trigger = mermaidOverlayState.trigger
+  mermaidOverlayState.trigger = null
+  if (trigger && document.contains(trigger) && trigger.focus) trigger.focus()
+}
+
+function mermaidOverlayTrapTab(e) {
+  if (e.key !== "Tab") return
+  const nodes = mermaidOverlayNodes()
+  if (!nodes.overlay) return
+  const focusables = nodes.overlay.querySelectorAll("button:not([disabled])")
+  if (!focusables || focusables.length === 0) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault()
+    first.focus()
+  }
+}
+
+function installMermaidOverlay() {
+  if (mermaidOverlayState.installed) return
+  const nodes = mermaidOverlayNodes()
+  if (!nodes.overlay || !nodes.viewport) return
+  mermaidOverlayState.installed = true
+  mermaidOverlayAbort = new AbortController()
+  const { signal } = mermaidOverlayAbort
+
+  const activePointers = new Map()
+  let panAnchor = null
+  let pinchStart = 0
+  let pinchScale = 1
+
+  function capturePinchBaseline() {
+    const pts = Array.from(activePointers.values())
+    if (pts.length < 2) return
+    pinchStart = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
+    pinchScale = mermaidOverlayState.scale
+  }
+
+  if (nodes.zoomIn) {
+    nodes.zoomIn.addEventListener("click", () => mermaidOverlayZoomCenter(1.25), { signal })
+  }
+  if (nodes.zoomOut) {
+    nodes.zoomOut.addEventListener("click", () => mermaidOverlayZoomCenter(1 / 1.25), { signal })
+  }
+  if (nodes.zoomReset) {
+    nodes.zoomReset.addEventListener("click", () => mermaidOverlayFit(), { signal })
+  }
+  if (nodes.closeBtn) {
+    nodes.closeBtn.addEventListener("click", () => closeMermaidOverlay(), { signal })
+  }
+  nodes.overlay.addEventListener("click", (e) => {
+    if (e.target === nodes.overlay) closeMermaidOverlay()
+  }, { signal })
+  nodes.overlay.addEventListener("keydown", mermaidOverlayTrapTab, { signal })
+  // Note: no defaultPrevented check — the app-wide keymap unconditionally
+  // preventDefaults Escape, so honoring it would break Esc-to-close.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return
+    if (mermaidOverlayState.open) {
+      e.preventDefault()
+      closeMermaidOverlay()
+    }
+  }, { signal })
+  // Theme change leaves the clone with stale colors — close rather than show a
+  // wrong-theme diagram (parity with crit applyTheme).
+  window.addEventListener("phx:set-theme", () => closeMermaidOverlay(), { signal })
+
+  nodes.viewport.addEventListener("wheel", (e) => {
+    if (!mermaidOverlayState.open) return
+    e.preventDefault()
+    mermaidOverlayZoomAt(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY)
+  }, { passive: false, signal })
+
+  nodes.viewport.addEventListener("pointerdown", (e) => {
+    if (!mermaidOverlayState.open) return
+    try { nodes.viewport.setPointerCapture(e.pointerId) } catch { /* noop */ }
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (activePointers.size === 1) {
+      panAnchor = { x: e.clientX - mermaidOverlayState.x, y: e.clientY - mermaidOverlayState.y }
+      nodes.viewport.classList.add("panning")
+    } else {
+      panAnchor = null
+      capturePinchBaseline()
+    }
+  }, { signal })
+  nodes.viewport.addEventListener("pointermove", (e) => {
+    if (!activePointers.has(e.pointerId)) return
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (activePointers.size === 2) {
+      const pts = Array.from(activePointers.values())
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
+      if (pinchStart > 0 && dist > 0) {
+        const midX = (pts[0].x + pts[1].x) / 2
+        const midY = (pts[0].y + pts[1].y) / 2
+        const rel = (pinchScale * dist / pinchStart) / mermaidOverlayState.scale
+        mermaidOverlayZoomAt(rel, midX, midY)
+      }
+      return
+    }
+    if (panAnchor) {
+      mermaidOverlayState.x = e.clientX - panAnchor.x
+      mermaidOverlayState.y = e.clientY - panAnchor.y
+      mermaidOverlayApply()
+    }
+  }, { signal })
+  function endMermaidPointer(e) {
+    activePointers.delete(e.pointerId)
+    if (activePointers.size === 1) {
+      const remaining = Array.from(activePointers.values())[0]
+      panAnchor = { x: remaining.x - mermaidOverlayState.x, y: remaining.y - mermaidOverlayState.y }
+    } else if (activePointers.size >= 2) {
+      capturePinchBaseline()
+    } else {
+      panAnchor = null
+      nodes.viewport.classList.remove("panning")
+    }
+  }
+  nodes.viewport.addEventListener("pointerup", endMermaidPointer, { signal })
+  nodes.viewport.addEventListener("pointercancel", endMermaidPointer, { signal })
+}
+
+function teardownMermaidOverlay() {
+  closeMermaidOverlay()
+  if (mermaidOverlayAbort) {
+    mermaidOverlayAbort.abort()
+    mermaidOverlayAbort = null
+  }
+  mermaidOverlayState.installed = false
+  mermaidOverlayState.trigger = null
+  mermaidOverlayState.scale = 1
+  mermaidOverlayState.x = 0
+  mermaidOverlayState.y = 0
+  document.body.style.overflow = ""
+}
+
+// Expand affordance on each rendered diagram. Idempotent — safe after every
+// renderMermaidBlocks() call. Button lives on .mermaid-block (not inside the
+// rendered svg wrapper) so re-renders never wipe it; clicks stopPropagation so
+// comment gestures are unaffected. crit-web uses .mermaid-rendered (not .mermaid).
+function decorateMermaidBlocks(container) {
+  installMermaidOverlay()
+  const root = container || document
+  const blocks = root.querySelectorAll(".line-content.mermaid-block")
+  blocks.forEach((block) => {
+    if (block.querySelector(".mermaid-expand")) return
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.className = "mermaid-expand"
+    btn.setAttribute("aria-label", "Open diagram fullscreen")
+    btn.setAttribute("title", "Open fullscreen")
+    btn.textContent = "⛶ Expand"
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation()
+      const svg = block.querySelector(".mermaid-rendered svg, .mermaid svg, svg")
+      if (!svg) return
+      openMermaidOverlay(svg, btn)
+    })
+    block.appendChild(btn)
+  })
+}
+
 async function initMermaid() {
   if (mermaidReady) return
   const { default: mermaid } = await import("mermaid")
@@ -1132,11 +1439,15 @@ async function initMermaid() {
 }
 
 async function renderMermaidBlocks(container) {
+  // Document rebuild invalidates the detached overlay clone — close it.
+  closeMermaidOverlay()
   await initMermaid()
   const mermaid = window.__critMermaid
-  if (!mermaid) return
+  if (!mermaid) {
+    decorateMermaidBlocks(container)
+    return
+  }
   const els = container.querySelectorAll(".mermaid-pending")
-  if (els.length === 0) return
   for (const el of els) {
     const source = el.dataset.mermaidSrc
     if (!source) continue
@@ -1151,6 +1462,7 @@ async function renderMermaidBlocks(container) {
       el.classList.remove("mermaid-pending")
     }
   }
+  decorateMermaidBlocks(container)
 }
 
 // ---- Markdown parsing & line-block building ---------------------------------
@@ -5566,6 +5878,7 @@ export const DocumentRenderer = {
     this.selectionStart = null
     this.selectionEnd = null
     document.body.classList.remove('visual-mode')
+    teardownMermaidOverlay()
     if (this._scrollHandler) {
       window.removeEventListener("scroll", this._scrollHandler)
     }
