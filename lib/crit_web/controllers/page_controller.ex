@@ -279,6 +279,74 @@ defmodule CritWeb.PageController do
         }
       ]
     },
+    "story" => %{
+      label: "Story mode",
+      screenshot: nil,
+      eyebrow: "Mode · story",
+      title: "See the shape of the diff before you review the lines.",
+      lead:
+        "Your agent's branch touched 40 files across a feature, a refactor, and a couple of unrelated fixes. Story mode has the agent write a chaptered narrative overview of the diff — prologue, thematic chapters, a support bucket for the noise — so you understand what happened before you drop into line-by-line review.",
+      tags: [
+        "Chaptered overview",
+        "Branch / PR / MR / range",
+        "Mermaid optional",
+        "Diff toggle"
+      ],
+      steps: [
+        %{
+          h: "Ask for a story",
+          p:
+            "After <code class=\"font-bold text-(--crit-brand)\">crit install &lt;tool&gt;</code>, run <code class=\"font-bold text-(--crit-brand)\">/crit-story</code> on a branch, PR, MR, or range. Terminal alternative: <code class=\"font-bold text-(--crit-brand)\">crit story</code> with <code class=\"font-bold text-(--crit-brand)\">agent_cmd</code> configured."
+        },
+        %{
+          h: "Agent authors chapters",
+          p:
+            "The agent groups the diff into a prologue and thematic chapters, with a dedicated support bucket for incidental noise — formatting, lockfiles, generated files."
+        },
+        %{
+          h: "Crit opens the story rail",
+          p:
+            "Each chapter renders as its own section with commentary and the relevant excerpts — a narrative, not a raw diff dump."
+        },
+        %{
+          h: "You review, then toggle to Diff",
+          p:
+            "Read chapter by chapter to understand intent. Flip to Diff view when you want to leave a line comment — story mode explains, diff mode reviews."
+        }
+      ],
+      features: [
+        %{
+          h: "Thematic chapters",
+          p:
+            "The diff is grouped by intent, not by file path. A feature, a refactor, and a bugfix in the same branch become three separate chapters."
+        },
+        %{
+          h: "Prologue sets the scene",
+          p:
+            "A short prologue chapter states what the branch is trying to do before you read a single hunk."
+        },
+        %{
+          h: "Support bucket for noise",
+          p:
+            "Formatting-only changes, lockfile bumps, and generated files land in a dedicated support bucket instead of cluttering the narrative chapters."
+        },
+        %{
+          h: "Mermaid diagrams, optional",
+          p:
+            "When a chapter changes control flow or data shape, the agent can drop in a mermaid diagram. Skipped when it wouldn't add anything."
+        },
+        %{
+          h: "Works for branch, PR, MR, or range",
+          p:
+            "Point it at a local branch, a GitHub PR, a GitLab MR, or an arbitrary commit range — the story is built from the diff, not the hosting platform."
+        },
+        %{
+          h: "Wording-gated, not automatic",
+          p:
+            "Story mode only fires when you ask for it by name. It won't hijack a normal /crit review of a small diff."
+        }
+      ]
+    },
     "live" => %{
       label: "Live",
       screenshot: "live",
@@ -718,7 +786,11 @@ defmodule CritWeb.PageController do
           canonical_url: canonical_url(conn),
           page_title: "#{mode.label} Mode - Crit",
           meta_description: mode.lead,
-          og_image: "https://crit.md/images/screenshots/#{mode.screenshot}-dark@2x.png",
+          og_image:
+            if(mode.screenshot,
+              do: "https://crit.md/images/screenshots/#{mode.screenshot}-dark@2x.png",
+              else: "https://crit.md/images/og.png"
+            ),
           json_ld: %{
             "@context" => "https://schema.org",
             "@type" => "BreadcrumbList",
@@ -849,6 +921,7 @@ defmodule CritWeb.PageController do
     {"/integrations/build-your-own", "monthly", "0.7"},
     {"/modes/plans-docs", "monthly", "0.8"},
     {"/modes/code", "monthly", "0.8"},
+    {"/modes/story", "monthly", "0.8"},
     {"/modes/live", "monthly", "0.8"},
     {"/modes/preview", "monthly", "0.8"},
     {"/getting-started", "monthly", "0.9"},

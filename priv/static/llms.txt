@@ -65,6 +65,14 @@ Subcommands an agent will call directly:
 - `crit push [pr]`: Post local review comments as a GitHub PR review. Supports `--event approve|request-changes|comment`.
 - `crit status`: Show review file path and daemon status.
 
+### Story mode
+
+For large branch / PR / MR / range diffs, [Story mode](https://crit.md/modes/story) adds a chaptered overview (prologue + thematic chapters + support bucket) before line-by-line review.
+
+- Prefer `/crit-story` after `crit install <tool>` — the agent authors the chapters.
+- Alternative: `crit story` from the terminal when `agent_cmd` is configured (separate LLM spend).
+- Explicit invoke only — agents must not infer story generation from a normal `/crit` review.
+
 Review files live at `~/.crit/reviews/<key>.json` (keyed by cwd + branch). The JSON schema is documented in the README. Agents read this file to consume human feedback. Humans never edit it directly.
 
 Round diffs: when the human reopens crit after the agent makes changes, crit shows only what changed since the last review round, not the full diff again.

@@ -116,7 +116,7 @@ defmodule CritWeb.PageControllerTest do
   end
 
   describe "GET /modes/:mode" do
-    for slug <- ~w(plans-docs code live preview) do
+    for slug <- ~w(plans-docs code story live preview) do
       @slug slug
 
       test "renders the #{slug} mode page", %{conn: conn} do
