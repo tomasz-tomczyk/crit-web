@@ -34,6 +34,16 @@ defmodule CritWeb.PageHTML do
       bullets: ["Syntax highlighting", "Stacked PRs", "Git, jj, sapling"]
     },
     %{
+      slug: "story",
+      label: "Story mode",
+      nav_label: "Review diffs as a story",
+      cmd: "branch / pr / mr / range",
+      screenshot: nil,
+      blurb:
+        "Your agent's branch touched 40 files across a feature, a refactor, and two unrelated fixes. Ask for a story and the agent groups the diff into a prologue and thematic chapters — with a support bucket for the noise — so you understand the shape of the change before you drop into line comments.",
+      bullets: ["Thematic chapters", "Support bucket for noise", "Diff toggle for line comments"]
+    },
+    %{
       slug: "live",
       label: "Live",
       nav_label: "Review running apps",
