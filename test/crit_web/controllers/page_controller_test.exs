@@ -127,6 +127,14 @@ defmodule CritWeb.PageControllerTest do
       end
     end
 
+    test "story mode page includes token cost indication", %{conn: conn} do
+      conn = get(conn, "/modes/story")
+      html = html_response(conn, 200)
+      assert html =~ "Token cost."
+      assert html =~ "Rough extra LLM spend"
+      assert html =~ "does not scale linearly"
+    end
+
     test "returns 404 for an unknown mode", %{conn: conn} do
       conn = get(conn, "/modes/does-not-exist")
       assert response(conn, 404) =~ "not found"

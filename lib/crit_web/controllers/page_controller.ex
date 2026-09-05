@@ -345,7 +345,31 @@ defmodule CritWeb.PageController do
           p:
             "Story mode only fires when you ask for it by name. It won't hijack a normal /crit review of a small diff."
         }
-      ]
+      ],
+      cost: %{
+        title: "Token cost.",
+        lead:
+          "Generating a story is LLM-driven exploration: your agent reads the diff prep, may open related source, and writes the chapters. That spend is on your agent's model — Crit does not bill for stories. Cost tracks how complex and multi-theme the change is (and how much the model explores), not a simple file or line count. It does not scale linearly with diff size.",
+        rows: [
+          %{
+            size: "Mid-size",
+            detail: "A focused PR — roughly a handful of files, one or two themes.",
+            indication: "Often a small fraction of a dollar extra"
+          },
+          %{
+            size: "Large",
+            detail: "Multi-file, multi-theme changes — thousands of lines is common.",
+            indication: "Often around ~$1 extra"
+          },
+          %{
+            size: "Very large",
+            detail: "Dozens of files / multi-thousand-line diffs with many hunks.",
+            indication: "Still often ~$1-ish; exploration depth matters more than raw size"
+          }
+        ],
+        footnote:
+          "Indicative only, measured as in-session /crit-story on a current frontier model. Your model, pricing, and how aggressively the agent explores will move the numbers. Session/project context (agent docs, skills, tools) is a separate baseline on top of story work."
+      }
     },
     "live" => %{
       label: "Live",
