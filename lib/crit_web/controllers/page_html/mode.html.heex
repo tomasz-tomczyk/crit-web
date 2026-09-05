@@ -99,6 +99,41 @@
     </div>
   </section>
 
+  <%= if cost = @mode[:cost] do %>
+    <section class="max-w-7xl mx-auto w-full px-10 py-20 max-sm:px-4 max-sm:py-12">
+      <h2 class="text-3xl font-extrabold tracking-tight mb-4 max-sm:text-2xl">
+        {cost.title}
+      </h2>
+      <p class="text-base text-(--crit-fg-secondary) leading-relaxed max-w-[720px] mb-10">
+        {cost.lead}
+      </p>
+      <div class="overflow-x-auto border border-(--crit-border) rounded-lg">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+            <tr>
+              <th class="px-4 py-3 font-semibold tracking-tight">Change size</th>
+              <th class="px-4 py-3 font-semibold tracking-tight">What that usually means</th>
+              <th class="px-4 py-3 font-semibold tracking-tight">Rough LLM spend</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              :for={row <- cost.rows}
+              class="border-b border-(--crit-border) last:border-b-0"
+            >
+              <td class="px-4 py-3 font-medium align-top whitespace-nowrap">{row.size}</td>
+              <td class="px-4 py-3 text-(--crit-fg-secondary) align-top">{row.detail}</td>
+              <td class="px-4 py-3 text-(--crit-fg-secondary) align-top">{row.indication}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-6 text-sm text-(--crit-fg-muted) leading-relaxed max-w-[720px]">
+        {cost.footnote}
+      </p>
+    </section>
+  <% end %>
+
   <CritWeb.PageHTML.install_section id="mode-install" />
   <Layouts.site_footer />
 </div>

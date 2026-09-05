@@ -158,6 +158,13 @@ defmodule CritWeb.Layouts do
                   <span class="font-mono text-xs text-(--crit-fg-muted)">branch / pr</span>
                 </a>
                 <a
+                  href="/modes/story"
+                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+                >
+                  <span class="font-medium">Story mode</span>
+                  <span class="font-mono text-xs text-(--crit-fg-muted)">branch / pr / range</span>
+                </a>
+                <a
                   href="/modes/live"
                   class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
                 >
@@ -333,6 +340,7 @@ defmodule CritWeb.Layouts do
           </div>
           <.nav_mobile_link href="/modes/plans-docs">Review plans & docs</.nav_mobile_link>
           <.nav_mobile_link href="/modes/code">Review code diffs</.nav_mobile_link>
+          <.nav_mobile_link href="/modes/story">Review diffs as a story</.nav_mobile_link>
           <.nav_mobile_link href="/modes/live">Review running apps</.nav_mobile_link>
           <.nav_mobile_link href="/modes/preview">Review HTML artifacts</.nav_mobile_link>
 
@@ -1132,6 +1140,12 @@ defmodule CritWeb.Layouts do
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Review code diffs
+              </a>
+              <a
+                href="/modes/story"
+                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
+              >
+                Review diffs as a story
               </a>
               <a
                 href="/modes/live"
