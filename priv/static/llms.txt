@@ -72,6 +72,7 @@ For large branch / PR / MR / range diffs, [Story mode](https://crit.md/modes/sto
 - Prefer `/crit-story` after `crit install <tool>` — the agent authors the chapters.
 - Alternative: `crit story` from the terminal when `agent_cmd` is configured (separate LLM spend).
 - Explicit invoke only — agents must not infer story generation from a normal `/crit` review.
+- Token cost: LLM-driven exploration on your agent's model. Spend depends on change complexity more than raw file/diff size and does not scale linearly — see the Story mode page for a rough indication table.
 
 Review files live at `~/.crit/reviews/<key>.json` (keyed by cwd + branch). The JSON schema is documented in the README. Agents read this file to consume human feedback. Humans never edit it directly.
 
