@@ -349,26 +349,26 @@ defmodule CritWeb.PageController do
       cost: %{
         title: "Token cost.",
         lead:
-          "Generating a story is LLM-driven exploration: your agent reads the diff prep, may open related source, and writes the chapters. That spend is on your agent's model — Crit does not bill for stories. Cost tracks how complex and multi-theme the change is (and how much the model explores), not a simple file or line count. It does not scale linearly with diff size.",
+          "Generating a story is LLM-driven exploration: your agent reads the diff prep, may open related source, and writes the chapters. That spend is on your agent's model — Crit does not bill for stories. Cost tracks how complex and multi-theme the change is (and how much the model explores), not a simple file or line count. It does not scale linearly with diff size. In our experience, complex PRs (~20–50 files, ~2k–5k lines changed) cost about $1–$1.40 with Claude Opus 5 via /crit-story.",
         rows: [
           %{
             size: "Mid-size",
-            detail: "A focused PR — roughly a handful of files, one or two themes.",
-            indication: "Often a small fraction of a dollar extra"
+            detail: "~10 files, hundreds of lines — one or two themes.",
+            indication: "Often around ~$0.40"
           },
           %{
             size: "Large",
-            detail: "Multi-file, multi-theme changes — thousands of lines is common.",
-            indication: "Often around ~$1 extra"
+            detail: "~20 files, ~2k lines changed — multi-theme.",
+            indication: "Often around ~$1–$1.40"
           },
           %{
             size: "Very large",
-            detail: "Dozens of files / multi-thousand-line diffs with many hunks.",
-            indication: "Still often ~$1-ish; exploration depth matters more than raw size"
+            detail: "~50 files, ~5k lines changed — many hunks.",
+            indication: "Still often ~$1–$1.40; exploration depth matters more than raw size"
           }
         ],
         footnote:
-          "Indicative only, measured as in-session /crit-story on a current frontier model. Your model, pricing, and how aggressively the agent explores will move the numbers. Session/project context (agent docs, skills, tools) is a separate baseline on top of story work."
+          "Measured as in-session /crit-story with Claude Opus 5. Session/project context (agent docs, skills, tools) is a separate baseline on top of story work."
       }
     },
     "live" => %{
