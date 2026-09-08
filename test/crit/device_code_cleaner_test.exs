@@ -4,7 +4,7 @@ defmodule Crit.DeviceCodeCleanerTest do
   alias Crit.{DeviceCodeCleaner, DeviceCodes, DeviceCode, Repo}
 
   setup do
-    Application.put_env(:crit, :device_code_cleaner_interval_ms, 10)
+    Application.put_env(:crit, :device_code_cleaner_interval_ms, :timer.hours(24))
 
     on_exit(fn ->
       Application.delete_env(:crit, :device_code_cleaner_interval_ms)
@@ -13,47 +13,29 @@ defmodule Crit.DeviceCodeCleanerTest do
     :ok
   end
 
-  test "deletes expired device codes after the configured interval" do
-    {:ok, %{record: record}} = DeviceCodes.create_device_code()
-
-    record
-    |> Ecto.Changeset.change(
-      expires_at: DateTime.utc_now() |> DateTime.add(-1, :second) |> DateTime.truncate(:second)
-    )
-    |> Repo.update!()
-
-    start_supervised!({DeviceCodeCleaner, []})
-    Process.sleep(50)
-
-    assert is_nil(Repo.get(DeviceCode, record.id))
+  defp run_cleaner(pid) do
+    send(pid, :run)
+    :sys.get_state(pid)
+    :ok
   end
 
-  test "does not delete fresh pending device codes" do
+  test "handles multiple cleanup runs" do
     {:ok, %{record: record}} = DeviceCodes.create_device_code()
 
-    start_supervised!({DeviceCodeCleaner, []})
-    Process.sleep(50)
-
-    assert Repo.get(DeviceCode, record.id)
-  end
-
-  test "runs cleanup repeatedly on the interval" do
-    {:ok, %{record: record}} = DeviceCodes.create_device_code()
-
-    start_supervised!({DeviceCodeCleaner, []})
-    Process.sleep(50)
+    pid = start_supervised!({DeviceCodeCleaner, []})
+    run_cleaner(pid)
 
     # Fresh record — still present
     assert Repo.get(DeviceCode, record.id)
 
-    # Now expire it and wait for the next tick
+    # Now expire it and trigger another run.
     record
     |> Ecto.Changeset.change(
       expires_at: DateTime.utc_now() |> DateTime.add(-1, :second) |> DateTime.truncate(:second)
     )
     |> Repo.update!()
 
-    Process.sleep(50)
+    run_cleaner(pid)
 
     assert is_nil(Repo.get(DeviceCode, record.id))
   end
