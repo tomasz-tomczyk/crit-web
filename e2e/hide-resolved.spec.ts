@@ -4,6 +4,7 @@ import {
   deleteReview,
   loadReview,
   addCommentViaUI,
+  openSettingsPane,
   seedComment,
 } from "./helpers";
 
@@ -22,21 +23,7 @@ async function addAndResolveComment(
   await card.locator(".resolve-btn").click();
 
   // Wait for the resolved-card class to appear (card DOM is replaced on resolve)
-  await expect(
-    page.locator(".comment-card.resolved-card")
-  ).toBeVisible({ timeout: 5_000 });
-}
-
-/**
- * Helper: open the Settings panel and switch to the "settings" tab.
- */
-async function openSettingsPane(page: import("@playwright/test").Page) {
-  await page.locator("#settingsToggle").click();
-  await expect(
-    page.locator("#settingsOverlay.active")
-  ).toBeVisible({ timeout: 5_000 });
-
-  await page.locator('.settings-tab[data-tab="settings"]').click();
+  await expect(card).toHaveClass(/resolved-card/, { timeout: 5_000 });
 }
 
 test.describe("Hide Resolved", () => {
@@ -85,7 +72,7 @@ test.describe("Hide Resolved", () => {
     ).toBeVisible();
   });
 
-  test("toggle hides resolved inline comments", async ({ page }) => {
+  test("settings checkbox hides resolved inline comments", async ({ page }) => {
     await loadReview(page, token);
 
     // Add a comment and resolve it
@@ -97,14 +84,18 @@ test.describe("Hide Resolved", () => {
       .filter({ has: page.locator(".resolved-card") });
     await expect(resolvedBlock).toBeVisible();
 
-    // Enable "Hide resolved" via keyboard shortcut
-    await page.keyboard.press("h");
+    // Enable "Hide resolved" via the settings checkbox
+    await openSettingsPane(page);
+    const toggle = page.locator("#hideResolvedToggle");
+    await toggle.click();
+    await expect(toggle).toBeChecked();
 
     // The resolved comment block should now be hidden
     await expect(resolvedBlock).not.toBeVisible();
 
-    // Press h again to verify it toggles back
-    await page.keyboard.press("h");
+    // Uncheck to verify it toggles back
+    await toggle.click();
+    await expect(toggle).not.toBeChecked();
     await expect(resolvedBlock).toBeVisible();
   });
 

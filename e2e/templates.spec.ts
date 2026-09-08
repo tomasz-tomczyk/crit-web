@@ -10,6 +10,24 @@ async function openCommentForm(page: Page) {
   await expect(page.locator(".comment-form")).toBeVisible({ timeout: 5_000 });
 }
 
+/**
+ * Fill the open comment form with `text` and save it as a template via the
+ * "+ Template" dialog.
+ */
+async function saveTemplate(page: Page, text: string) {
+  const textarea = page.locator(".comment-form textarea");
+  await textarea.fill(text);
+
+  await page
+    .locator('.comment-form-actions button', { hasText: "+ Template" })
+    .click();
+
+  const overlay = page.locator(".save-template-overlay");
+  await expect(overlay).toBeVisible();
+  await overlay.locator('button', { hasText: "Save" }).click();
+  await expect(overlay).toBeHidden();
+}
+
 test.describe("Comment Templates", () => {
   let token: string;
   let deleteToken: string;
@@ -70,17 +88,7 @@ test.describe("Comment Templates", () => {
   }) => {
     await loadReview(page, token);
     await openCommentForm(page);
-
-    const textarea = page.locator(".comment-form textarea");
-    await textarea.fill("Needs a test for this");
-
-    await page
-      .locator('.comment-form-actions button', { hasText: "+ Template" })
-      .click();
-
-    const overlay = page.locator(".save-template-overlay");
-    await overlay.locator('button', { hasText: "Save" }).click();
-    await expect(overlay).toBeHidden();
+    await saveTemplate(page, "Needs a test for this");
 
     const bar = page.locator(".comment-template-bar");
     await expect(bar).toBeVisible();
@@ -94,19 +102,10 @@ test.describe("Comment Templates", () => {
   test("clicking chip inserts text into textarea", async ({ page }) => {
     await loadReview(page, token);
     await openCommentForm(page);
-
-    const textarea = page.locator(".comment-form textarea");
-    await textarea.fill("My template text");
-
-    // Save a template
-    await page
-      .locator('.comment-form-actions button', { hasText: "+ Template" })
-      .click();
-    await page
-      .locator('.save-template-overlay button', { hasText: "Save" })
-      .click();
+    await saveTemplate(page, "My template text");
 
     // Clear textarea
+    const textarea = page.locator(".comment-form textarea");
     await textarea.fill("");
 
     // Click the chip
@@ -121,17 +120,7 @@ test.describe("Comment Templates", () => {
   }) => {
     await loadReview(page, token);
     await openCommentForm(page);
-
-    const textarea = page.locator(".comment-form textarea");
-    await textarea.fill("Temp template");
-
-    // Save a template
-    await page
-      .locator('.comment-form-actions button', { hasText: "+ Template" })
-      .click();
-    await page
-      .locator('.save-template-overlay button', { hasText: "Save" })
-      .click();
+    await saveTemplate(page, "Temp template");
 
     const bar = page.locator(".comment-template-bar");
     await expect(bar).toBeVisible();
@@ -148,17 +137,7 @@ test.describe("Comment Templates", () => {
   test("templates persist across form close and reopen", async ({ page }) => {
     await loadReview(page, token);
     await openCommentForm(page);
-
-    const textarea = page.locator(".comment-form textarea");
-    await textarea.fill("Persistent template");
-
-    // Save template
-    await page
-      .locator('.comment-form-actions button', { hasText: "+ Template" })
-      .click();
-    await page
-      .locator('.save-template-overlay button', { hasText: "Save" })
-      .click();
+    await saveTemplate(page, "Persistent template");
 
     // Cancel form
     await page

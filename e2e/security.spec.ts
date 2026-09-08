@@ -70,19 +70,26 @@ async function waitForProbe(
   variant: string,
   timeoutMs = 10_000,
 ): Promise<SecProbe> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const found = await page.evaluate((variant) => {
+  await page.waitForFunction(
+    (wanted) => {
       const probes = (window as unknown as { __critSecProbes?: SecProbe[] })
         .__critSecProbes;
-      return (probes ?? []).find((p) => p.variant === variant) ?? null;
-    }, variant);
-    if (found) return found as SecProbe;
-    await page.waitForTimeout(150);
-  }
-  throw new Error(
-    `no CRIT_SEC_PROBE with variant "${variant}" within ${timeoutMs}ms`,
+      return (probes ?? []).some((p) => p.variant === wanted);
+    },
+    variant,
+    { timeout: timeoutMs, polling: 100 },
   );
+  const found = await page.evaluate((wanted) => {
+    const probes = (window as unknown as { __critSecProbes?: SecProbe[] })
+      .__critSecProbes;
+    return (probes ?? []).find((p) => p.variant === wanted) ?? null;
+  }, variant);
+  if (!found) {
+    throw new Error(
+      `no CRIT_SEC_PROBE with variant "${variant}" within ${timeoutMs}ms`,
+    );
+  }
+  return found as SecProbe;
 }
 
 test.describe("Preview isolation: preview iframe cannot exfiltrate victim session", () => {

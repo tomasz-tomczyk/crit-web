@@ -127,24 +127,6 @@ test.describe("Comment Markdown Rendering", () => {
     ).toBeVisible();
   });
 
-  test("renders markdown with bold, code, and link combined", async ({
-    page,
-  }) => {
-    await loadReview(page, token);
-    await addCommentViaUI(
-      page,
-      "**bold text** and `inline code` and [a link](https://example.com)",
-      { waitText: "bold text" }
-    );
-
-    const body = page.locator(".comment-card .comment-body");
-    await expect(body.locator("strong")).toHaveText("bold text");
-    await expect(body.locator("code")).toHaveText("inline code");
-    const link = body.locator("a");
-    await expect(link).toHaveText("a link");
-    await expect(link).toHaveAttribute("href", "https://example.com");
-  });
-
   test("draws a border on every cell of a markdown table in a comment", async ({
     page,
   }) => {

@@ -53,6 +53,14 @@ test.describe("Drag Selection — Multi-line Comment Range", () => {
 
     const header = page.locator(".comment-form-header");
     await expect(header).toContainText("Lines");
+
+    // Submitting the range form creates one comment card
+    const textarea = form.locator("textarea");
+    await textarea.fill("Comment spanning three lines");
+    await textarea.press("Control+Enter");
+    await expect(
+      page.locator(".comment-card").filter({ hasText: "Comment spanning three lines" })
+    ).toBeVisible({ timeout: 5_000 });
   });
 
   test("after drag, selected line blocks have .selected class", async ({
@@ -100,21 +108,26 @@ test.describe("Drag Selection — Multi-line Comment Range", () => {
     await expect(header).toContainText("Line");
   });
 
-  test("Shift+click extends selection from anchor", async ({ page }) => {
+  test("Shift+click extends selection from anchor to a multi-line range", async ({
+    page,
+  }) => {
     await loadReview(page, token);
 
     const gutters = page.locator(".line-gutter");
     const count = await gutters.count();
-    expect(count).toBeGreaterThanOrEqual(3);
+    expect(count).toBeGreaterThanOrEqual(4);
 
-    // Click first gutter to set anchor
+    // Plain click sets the anchor (single-line form)
     await gutters.nth(1).click();
+    await expect(page.locator(".comment-form-header")).toContainText("Line");
+
+    // Shift+click a lower gutter: the anchor extends into a range and the
+    // form re-opens with a "Lines x–y" header
+    await gutters.nth(3).click({ modifiers: ["Shift"] });
 
     const form = page.locator(".comment-form");
     await expect(form).toBeVisible({ timeout: 5_000 });
-
-    // The form header should show a line reference
-    const header = page.locator(".comment-form-header");
-    await expect(header).toContainText("Line");
+    await expect(page.locator(".comment-form-header")).toContainText("Lines");
+    await expect(form).toHaveCount(1);
   });
 });
