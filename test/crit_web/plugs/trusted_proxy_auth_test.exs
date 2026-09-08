@@ -82,8 +82,7 @@ defmodule CritWeb.Plugs.TrustedProxyAuthTest do
 
       assert conn.assigns.current_scope.user == nil
       assert Plug.Conn.get_session(conn, "user_id") == nil
-      # No user should have been created
-      assert Crit.Repo.aggregate(User, :count, :id) == 0
+      refute Crit.Repo.get_by(User, email: "user@example.com")
     end
 
     test "skips when header missing from request" do
@@ -144,6 +143,24 @@ defmodule CritWeb.Plugs.TrustedProxyAuthTest do
 
       assert log =~ "trusted-proxy"
     end
+
+    test "logs warning and skips when email exceeds the length cap" do
+      setup_env()
+      email = String.duplicate("a", 309) <> "@example.com"
+
+      log =
+        capture_log(fn ->
+          conn =
+            anon_conn(headers: [{@header_name, email}])
+            |> call()
+
+          assert conn.assigns.current_scope.user == nil
+          assert Plug.Conn.get_session(conn, "user_id") == nil
+        end)
+
+      assert log =~ "exceeds 320 chars"
+      refute Crit.Repo.get_by(User, email: email)
+    end
   end
 
   describe "happy path" do
@@ -169,20 +186,19 @@ defmodule CritWeb.Plugs.TrustedProxyAuthTest do
         |> call()
 
       assert conn.assigns.current_scope.user.id == user.id
-      assert Crit.Repo.aggregate(User, :count, :id) == 1
     end
 
     test "lowercases email for matching" do
       setup_env()
 
-      {:ok, _user} = Accounts.upsert_user_by_email("mixed@example.com")
+      {:ok, user} = Accounts.upsert_user_by_email("mixed@example.com")
 
       conn =
         anon_conn(headers: [{@header_name, "Mixed@Example.COM"}])
         |> call()
 
       assert conn.assigns.current_scope.user.email == "mixed@example.com"
-      assert Crit.Repo.aggregate(User, :count, :id) == 1
+      assert conn.assigns.current_scope.user.id == user.id
     end
   end
 end

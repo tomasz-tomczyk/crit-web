@@ -47,16 +47,16 @@ defmodule Crit.ReviewsCommentPolicyTest do
   # uses broadcast_from(self(), ...) and would skip a same-process subscriber.
   defp subscribe_from_other_process(token) do
     test_pid = self()
+    ref = make_ref()
 
     {:ok, _pid} =
       Task.start_link(fn ->
         Phoenix.PubSub.subscribe(Crit.PubSub, "review:#{token}")
+        send(test_pid, {:subscribed, ref})
         forward_loop(test_pid)
       end)
 
-    # Give the Task a tick to register the subscription before the caller
-    # triggers the broadcast.
-    Process.sleep(20)
+    assert_receive {:subscribed, ^ref}
     :ok
   end
 
