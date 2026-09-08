@@ -116,7 +116,7 @@ defmodule CritWeb.PageControllerTest do
   end
 
   describe "GET /modes/:mode" do
-    for slug <- ~w(plans-docs code live preview) do
+    for slug <- ~w(plans-docs code story live preview) do
       @slug slug
 
       test "renders the #{slug} mode page", %{conn: conn} do
@@ -125,6 +125,16 @@ defmodule CritWeb.PageControllerTest do
         assert html =~ "How it works."
         assert html =~ "What you get."
       end
+    end
+
+    test "story mode page includes token cost indication", %{conn: conn} do
+      conn = get(conn, "/modes/story")
+      html = html_response(conn, 200)
+      assert html =~ "Token cost."
+      assert html =~ "Rough LLM spend"
+      assert html =~ "does not scale linearly"
+      assert html =~ "$1–$1.40"
+      assert html =~ "Claude Opus 5"
     end
 
     test "returns 404 for an unknown mode", %{conn: conn} do

@@ -34,6 +34,19 @@ defmodule CritWeb.PageHTML do
       bullets: ["Syntax highlighting", "Stacked PRs", "Git, jj, sapling"]
     },
     %{
+      slug: "story",
+      label: "Story mode",
+      nav_label: "Review diffs as a story",
+      cmd: "branch / pr / mr / range",
+      screenshot: nil,
+      # Served from Cloudflare R2 (assets.crit.md)
+      video: "https://assets.crit.md/story-mode.mp4",
+      poster: "https://assets.crit.md/story-mode-poster.webp",
+      blurb:
+        "Organize the diff around themes that belong together — not chronological file order — so the important work surfaces first and you understand the shape of the change before you dig into lines.",
+      bullets: ["Thematic chapters", "Important changes first"]
+    },
+    %{
       slug: "live",
       label: "Live",
       nav_label: "Review running apps",

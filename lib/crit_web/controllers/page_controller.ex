@@ -279,6 +279,90 @@ defmodule CritWeb.PageController do
         }
       ]
     },
+    "story" => %{
+      label: "Story mode",
+      screenshot: nil,
+      # Served from Cloudflare R2 (assets.crit.md)
+      video: "https://assets.crit.md/story-mode.mp4",
+      poster: "https://assets.crit.md/story-mode-poster.webp",
+      eyebrow: "Mode · story",
+      title: "See the shape of the diff before you review the lines.",
+      lead:
+        "Organize the diff around themes that belong together — not chronological file order — so the important work surfaces first. Crit opens a chaptered narrative overview so you understand what happened before you dig into lines.",
+      tags: [
+        "Chaptered overview",
+        "Branch / PR / MR / range",
+        "Diff toggle"
+      ],
+      steps: [
+        %{
+          h: "Ask for a story",
+          p:
+            "After <code class=\"font-bold text-(--crit-brand)\">crit install &lt;tool&gt;</code>, run <code class=\"font-bold text-(--crit-brand)\">/crit-story</code> on a branch, PR, MR, or range."
+        },
+        %{
+          h: "Agent authors chapters",
+          p:
+            "The agent groups the diff into a prologue and thematic chapters, with a dedicated support bucket for incidental noise — formatting, lockfiles, generated files."
+        },
+        %{
+          h: "Crit opens the story rail",
+          p:
+            "Each chapter renders as its own section with commentary and the relevant excerpts — a narrative, not a raw diff dump."
+        },
+        %{
+          h: "You review and comment",
+          p:
+            "Read chapter by chapter to understand intent, and leave line comments as you go — comments work in story mode. Toggle to Diff when you want the raw hunks."
+        }
+      ],
+      features: [
+        %{
+          h: "Thematic chapters",
+          p:
+            "The diff is grouped by intent, not by file path. A feature, a refactor, and a bugfix in the same branch become three separate chapters."
+        },
+        %{
+          h: "Prologue sets the scene",
+          p:
+            "A short prologue chapter states what the branch is trying to do before you read a single hunk."
+        },
+        %{
+          h: "Support bucket for noise",
+          p:
+            "Formatting-only changes, lockfile bumps, and generated files land in a dedicated support bucket instead of cluttering the narrative chapters."
+        },
+        %{
+          h: "Works for branch, PR, MR, or range",
+          p:
+            "Point it at a local branch, a GitHub PR, a GitLab MR, or an arbitrary commit range — the story is built from the diff, not the hosting platform."
+        }
+      ],
+      cost: %{
+        title: "Token cost.",
+        lead:
+          "Generating a story is LLM-driven exploration: your agent reads the diff prep, may open related source, and writes the chapters. That spend is on your agent's model — Crit does not bill for stories. Cost tracks how complex and multi-theme the change is (and how much the model explores), not a simple file or line count. It does not scale linearly with diff size. In our experience, complex PRs (~20–50 files, ~2k–5k lines changed) cost about $1–$1.40 with Claude Opus 5 via /crit-story.",
+        rows: [
+          %{
+            size: "Mid-size",
+            detail: "~10 files, hundreds of lines — one or two themes.",
+            indication: "Often around ~$0.40"
+          },
+          %{
+            size: "Large",
+            detail: "~20 files, ~2k lines changed — multi-theme.",
+            indication: "Often around ~$1–$1.40"
+          },
+          %{
+            size: "Very large",
+            detail: "~50 files, ~5k lines changed — many hunks.",
+            indication: "Still often ~$1–$1.40; exploration depth matters more than raw size"
+          }
+        ],
+        footnote:
+          "Measured as in-session /crit-story with Claude Opus 5. Session/project context (agent docs, skills, tools) is a separate baseline on top of story work."
+      }
+    },
     "live" => %{
       label: "Live",
       screenshot: "live",
@@ -718,7 +802,11 @@ defmodule CritWeb.PageController do
           canonical_url: canonical_url(conn),
           page_title: "#{mode.label} Mode - Crit",
           meta_description: mode.lead,
-          og_image: "https://crit.md/images/screenshots/#{mode.screenshot}-dark@2x.png",
+          og_image:
+            if(mode.screenshot,
+              do: "https://crit.md/images/screenshots/#{mode.screenshot}-dark@2x.png",
+              else: "https://crit.md/images/og.png"
+            ),
           json_ld: %{
             "@context" => "https://schema.org",
             "@type" => "BreadcrumbList",
@@ -849,6 +937,7 @@ defmodule CritWeb.PageController do
     {"/integrations/build-your-own", "monthly", "0.7"},
     {"/modes/plans-docs", "monthly", "0.8"},
     {"/modes/code", "monthly", "0.8"},
+    {"/modes/story", "monthly", "0.8"},
     {"/modes/live", "monthly", "0.8"},
     {"/modes/preview", "monthly", "0.8"},
     {"/getting-started", "monthly", "0.9"},
