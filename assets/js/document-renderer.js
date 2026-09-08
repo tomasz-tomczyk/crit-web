@@ -2817,7 +2817,7 @@ function renderFileSection(ctx, file) {
   return section
 }
 
-// ===== Quote Highlighting in Document Body =====
+// ===== Quote Highlighting in Document/Diff Body =====
 
 function highlightQuotesInSection(sectionEl, file, activeForms) {
   var quotedComments = file.comments.filter(function(c) { return c.quote && !c.resolved })
@@ -2832,6 +2832,7 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
           end_line: f.endLine,
           id: f.formKey,
           resolved: false,
+          side: f.side,
         })
       }
     })
@@ -2839,19 +2840,70 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
 
   if (quotedComments.length === 0) return
 
+  // Index content elements once per mount. The old code ran a
+  // full-section querySelectorAll scan per quoted line (O(Q × L) DOM
+  // queries), which dominated mount time on large files with quoted
+  // comments. One pass here, O(1) map lookups per quoted line below.
+  var pathEsc = CSS.escape(file.path)
+  var docLineMap = new Map() // source line -> .line-content elements
+  sectionEl.querySelectorAll('.line-block[data-file-path="' + pathEsc + '"]').forEach(function(el) {
+    var s = parseInt(el.dataset.startLine)
+    var e = parseInt(el.dataset.endLine)
+    // Native table rows have one content element per cell. Other
+    // blocks have one content div.
+    var contents = []
+    el.querySelectorAll('.line-content').forEach(function(content) {
+      contents.push(content)
+    })
+    if (contents.length === 0) return
+    for (var ln = s; ln <= e; ln++) {
+      var arr = docLineMap.get(ln)
+      if (!arr) {
+        arr = []
+        docLineMap.set(ln, arr)
+      }
+      for (var ci = 0; ci < contents.length; ci++) {
+        if (arr.indexOf(contents[ci]) === -1) arr.push(contents[ci])
+      }
+    }
+  })
+  var diffLineMap = new Map() // lineNum + side -> .diff-content elements
+  sectionEl.querySelectorAll('[data-diff-file-path="' + pathEsc + '"]').forEach(function(el) {
+    // Elements without data-diff-side never matched (undefined !== any
+    // comment side string), so they are left out of the index entirely.
+    if (el.dataset.diffSide === undefined) return
+    var key = el.dataset.diffLineNum + '' + el.dataset.diffSide
+    var content = el.querySelector('.diff-content')
+    if (!content) return
+    var arr = diffLineMap.get(key)
+    if (!arr) {
+      arr = []
+      diffLineMap.set(key, arr)
+    }
+    if (arr.indexOf(content) === -1) arr.push(content)
+  })
+
   quotedComments.forEach(function(comment) {
     // Find the content elements in this comment's line range
     var contentEls = []
+    // Filter by side to avoid matching the wrong line in unified diff
+    // (deleted and added lines can share the same line number)
+    var commentSide = comment.side || ''
     for (var ln = comment.start_line; ln <= comment.end_line; ln++) {
-      sectionEl.querySelectorAll('.line-block[data-file-path="' + CSS.escape(file.path) + '"]').forEach(function(el) {
-        var s = parseInt(el.dataset.startLine)
-        var e = parseInt(el.dataset.endLine)
-        if (s <= ln && e >= ln) {
-          el.querySelectorAll('.line-content').forEach(function(content) {
-            if (contentEls.indexOf(content) === -1) contentEls.push(content)
-          })
+      // Document view: line-blocks with data-file-path
+      var docEls = docLineMap.get(ln)
+      if (docEls) {
+        for (var di = 0; di < docEls.length; di++) {
+          if (contentEls.indexOf(docEls[di]) === -1) contentEls.push(docEls[di])
         }
-      })
+      }
+      // Diff view: diff lines with data-diff-line-num
+      var diffEls = diffLineMap.get(ln + '' + commentSide)
+      if (diffEls) {
+        for (var fi = 0; fi < diffEls.length; fi++) {
+          if (contentEls.indexOf(diffEls[fi]) === -1) contentEls.push(diffEls[fi])
+        }
+      }
     }
 
     if (contentEls.length === 0) return
