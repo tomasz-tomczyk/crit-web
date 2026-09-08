@@ -39,9 +39,12 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review diffs as a story",
       cmd: "branch / pr / mr / range",
       screenshot: nil,
+      # Served from Cloudflare R2 (assets.crit.md)
+      video: "https://assets.crit.md/story-mode.mp4",
+      poster: "https://assets.crit.md/story-mode-poster.webp",
       blurb:
-        "Your agent's branch touched 40 files across a feature, a refactor, and two unrelated fixes. Ask for a story and the agent groups the diff into a prologue and thematic chapters — with a support bucket for the noise — so you understand the shape of the change before you drop into line comments.",
-      bullets: ["Thematic chapters", "Support bucket for noise", "Diff toggle for line comments"]
+        "Organize the diff around themes that belong together — not chronological file order — so the important work surfaces first and you understand the shape of the change before you dig into lines.",
+      bullets: ["Thematic chapters", "Important changes first"]
     },
     %{
       slug: "live",

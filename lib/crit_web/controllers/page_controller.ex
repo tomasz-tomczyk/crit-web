@@ -282,21 +282,23 @@ defmodule CritWeb.PageController do
     "story" => %{
       label: "Story mode",
       screenshot: nil,
+      # Served from Cloudflare R2 (assets.crit.md)
+      video: "https://assets.crit.md/story-mode.mp4",
+      poster: "https://assets.crit.md/story-mode-poster.webp",
       eyebrow: "Mode · story",
       title: "See the shape of the diff before you review the lines.",
       lead:
-        "Your agent's branch touched 40 files across a feature, a refactor, and a couple of unrelated fixes. Story mode has the agent write a chaptered narrative overview of the diff — prologue, thematic chapters, a support bucket for the noise — so you understand what happened before you drop into line-by-line review.",
+        "Organize the diff around themes that belong together — not chronological file order — so the important work surfaces first. Crit opens a chaptered narrative overview so you understand what happened before you dig into lines.",
       tags: [
         "Chaptered overview",
         "Branch / PR / MR / range",
-        "Mermaid optional",
         "Diff toggle"
       ],
       steps: [
         %{
           h: "Ask for a story",
           p:
-            "After <code class=\"font-bold text-(--crit-brand)\">crit install &lt;tool&gt;</code>, run <code class=\"font-bold text-(--crit-brand)\">/crit-story</code> on a branch, PR, MR, or range. Terminal alternative: <code class=\"font-bold text-(--crit-brand)\">crit story</code> with <code class=\"font-bold text-(--crit-brand)\">agent_cmd</code> configured."
+            "After <code class=\"font-bold text-(--crit-brand)\">crit install &lt;tool&gt;</code>, run <code class=\"font-bold text-(--crit-brand)\">/crit-story</code> on a branch, PR, MR, or range."
         },
         %{
           h: "Agent authors chapters",
@@ -309,9 +311,9 @@ defmodule CritWeb.PageController do
             "Each chapter renders as its own section with commentary and the relevant excerpts — a narrative, not a raw diff dump."
         },
         %{
-          h: "You review, then toggle to Diff",
+          h: "You review and comment",
           p:
-            "Read chapter by chapter to understand intent. Flip to Diff view when you want to leave a line comment — story mode explains, diff mode reviews."
+            "Read chapter by chapter to understand intent, and leave line comments as you go — comments work in story mode. Toggle to Diff when you want the raw hunks."
         }
       ],
       features: [
@@ -331,19 +333,9 @@ defmodule CritWeb.PageController do
             "Formatting-only changes, lockfile bumps, and generated files land in a dedicated support bucket instead of cluttering the narrative chapters."
         },
         %{
-          h: "Mermaid diagrams, optional",
-          p:
-            "When a chapter changes control flow or data shape, the agent can drop in a mermaid diagram. Skipped when it wouldn't add anything."
-        },
-        %{
           h: "Works for branch, PR, MR, or range",
           p:
             "Point it at a local branch, a GitHub PR, a GitLab MR, or an arbitrary commit range — the story is built from the diff, not the hosting platform."
-        },
-        %{
-          h: "Wording-gated, not automatic",
-          p:
-            "Story mode only fires when you ask for it by name. It won't hijack a normal /crit review of a small diff."
         }
       ],
       cost: %{
