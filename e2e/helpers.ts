@@ -256,6 +256,20 @@ export async function waitForCommentCard(page: Page, bodyText?: string) {
 }
 
 /**
+ * Open the settings overlay via the header toggle and switch to a tab.
+ */
+export async function openSettingsPane(
+  page: Page,
+  tab: "settings" | "shortcuts" = "settings"
+) {
+  await page.locator("#settingsToggle").click();
+  await expect(page.locator("#settingsOverlay.active")).toBeVisible({
+    timeout: 5_000,
+  });
+  await page.locator(`.settings-tab[data-tab="${tab}"]`).click();
+}
+
+/**
  * Add a comment via the UI (click gutter, type, submit with Ctrl+Enter).
  * The comment is owned by the current session identity, so edit/delete/resolve
  * buttons will be visible.

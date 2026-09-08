@@ -5,6 +5,7 @@ import {
   loadReview,
   seedComment,
   waitForCommentCard,
+  addCommentViaUI,
 } from "./helpers";
 
 test.describe("Comments — Seed & Display", () => {
@@ -216,23 +217,6 @@ test.describe("Comments — Add via UI", () => {
   });
 });
 
-/**
- * Helper: add a comment via the UI (click gutter, type, submit).
- * This ensures the comment is owned by the current session identity,
- * so Resolve / Edit / Delete buttons are visible.
- */
-async function addCommentViaUI(page: import("@playwright/test").Page, body: string) {
-  const gutter = page.locator(".line-gutter").first();
-  await gutter.click();
-
-  const textarea = page.locator(".comment-form textarea");
-  await expect(textarea).toBeVisible({ timeout: 5_000 });
-  await textarea.fill(body);
-  await textarea.press("Control+Enter");
-
-  await waitForCommentCard(page, body);
-}
-
 test.describe("Comments — Resolve", () => {
   let token: string;
   let deleteToken: string;
@@ -268,6 +252,20 @@ test.describe("Comments — Resolve", () => {
       page.locator(".resolve-btn--active")
     ).toBeVisible();
   });
+
+  test("can unresolve a resolved comment", async ({ page }) => {
+    await loadReview(page, token);
+    await addCommentViaUI(page, "Round trip me");
+
+    const card = page.locator(".comment-card").filter({ hasText: "Round trip me" });
+    await card.locator(".resolve-btn").click();
+    await expect(card).toHaveClass(/resolved-card/, { timeout: 5_000 });
+
+    // Unresolve — the card returns to its open state
+    await card.locator(".resolve-btn--active").click();
+    await expect(card).not.toHaveClass(/resolved-card/, { timeout: 5_000 });
+    await expect(page.locator(".comment-card.resolved-card")).toHaveCount(0);
+  });
 });
 
 test.describe("Comments — Delete", () => {
@@ -295,9 +293,10 @@ test.describe("Comments — Delete", () => {
     const deleteBtn = card.locator(".delete-btn");
     await deleteBtn.click();
 
-    // The comment should disappear
+    // The comment should disappear and the count badge clear (empty at 0)
     await expect(
       page.locator(".comment-card").filter({ hasText: "Delete me" })
     ).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.locator("#commentCountNumber")).toHaveText("");
   });
 });

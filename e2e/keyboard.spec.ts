@@ -1,11 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  createReview,
-  deleteReview,
-  loadReview,
-  seedComment,
-  waitForCommentCard,
-} from "./helpers";
+import { createReview, deleteReview, loadReview } from "./helpers";
 
 test.describe("Keyboard Shortcuts", () => {
   let token: string;
@@ -209,52 +203,8 @@ test.describe("Keyboard Shortcuts", () => {
     expect(pageErrors).toEqual([]);
   });
 
-  test("[ and ] navigate between comments", async ({ page, request }) => {
-    await seedComment(request, token, {
-      body: "First shortcut comment",
-      startLine: 1,
-    });
-    await seedComment(request, token, {
-      body: "Second shortcut comment",
-      startLine: 4,
-    });
-
-    await loadReview(page, token);
-    await waitForCommentCard(page, "First shortcut comment");
-    await waitForCommentCard(page, "Second shortcut comment");
-
-    // Navigate with ] to next comment
-    await page.keyboard.press("]");
-
-    // Navigate with ] again
-    await page.keyboard.press("]");
-
-    // Navigate with [ back
-    await page.keyboard.press("[");
-
-    // These shortcuts should work without errors. The comment navigation
-    // highlight CSS class confirms the jump happened.
-  });
-
-  test("Shift+C toggles comments panel", async ({ page, request }) => {
-    await seedComment(request, token, {
-      body: "Panel shortcut test",
-      startLine: 1,
-    });
-
-    await loadReview(page, token);
-    await waitForCommentCard(page, "Panel shortcut test");
-
-    const panel = page.locator(".comments-panel");
-
-    // Open
-    await page.keyboard.press("Shift+C");
-    await expect(panel).toHaveClass(/comments-panel-open/, { timeout: 5_000 });
-
-    // Close
-    await page.keyboard.press("Shift+C");
-    await expect(panel).not.toHaveClass(/comments-panel-open/);
-  });
+  // [ / ] comment navigation is covered (with highlight assertions) in
+  // comment-navigation.spec.ts; Shift+C panel toggle in comments-panel.spec.ts.
 
   test("keyboard shortcuts do not fire when typing in textarea", async ({
     page,

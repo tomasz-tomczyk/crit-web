@@ -42,28 +42,19 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
     await deleteReview(request, deleteToken);
   });
 
-  test("each file section has a viewed checkbox", async ({ page }) => {
+  test("each file section has a viewed checkbox, unchecked by default", async ({ page }) => {
     await loadReview(page, token);
 
     const checkboxes = page.locator(
       '.file-header-viewed input[type="checkbox"]'
     );
     const sections = page.locator("details.file-section");
-    const sectionCount = await sections.count();
-    expect(sectionCount).toBe(3);
-    await expect(checkboxes).toHaveCount(sectionCount);
+    await expect(sections).toHaveCount(3);
+    await expect(checkboxes).toHaveCount(3);
+    await expect(checkboxes.first()).not.toBeChecked();
   });
 
-  test("viewed checkbox starts unchecked", async ({ page }) => {
-    await loadReview(page, token);
-
-    const checkbox = page
-      .locator('.file-header-viewed input[type="checkbox"]')
-      .first();
-    await expect(checkbox).not.toBeChecked();
-  });
-
-  test("clicking viewed checkbox marks file as viewed", async ({ page }) => {
+  test("clicking viewed checkbox marks file as viewed and persists to localStorage", async ({ page }) => {
     await loadReview(page, token);
 
     const checkbox = page
@@ -71,6 +62,17 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
       .first();
     await checkbox.click();
     await expect(checkbox).toBeChecked();
+
+    // Verify localStorage was updated
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            Object.keys(localStorage).filter((k) => k.startsWith("crit-viewed-"))
+              .length
+        )
+      )
+      .toBeGreaterThan(0);
   });
 
   test("checking viewed collapses the file section", async ({ page }) => {
@@ -85,25 +87,6 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
     await checkbox.click();
 
     await expect(section).not.toHaveAttribute("open", "");
-  });
-
-  test("viewed state persists in localStorage", async ({ page }) => {
-    await loadReview(page, token);
-
-    const checkbox = page
-      .locator('.file-header-viewed input[type="checkbox"]')
-      .first();
-    await checkbox.click();
-    await expect(checkbox).toBeChecked();
-
-    // Verify localStorage was updated
-    const hasViewed = await page.evaluate(() => {
-      const keys = Object.keys(localStorage).filter((k) =>
-        k.startsWith("crit-viewed-")
-      );
-      return keys.length > 0;
-    });
-    expect(hasViewed).toBe(true);
   });
 
   test("viewed state persists across page reload", async ({ page }) => {

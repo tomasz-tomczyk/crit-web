@@ -107,6 +107,30 @@ test.describe("Comment Threading", () => {
     await expect(card.locator(".reply-input")).toHaveValue("");
   });
 
+  test("Ctrl+Enter submits a new reply", async ({ page, request }) => {
+    await seedComment(request, token, {
+      body: "Reply shortcut target",
+      startLine: 1,
+    });
+
+    await loadReview(page, token);
+    await waitForCommentCard(page, "Reply shortcut target");
+
+    const card = page
+      .locator(".comment-card")
+      .filter({ hasText: "Reply shortcut target" });
+
+    await card.locator(".reply-input").click();
+    const replyTextarea = card.locator(".reply-textarea");
+    await expect(replyTextarea).toBeVisible({ timeout: 5_000 });
+    await replyTextarea.fill("Submitted with Ctrl+Enter");
+    await replyTextarea.press("Control+Enter");
+
+    await expect(
+      card.locator(".reply-body").filter({ hasText: "Submitted with Ctrl+Enter" })
+    ).toBeVisible({ timeout: 5_000 });
+  });
+
   test("reply form Cancel collapses without submitting", async ({
     page,
     request,
