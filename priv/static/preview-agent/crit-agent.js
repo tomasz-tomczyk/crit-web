@@ -660,4 +660,26 @@
   document.addEventListener('focusout', function (ev) {
     if (isInputLike(ev.target)) postToParent({ type: A2C.FOCUS_STATE, in_input: false });
   }, true);
+
+  // The live target owns focus once a reviewer clicks into it, so shortcuts
+  // registered by the review chrome cannot see these events. Relay safe key
+  // details to the trusted parent, which resolves them against the reviewer's
+  // configurable shortcut map. Do not steal typing or native interactive keys
+  // from the page being reviewed.
+  document.addEventListener('keydown', function (ev) {
+    if (ev.defaultPrevented || ev.repeat || ev.isComposing || isInputLike(ev.target)) return;
+    var target = ev.target;
+    if (target && target.closest && target.closest(
+      'button, a[href], summary, [role="button"], [role="link"], [role="radio"], [role="checkbox"], [role="switch"], [role="tab"], [role="menuitem"], [role="option"], [role="slider"]'
+    ) && [' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].indexOf(ev.key) !== -1) return;
+    postToParent({
+      type: A2C.SHORTCUT_KEY,
+      key: ev.key,
+      code: ev.code,
+      ctrlKey: !!ev.ctrlKey,
+      altKey: !!ev.altKey,
+      shiftKey: !!ev.shiftKey,
+      metaKey: !!ev.metaKey,
+    });
+  }, true);
 })();

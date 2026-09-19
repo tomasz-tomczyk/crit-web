@@ -29,7 +29,7 @@
 
 import { renderCommentCard, attachSidebarResizeHandle, escapeHtml, startInlineBodyEdit } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
-import { actionForEvent } from "./shortcut-registry"
+import { actionForEvent, getBinding } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 
 // Chrome → Agent message types (copied verbatim from agent-protocol.js C2A).
@@ -144,6 +144,10 @@ export const PreviewMode = {
       showWidth: false,
       showHideResolved: false,
       shortcutMode: "preview",
+      onShortcutsChanged: () => {
+        this.updateCommentModeLabel()
+        this.updateModeHint()
+      },
     })
 
     this.handleShortcut = (event) => {
@@ -292,6 +296,12 @@ export const PreviewMode = {
     this.el.innerHTML = [
       '<div class="crit-preview-body">',
       '  <div class="crit-preview-iframe-pane">',
+      // Persistent browse/comment state next to the page — parity with crit
+      // live-mode's #liveModeHint (class name shared for CSS/docs alignment).
+      '    <div class="crit-live-mode-hint" id="critPreviewModeHint" data-mode="navigate" role="status">',
+      '      <strong id="critPreviewModeHintState">Browsing</strong>',
+      '      <span id="critPreviewModeHintText"></span>',
+      "    </div>",
       '    <div class="crit-preview-iframe-frame" id="critPreviewFrame">',
       // Sandbox runs on preview.crit.md (not crit.md). In isolated mode we keep
       // the iframe on an opaque origin (no allow-same-origin) while still
@@ -389,6 +399,7 @@ export const PreviewMode = {
     this.modeToggle = controls.querySelector("#critPreviewMode")
     this.buildViewportToggle()
     this.buildModeToggle()
+    this.updateModeHint()
   },
 
   buildViewportToggle() {
@@ -425,8 +436,10 @@ export const PreviewMode = {
     let w, h
     if (vp.key === "fit") {
       const rect = this.iframePane.getBoundingClientRect()
+      const hint = document.getElementById("critPreviewModeHint")
+      const hintH = hint ? Math.ceil(hint.getBoundingClientRect().height) + 10 : 0
       w = Math.max(320, Math.floor(rect.width - 32))
-      h = Math.max(240, Math.floor(rect.height - 32))
+      h = Math.max(240, Math.floor(rect.height - 32 - hintH))
     } else {
       w = vp.w
       h = vp.h
@@ -448,8 +461,8 @@ export const PreviewMode = {
 
   buildModeToggle() {
     this.modeToggle.innerHTML = [
-      { key: "navigate", label: "Navigate" },
-      { key: "pin", label: "Pin" },
+      { key: "navigate", label: "Browse" },
+      { key: "pin", label: this.commentModeLabel() },
     ]
       .map((m) => {
         const active = m.key === this.mode
@@ -476,6 +489,57 @@ export const PreviewMode = {
     })
   },
 
+  commentModeLabel() {
+    const binding = getBinding("toggle_pin_mode")
+    return binding ? `${binding} · Comment` : "Comment"
+  },
+
+  pinShortcutLabel(binding) {
+    return binding && binding.length === 1 && /^[a-z]$/i.test(binding)
+      ? binding.toUpperCase()
+      : (binding || "")
+  },
+
+  updateCommentModeLabel() {
+    const pinBtn = this.modeToggle?.querySelector('[data-mode="pin"]')
+    if (pinBtn) pinBtn.textContent = this.commentModeLabel()
+  },
+
+  // Port of crit live-mode updateModeHint: keep browse/comment state visible
+  // next to the preview iframe so first-time reviewers don't miss the toggle.
+  updateModeHint() {
+    const hint = document.getElementById("critPreviewModeHint")
+    const label = document.getElementById("critPreviewModeHintState")
+    const text = document.getElementById("critPreviewModeHintText")
+    const binding = getBinding("toggle_pin_mode") || ""
+    const bindingLabel = this.pinShortcutLabel(binding)
+    const isPin = this.mode === "pin"
+    if (hint) hint.dataset.mode = isPin ? "pin" : "navigate"
+    if (label) label.textContent = isPin ? "Commenting" : "Browsing"
+    // Keep the Loading… title while the pin button is still disabled.
+    const commentBtn = this.modeToggle?.querySelector('.crit-toggle-btn[data-mode="pin"]')
+    if (commentBtn && !commentBtn.hasAttribute("disabled")) {
+      const ariaLabel = bindingLabel
+        ? `Comment mode (${bindingLabel})`
+        : "Comment mode"
+      commentBtn.setAttribute("aria-label", ariaLabel)
+      commentBtn.setAttribute("title", ariaLabel)
+    }
+    if (!text) return
+    text.replaceChildren()
+    if (isPin) {
+      text.textContent = "Click an element in the page to leave a comment."
+    } else if (bindingLabel) {
+      text.append("Press ")
+      const hintKey = document.createElement("kbd")
+      hintKey.textContent = bindingLabel
+      text.appendChild(hintKey)
+      text.append(" or choose Comment to leave feedback.")
+    } else {
+      text.textContent = "Choose Comment to leave feedback."
+    }
+  },
+
   setMode(value) {
     const next = value === "pin" ? "pin" : "navigate"
     if (this.mode === next || this.composerSubmitting) return
@@ -491,6 +555,7 @@ export const PreviewMode = {
         b.setAttribute("aria-pressed", on ? "true" : "false")
       })
     }
+    this.updateModeHint()
     if (next === "pin") this.openPanel()
     if (next === "navigate") this.closeComposer()
   },
@@ -501,7 +566,7 @@ export const PreviewMode = {
     if (!pinBtn) return
     pinBtn.removeAttribute("disabled")
     pinBtn.removeAttribute("aria-disabled")
-    pinBtn.setAttribute("title", "Click an element in the preview to comment")
+    this.updateModeHint()
   },
 
   // ---- Panel open/close ----------------------------------------------------

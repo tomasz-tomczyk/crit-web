@@ -4355,7 +4355,7 @@ body.sidebar-resizing * {
    The comment panel, cards, replies, resolve/reply and resolved styling are
    REUSED from the shared chrome (.comments-panel*, .comment-card*, comments-
    panel.js) — identical to files mode. This block defines only the preview-
-   specific pieces: the iframe pane, the header viewport/Navigate-Pin toggles
+   specific pieces: the iframe pane, the header viewport/Browse-Comment toggles
    (which reuse .crit-diff-mode-toggle/.crit-toggle-btn), the pin-number badge,
    the selection composer, and the pin flash animation.
    Custom CSS only — no Tailwind/daisyUI on the review page.
@@ -4369,7 +4369,7 @@ body.sidebar-resizing * {
   background: var(--crit-editor-bg);
 }
 
-/* Header viewport + Navigate/Pin toggles (injected into .crit-header-actions-right). */
+/* Header viewport + Browse/Comment toggles (injected into .crit-header-actions-right). */
 .crit-preview-controls {
   display: inline-flex;
   align-items: center;
@@ -4379,6 +4379,22 @@ body.sidebar-resizing * {
 .crit-preview-controls .crit-toggle-btn[disabled] {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Preview-only active contrast — scoped so viewport/filter pills keep the
+   shared subtler active tint. Matches crit live-mode brand-filled active. */
+#critPreviewMode .crit-toggle-btn--active {
+  background: var(--crit-brand);
+  /* In dark themes the brand is intentionally light, so use the editor
+     surface (dark there, white in light themes) for a reliable text ratio. */
+  color: var(--crit-editor-bg);
+  box-shadow: none;
+}
+#critPreviewMode .crit-toggle-btn[data-mode="pin"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
 }
 
 /* --- Body: iframe pane + shared side panel split --- */
@@ -4391,13 +4407,47 @@ body.sidebar-resizing * {
 .crit-preview-iframe-pane {
   flex: 1 1 auto;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   min-width: 0;
   min-height: 0;
   padding: 16px;
   overflow: auto;
   background: var(--crit-editor-bg);
+}
+
+/* Keep the current interaction state next to the page being reviewed. The
+   colours deliberately do not rely on the low-contrast shared toggle tint.
+   Class name matches crit live-mode for parity. */
+.crit-live-mode-hint {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+  background: var(--crit-editor-bg-elevated);
+  color: var(--crit-editor-fg-secondary);
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+.crit-live-mode-hint strong { color: var(--crit-editor-fg); }
+.crit-live-mode-hint[data-mode="pin"] {
+  border-color: var(--crit-brand);
+  background: var(--crit-brand-subtle);
+  color: var(--crit-brand);
+}
+.crit-live-mode-hint[data-mode="pin"] strong { color: var(--crit-brand); }
+.crit-live-mode-hint kbd {
+  padding: 0 3px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font: inherit;
+  font-weight: 700;
 }
 
 .crit-preview-iframe-frame {
