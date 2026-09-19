@@ -436,8 +436,10 @@ export const PreviewMode = {
     let w, h
     if (vp.key === "fit") {
       const rect = this.iframePane.getBoundingClientRect()
+      const hint = document.getElementById("critPreviewModeHint")
+      const hintH = hint ? Math.ceil(hint.getBoundingClientRect().height) + 10 : 0
       w = Math.max(320, Math.floor(rect.width - 32))
-      h = Math.max(240, Math.floor(rect.height - 32))
+      h = Math.max(240, Math.floor(rect.height - 32 - hintH))
     } else {
       w = vp.w
       h = vp.h
@@ -514,6 +516,7 @@ export const PreviewMode = {
     const isPin = this.mode === "pin"
     if (hint) hint.dataset.mode = isPin ? "pin" : "navigate"
     if (label) label.textContent = isPin ? "Commenting" : "Browsing"
+    // Keep the Loading… title while the pin button is still disabled.
     const commentBtn = this.modeToggle?.querySelector('.crit-toggle-btn[data-mode="pin"]')
     if (commentBtn && !commentBtn.hasAttribute("disabled")) {
       const ariaLabel = bindingLabel
