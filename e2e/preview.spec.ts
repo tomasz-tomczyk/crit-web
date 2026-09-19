@@ -49,6 +49,10 @@ test.describe("Preview mode", () => {
     await expect(page.locator("#critPreviewMode")).toBeVisible();
     await expect(page.locator('#critPreviewMode button[data-mode="navigate"]')).toHaveText("Browse");
     await expect(page.locator('#critPreviewMode button[data-mode="pin"]')).toContainText("Comment");
+    await expect(page.locator("#critPreviewModeHint")).toHaveAttribute("data-mode", "navigate");
+    await expect(page.locator("#critPreviewModeHintState")).toHaveText("Browsing");
+    await expect(page.locator("#critPreviewModeHintText")).toContainText("Press");
+    await expect(page.locator("#critPreviewModeHintText")).toContainText("Comment");
 
     // The iframe points at the raw HTML route for this review.
     const src = await page.locator("#critPreviewIframe").getAttribute("src");
@@ -86,6 +90,8 @@ test.describe("Preview mode", () => {
     await page.keyboard.press("x");
     await expect(pin).toHaveClass(/crit-toggle-btn--active/);
     await expect(pin).toHaveText("x · Comment");
+    await expect(page.locator("#critPreviewModeHint")).toHaveAttribute("data-mode", "pin");
+    await expect(page.locator("#critPreviewModeHintState")).toHaveText("Commenting");
 
     const frame = page.frameLocator("#critPreviewIframe");
     await page.keyboard.press("x");
