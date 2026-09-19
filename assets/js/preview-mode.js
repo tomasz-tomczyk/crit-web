@@ -1043,11 +1043,19 @@ export const PreviewMode = {
 
   // ---- Pin highlight + flash (agent bridge) --------------------------------
 
+  // Parity with crit local openPinAndFocus / performFlashAndScroll (#958):
+  // card clicks must scroll the pinned element into view, not only outline it.
+  // keep-highlight.scroll is optional in the agent protocol — compose paths
+  // omit it so the element the user just clicked isn't re-centred.
   flashPin(comment) {
     if (!comment) return
     const anchor = comment.dom_anchor
     if (anchor && anchor.css_selector) {
-      this.sender.send({ type: C2A.KEEP_HIGHLIGHT, selector: anchor.css_selector })
+      this.sender.send({
+        type: C2A.KEEP_HIGHLIGHT,
+        selector: anchor.css_selector,
+        scroll: true,
+      })
       if (this._highlightTimer) clearTimeout(this._highlightTimer)
       this._highlightTimer = setTimeout(() => {
         this.sender.send({ type: C2A.CLEAR_HIGHLIGHT })

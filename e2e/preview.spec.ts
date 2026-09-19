@@ -440,4 +440,64 @@ test.describe("Preview mode", () => {
     await expect(cards).toHaveCount(1, { timeout: 10_000 });
     await page.evaluate(() => (window as any).liveSocket.disableLatencySim());
   });
+
+  // Parity with crit #958 / PR #964: panel card click must ask the agent to
+  // scroll the pinned element into view (keep-highlight with scroll: true),
+  // not only outline it.
+  test("clicking a pin card scrolls to and highlights its target element", async ({
+    page,
+    request,
+  }) => {
+    const review = await createPreviewReview(request, {
+      comments: [
+        {
+          body: "Scroll me to the counter button",
+          css_selector: "#counter",
+          tag_chain: ["BODY", "MAIN", "BUTTON"],
+          outer_html: '<button id="counter">Clicked 0 times</button>',
+        },
+      ],
+    });
+    token = review.token;
+    deleteToken = review.deleteToken;
+
+    const frame = await loadPreview(page, token);
+    const pinBtn = page.locator('#critPreviewMode button[data-mode="pin"]');
+    await expect(pinBtn).toBeEnabled({ timeout: 15_000 });
+
+    const target = frame.locator("#counter");
+    await expect(target).toBeVisible();
+    // Push the pin target below the fold so card activation must scroll.
+    await target.evaluate((el) => {
+      const spacer = document.createElement("div");
+      spacer.id = "__crit_pin_card_scroll_spacer";
+      spacer.style.height = "1600px";
+      el.parentElement?.insertBefore(spacer, el);
+      window.scrollTo(0, 0);
+    });
+    await expect
+      .poll(() =>
+        target.evaluate((el) => el.getBoundingClientRect().top > window.innerHeight)
+      )
+      .toBe(true);
+
+    const card = page
+      .locator("#critPreviewPanelBody .comment-card")
+      .filter({ hasText: "Scroll me to the counter button" });
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    await card.click();
+
+    await expect
+      .poll(() =>
+        target.evaluate((el) => {
+          const rect = el.getBoundingClientRect();
+          return (
+            rect.top < window.innerHeight &&
+            rect.bottom > 0 &&
+            el.classList.contains("crit-live-pending-highlight")
+          );
+        })
+      )
+      .toBe(true);
+  });
 });
