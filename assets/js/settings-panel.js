@@ -302,6 +302,7 @@ export function createSettingsPanel(adapter) {
     const rerender = () => renderShortcutsPane()
     pane.querySelector('.shortcut-reset-all')?.addEventListener('click', () => {
       resetAll()
+      adapter.onShortcutsChanged?.()
       rerender()
     })
 
@@ -345,6 +346,7 @@ export function createSettingsPanel(adapter) {
           return
         }
         setBinding(id, binding)
+        adapter.onShortcutsChanged?.()
         rerender()
       })
     })

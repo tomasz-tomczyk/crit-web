@@ -29,7 +29,7 @@
 
 import { renderCommentCard, attachSidebarResizeHandle, escapeHtml, startInlineBodyEdit } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
-import { actionForEvent } from "./shortcut-registry"
+import { actionForEvent, getBinding } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 
 // Chrome → Agent message types (copied verbatim from agent-protocol.js C2A).
@@ -144,6 +144,7 @@ export const PreviewMode = {
       showWidth: false,
       showHideResolved: false,
       shortcutMode: "preview",
+      onShortcutsChanged: () => this.updateCommentModeLabel(),
     })
 
     this.handleShortcut = (event) => {
@@ -448,8 +449,8 @@ export const PreviewMode = {
 
   buildModeToggle() {
     this.modeToggle.innerHTML = [
-      { key: "navigate", label: "Navigate" },
-      { key: "pin", label: "Pin" },
+      { key: "navigate", label: "Browse" },
+      { key: "pin", label: this.commentModeLabel() },
     ]
       .map((m) => {
         const active = m.key === this.mode
@@ -474,6 +475,16 @@ export const PreviewMode = {
       if (key !== "navigate" && key !== "pin") return
       this.setMode(key)
     })
+  },
+
+  commentModeLabel() {
+    const binding = getBinding("toggle_pin_mode")
+    return binding ? `${binding} · Comment` : "Comment"
+  },
+
+  updateCommentModeLabel() {
+    const pinBtn = this.modeToggle?.querySelector('[data-mode="pin"]')
+    if (pinBtn) pinBtn.textContent = this.commentModeLabel()
   },
 
   setMode(value) {
