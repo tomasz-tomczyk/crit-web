@@ -126,7 +126,11 @@ test.describe("Multi-File Review", () => {
       'details.file-section:has(.file-header-name:has-text("main.ts"))'
     );
     await mainSection.getByTitle("Add file comment").click();
-    const fileTextarea = mainSection.locator(".file-comment-form textarea");
+    // renderCommentFormUI uses .comment-form (not .file-comment-form)
+    const fileTextarea = mainSection.locator(
+      ".file-comments .comment-form textarea"
+    );
+    await expect(fileTextarea).toBeVisible();
     await fileTextarea.fill("Main file feedback");
     await fileTextarea.press("Control+Enter");
     await expect(
