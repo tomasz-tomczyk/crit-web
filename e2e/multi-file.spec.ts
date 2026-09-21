@@ -125,7 +125,17 @@ test.describe("Multi-File Review", () => {
     const mainSection = page.locator(
       'details.file-section:has(.file-header-name:has-text("main.ts"))'
     );
+    // File sections can be collapsed by the renderer when the review loads.
+    // Open this section explicitly before interacting with its form.
+    if (!(await mainSection.getAttribute("open"))) {
+      await mainSection.locator("summary").click();
+    }
     await mainSection.getByTitle("Add file comment").click();
+    // Rendering the form can recreate the details element from its persisted
+    // collapsed state. Keep the target section open while the form is used.
+    await mainSection.evaluate((element) => {
+      (element as HTMLDetailsElement).open = true;
+    });
     // renderCommentFormUI uses .comment-form (not .file-comment-form)
     const fileTextarea = mainSection.locator(
       ".file-comments .comment-form textarea"
