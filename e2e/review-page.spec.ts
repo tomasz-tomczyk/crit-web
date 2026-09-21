@@ -72,12 +72,27 @@ test.describe("Review Page — Loading", () => {
     await expect(commentCountBtn).toBeVisible();
   });
 
-  test("shows the 'Get prompt' button", async ({ page }) => {
+  test("opens both prompt modes", async ({ page }) => {
     await loadReview(page, token);
 
-    await expect(
-      page.locator(".crit-split-btn-main")
-    ).toContainText("Get prompt");
+    const promptPanel = page.locator("#crit-prompt-panel");
+    await page.getByRole("button", { name: "Get prompt" }).click();
+    await expect(promptPanel).toBeVisible();
+    await expect(promptPanel.getByRole("heading")).toHaveText("Act on comments");
+    await expect(promptPanel.locator(".crit-prompt-text")).toContainText(
+      "crit fetch"
+    );
+    await promptPanel.getByRole("button", { name: "Dismiss" }).click();
+
+    await page.locator(".crit-split-btn-caret").click();
+    await page.getByRole("button", { name: /Full plan \+ comments/ }).click();
+    await expect(promptPanel).toBeVisible();
+    await expect(promptPanel.getByRole("heading")).toHaveText(
+      "Full plan + comments"
+    );
+    await expect(promptPanel.locator(".crit-prompt-text")).toContainText(
+      `/api/export/${token}/review`
+    );
   });
 
   test("renders 404 page for invalid token", async ({ page }) => {

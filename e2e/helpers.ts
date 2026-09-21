@@ -186,6 +186,34 @@ export async function loadPreview(page: Page, token: string) {
 }
 
 /**
+ * Create a standard multi-file review used by multi-file and viewed specs.
+ */
+export async function createMultiFileReview(request: APIRequestContext) {
+  const paragraphs = (label: string) =>
+    Array.from(
+      { length: 20 },
+      (_, index) => `${label} paragraph ${index + 1}.`
+    ).join("\n\n");
+
+  return createReview(request, {
+    files: [
+      {
+        path: "src/main.ts",
+        content: paragraphs("Main"),
+      },
+      {
+        path: "src/utils.ts",
+        content: paragraphs("Utils"),
+      },
+      {
+        path: "README.md",
+        content: `# My Project\n\n${paragraphs("README")}`,
+      },
+    ],
+  });
+}
+
+/**
  * Delete a review via the API.
  */
 export async function deleteReview(

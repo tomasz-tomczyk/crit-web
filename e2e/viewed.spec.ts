@@ -1,28 +1,16 @@
 import { test, expect } from "@playwright/test";
-import { createReview, deleteReview, loadReview } from "./helpers";
+import {
+  createMultiFileReview,
+  deleteReview,
+  loadReview,
+} from "./helpers";
 
 test.describe("Viewed Checkbox — Multi-File Review", () => {
   let token: string;
   let deleteToken: string;
 
   test.beforeAll(async ({ request }) => {
-    const review = await createReview(request, {
-      files: [
-        {
-          path: "src/main.ts",
-          content: "export function main() {\n  console.log('hello')\n}\n",
-        },
-        {
-          path: "src/utils.ts",
-          content:
-            "export function add(a: number, b: number) {\n  return a + b\n}\n",
-        },
-        {
-          path: "README.md",
-          content: "# My Project\n\nA sample project.\n",
-        },
-      ],
-    });
+    const review = await createMultiFileReview(request);
     token = review.token;
     deleteToken = review.deleteToken;
   });
@@ -51,28 +39,41 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
     const sections = page.locator("details.file-section");
     await expect(sections).toHaveCount(3);
     await expect(checkboxes).toHaveCount(3);
-    await expect(checkboxes.first()).not.toBeChecked();
+    await expect
+      .poll(() =>
+        checkboxes.evaluateAll((elements) =>
+          elements.map((element) => (element as HTMLInputElement).checked)
+        )
+      )
+      .toEqual([false, false, false]);
   });
 
   test("clicking viewed checkbox marks file as viewed and persists to localStorage", async ({ page }) => {
     await loadReview(page, token);
 
-    const checkbox = page
-      .locator('.file-header-viewed input[type="checkbox"]')
-      .first();
+    const mainSection = page.locator(
+      'details.file-section:has(.file-header-name:has-text("main.ts"))'
+    );
+    const checkbox = mainSection.locator(
+      '.file-header-viewed input[type="checkbox"]'
+    );
     await checkbox.click();
     await expect(checkbox).toBeChecked();
 
-    // Verify localStorage was updated
+    // Verify the persisted value belongs to the file that was checked.
     await expect
       .poll(() =>
-        page.evaluate(
-          () =>
-            Object.keys(localStorage).filter((k) => k.startsWith("crit-viewed-"))
-              .length
-        )
+        page.evaluate(() => {
+          const keys = Object.keys(localStorage).filter((key) =>
+            key.startsWith("crit-viewed-")
+          );
+          const key = keys[0];
+          return keys.length === 1 && key
+            ? JSON.parse(localStorage.getItem(key) || "{}")
+            : null;
+        })
       )
-      .toBeGreaterThan(0);
+      .toEqual({ "src/main.ts": true });
   });
 
   test("checking viewed collapses the file section", async ({ page }) => {
@@ -120,17 +121,12 @@ test.describe("Viewed Checkbox — Multi-File Review", () => {
     const treeFile = page.locator(`.tree-file[data-path="${filePath}"]`);
     await expect(treeFile.locator(".tree-viewed-check")).toHaveCount(0);
 
-    // Click via getElementById + CSS.escape — ids escape '/' and '.' for CSS
-    await page.evaluate((path) => {
-      const section = document.getElementById(
-        "file-section-" + CSS.escape(path)
-      );
-      const cb = section?.querySelector(
-        '.file-header-viewed input[type="checkbox"]'
-      );
-      if (!cb) throw new Error("viewed checkbox not found for " + path);
-      (cb as HTMLInputElement).click();
-    }, filePath);
+    const section = page.locator(
+      'details.file-section:has(.file-header-name:has-text("main.ts"))'
+    );
+    await section
+      .locator('.file-header-viewed input[type="checkbox"]')
+      .click();
 
     // Tree file should have viewed class and checkmark
     await expect(treeFile).toHaveClass(/viewed/);
