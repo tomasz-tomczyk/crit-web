@@ -30,6 +30,7 @@ export const shortcutGroups = [
     { id: "toggle_pin_mode", binding: "p", action: "Toggle pin mode", modes: PREVIEW },
   ] },
   { label: "View", shortcuts: [
+    { id: "toggle_file_tree", binding: "b", action: "Toggle sidebar (file tree)", modes: FILES },
     { id: "toggle_toc", binding: "t", action: "Toggle table of contents", modes: FILES },
     { id: "toggle_resolved", binding: "h", action: "Toggle hide resolved", modes: FILES },
     { binding: "Esc", action: "Cancel / clear focus", modes: BOTH, fixed: true },

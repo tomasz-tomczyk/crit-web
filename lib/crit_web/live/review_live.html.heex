@@ -2,6 +2,33 @@
   <div class="crit-header">
     <div class="crit-header-bar">
       <div class="crit-header-left">
+        <%!-- File-tree sidebar toggle. Hidden until multi-file init (JS).
+             aria-expanded / title / aria-label are owned by document-renderer.js. --%>
+        <button
+          type="button"
+          class="ft-toggle"
+          id="fileTreeToggle"
+          title="Hide sidebar (b)"
+          aria-label="Hide sidebar"
+          aria-expanded="true"
+          style="display:none"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.25"
+            aria-hidden="true"
+          >
+            <path class="ft-toggle-fill" d="M2.5 3.5h3v9h-3z" fill="currentColor" stroke="none" /><rect
+              x="1.5"
+              y="2.5"
+              width="13"
+              height="11"
+              rx="1.5"
+            /><path d="M5.5 2.5v11" />
+          </svg>
+        </button>
         <a href="/dashboard" class="crit-header-title">
           <svg class="crit-header-logo" viewBox="50 -1600 3430 1650" aria-label="crit">
             <g transform="scale(1,-1)">

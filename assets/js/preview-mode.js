@@ -376,12 +376,17 @@ export const PreviewMode = {
     if (Number.isFinite(savedWidth) && savedWidth >= 300) this.panel.style.width = savedWidth + "px"
     attachSidebarResizeHandle(this.resizer, this.panel, {
       storageKey: "crit-comments-panel-width", min: 300, edge: "left", step: 16,
+      cssVar: "--comments-panel-width",
     })
+    // Keep slide margin var aligned with the applied width before first open.
+    const bootW = this.panel.getBoundingClientRect().width
+    if (bootW > 0) document.body.style.setProperty("--comments-panel-width", bootW + "px")
 
     this.renderPanel()
     // Comments are the point of a shared preview, so the panel starts open
     // (the header comment-count button still toggles it closed/open).
-    this.openPanel()
+    // No slide-in on first paint — matches file-tree "restore without anim".
+    this.openPanel(false)
   },
 
   // Inject viewport + mode toggles into the right-aligned header, mirroring
@@ -571,16 +576,30 @@ export const PreviewMode = {
 
   // ---- Panel open/close ----------------------------------------------------
 
-  openPanel() {
-    if (!this.panel) return
-    this.panel.classList.add("comments-panel-open")
-    this.syncToggleAria(true)
+  startCommentsPanelAnimation() {
+    document.body.classList.add("comments-panel-anim")
+    document.body.getBoundingClientRect()
   },
 
-  closePanel() {
+  setCommentsPanelOpen(open, animate) {
     if (!this.panel) return
-    this.panel.classList.remove("comments-panel-open")
-    this.syncToggleAria(false)
+    if (this.panel.classList.contains("comments-panel-open") === open) {
+      this.syncToggleAria(open)
+      return
+    }
+    const w = this.panel.getBoundingClientRect().width
+    if (w > 0) document.body.style.setProperty("--comments-panel-width", w + "px")
+    if (animate) this.startCommentsPanelAnimation()
+    this.panel.classList.toggle("comments-panel-open", open)
+    this.syncToggleAria(open)
+  },
+
+  openPanel(animate = true) {
+    this.setCommentsPanelOpen(true, animate)
+  },
+
+  closePanel(animate = true) {
+    this.setCommentsPanelOpen(false, animate)
   },
 
   togglePanel() {

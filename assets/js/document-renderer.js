@@ -19,7 +19,7 @@ import {
   attachSidebarResizeHandle,
 } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
-import { actionForEvent } from "./shortcut-registry"
+import { actionForEvent, getBinding } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 
 // Re-register hljs 'markdown' with patched grammar. Must run before any
@@ -2119,9 +2119,13 @@ function renderMobileFilePicker(ctx) {
 
 function renderFileTree(ctx) {
   const panel = document.getElementById('fileTreePanel')
-  if (!panel || !ctx.multiFile) return
+  if (!panel || !ctx.multiFile) {
+    syncSidebarToggleVisibility(ctx)
+    return
+  }
 
   panel.style.display = ''
+  syncSidebarToggleVisibility(ctx)
 
   const stats = document.getElementById('fileTreeStats')
   const viewedCount = ctx.files.filter(f => f.viewed).length
@@ -3934,9 +3938,15 @@ function cancelComment(formObj, ctx) {
 // the local CLI which uses a random port). Only a minimum is enforced —
 // no upper bound; ultrawide users may legitimately want very wide sidebars.
 const SIDEBAR_RESIZE = [
-  { handleId: 'fileTreeResizer',     targetId: 'fileTreePanel',  storageKey: 'crit-file-tree-width',     min: 180, edge: 'right', step: 16 },
-  { handleId: 'commentsPanelResizer', targetId: 'commentsPanel', storageKey: 'crit-comments-panel-width', min: 300, edge: 'left',  step: 16 },
+  { handleId: 'fileTreeResizer',     targetId: 'fileTreePanel',  storageKey: 'crit-file-tree-width',     min: 180, edge: 'right', step: 16, cssVar: '--file-tree-width' },
+  { handleId: 'commentsPanelResizer', targetId: 'commentsPanel', storageKey: 'crit-comments-panel-width', min: 300, edge: 'left',  step: 16, cssVar: '--comments-panel-width' },
 ]
+
+function syncSidebarSlideWidth(target, cssVar) {
+  if (!target || !cssVar) return
+  const w = target.getBoundingClientRect().width
+  if (w > 0) document.body.style.setProperty(cssVar, w + 'px')
+}
 
 function initSidebarWidths() {
   SIDEBAR_RESIZE.forEach(function(cfg) {
@@ -3947,6 +3957,10 @@ function initSidebarWidths() {
     if (Number.isFinite(saved) && saved >= cfg.min) {
       target.style.width = saved + 'px'
     }
+    // Closed-panel slide uses margin ± var(--*-width). Keep the var in lockstep
+    // with the applied width so a non-default saved size doesn't leave a flex gap
+    // (or over-pull) before the first toggle measures.
+    syncSidebarSlideWidth(target, cfg.cssVar)
     const handle = document.getElementById(cfg.handleId)
     if (handle && !handle.dataset.resizeWired) {
       attachSidebarResizeHandle(handle, target, cfg)
@@ -5010,18 +5024,91 @@ function syncCommentsPanelAria(isOpen) {
   if (btn) btn.setAttribute('aria-expanded', String(isOpen))
 }
 
+function startCommentsPanelAnimation() {
+  document.body.classList.add('comments-panel-anim')
+  document.body.getBoundingClientRect()
+}
+
+function setCommentsPanelOpen(ctx, open, animate) {
+  const panel = ctx._commentsPanel
+  if (!panel) return
+  // Always measure — including the no-op early return — so a resized-but-still-
+  // closed panel keeps --comments-panel-width aligned with margin-right:-W.
+  const w = panel.getBoundingClientRect().width
+  if (w > 0) document.body.style.setProperty('--comments-panel-width', w + 'px')
+  if (panel.classList.contains('comments-panel-open') === open) {
+    syncCommentsPanelAria(open)
+    updateTocPosition(ctx)
+    return
+  }
+  if (animate) startCommentsPanelAnimation()
+  panel.classList.toggle('comments-panel-open', open)
+  syncCommentsPanelAria(open)
+  updateTocPosition(ctx)
+}
+
 function toggleCommentsPanel(ctx) {
   const panel = ctx._commentsPanel
   if (!panel) return
   const isOpen = panel.classList.contains('comments-panel-open')
-  if (isOpen) {
-    panel.classList.remove('comments-panel-open')
+  if (!isOpen) renderCommentsPanel(ctx)
+  setCommentsPanelOpen(ctx, !isOpen, true)
+}
+
+// ---- File tree sidebar toggle (parity with crit CLI #fileTreeToggle) --------
+
+function syncSidebarToggleAria() {
+  const btn = document.getElementById('fileTreeToggle')
+  if (!btn) return
+  const expanded = !document.body.classList.contains('file-tree-collapsed')
+  btn.setAttribute('aria-expanded', expanded ? 'true' : 'false')
+  const binding = getBinding('toggle_file_tree') || 'b'
+  const label = expanded ? 'Hide sidebar' : 'Show sidebar'
+  btn.title = `${label} (${binding})`
+  btn.setAttribute('aria-label', label)
+}
+
+function syncSidebarToggleVisibility(ctx) {
+  const treeToggle = document.getElementById('fileTreeToggle')
+  if (!treeToggle) return
+  // Hide for single-file reviews; multi-file (and git-mode equivalents) show it.
+  if (!ctx?.multiFile) {
+    treeToggle.style.display = 'none'
   } else {
-    renderCommentsPanel(ctx)
-    panel.classList.add('comments-panel-open')
+    treeToggle.style.display = ''
   }
-  syncCommentsPanelAria(!isOpen)
-  updateTocPosition(ctx)
+}
+
+function startFileTreeAnimation() {
+  document.body.classList.add('file-tree-anim')
+  document.body.getBoundingClientRect()
+}
+
+function setFileTreeCollapsed(collapsed, animate) {
+  const panel = document.getElementById('fileTreePanel')
+  if (!panel) return
+  // Slide distance = the panel's own width (tracks user resize).
+  const w = panel.getBoundingClientRect().width
+  if (w > 0) document.body.style.setProperty('--file-tree-width', w + 'px')
+  if (animate) startFileTreeAnimation()
+  document.body.classList.toggle('file-tree-collapsed', collapsed)
+  try {
+    localStorage.setItem('crit-file-tree', collapsed ? 'collapsed' : 'open')
+  } catch (_) { /* ignore quota / private mode */ }
+  syncSidebarToggleAria()
+}
+
+function toggleFileTree(animate) {
+  setFileTreeCollapsed(!document.body.classList.contains('file-tree-collapsed'), animate)
+}
+
+function restoreFileTreeCollapsed() {
+  let collapsed = false
+  try {
+    collapsed = localStorage.getItem('crit-file-tree') === 'collapsed'
+  } catch (_) { /* ignore */ }
+  // No animation on load — a restored-collapsed sidebar shouldn't slide in.
+  setFileTreeCollapsed(collapsed, false)
 }
 
 // ---- Comment navigation -----------------------------------------------------
@@ -5329,9 +5416,7 @@ export const DocumentRenderer = {
     ctx._commentsActiveFilter = 'all'
 
     commentsPanel.querySelector('.comments-panel-close').addEventListener('click', () => {
-      commentsPanel.classList.remove('comments-panel-open')
-      syncCommentsPanelAria(false)
-      updateTocPosition(ctx)
+      setCommentsPanelOpen(ctx, false, true)
     })
 
     // Segmented pill filter (radiogroup with roving tabindex)
@@ -5400,6 +5485,12 @@ export const DocumentRenderer = {
     // listener survives LiveView DOM patches to the header.
     ctx.el.addEventListener('crit:toggle-comments', () => toggleCommentsPanel(ctx))
 
+    // File-tree sidebar toggle (header-left). Animate user clicks only.
+    const fileTreeToggle = document.getElementById('fileTreeToggle')
+    if (fileTreeToggle) {
+      fileTreeToggle.addEventListener('click', () => toggleFileTree(true))
+    }
+
     // Show loading until server sends init
     ctx.el.innerHTML = '<div class="crit-loading">Loading comments…</div>'
 
@@ -5461,6 +5552,8 @@ export const DocumentRenderer = {
       }
 
       render(ctx)
+      if (ctx.multiFile) restoreFileTreeCollapsed()
+      else syncSidebarToggleVisibility(ctx)
       restoreDrafts(ctx)
       if (ctx._commentsPanel?.classList.contains('comments-panel-open')) {
         renderCommentsPanel(ctx)
@@ -5750,6 +5843,17 @@ export const DocumentRenderer = {
       if (shortcutAction === 'toggle_comments') {
         e.preventDefault()
         toggleCommentsPanel(ctx)
+        return
+      }
+
+      // File-tree sidebar toggle (parity with crit `b`)
+      if (shortcutAction === 'toggle_file_tree') {
+        const treeBtn = document.getElementById('fileTreeToggle')
+        // CSS hides the button on mobile; inline style covers single-file.
+        // Read computed display so `b` no-ops when the control is unavailable.
+        if (!treeBtn || getComputedStyle(treeBtn).display === 'none') return
+        e.preventDefault()
+        treeBtn.click()
         return
       }
 

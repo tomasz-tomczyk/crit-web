@@ -576,6 +576,7 @@ export function attachSidebarResizeHandle(handle, target, cfg) {
       const delta = (ev.clientX - startX) * dir
       const w = Math.max(cfg.min, startWidth + delta)
       target.style.width = w + 'px'
+      if (cfg.cssVar) document.body.style.setProperty(cfg.cssVar, w + 'px')
       lastWidth = w
     }
     function onEnd() {
@@ -602,6 +603,7 @@ export function attachSidebarResizeHandle(handle, target, cfg) {
     const current = target.getBoundingClientRect().width
     const w = Math.max(cfg.min, current + sign * dir * cfg.step)
     target.style.width = w + 'px'
+    if (cfg.cssVar) document.body.style.setProperty(cfg.cssVar, w + 'px')
     try {
       localStorage.setItem(cfg.storageKey, String(Math.round(w)))
     } catch { /* storage unavailable; ignore */ }
