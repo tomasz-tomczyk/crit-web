@@ -376,7 +376,11 @@ export const PreviewMode = {
     if (Number.isFinite(savedWidth) && savedWidth >= 300) this.panel.style.width = savedWidth + "px"
     attachSidebarResizeHandle(this.resizer, this.panel, {
       storageKey: "crit-comments-panel-width", min: 300, edge: "left", step: 16,
+      cssVar: "--comments-panel-width",
     })
+    // Keep slide margin var aligned with the applied width before first open.
+    const bootW = this.panel.getBoundingClientRect().width
+    if (bootW > 0) document.body.style.setProperty("--comments-panel-width", bootW + "px")
 
     this.renderPanel()
     // Comments are the point of a shared preview, so the panel starts open
