@@ -702,6 +702,36 @@
   gap: 12px;
 }
 
+/* File-tree sidebar toggle (header-left), parity with crit CLI #fileTreeToggle */
+.ft-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 7px;
+  cursor: pointer;
+  color: var(--crit-editor-fg-muted);
+  transition: all 0.15s;
+}
+.ft-toggle svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+.ft-toggle:hover {
+  color: var(--crit-editor-fg);
+  background: var(--crit-editor-bg-hover);
+}
+#fileTreeToggle .ft-toggle-fill {
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+}
+#fileTreeToggle[aria-expanded="false"] .ft-toggle-fill {
+  opacity: 0;
+}
+
 .crit-header-title {
   display: flex;
   align-items: center;
@@ -2362,7 +2392,10 @@ body.dragging { user-select: none; cursor: grabbing; }
 [data-theme="light"] .addition .hljs-selector-pseudo,
 [data-theme="light"] .addition .hljs-selector-tag{color:#1f2328}
 
-/* Comments panel */
+/* Comments panel — always in the flex row so margin-right can slide it.
+   Closed (no .comments-panel-open): margin-right:-W parks it past the right
+   edge; .crit-main-layout / .crit-preview-body { overflow-x: clip } prevents a
+   page scrollbar. Open class restores margin and visibility. */
 .comments-panel {
   width: 480px;
   flex-shrink: 0;
@@ -2374,12 +2407,28 @@ body.dragging { user-select: none; cursor: grabbing; }
   overflow-y: hidden;
   overflow-x: hidden;
   z-index: 90;
-  display: none;
+  display: flex;
   flex-direction: column;
+  margin-right: calc(-1 * var(--comments-panel-width, 480px));
+  visibility: hidden;
 }
 
 .comments-panel.comments-panel-open {
-  display: flex;
+  margin-right: 0;
+  visibility: visible;
+}
+
+body.comments-panel-anim .comments-panel {
+  transition: margin-right 0.22s ease, visibility 0.22s;
+}
+body.comments-panel-anim #commentsPanelResizer {
+  transition: flex-basis 0.22s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.comments-panel-anim .comments-panel,
+  body.comments-panel-anim #commentsPanelResizer {
+    transition: none;
+  }
 }
 
 /* Two-row panel header */
@@ -2803,11 +2852,18 @@ body.dragging { user-select: none; cursor: grabbing; }
   display: flex;
   align-items: flex-start;
   min-height: calc(100vh - var(--crit-header-height, 53px));
+  /* Clip the comments panel when it slides past the right edge (margin-right:-W).
+     clip (not hidden) avoids creating a scroll container that can break
+     position:sticky descendants. */
+  overflow-x: clip;
 }
 
 .crit-main-content {
   flex: 1;
   min-width: 0;
+  /* Flush-left: when the file tree collapses the content grows into the
+     freed space instead of recentering. */
+  margin: 0 auto 0 0;
 }
 
 /* ===== File Sections (multi-file mode) ===== */
@@ -2974,6 +3030,31 @@ body.dragging { user-select: none; cursor: grabbing; }
   flex-direction: column;
   z-index: 85;
   overflow: hidden;
+}
+
+/* Collapsed via the header toggle: negative margin equal to the panel's own
+   width pulls it off the left edge. --file-tree-width is written from JS. */
+body.file-tree-collapsed .tree-panel {
+  margin-left: calc(-1 * var(--file-tree-width, 260px));
+  visibility: hidden;
+}
+body.file-tree-collapsed #fileTreeResizer {
+  flex-basis: 0;
+  /* visibility:hidden drops tabindex=0 from the tab order. */
+  visibility: hidden;
+}
+/* Transitions only after the first user toggle (never on load). */
+body.file-tree-anim .tree-panel {
+  transition: margin-left 0.22s ease, visibility 0.22s;
+}
+body.file-tree-anim #fileTreeResizer {
+  transition: flex-basis 0.22s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.file-tree-anim .tree-panel,
+  body.file-tree-anim #fileTreeResizer {
+    transition: none;
+  }
 }
 
 .tree-header {
@@ -3178,9 +3259,12 @@ body.dragging { user-select: none; cursor: grabbing; }
   background: var(--crit-brand);
   outline: none;
 }
-/* Hide the comments-panel resizer when its panel is hidden. */
-.crit-main-layout:has(.comments-panel:not(.comments-panel-open)) #commentsPanelResizer {
-  display: none;
+/* Collapse the comments-panel resizer with the panel (not display:none alone —
+   that skips the flex-basis transition and can yank the handle out mid-slide). */
+.crit-main-layout:has(.comments-panel:not(.comments-panel-open)) #commentsPanelResizer,
+.crit-preview-body:has(.comments-panel:not(.comments-panel-open)) #commentsPanelResizer {
+  flex-basis: 0;
+  visibility: hidden;
 }
 /* Hide the file-tree resizer when the panel is hidden (single-file mode). */
 .crit-main-layout:has(#fileTreePanel[style*="display:none"]) #fileTreeResizer,
@@ -3206,6 +3290,7 @@ body.sidebar-resizing * {
   .line-content.code-line { white-space: pre-wrap; overflow-wrap: anywhere; }
   .crit-toc, #crit-toc-toggle { display: none !important; }
   .tree-panel { display: none !important; }
+  #fileTreeToggle { display: none !important; }
   .sidebar-resize-handle { display: none !important; }
 
   /* Two-row header on mobile */
@@ -4170,6 +4255,7 @@ body.sidebar-resizing * {
 
 @media (max-width: 768px) {
   .tree-panel { display: none !important; }
+  #fileTreeToggle { display: none !important; }
   .sidebar-resize-handle { display: none !important; }
   .comments-panel { display: none !important; }
   .crit-diff-mode-toggle { display: none !important; }
@@ -4402,6 +4488,8 @@ body.sidebar-resizing * {
   flex: 1 1 auto;
   display: flex;
   min-height: 0;
+  /* Clip the comments panel when it slides past the right edge. */
+  overflow-x: clip;
 }
 
 .crit-preview-iframe-pane {
