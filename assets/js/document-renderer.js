@@ -3938,9 +3938,15 @@ function cancelComment(formObj, ctx) {
 // the local CLI which uses a random port). Only a minimum is enforced —
 // no upper bound; ultrawide users may legitimately want very wide sidebars.
 const SIDEBAR_RESIZE = [
-  { handleId: 'fileTreeResizer',     targetId: 'fileTreePanel',  storageKey: 'crit-file-tree-width',     min: 180, edge: 'right', step: 16 },
-  { handleId: 'commentsPanelResizer', targetId: 'commentsPanel', storageKey: 'crit-comments-panel-width', min: 300, edge: 'left',  step: 16 },
+  { handleId: 'fileTreeResizer',     targetId: 'fileTreePanel',  storageKey: 'crit-file-tree-width',     min: 180, edge: 'right', step: 16, cssVar: '--file-tree-width' },
+  { handleId: 'commentsPanelResizer', targetId: 'commentsPanel', storageKey: 'crit-comments-panel-width', min: 300, edge: 'left',  step: 16, cssVar: '--comments-panel-width' },
 ]
+
+function syncSidebarSlideWidth(target, cssVar) {
+  if (!target || !cssVar) return
+  const w = target.getBoundingClientRect().width
+  if (w > 0) document.body.style.setProperty(cssVar, w + 'px')
+}
 
 function initSidebarWidths() {
   SIDEBAR_RESIZE.forEach(function(cfg) {
@@ -3951,6 +3957,10 @@ function initSidebarWidths() {
     if (Number.isFinite(saved) && saved >= cfg.min) {
       target.style.width = saved + 'px'
     }
+    // Closed-panel slide uses margin ± var(--*-width). Keep the var in lockstep
+    // with the applied width so a non-default saved size doesn't leave a flex gap
+    // (or over-pull) before the first toggle measures.
+    syncSidebarSlideWidth(target, cfg.cssVar)
     const handle = document.getElementById(cfg.handleId)
     if (handle && !handle.dataset.resizeWired) {
       attachSidebarResizeHandle(handle, target, cfg)
@@ -5022,13 +5032,15 @@ function startCommentsPanelAnimation() {
 function setCommentsPanelOpen(ctx, open, animate) {
   const panel = ctx._commentsPanel
   if (!panel) return
+  // Always measure — including the no-op early return — so a resized-but-still-
+  // closed panel keeps --comments-panel-width aligned with margin-right:-W.
+  const w = panel.getBoundingClientRect().width
+  if (w > 0) document.body.style.setProperty('--comments-panel-width', w + 'px')
   if (panel.classList.contains('comments-panel-open') === open) {
     syncCommentsPanelAria(open)
     updateTocPosition(ctx)
     return
   }
-  const w = panel.getBoundingClientRect().width
-  if (w > 0) document.body.style.setProperty('--comments-panel-width', w + 'px')
   if (animate) startCommentsPanelAnimation()
   panel.classList.toggle('comments-panel-open', open)
   syncCommentsPanelAria(open)
