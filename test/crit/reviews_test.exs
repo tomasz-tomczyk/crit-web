@@ -485,6 +485,19 @@ defmodule Crit.ReviewsTest do
 
       assert comment.file_path == nil
     end
+
+    test "invalid attrs return the changeset" do
+      review = review_fixture()
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Reviews.create_comment(anon_scope("identity1"), review, %{
+                 "start_line" => 1,
+                 "end_line" => 1,
+                 "body" => ""
+               })
+
+      assert %{body: [_]} = errors_on(changeset)
+    end
   end
 
   describe "update_comment/3 (scope) — owner check" do
@@ -968,6 +981,18 @@ defmodule Crit.ReviewsTest do
       assert reply.author_identity == "id2"
       assert reply.author_display_name == "Bob"
       assert reply.parent_id == comment.id
+    end
+
+    test "create_reply/4 returns the changeset for invalid attrs", %{
+      review: review,
+      comment: comment
+    } do
+      scope = Scope.for_visitor("id2", "Bob")
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Reviews.create_reply(scope, comment.id, %{"body" => ""}, review.id)
+
+      assert %{body: [_]} = errors_on(changeset)
     end
 
     test "create_reply/4 rejects reply to comment from different review", %{comment: comment} do

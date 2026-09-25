@@ -150,9 +150,6 @@ defmodule Crit.Reviews do
 
       {:error, :comment, changeset, _changes} ->
         {:error, changeset}
-
-      {:error, _step, reason, _changes} ->
-        {:error, reason}
     end
   end
 
@@ -1381,9 +1378,6 @@ defmodule Crit.Reviews do
 
       {:error, :comment, changeset, _changes} ->
         {:error, changeset}
-
-      {:error, _step, reason, _changes} ->
-        {:error, reason}
     end
   end
 
