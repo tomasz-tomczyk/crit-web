@@ -145,7 +145,7 @@ defmodule Crit.Reviews do
     |> Repo.transaction()
     |> case do
       {:ok, %{comment: comment}} ->
-        Notifications.record_activity_safely(scope, review, comment)
+        Notifications.record_activity(scope, review, comment)
         {:ok, comment}
 
       {:error, :comment, changeset, _changes} ->
@@ -1373,7 +1373,7 @@ defmodule Crit.Reviews do
     |> Repo.transaction()
     |> case do
       {:ok, %{comment: reply}} ->
-        Notifications.record_activity_safely(scope, review, reply)
+        Notifications.record_activity(scope, review, reply)
         {:ok, Repo.preload(reply, :user)}
 
       {:error, :comment, changeset, _changes} ->

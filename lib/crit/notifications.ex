@@ -15,9 +15,9 @@ defmodule Crit.Notifications do
   Best-effort: a failure is logged and reported to Sentry, never returned, so
   notification problems cannot undo or fail a comment write.
   """
-  def record_activity_safely(%Scope{} = scope, %Review{} = review, %Comment{} = comment) do
+  def record_activity(%Scope{} = scope, %Review{} = review, %Comment{} = comment) do
     Repo.transaction(fn ->
-      case record_activity(scope, review, comment) do
+      case queue_items(scope, review, comment) do
         {:ok, batches} -> batches
         {:error, reason} -> Repo.rollback(reason)
       end
@@ -27,7 +27,9 @@ defmodule Crit.Notifications do
         :ok
 
       {:error, reason} ->
-        log_failure(comment, inspect(reason))
+        Logger.error(
+          "Failed to record discussion notifications for comment #{comment.id}: #{inspect(reason)}"
+        )
 
         Sentry.capture_message("Failed to record discussion notifications",
           extra: %{comment_id: comment.id, reason: inspect(reason)}
@@ -37,17 +39,15 @@ defmodule Crit.Notifications do
     end
   rescue
     e ->
-      log_failure(comment, Exception.message(e))
+      Logger.error(
+        "Failed to record discussion notifications for comment #{comment.id}: #{Exception.message(e)}"
+      )
+
       Sentry.capture_exception(e, stacktrace: __STACKTRACE__, extra: %{comment_id: comment.id})
       :ok
   end
 
-  defp log_failure(comment, reason) do
-    Logger.error("Failed to record discussion notifications for comment #{comment.id}: #{reason}")
-  end
-
-  @doc "Records eligible notification items. Must run inside a transaction."
-  def record_activity(%Scope{} = scope, %Review{} = review, %Comment{} = comment) do
+  defp queue_items(scope, review, comment) do
     setting = Settings.get()
 
     if setting.notifications_enabled do
