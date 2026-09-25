@@ -664,8 +664,14 @@ export const PreviewMode = {
     // the postMessage bridge explicit and strict.
     const firstHtml = this.files.find((f) => /\.html?$/i.test(f.path || ""))
     this.htmlFile = (firstHtml && firstHtml.path) || "index.html"
+    // The entry keeps its original path (e.g. "docs/checkout.html"), so encode
+    // per segment: the slashes must stay so the page's relative asset refs
+    // resolve against its own directory.
     const rawPath =
-      "/r/" + encodeURIComponent(this.token) + "/raw/" + this.htmlFile
+      "/r/" +
+      encodeURIComponent(this.token) +
+      "/raw/" +
+      this.htmlFile.split("/").map(encodeURIComponent).join("/")
     this.iframe.src = this.previewIsolated ? this.previewOrigin + rawPath : rawPath
 
     this.applyViewport(this.viewport)

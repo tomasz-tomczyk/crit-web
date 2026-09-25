@@ -118,14 +118,19 @@ export async function createPreviewReview(
     css?: string;
     js?: string;
     comments?: PreviewComment[];
+    cliArgs?: string[];
   } = {}
 ) {
   const htmlFile = opts.htmlFile ?? "index.html";
+  // Assets live next to the entry HTML (crit keys them under its directory),
+  // so the page's relative refs resolve for a nested entry path too.
+  const slash = htmlFile.lastIndexOf("/");
+  const assetDir = slash >= 0 ? htmlFile.slice(0, slash + 1) : "";
 
   const files = [
     { path: htmlFile, content: opts.html ?? PREVIEW_HTML, status: "modified" },
-    { path: "style.css", content: opts.css ?? PREVIEW_CSS, status: "modified" },
-    { path: "app.js", content: opts.js ?? PREVIEW_JS, status: "modified" },
+    { path: assetDir + "style.css", content: opts.css ?? PREVIEW_CSS, status: "modified" },
+    { path: assetDir + "app.js", content: opts.js ?? PREVIEW_JS, status: "modified" },
   ];
 
   const comments = (opts.comments ?? []).map((c) => ({
@@ -150,6 +155,7 @@ export async function createPreviewReview(
     files,
   };
   if (comments.length) body.comments = comments;
+  if (opts.cliArgs) body.cli_args = opts.cliArgs;
 
   const res = await request.post(`${BASE_URL}/api/reviews`, { data: body });
   expect(res.status()).toBe(201);

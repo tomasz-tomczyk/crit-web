@@ -73,6 +73,29 @@ defmodule Crit.ReviewsTest do
       assert Reviews.display_filename(Reviews.get_by_token(review.token)) == review.title
     end
 
+    test "keeps the original entry path as the artifact and title (#983)" do
+      path = "artifacts/reports/checkout.html"
+
+      assert {:ok, review} =
+               Reviews.create_review(
+                 anon_scope(),
+                 [
+                   %{"path" => path, "content" => ~s(<link rel="stylesheet" href="app.css">)},
+                   %{"path" => "artifacts/reports/app.css", "content" => "body{}"}
+                 ],
+                 0,
+                 [%{"file" => path, "start_line" => 1, "end_line" => 1, "body" => "pin"}],
+                 [],
+                 review_type: "preview",
+                 cli_args: ["preview", path]
+               )
+
+      loaded = Reviews.get_by_token(review.token)
+      assert review.title == path
+      assert Enum.map(loaded.files, & &1.file_path) == [path, "artifacts/reports/app.css"]
+      assert Reviews.display_filename(loaded) == path
+    end
+
     test "does not store a title for non-preview reviews" do
       assert {:ok, review} =
                Reviews.create_review(anon_scope(), default_files(), 0, [], [],
@@ -1195,6 +1218,55 @@ defmodule Crit.ReviewsTest do
       assert updated.cli_args == ["preview", "artifacts/renamed.html"]
       assert updated.title == "artifacts/original.html"
       assert Reviews.display_filename(updated) == "artifacts/original.html"
+    end
+
+    test "backfills a missing preview title on upsert, keyed by the original path" do
+      scope = anon_scope()
+
+      # Created without usable cli_args (e.g. an older CLI) → no title yet.
+      assert {:ok, review} =
+               Reviews.create_review(
+                 scope,
+                 [%{"path" => "docs/docs-minimize.html", "content" => "first"}],
+                 1,
+                 [],
+                 [],
+                 review_type: "preview"
+               )
+
+      assert review.title == nil
+
+      assert {:ok, :no_changes, updated} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "docs/docs-minimize.html", "content" => "first"}],
+                 "comments" => [],
+                 "cli_args" => ["preview", "docs/docs-minimize.html"]
+               })
+
+      assert updated.title == "docs/docs-minimize.html"
+      assert Reviews.display_filename(updated) == "docs/docs-minimize.html"
+    end
+
+    test "does not backfill a title on upsert for non-preview reviews" do
+      scope = anon_scope()
+
+      assert {:ok, review} =
+               Reviews.create_review(
+                 scope,
+                 [%{"path" => "plan.md", "content" => "v1"}],
+                 1,
+                 [],
+                 []
+               )
+
+      assert {:ok, :no_changes, updated} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "plan.md", "content" => "v1"}],
+                 "comments" => [],
+                 "cli_args" => ["preview", "plan.html"]
+               })
+
+      assert updated.title == nil
     end
 
     test "rejects upsert with oversize cli_args" do

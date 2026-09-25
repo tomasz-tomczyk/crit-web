@@ -568,7 +568,7 @@ defmodule Crit.Reviews do
             {:error, _} = error -> error
           end
         end)
-        |> Ecto.Multi.update(:review, Review.update_changeset(review, review_changes))
+        |> Ecto.Multi.update(:review, upsert_review_changeset(review, review_changes, cli_args))
         |> Repo.transaction()
         |> case do
           {:ok, %{review: updated}} ->
@@ -598,7 +598,11 @@ defmodule Crit.Reviews do
 
         multi =
           if review_changes != %{} do
-            Ecto.Multi.update(multi, :review, Review.update_changeset(review, review_changes))
+            Ecto.Multi.update(
+              multi,
+              :review,
+              upsert_review_changeset(review, review_changes, cli_args)
+            )
           else
             multi
           end
@@ -612,6 +616,19 @@ defmodule Crit.Reviews do
         end
       end
     end
+  end
+
+  # A preview title is fixed once set, but a preview first shared without one
+  # (older CLI, or no usable cli_args) gets it backfilled on its next upsert.
+  defp upsert_review_changeset(%Review{title: title} = review, review_changes, cli_args)
+       when title in [nil, ""] do
+    review
+    |> Review.update_changeset(review_changes)
+    |> put_preview_title(review.review_type, cli_args)
+  end
+
+  defp upsert_review_changeset(review, review_changes, _cli_args) do
+    Review.update_changeset(review, review_changes)
   end
 
   defp fetch_review_for_update(token, delete_token) do
