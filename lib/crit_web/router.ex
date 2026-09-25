@@ -226,6 +226,14 @@ defmodule CritWeb.Router do
     delete "/token", AuthApiController, :revoke
   end
 
+  # Bearer-authed review listing. Kept out of the `:api` scope below, where
+  # auth is optional on non-OAuth instances.
+  scope "/api", CritWeb do
+    pipe_through [:auth_api, :noindex]
+
+    get "/reviews", ReviewsApiController, :index
+  end
+
   scope "/api", CritWeb do
     # LocalhostCors lives in the :api pipeline (before ApiAuth) — see pipeline.
     pipe_through [:api, :noindex]

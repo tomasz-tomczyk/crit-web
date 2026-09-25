@@ -1044,6 +1044,80 @@ defmodule Crit.Reviews do
     {reviews, count}
   end
 
+  @doc """
+  Cursor-paginated list of reviews for the API, newest first
+  (`inserted_at` desc, `id` desc).
+
+  Without `:org`, returns the scope user's own reviews (same set as
+  `list_user_reviews_paginated/2`). With `org: slug`, returns that org's
+  `:organization` and `:public` reviews plus the user's own reviews in the org
+  of any visibility; the user must be a member.
+
+  Options:
+    * `:org` - organization slug, or `nil`
+    * `:limit` - page size, 1..500, default 50 (integer or numeric string)
+    * `:after` - opaque cursor from a previous page's `next_cursor`
+
+  Returns `{:ok, %{reviews: [map], has_more: boolean, next_cursor: binary | nil}}`,
+  `{:error, :org_not_found}`, `{:error, :not_a_member}`, or
+  `{:error, {:invalid_params, message}}`.
+  """
+  def list_reviews_page(%Scope{user: %User{id: user_id}}, opts) do
+    with {:ok, filter} <- review_page_filter(user_id, opts[:org]) do
+      params = %{first: opts[:limit], after: opts[:after]}
+
+      case Flop.validate_and_run(review_summaries_query(filter), params,
+             for: Review,
+             repo: Repo
+           ) do
+        {:ok, {reviews, meta}} ->
+          {:ok,
+           %{
+             reviews: reviews,
+             has_more: meta.has_next_page?,
+             next_cursor: if(meta.has_next_page?, do: meta.end_cursor)
+           }}
+
+        {:error, %Flop.Meta{errors: errors}} ->
+          {:error, {:invalid_params, format_page_errors(errors)}}
+      end
+    end
+  end
+
+  def list_reviews_page(%Scope{}, _opts),
+    do: {:ok, %{reviews: [], has_more: false, next_cursor: nil}}
+
+  defp review_page_filter(user_id, nil), do: {:ok, {:user, user_id}}
+
+  defp review_page_filter(user_id, slug) when is_binary(slug) do
+    with {:org, {:ok, org}} <- {:org, Organizations.get_organization_by_slug(slug)},
+         {:member, {:ok, _}} <- {:member, Organizations.get_membership_for_user(org.id, user_id)} do
+      {:ok, {:org_for_user, org.id, user_id}}
+    else
+      {:org, {:error, :not_found}} -> {:error, :org_not_found}
+      {:member, {:error, :not_found}} -> {:error, :not_a_member}
+    end
+  end
+
+  # Flop's param names differ from ours: :first is the page size.
+  @page_param_names %{first: "limit", after: "after"}
+
+  defp format_page_errors(errors) do
+    Enum.map_join(errors, "; ", fn {field, messages} ->
+      name = Map.get(@page_param_names, field, to_string(field))
+
+      Enum.map_join(messages, ", ", fn {msg, opts} ->
+        name <> " " <> interpolate_error(msg, opts)
+      end)
+    end)
+  end
+
+  defp interpolate_error(msg, opts) do
+    Regex.replace(~r/%{(\w+)}/, msg, fn _, key ->
+      opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+    end)
+  end
+
   defp count_reviews(filter) do
     from(r in Review, as: :review)
     |> apply_review_filter(filter)
@@ -1083,6 +1157,16 @@ defmodule Crit.Reviews do
     )
   end
 
+  # An org's shared reviews plus the user's own unlisted reviews in that org.
+  # The caller must have checked membership.
+  defp apply_review_filter(query, {:org_for_user, org_id, user_id}) do
+    from(r in query,
+      where:
+        r.organization_id == ^org_id and
+          (r.visibility in [:organization, :public] or r.user_id == ^user_id)
+    )
+  end
+
   defp apply_review_filter(query, {:visible_to, user_id}) do
     user_org_ids =
       from(m in Crit.Organizations.OrganizationMembership,
@@ -1098,6 +1182,17 @@ defmodule Crit.Reviews do
   end
 
   defp reviews_with_counts_query(filter) do
+    filter
+    |> review_summaries_query()
+    |> group_by([_r, _c, _rf, fp], fp.content)
+    |> select_merge([_r, _c, _rf, fp], %{first_file_content: fp.content})
+    |> order_by([r], desc: r.last_activity_at)
+  end
+
+  # Reviews with comment/file counts, first file path, author and org fields.
+  # Unordered, and without the first file's content (which can be large), so
+  # callers add only what they need.
+  defp review_summaries_query(filter) do
     first_file_subquery =
       from(rf in ReviewRoundSnapshot,
         where: rf.review_id == parent_as(:review).id,
@@ -1126,8 +1221,8 @@ defmodule Crit.Reviews do
         r.visibility,
         r.organization_id,
         r.title,
+        r.review_type,
         fp.file_path,
-        fp.content,
         u.name,
         u.email,
         u.avatar_url,
@@ -1143,17 +1238,16 @@ defmodule Crit.Reviews do
         visibility: r.visibility,
         organization_id: r.organization_id,
         title: r.title,
+        review_type: r.review_type,
         org_name: o.name,
         org_slug: o.slug,
         comment_count: count(c.id, :distinct),
         file_count: count(rf.id, :distinct),
         first_file_path: fp.file_path,
-        first_file_content: fp.content,
         author_name: u.name,
         author_email: u.email,
         author_avatar_url: u.avatar_url
       })
-      |> order_by([r], desc: r.last_activity_at)
 
     apply_review_filter(base, filter)
   end

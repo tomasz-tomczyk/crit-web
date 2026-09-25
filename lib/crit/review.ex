@@ -1,5 +1,19 @@
 defmodule Crit.Review do
   use Crit.Schema
+  use Flop.Schema
+
+  # Cursor pagination for `GET /api/reviews`. Order is fixed (newest first);
+  # nothing is client-filterable or client-sortable.
+  @flop_options [
+    filterable: [],
+    sortable: [:inserted_at],
+    default_order: %{order_by: [:inserted_at], order_directions: [:desc]},
+    tiebreaker: {:primary_key, :desc},
+    default_limit: 50,
+    max_limit: 500,
+    pagination_types: [:first],
+    default_pagination_type: :first
+  ]
 
   schema "reviews" do
     field :token, :string
