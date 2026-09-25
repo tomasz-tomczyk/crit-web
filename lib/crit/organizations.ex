@@ -54,10 +54,14 @@ defmodule Crit.Organizations do
     end
   end
 
+  # Slugs come from URLs and API params. Anything that can't be a slug is
+  # not found without a query (a NUL byte would make Postgres raise).
   def get_organization_by_slug(slug) do
-    case Repo.get_by(Organization, slug: slug) do
-      nil -> {:error, :not_found}
-      org -> {:ok, org}
+    with true <- Organization.valid_slug?(slug),
+         %Organization{} = org <- Repo.get_by(Organization, slug: slug) do
+      {:ok, org}
+    else
+      _ -> {:error, :not_found}
     end
   end
 

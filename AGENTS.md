@@ -147,6 +147,7 @@ CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, El
 - `GET /whoami` — current user info
 - `GET /orgs` — list user's organizations (`[{name, slug, role}]`)
 - `DELETE /token` — revoke current bearer token
+- `GET /api/reviews` (own `/api` scope, not under `/api/auth`) — list the caller's reviews, or an org's with `?org=<slug>`; cursor-paginated via `limit` (≤500) + `after`
 
 **Test/dev seeding (`/api/...`, compiled out of prod):** `seed-comment`, `seed-reply`, `seed-user`.
 </important>

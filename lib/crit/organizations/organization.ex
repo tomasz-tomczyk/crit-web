@@ -68,11 +68,23 @@ defmodule Crit.Organizations.Organization do
     if String.length(base) < 2, do: "org-#{base}", else: base
   end
 
+  @slug_format ~r/^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/
+  @slug_min_length 2
+  @slug_max_length 60
+
+  @doc "True if `slug` has the shape `changeset/2` accepts for a slug."
+  def valid_slug?(slug) when is_binary(slug) do
+    String.length(slug) in @slug_min_length..@slug_max_length and
+      Regex.match?(@slug_format, slug)
+  end
+
+  def valid_slug?(_slug), do: false
+
   defp validate_slug(changeset) do
     changeset
-    |> validate_format(:slug, ~r/^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/,
+    |> validate_format(:slug, @slug_format,
       message: "must be lowercase letters, numbers, hyphens, and underscores only"
     )
-    |> validate_length(:slug, min: 2, max: 60)
+    |> validate_length(:slug, min: @slug_min_length, max: @slug_max_length)
   end
 end
