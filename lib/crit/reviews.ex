@@ -941,8 +941,13 @@ defmodule Crit.Reviews do
         demo_token -> from [r, _u] in ids_query, where: r.token != ^demo_token
       end
 
+    # Repeat the cutoff on the outer delete: if a selected review is touched
+    # concurrently, Postgres re-checks this row and skips it.
     {count, _} =
-      Repo.delete_all(from r in Review, where: r.id in subquery(ids_query))
+      Repo.delete_all(
+        from r in Review,
+          where: r.id in subquery(ids_query) and r.last_activity_at < ^cutoff
+      )
 
     if count < batch_size do
       {:ok, total + count}

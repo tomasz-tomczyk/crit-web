@@ -45,7 +45,12 @@ defmodule Crit.Reviews.InactiveCleanupWorkerTest do
   end
 
   test "is scheduled daily by the Oban cron plugin" do
-    oban = "config/config.exs" |> Config.Reader.read!(env: :prod) |> get_in([:crit, Oban])
+    oban =
+      Path.expand("../../../config/config.exs", __DIR__)
+      |> Config.Reader.read!(env: :prod)
+      |> get_in([:crit, Oban])
+
+    assert %Oban.Config{} = Oban.Config.new(oban)
 
     {Oban.Plugins.Cron, cron_opts} =
       Enum.find(oban[:plugins], &match?({Oban.Plugins.Cron, _}, &1))
@@ -54,6 +59,6 @@ defmodule Crit.Reviews.InactiveCleanupWorkerTest do
              Enum.find(cron_opts[:crontab], &match?({_, InactiveCleanupWorker}, &1))
 
     assert {:ok, %Oban.Cron.Expression{}} = Oban.Cron.Expression.parse(expr)
-    assert oban[:queues][:maintenance]
+    assert Keyword.has_key?(oban[:queues], InactiveCleanupWorker.__opts__()[:queue])
   end
 end

@@ -16,7 +16,6 @@ crit-web/
 │   │   ├── review_round_snapshot.ex # Per-round snapshot of review files
 │   │   ├── reviews.ex               # Context: create/get/delete reviews with comments (10 MB total limit)
 │   │   ├── reviews/inactive_cleanup_worker.ex # Oban cron job: deletes reviews inactive for 30 days
-│   │   ├── reviews/inactive_cleanup_worker.ex # Oban cron job: deletes reviews inactive for 30 days
 │   │   ├── output.ex                # Formats review data for API responses
 │   │   ├── display_name.ex          # Author display name logic (40-char max)
 │   │   ├── integrations.ex          # Integration metadata (editors, AI tools)

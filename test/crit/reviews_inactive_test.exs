@@ -66,13 +66,23 @@ defmodule Crit.ReviewsInactiveTest do
       Application.put_env(:crit, :demo_review_token, demo.token)
       on_exit(fn -> Application.delete_env(:crit, :demo_review_token) end)
 
+      {:ok, keeper} =
+        Accounts.find_or_create_from_oauth("github", %{
+          "sub" => "batch_keep_#{System.unique_integer()}",
+          "name" => "Keeper"
+        })
+
+      {:ok, keeper} = Accounts.update_preferences(keeper, %{keep_reviews: true})
+      kept = review_fixture(%{user_id: keeper.id})
+
       stale = for _ <- 1..5, do: review_fixture()
-      Enum.each([demo | stale], &set_last_activity(&1, 31))
+      Enum.each([demo, kept | stale], &set_last_activity(&1, 31))
       recent = review_fixture()
 
       assert {:ok, 5} = Reviews.delete_inactive(30, 2)
       assert Enum.all?(stale, &is_nil(Repo.get(Review, &1.id)))
       assert Repo.get(Review, demo.id)
+      assert Repo.get(Review, kept.id)
       assert Repo.get(Review, recent.id)
     end
 

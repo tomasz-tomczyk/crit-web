@@ -54,7 +54,7 @@ config :phoenix_live_view,
 config :phoenix,
   sort_verified_routes_query_params: true
 
-# Don't start background processes in tests — tests start their own supervised instances
+# Don't start background processes in tests
 config :crit, start_device_code_cleaner: false
 config :crit, start_changelog: false
 config :crit, start_github_stars: false
