@@ -18,7 +18,6 @@ defmodule Crit.Application do
         {Phoenix.PubSub, name: Crit.PubSub},
         {Crit.RateLimit, clean_period: :timer.minutes(10)}
       ] ++
-        review_cleaner() ++
         device_code_cleaner() ++
         changelog() ++
         github_stars() ++
@@ -30,14 +29,6 @@ defmodule Crit.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Crit.Supervisor]
     Supervisor.start_link(children, opts)
-  end
-
-  defp review_cleaner do
-    if Application.get_env(:crit, :start_review_cleaner, true) do
-      [Crit.ReviewCleaner]
-    else
-      []
-    end
   end
 
   defp device_code_cleaner do
