@@ -51,7 +51,7 @@ end
 | ------------------------------------------------------- | --------------------------------------------- |
 | Attribution-bearing mutations (`create_comment/4`, `create_reply/4`) | Token-authed entry points (CLI device flow, share API) |
 | Owner-checked mutations (`resolve_comment/4`, `update_review_name/3`) | Pure data transforms (`Output.format/1`, formatters) |
-| Subject-driven reads (`list_user_reviews_with_counts/1`) | Internal/admin batch jobs (`ReviewCleaner`)   |
+| Subject-driven reads (`list_user_reviews_with_counts/1`) | Internal/admin batch jobs (`delete_inactive`) |
 | LiveView mounts/handlers that act on behalf of the visitor | Lookups by external token (`get_by_token/1`)  |
 
 If the function depends on **who is acting**, it takes scope. If it acts on a token, an admin job, or pure data, it doesn't.

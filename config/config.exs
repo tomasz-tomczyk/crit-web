@@ -14,11 +14,12 @@ config :crit,
 
 config :crit, Oban,
   repo: Crit.Repo,
-  queues: [notifications: 10],
+  queues: [notifications: 10, maintenance: 1],
   plugins: [
     {Oban.Plugins.Cron,
      crontab: [
-       {"17 3 * * *", Crit.Notifications.CleanupWorker}
+       {"17 3 * * *", Crit.Notifications.CleanupWorker},
+       {"47 3 * * *", Crit.Reviews.InactiveCleanupWorker}
      ]},
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7}
   ]

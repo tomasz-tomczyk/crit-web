@@ -15,7 +15,8 @@ crit-web/
 │   │   ├── comment.ex               # Comment schema (review_id, parent_id, start_line, end_line, body, scope, resolved, author_identity, author_display_name, file_path, quote, external_id)
 │   │   ├── review_round_snapshot.ex # Per-round snapshot of review files
 │   │   ├── reviews.ex               # Context: create/get/delete reviews with comments (10 MB total limit)
-│   │   ├── review_cleaner.ex        # Periodic cleanup of inactive reviews (30 days)
+│   │   ├── reviews/inactive_cleanup_worker.ex # Oban cron job: deletes reviews inactive for 30 days
+│   │   ├── reviews/inactive_cleanup_worker.ex # Oban cron job: deletes reviews inactive for 30 days
 │   │   ├── output.ex                # Formats review data for API responses
 │   │   ├── display_name.ex          # Author display name logic (40-char max)
 │   │   ├── integrations.ex          # Integration metadata (editors, AI tools)

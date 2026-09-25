@@ -911,12 +911,19 @@ defmodule Crit.Reviews do
 
   @doc """
   Deletes all reviews whose last_activity_at is older than `days` days ago.
-  Returns {:ok, count} where count is the number of deleted reviews.
+  Skips the demo review and reviews owned by users with `keep_reviews` set.
+
+  Deletes in batches of `batch_size` so each transaction stays short.
+  Returns {:ok, count} where count is the total number of deleted reviews.
   Cascade at the database level handles comments and review_files automatically.
   """
-  def delete_inactive(days) when is_integer(days) and days > 0 do
+  def delete_inactive(days, batch_size \\ 1000)
+      when is_integer(days) and days > 0 and is_integer(batch_size) and batch_size > 0 do
     cutoff = DateTime.add(DateTime.utc_now(), -days, :day)
+    delete_inactive_batches(cutoff, batch_size, 0)
+  end
 
+  defp delete_inactive_batches(cutoff, batch_size, total) do
     ids_query =
       from r in Review,
         left_join: u in User,
@@ -925,7 +932,8 @@ defmodule Crit.Reviews do
           r.last_activity_at < ^cutoff and
             (is_nil(u.id) or
                fragment("COALESCE((?->>'keep_reviews')::boolean, false)", u.preferences) == false),
-        select: r.id
+        select: r.id,
+        limit: ^batch_size
 
     ids_query =
       case Application.get_env(:crit, :demo_review_token) do
@@ -936,7 +944,11 @@ defmodule Crit.Reviews do
     {count, _} =
       Repo.delete_all(from r in Review, where: r.id in subquery(ids_query))
 
-    {:ok, count}
+    if count < batch_size do
+      {:ok, total + count}
+    else
+      delete_inactive_batches(cutoff, batch_size, total + count)
+    end
   end
 
   @doc "Delete a review by its delete token. Returns :ok or {:error, :not_found} or {:error, :delete_failed}."
