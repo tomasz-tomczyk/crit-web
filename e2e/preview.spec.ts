@@ -67,7 +67,8 @@ test.describe("Preview mode", () => {
     page,
     request,
   }) => {
-    const entry = "artifacts/reports/docs-minimize.html";
+    // A space in a segment proves the iframe URL is encoded per segment.
+    const entry = "artifacts/my reports/docs-minimize.html";
     const review = await createPreviewReview(request, {
       htmlFile: entry,
       cliArgs: ["preview", entry],
@@ -77,9 +78,10 @@ test.describe("Preview mode", () => {
 
     const frame = await loadPreview(page, token);
 
-    // The iframe loads the entry from its original path, slashes intact.
+    // The iframe loads the entry from its original path: slashes intact, each
+    // segment encoded.
     const src = await page.locator("#critPreviewIframe").getAttribute("src");
-    expect(src).toContain(`/r/${token}/raw/${entry}`);
+    expect(src).toContain(`/r/${token}/raw/artifacts/my%20reports/docs-minimize.html`);
 
     // Relative style.css / app.js resolve next to the entry: CSS applies and
     // the script runs.

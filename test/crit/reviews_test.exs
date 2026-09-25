@@ -1247,6 +1247,30 @@ defmodule Crit.ReviewsTest do
       assert Reviews.display_filename(updated) == "docs/docs-minimize.html"
     end
 
+    test "backfills a missing preview title when the upsert creates a new round" do
+      scope = anon_scope()
+
+      assert {:ok, review} =
+               Reviews.create_review(
+                 scope,
+                 [%{"path" => "docs/docs-minimize.html", "content" => "first"}],
+                 1,
+                 [],
+                 [],
+                 review_type: "preview"
+               )
+
+      assert {:ok, :updated, updated} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "docs/docs-minimize.html", "content" => "second"}],
+                 "comments" => [],
+                 "cli_args" => ["preview", "docs/docs-minimize.html"]
+               })
+
+      assert updated.review_round == 2
+      assert updated.title == "docs/docs-minimize.html"
+    end
+
     test "does not backfill a title on upsert for non-preview reviews" do
       scope = anon_scope()
 

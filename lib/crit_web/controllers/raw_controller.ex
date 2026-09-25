@@ -95,10 +95,11 @@ defmodule CritWeb.RawController do
   defp preview_host_request?(conn), do: conn.host == CritWeb.Hosts.preview_host()
 
   defp serve_raw(conn, %Review{} = review, file_path) do
+    preview? = review.review_type == :preview
+
     with %{} = file <- Enum.find(review.files, fn f -> f.file_path == file_path end),
-         basename when basename != :unsafe <- safe_basename(file.file_path),
+         {:ok, disposition} <- content_disposition(file.file_path, preview?),
          {:ok, content} <- decode_content(file) do
-      preview? = review.review_type == :preview
       mime = mime_for(file_path, preview?)
 
       conn
@@ -113,7 +114,7 @@ defmodule CritWeb.RawController do
       # honoured.
       |> put_private(:plug_skip_csrf_protection, true)
       |> put_resp_content_type(mime)
-      |> put_resp_header("content-disposition", ~s(inline; filename="#{basename}"))
+      |> put_resp_header("content-disposition", disposition)
       |> maybe_preview_csp(preview?, mime)
       |> send_resp(200, maybe_inject_agent_scripts(content, preview?, mime))
     else
@@ -283,11 +284,22 @@ defmodule CritWeb.RawController do
   defp maybe_query(""), do: ""
   defp maybe_query(qs), do: "?" <> qs
 
+  # Preview files keep their original names (crit#983), so a preview must not
+  # 404 on a non-ASCII name: its iframe would go blank. Drop the filename
+  # parameter instead. Files-mode raw keeps the 404.
+  defp content_disposition(path, preview?) do
+    case safe_basename(path) do
+      :unsafe when preview? -> {:ok, "inline"}
+      :unsafe -> :error
+      basename -> {:ok, ~s(inline; filename="#{basename}")}
+    end
+  end
+
   # RFC 6266 requires the `filename=` parameter to be ASCII. Reject anything
   # outside printable ASCII (0x20–0x7e), plus the quote and backslash that
   # would break the quoted-string in the content-disposition header.
   # We deliberately do NOT emit a `filename*=UTF-8''…` fallback here —
-  # callers with non-ASCII basenames get a 404, which is acceptable.
+  # files-mode callers with non-ASCII basenames get a 404, which is acceptable.
   defp safe_basename(path) do
     base = Path.basename(path)
 
