@@ -3,11 +3,50 @@ defmodule Crit.Notifications do
 
   import Ecto.Query
 
+  require Logger
+
   alias Crit.Accounts.Scope
   alias Crit.Notifications.{DeliverBatchWorker, NotificationBatch, NotificationItem}
   alias Crit.{Comment, Repo, Review, Settings, User}
 
-  @doc "Records eligible notification items inside the caller's transaction."
+  @doc """
+  Records activity in its own transaction, after the comment has committed.
+
+  Best-effort: a failure is logged and reported to Sentry, never returned, so
+  notification problems cannot undo or fail a comment write.
+  """
+  def record_activity_safely(%Scope{} = scope, %Review{} = review, %Comment{} = comment) do
+    Repo.transaction(fn ->
+      case record_activity(scope, review, comment) do
+        {:ok, batches} -> batches
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, _batches} ->
+        :ok
+
+      {:error, reason} ->
+        log_failure(comment, inspect(reason))
+
+        Sentry.capture_message("Failed to record discussion notifications",
+          extra: %{comment_id: comment.id, reason: inspect(reason)}
+        )
+
+        :ok
+    end
+  rescue
+    e ->
+      log_failure(comment, Exception.message(e))
+      Sentry.capture_exception(e, stacktrace: __STACKTRACE__, extra: %{comment_id: comment.id})
+      :ok
+  end
+
+  defp log_failure(comment, reason) do
+    Logger.error("Failed to record discussion notifications for comment #{comment.id}: #{reason}")
+  end
+
+  @doc "Records eligible notification items. Must run inside a transaction."
   def record_activity(%Scope{} = scope, %Review{} = review, %Comment{} = comment) do
     setting = Settings.get()
 
