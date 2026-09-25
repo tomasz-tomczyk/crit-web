@@ -342,6 +342,38 @@ defmodule CritWeb.RawControllerTest do
     end
   end
 
+  describe "preview entries with original names (crit#983)" do
+    test "serves a nested entry with a non-ASCII name without a filename parameter", %{conn: conn} do
+      path = "docs/résumé.html"
+
+      review =
+        review_fixture(%{
+          review_type: :preview,
+          files: [file(path, "<html><body><h1>CV</h1></body></html>")]
+        })
+
+      conn = get(conn, "/r/" <> review.token <> "/raw/docs/r%C3%A9sum%C3%A9.html")
+
+      assert html_response(conn, 200) =~ "<h1>CV</h1>"
+      assert get_resp_header(conn, "content-disposition") == ["inline"]
+    end
+
+    test "serves a nested entry whose name has spaces and URL-special characters", %{conn: conn} do
+      path = "a b/50% #1.html"
+
+      review =
+        review_fixture(%{
+          review_type: :preview,
+          files: [file(path, "<html><body>ok</body></html>")]
+        })
+
+      conn = get(conn, "/r/" <> review.token <> "/raw/a%20b/50%25%20%231.html")
+
+      assert html_response(conn, 200) =~ "ok"
+      assert get_resp_header(conn, "content-disposition") == [~s(inline; filename="50% #1.html")]
+    end
+  end
+
   describe "auth gate for selfhosted with OAuth" do
     setup do
       original_selfhosted = Application.get_env(:crit, :selfhosted)

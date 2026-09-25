@@ -63,6 +63,59 @@ test.describe("Preview mode", () => {
     await expect(frame.locator("#counter")).toHaveText("Clicked 0 times");
   });
 
+  test("a nested entry path loads with its assets, title and pin file (#983)", async ({
+    page,
+    request,
+  }) => {
+    // A space in a segment proves the iframe URL is encoded per segment.
+    const entry = "artifacts/my reports/docs-minimize.html";
+    const review = await createPreviewReview(request, {
+      htmlFile: entry,
+      cliArgs: ["preview", entry],
+    });
+    token = review.token;
+    deleteToken = review.deleteToken;
+
+    const frame = await loadPreview(page, token);
+
+    // The iframe loads the entry from its original path: slashes intact, each
+    // segment encoded.
+    const src = await page.locator("#critPreviewIframe").getAttribute("src");
+    expect(src).toContain(`/r/${token}/raw/artifacts/my%20reports/docs-minimize.html`);
+
+    // Relative style.css / app.js resolve next to the entry: CSS applies and
+    // the script runs.
+    await expect(frame.locator("#hero")).toHaveText("Preview Demo Heading");
+    await expect(frame.locator("#counter")).toHaveCSS("cursor", "pointer");
+    await frame.locator("#counter").click();
+    await expect(frame.locator("#counter")).toHaveText("Clicked 1 times");
+
+    // The review is titled by the original path, not index.html.
+    await expect(page).toHaveTitle(new RegExp(entry.replace(/[.]/g, "\\.")));
+
+    // A new pin is stored against the entry path and grouped under it.
+    const pinBtn = page.locator('#critPreviewMode button[data-mode="pin"]');
+    await expect(pinBtn).toBeEnabled({ timeout: 15_000 });
+    await pinBtn.click();
+    await frame.locator("#hero").click();
+    const composer = page.locator(".crit-preview-composer-body");
+    await expect(composer).toBeVisible({ timeout: 10_000 });
+    await composer.fill("Pin on nested preview");
+    await page.locator(".crit-preview-composer-save").click();
+
+    await expect(
+      page.locator("#critPreviewPanelBody .comments-panel-file-name")
+    ).toHaveText("/" + entry);
+
+    await expect(async () => {
+      const res = await request.get(`/api/reviews/${token}/comments`);
+      expect(res.ok()).toBeTruthy();
+      const comments = await res.json();
+      expect(comments).toHaveLength(1);
+      expect(comments[0].file_path).toBe(entry);
+    }).toPass({ timeout: 10_000 });
+  });
+
   test("custom pin shortcut can be set and used from preview mode", async ({
     page,
     request,
