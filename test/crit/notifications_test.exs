@@ -412,6 +412,81 @@ defmodule Crit.NotificationsTest do
     assert Repo.aggregate(NotificationBatch, :count) == 0
   end
 
+  test "notification failure does not roll back the comment or reply" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    # Force every notification item insert to fail at the database level.
+    Repo.query!("""
+    CREATE FUNCTION fail_notification_items() RETURNS trigger AS $$
+    BEGIN RAISE EXCEPTION 'notifications down'; END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Repo.query!("""
+    CREATE TRIGGER fail_notification_items BEFORE INSERT ON notification_items
+    FOR EACH ROW EXECUTE FUNCTION fail_notification_items()
+    """)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        assert {:ok, comment} =
+                 Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+
+        assert {:ok, reply} =
+                 Reviews.create_reply(
+                   Scope.for_user(actor),
+                   comment.id,
+                   %{"body" => "reply"},
+                   review.id
+                 )
+
+        assert Repo.get(Crit.Comment, comment.id)
+        assert Repo.get(Crit.Comment, reply.id)
+      end)
+
+    assert log =~ "Failed to record discussion notifications"
+    assert log =~ "notifications down"
+    assert Repo.aggregate(NotificationBatch, :count) == 0
+    assert Repo.aggregate(NotificationItem, :count) == 0
+    refute_enqueued(worker: DeliverBatchWorker)
+  end
+
+  test "notification error result does not roll back the comment" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    # Raise a constraint error the item changeset maps to {:error, changeset},
+    # covering the non-raising failure branch.
+    Repo.query!("""
+    CREATE FUNCTION fail_notification_items() RETURNS trigger AS $$
+    BEGIN
+      RAISE foreign_key_violation USING CONSTRAINT = 'notification_items_comment_id_fkey';
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Repo.query!("""
+    CREATE TRIGGER fail_notification_items BEFORE INSERT ON notification_items
+    FOR EACH ROW EXECUTE FUNCTION fail_notification_items()
+    """)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        assert {:ok, comment} =
+                 Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+
+        assert Repo.get(Crit.Comment, comment.id)
+      end)
+
+    assert log =~ "Failed to record discussion notifications"
+    assert log =~ "#Ecto.Changeset"
+    assert Repo.aggregate(NotificationBatch, :count) == 0
+    refute_enqueued(worker: DeliverBatchWorker)
+  end
+
   test "missing or terminal batches are no-ops" do
     assert :ok =
              perform_job(DeliverBatchWorker, %{batch_id: Ecto.UUID.generate()})

@@ -141,12 +141,15 @@ defmodule Crit.Reviews do
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:comment, changeset)
-    |> add_comment_side_effects(scope, review)
+    |> Ecto.Multi.run(:statistics, &Statistics.increment_comment/2)
     |> Repo.transaction()
     |> case do
-      {:ok, %{comment: comment}} -> {:ok, comment}
-      {:error, :comment, changeset, _changes} -> {:error, changeset}
-      {:error, _step, reason, _changes} -> {:error, reason}
+      {:ok, %{comment: comment}} ->
+        Notifications.record_activity(scope, review, comment)
+        {:ok, comment}
+
+      {:error, :comment, changeset, _changes} ->
+        {:error, changeset}
     end
   end
 
@@ -1366,21 +1369,16 @@ defmodule Crit.Reviews do
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:comment, changeset)
-    |> add_comment_side_effects(scope, review)
+    |> Ecto.Multi.run(:statistics, &Statistics.increment_comment/2)
     |> Repo.transaction()
     |> case do
-      {:ok, %{comment: reply}} -> {:ok, Repo.preload(reply, :user)}
-      {:error, :comment, changeset, _changes} -> {:error, changeset}
-      {:error, _step, reason, _changes} -> {:error, reason}
-    end
-  end
+      {:ok, %{comment: reply}} ->
+        Notifications.record_activity(scope, review, reply)
+        {:ok, Repo.preload(reply, :user)}
 
-  defp add_comment_side_effects(multi, scope, review) do
-    multi
-    |> Ecto.Multi.run(:statistics, &Statistics.increment_comment/2)
-    |> Ecto.Multi.run(:notifications, fn _repo, %{comment: comment} ->
-      Notifications.record_activity(scope, review, comment)
-    end)
+      {:error, :comment, changeset, _changes} ->
+        {:error, changeset}
+    end
   end
 
   @doc "Update a reply's body if the caller's scope owns it. See `update_comment/3` for ownership rules."
