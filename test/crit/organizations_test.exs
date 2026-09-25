@@ -57,6 +57,20 @@ defmodule Crit.OrganizationsTest do
     end
   end
 
+  describe "get_organization_by_slug/1" do
+    test "finds an org by slug" do
+      org = organization_fixture(user_fixture())
+      assert {:ok, %Organization{id: id}} = Organizations.get_organization_by_slug(org.slug)
+      assert id == org.id
+    end
+
+    test "returns :not_found without raising for values that can't be slugs" do
+      for slug <- ["\0", "bad slug", "UPPER", nil, ["a"], %{"a" => "b"}] do
+        assert {:error, :not_found} = Organizations.get_organization_by_slug(slug)
+      end
+    end
+  end
+
   describe "update_organization/3" do
     test "admin can update org name" do
       user = oauth_user_fixture()

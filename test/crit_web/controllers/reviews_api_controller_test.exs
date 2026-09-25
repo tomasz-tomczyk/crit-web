@@ -6,7 +6,7 @@ defmodule CritWeb.ReviewsApiControllerTest do
   import Crit.OrganizationsFixtures
   import Crit.ReviewsFixtures
 
-  alias Crit.{Accounts, Repo, Review}
+  alias Crit.{Accounts, Repo, Review, Reviews}
 
   defp create_user_and_token do
     user = oauth_user_fixture()
@@ -108,13 +108,52 @@ defmodule CritWeb.ReviewsApiControllerTest do
       end
     end
 
-    test "excludes the caller's reviews in an org they have left", %{conn: conn} do
+    test "lists the caller's org reviews only while they are a member", %{conn: conn} do
       {user, token} = create_user_and_token()
       owner = oauth_user_fixture()
       org = organization_fixture(owner)
-      review_fixture(%{user_id: user.id}) |> put_org(org, :organization)
+      membership = membership_fixture(org, user)
+      review = review_fixture(%{user_id: user.id}) |> put_org(org, :organization)
 
-      assert %{"reviews" => []} = conn |> list(token) |> json_response(200)
+      assert %{"reviews" => [%{"token" => listed}]} = conn |> list(token) |> json_response(200)
+      assert listed == review.token
+
+      Repo.delete!(membership)
+
+      assert %{"reviews" => []} = build_conn() |> list(token) |> json_response(200)
+    end
+
+    test "returns correct counts for every row across pages", %{conn: conn} do
+      {user, token} = create_user_and_token()
+
+      files =
+        for i <- 1..3, do: %{"path" => "file#{i}.md", "content" => "# File #{i}"}
+
+      reviews =
+        for {n_comments, i} <- Enum.with_index([4, 0, 2, 5, 1]) do
+          review =
+            %{user_id: user.id, files: files}
+            |> review_fixture()
+            |> put_inserted_at(DateTime.add(~U[2026-03-01 00:00:00Z], i, :second))
+
+          for _ <- 1..n_comments//1, do: comment_fixture(review)
+
+          # Snapshots from another round must not count toward file_count.
+          Reviews.create_round_snapshot(review.id, review.review_round + 1, "old.md", "x")
+
+          {review.token, n_comments}
+        end
+
+      pages = walk_pages(conn, token, %{"limit" => "2"})
+      rows = Enum.flat_map(pages, & &1["reviews"])
+
+      assert length(rows) == 5
+
+      for row <- rows do
+        {_, n_comments} = List.keyfind(reviews, row["token"], 0)
+        assert row["comment_count"] == n_comments
+        assert row["file_count"] == 3
+      end
     end
 
     test "walks all pages newest first with no duplicates", %{conn: conn} do
@@ -199,6 +238,14 @@ defmodule CritWeb.ReviewsApiControllerTest do
                conn |> list(token, %{"after" => cursor}) |> json_response(400)
     end
 
+    test "returns 400 for a cursor whose id is not a UUID", %{conn: conn} do
+      {_user, token} = create_user_and_token()
+      cursor = Flop.Cursor.encode(%{inserted_at: ~U[2020-01-01 00:00:00Z], id: "not-uuid"})
+
+      assert %{"error" => "after is invalid"} =
+               conn |> list(token, %{"after" => cursor}) |> json_response(400)
+    end
+
     test "returns 400 for a cursor with values of the wrong type", %{conn: conn} do
       {_user, token} = create_user_and_token()
       cursor = Flop.Cursor.encode(%{inserted_at: "yesterday", id: 42})
@@ -247,14 +294,67 @@ defmodule CritWeb.ReviewsApiControllerTest do
       assert Enum.all?(body["reviews"], &(&1["org"] == %{"slug" => org.slug, "name" => org.name}))
     end
 
+    test "walks all org pages newest first with no duplicates",
+         %{conn: conn, user: user, token: token, owner: owner, org: org} do
+      membership_fixture(org, user)
+
+      reviews =
+        for i <- 1..5 do
+          review_fixture(%{user_id: owner.id})
+          |> put_org(org, :organization)
+          |> put_inserted_at(DateTime.add(~U[2026-04-01 00:00:00Z], i, :second))
+        end
+
+      pages = walk_pages(conn, token, %{"org" => org.slug, "limit" => "2"})
+
+      assert Enum.map(pages, &length(&1["reviews"])) == [2, 2, 1]
+      assert List.last(pages)["next_cursor"] == nil
+
+      tokens = Enum.flat_map(pages, fn page -> Enum.map(page["reviews"], & &1["token"]) end)
+      assert tokens == reviews |> Enum.reverse() |> Enum.map(& &1.token)
+    end
+
     test "returns 403 when the caller is not a member", %{conn: conn, token: token, org: org} do
       assert %{"error" => "You are not a member of this organization"} =
                conn |> list(token, %{"org" => org.slug}) |> json_response(403)
     end
 
+    test "returns 403 once the caller leaves the org",
+         %{conn: conn, user: user, token: token, owner: owner, org: org} do
+      membership = membership_fixture(org, user)
+      review = review_fixture(%{user_id: owner.id}) |> put_org(org, :organization)
+
+      assert %{"reviews" => [%{"token" => listed}]} =
+               conn |> list(token, %{"org" => org.slug}) |> json_response(200)
+
+      assert listed == review.token
+
+      Repo.delete!(membership)
+
+      assert %{"error" => "You are not a member of this organization"} =
+               build_conn() |> list(token, %{"org" => org.slug}) |> json_response(403)
+    end
+
     test "returns 404 for an unknown slug", %{conn: conn, token: token} do
       assert %{"error" => "Organization not found"} =
                conn |> list(token, %{"org" => "no-such-org"}) |> json_response(404)
+    end
+
+    test "returns 404 for a slug that can't exist", %{token: token} do
+      for slug <- ["\0", "a\0b", "UPPER", "-lead", String.duplicate("a", 61), ""] do
+        assert %{"error" => "Organization not found"} =
+                 build_conn() |> list(token, %{"org" => slug}) |> json_response(404)
+      end
+    end
+
+    test "returns 400 when org is not a string", %{token: token} do
+      for query <- ["org[]=x", "org[a]=b"] do
+        assert %{"error" => "org is invalid"} =
+                 build_conn()
+                 |> auth_conn(token)
+                 |> get("/api/reviews?" <> query)
+                 |> json_response(400)
+      end
     end
   end
 end

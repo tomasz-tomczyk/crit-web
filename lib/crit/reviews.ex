@@ -1063,24 +1063,18 @@ defmodule Crit.Reviews do
   `{:error, {:invalid_params, message}}`.
   """
   def list_reviews_page(%Scope{user: %User{id: user_id}}, opts) do
-    with {:ok, filter} <- review_page_filter(user_id, opts[:org]) do
-      params = %{first: opts[:limit], after: opts[:after]}
+    flop_opts = [for: Review, repo: Repo]
 
-      case Flop.validate_and_run(review_summaries_query(filter), params,
-             for: Review,
-             repo: Repo
-           ) do
-        {:ok, {reviews, meta}} ->
-          {:ok,
-           %{
-             reviews: reviews,
-             has_more: meta.has_next_page?,
-             next_cursor: if(meta.has_next_page?, do: meta.end_cursor)
-           }}
+    with {:ok, filter} <- review_page_filter(user_id, opts[:org]),
+         {:ok, flop} <- validate_page_params(opts, flop_opts) do
+      {reviews, meta} = Flop.run(review_summaries_query(filter), flop, flop_opts)
 
-        {:error, %Flop.Meta{errors: errors}} ->
-          {:error, {:invalid_params, format_page_errors(errors)}}
-      end
+      {:ok,
+       %{
+         reviews: reviews,
+         has_more: meta.has_next_page?,
+         next_cursor: if(meta.has_next_page?, do: meta.end_cursor)
+       }}
     end
   end
 
@@ -1099,6 +1093,35 @@ defmodule Crit.Reviews do
     end
   end
 
+  # e.g. `?org[]=x` arrives as a list or map.
+  defp review_page_filter(_user_id, _org), do: {:error, {:invalid_params, "org is invalid"}}
+
+  defp validate_page_params(opts, flop_opts) do
+    params = %{first: opts[:limit], after: opts[:after]}
+
+    case Flop.validate(params, flop_opts) do
+      {:ok, flop} ->
+        validate_cursor_id(flop)
+
+      {:error, %Flop.Meta{errors: errors}} ->
+        {:error, {:invalid_params, format_page_errors(errors)}}
+    end
+  end
+
+  # Flop casts the cursor's id as :binary_id, which accepts any binary, so a
+  # cursor with a non-UUID id would pass validation and then raise when the
+  # query is built. Check it is a real UUID first.
+  defp validate_cursor_id(%Flop{decoded_cursor: nil} = flop), do: {:ok, flop}
+
+  defp validate_cursor_id(%Flop{decoded_cursor: %{id: id}} = flop) do
+    case Ecto.UUID.cast(id) do
+      {:ok, _} -> {:ok, flop}
+      :error -> {:error, {:invalid_params, "after is invalid"}}
+    end
+  end
+
+  defp validate_cursor_id(%Flop{} = flop), do: {:ok, flop}
+
   # Flop's param names differ from ours: :first is the page size.
   @page_param_names %{first: "limit", after: "after"}
 
@@ -1114,7 +1137,7 @@ defmodule Crit.Reviews do
 
   defp interpolate_error(msg, opts) do
     Regex.replace(~r/%{(\w+)}/, msg, fn _, key ->
-      opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      Enum.find_value(opts, key, fn {k, v} -> if Atom.to_string(k) == key, do: to_string(v) end)
     end)
   end
 
@@ -1184,15 +1207,33 @@ defmodule Crit.Reviews do
   defp reviews_with_counts_query(filter) do
     filter
     |> review_summaries_query()
-    |> group_by([_r, _c, _rf, fp], fp.content)
-    |> select_merge([_r, _c, _rf, fp], %{first_file_content: fp.content})
+    |> select_merge([_r, _cc, _fc, fp], %{first_file_content: fp.content})
     |> order_by([r], desc: r.last_activity_at)
   end
 
   # Reviews with comment/file counts, first file path, author and org fields.
   # Unordered, and without the first file's content (which can be large), so
   # callers add only what they need.
+  #
+  # One row per review, no GROUP BY: counts and the first file come from
+  # lateral subqueries correlated on the review, and user/org are 1:1 joins.
+  # That lets an ORDER BY + LIMIT walk an index on reviews and stop early
+  # instead of aggregating every matching review first.
   defp review_summaries_query(filter) do
+    comment_count_subquery =
+      from(c in Comment,
+        where: c.review_id == parent_as(:review).id,
+        select: %{count: count(c.id)}
+      )
+
+    file_count_subquery =
+      from(rf in ReviewRoundSnapshot,
+        where:
+          rf.review_id == parent_as(:review).id and
+            rf.round_number == parent_as(:review).review_round,
+        select: %{count: count(rf.id)}
+      )
+
     first_file_subquery =
       from(rf in ReviewRoundSnapshot,
         where: rf.review_id == parent_as(:review).id,
@@ -1203,33 +1244,14 @@ defmodule Crit.Reviews do
 
     base =
       from(r in Review, as: :review)
-      |> join(:left, [r], c in Comment, on: c.review_id == r.id)
-      |> join(:left, [r, _c], rf in ReviewRoundSnapshot,
-        on: rf.review_id == r.id and rf.round_number == r.review_round
-      )
-      |> join(:left_lateral, [r, _c, _rf], fp in subquery(first_file_subquery), on: true)
-      |> join(:left, [r, _c, _rf, _fp], u in User, on: u.id == r.user_id)
-      |> join(:left, [r, _c, _rf, _fp, _u], o in Crit.Organizations.Organization,
+      |> join(:left_lateral, [r], cc in subquery(comment_count_subquery), on: true)
+      |> join(:left_lateral, [r, _cc], fc in subquery(file_count_subquery), on: true)
+      |> join(:left_lateral, [r, _cc, _fc], fp in subquery(first_file_subquery), on: true)
+      |> join(:left, [r, _cc, _fc, _fp], u in User, on: u.id == r.user_id)
+      |> join(:left, [r, _cc, _fc, _fp, _u], o in Crit.Organizations.Organization,
         on: o.id == r.organization_id
       )
-      |> group_by([r, _c, _rf, fp, u, o], [
-        r.id,
-        r.token,
-        r.inserted_at,
-        r.last_activity_at,
-        r.user_id,
-        r.visibility,
-        r.organization_id,
-        r.title,
-        r.review_type,
-        fp.file_path,
-        u.name,
-        u.email,
-        u.avatar_url,
-        o.name,
-        o.slug
-      ])
-      |> select([r, c, rf, fp, u, o], %{
+      |> select([r, cc, fc, fp, u, o], %{
         id: r.id,
         token: r.token,
         inserted_at: r.inserted_at,
@@ -1241,8 +1263,8 @@ defmodule Crit.Reviews do
         review_type: r.review_type,
         org_name: o.name,
         org_slug: o.slug,
-        comment_count: count(c.id, :distinct),
-        file_count: count(rf.id, :distinct),
+        comment_count: cc.count,
+        file_count: fc.count,
         first_file_path: fp.file_path,
         author_name: u.name,
         author_email: u.email,
