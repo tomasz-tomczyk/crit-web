@@ -121,9 +121,11 @@ test.describe("Comment Markdown Rendering", () => {
     const codeBlock = body.locator("pre code");
     await expect(codeBlock).toBeVisible();
 
-    // hljs should produce spans with hljs-* classes
+    // Rendered plain (sanitised), then highlighted in place with Shiki: token
+    // spans carry the theme's --diffs-token-* colours (as in crit).
+    await expect(codeBlock).toHaveClass(/crit-code/);
     await expect(
-      codeBlock.locator('span[class^="hljs-"]').first()
+      codeBlock.locator('span[style*="--diffs-token-dark"]').first()
     ).toBeVisible();
   });
 

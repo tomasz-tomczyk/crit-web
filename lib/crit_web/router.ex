@@ -104,6 +104,17 @@ defmodule CritWeb.Router do
     end
   end
 
+  # Theme preview (linked from the review page's Settings). No review data.
+  scope "/", CritWeb do
+    pipe_through [:browser, :noindex]
+
+    live_session :themes,
+      on_mount: [{CritWeb.UserAuth, :mount_current_scope_for_user}],
+      session: {CritWeb.ThemesLive, :session_opts, []} do
+      live "/themes", ThemesLive, :index
+    end
+  end
+
   # Dashboard / settings / admin — always noindex
   scope "/", CritWeb do
     pipe_through [:browser, :noindex]

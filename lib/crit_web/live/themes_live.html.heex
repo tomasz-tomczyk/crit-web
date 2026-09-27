@@ -1,0 +1,92 @@
+<div class="crit-page theme-preview-page">
+  <div class="crit-header">
+    <div class="crit-header-bar">
+      <div class="crit-header-left">
+        <a href="/" class="crit-header-title" aria-label="Crit home">
+          <Layouts.review_logo />
+        </a>
+        <span class="theme-preview-title">Themes</span>
+      </div>
+      <div class="crit-header-actions">
+        <div
+          class="crit-diff-mode-toggle"
+          id="previewModeToggle"
+          role="group"
+          aria-label="Preview mode"
+        >
+          <button
+            type="button"
+            class="crit-toggle-btn"
+            data-preview-mode="light"
+            aria-pressed="false"
+          >
+            Light
+          </button>
+          <button
+            type="button"
+            class="crit-toggle-btn"
+            data-preview-mode="dark"
+            aria-pressed="false"
+          >
+            Dark
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="theme-preview-layout" id="theme-preview" phx-hook="ThemePreview">
+    <nav class="theme-preview-list" aria-label="Themes">
+      <div class="theme-preview-list-hint">↑ ↓ to switch</div>
+      <div id="themeList" role="listbox" tabindex="0" aria-label="Themes" phx-update="ignore">
+        <div
+          :for={p <- @palettes}
+          class="theme-preview-item"
+          role="option"
+          id={"theme-" <> p.id}
+          data-id={p.id}
+          data-type={p.type}
+          aria-selected="false"
+          hidden
+        >
+          <span
+            class="theme-preview-swatches"
+            style={"background:#{swatch(p.colors, "bg")};border-color:#{swatch(p.colors, "border")}"}
+          >
+            <span
+              :for={role <- ~w(fg accent green red)}
+              class="theme-preview-swatch"
+              style={"background:#{swatch(p.colors, role)}"}
+            ></span>
+          </span>
+          <span class="theme-preview-item-name">{p.display_name}</span>
+          <span class="theme-preview-current" hidden>current</span>
+        </div>
+      </div>
+    </nav>
+    <main class="theme-preview-main">
+      <div class="theme-preview-bar" phx-update="ignore" id="theme-preview-bar">
+        <div>
+          <div class="theme-preview-name" id="themeName"></div>
+          <div class="theme-preview-status" id="themeStatus" aria-live="polite"></div>
+        </div>
+        <div class="theme-preview-actions">
+          <%!-- Display settings the samples follow; saved like the review page's. --%>
+          <label :for={s <- @display_settings} class="theme-preview-setting">
+            <span>{s.label}</span>
+            <select
+              class="settings-select"
+              id={s.key <> "Select"}
+              data-preview-setting={s.key}
+              data-fallback={s.fallback}
+            >
+              <option :for={{value, name} <- s.options} value={value}>{name}</option>
+            </select>
+          </label>
+          <button type="button" class="btn btn-primary" id="useTheme"></button>
+        </div>
+      </div>
+      <div id="themeSamples" phx-update="ignore" inert></div>
+    </main>
+  </div>
+</div>

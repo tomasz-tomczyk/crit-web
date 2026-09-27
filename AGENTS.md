@@ -56,10 +56,14 @@ crit-web/
 ├── assets/
 │   ├── js/
 │   │   ├── app.js                   # Phoenix JS setup + LiveView hooks
-│   │   └── document-renderer.js     # Port of crit local's rendering logic
+│   │   ├── document-renderer.js     # Port of crit local's rendering logic
+│   │   ├── pierre-runtime.js        # Code renderer glue (vendored Pierre/Shiki)
+│   │   └── code-file-view.js        # A code file as a Pierre File
+│   ├── vendor/crit/                 # crit's renderer modules (scripts/sync-pierre.sh)
 │   └── css/
 │       └── app.css                  # Review page CSS (crit-* classes) + Tailwind
 ├── priv/repo/migrations/
+├── priv/static/pierre/              # crit's Pierre/Shiki bundle (scripts/sync-pierre.sh)
 ├── config/                          # Dev/test/prod/runtime config
 ├── test/                            # ExUnit tests
 └── .github/workflows/ci.yml         # CI: format, compile, sobelow, audit, test
@@ -67,7 +71,7 @@ crit-web/
 
 ## Key architecture
 
-1. **Review page rendering** — the LiveView loads review data, then `document-renderer.js` (a Phoenix hook) renders the markdown client-side using markdown-it + highlight.js + mermaid. Mirrors `crit` local's rendering.
+1. **Review page rendering** — the LiveView loads review data, then `document-renderer.js` (a Phoenix hook) renders it client-side: markdown with markdown-it + mermaid, code files with crit's `@pierre/diffs` build (Shiki in a worker pool), fenced code with Shiki too. Mirrors `crit` local's rendering. The Pierre bundle and crit's renderer modules are vendored verbatim (see the Pierre section below).
 2. **API for CLI uploads** — `POST /api/reviews` accepts review files + comments + metadata from the CLI's Share button. `PUT /api/reviews/:token` upserts updates and bumps `review_round`. Returns `{url, delete_token}`.
 3. **Delete via token** — reviews are deleted by passing the `delete_token` (not auth). The CLI stores this in the review file.
 4. **Rate limiting** — Hammer-based via `CritWeb.Plugs.RateLimit`, applied across browser + API pipelines.
@@ -86,6 +90,7 @@ mix test path/to/test.exs:42  # One test by line
 mix precommit             # compile --warnings-as-errors, deps.unlock --unused, format, sobelow --skip, deps.audit, test
 mise run e2e              # Run the full Playwright e2e suite (installs everything it needs first)
 mise run e2e e2e/accessibility.spec.ts  # Run a single e2e spec (args pass through to `npx playwright test`)
+mise run test:js          # Review page JS unit tests (assets/test/*.test.mjs, node --test)
 ```
 
 Tests use `DataCase` (database) or `ConnCase` (HTTP). Test database: `crit_test`. Local Postgres listens on **5433** (host) → 5432 (container); `DB_PORT` defaults to 5433 via `mise.toml` and `.envrc`, so `mise exec -- mix test` / `mise run test` just work (an explicit `DB_PORT` still overrides). Start the DB first with `mise run db:start` (idempotent). Always run `mix precommit` when done with a change.
@@ -173,9 +178,31 @@ Responsive & Touch rules for review page CSS:
 See `../CLAUDE.md` for the full parity contract between crit local and crit-web.
 </important>
 
+<important if="you are touching code highlighting, code files on the review page, theme palettes, or anything under priv/static/pierre or assets/vendor/crit">
+
+## Code renderer and themes (vendored from crit)
+
+crit renders code with `@pierre/diffs` (Shiki grammars and themes in a worker pool) and themes its whole review UI from the selected Shiki theme. crit-web uses crit's build, byte for byte:
+
+- `priv/static/pierre/*.js.gz` — the bundle, worker, grammar/theme chunks and `palettes.js` (UI palette per theme). Served at `/pierre/<name>.js` by `CritWeb.Plugs.Precompressed` (gzip as-is, ETag; chunks cached for a year).
+- `assets/vendor/crit/` — crit's `crit-code-highlight.js`, `crit-pierre-adapter.js`, `crit-pierre-dom.js`, `crit-pierre-runtime.js`, `crit-theme-boost.js` and `crit-palette.css`, bundled by esbuild.
+
+Never edit these by hand or `npm install @pierre/diffs` here. When crit changes them, run `scripts/sync-pierre.sh` and commit; `test/crit_web/pierre_sync_test.exs` fails on drift (and only checks presence when `../crit` is absent, e.g. CI).
+
+crit-web's own glue:
+
+- `assets/js/pierre-runtime.js` — loads the bundle (`/pierre/pierre-diffs.js`), the worker pool (absolute `/pierre/pierre-worker.js`), display options, fence highlighting, setting changes.
+- `assets/js/code-file-view.js` — one Pierre `File` per code file (crit uses CodeView; crit-web's review list is not virtualized). Comments and open forms are line annotations.
+- `assets/js/review-settings.js` — the `crit-settings` cookie (`lightPalette`, `darkPalette`, `boostContrast`, `codeOverflow`, `lineNumbers`, crit's key names). The System/Light/Dark theme stays in localStorage `phx:theme`.
+- `CritWeb.ThemePalette` — reads `palettes.js.gz` at compile time and renders the chosen palette as CSS (`<style id="crit-palette">` in the root layout, `--crit-palette-*` for dark, light and system). `crit-palette.css` maps those onto `--crit-*`. No palette script runs before paint.
+- `/themes` (`CritWeb.ThemesLive` + `assets/js/theme-preview.js`) — theme preview page linked from Settings.
+
+File type follows crit: `.md` / `.markdown` / `.mdown` render as documents, everything else is a code file. Fenced code: `codeHighlight.prime()` before `buildLineBlocks`, lines emitted as `<code class="crit-code">`; comment bodies render plain and are highlighted once mounted (files mode only; preview mode keeps them plain, like crit live mode).
+</important>
+
 <important if="you are adding or modifying frontend JS in assets/js/">
 
-- `document-renderer.js` uses markdown-it, highlight.js, mermaid — must stay version-aligned with `../crit/package.json`. See `../CLAUDE.md`.
+- `document-renderer.js` uses markdown-it and mermaid — must stay version-aligned with `../crit/package.json`. See `../CLAUDE.md`. Syntax highlighting is not an npm dependency: it is crit's vendored Pierre/Shiki build (see "Code renderer and themes").
 - Only `app.js` and `app.css` bundles are supported — import vendor deps, don't reference external scripts in layouts.
 - **Never** write inline `<script>` tags in templates. Use colocated hooks (`:type={Phoenix.LiveView.ColocatedHook}`, name starts with `.`) or external hooks in `assets/js/`.
 - **Never** attach listeners via `document.getElementById("x").addEventListener(...)` in `app.js` for elements rendered inside LiveView templates — they break across client-side patches (`<.link navigate={...}>`) because the new DOM node isn't the one you bound to. Use `JS` commands, a hook, or document-level event delegation.

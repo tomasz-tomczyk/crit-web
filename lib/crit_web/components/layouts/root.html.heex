@@ -1,5 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html
+  lang="en"
+  data-crit-palette={assigns[:crit_palette] != nil}
+  data-crit-palette-light={assigns[:crit_palette] && @crit_palette.light}
+  data-crit-palette-dark={assigns[:crit_palette] && @crit_palette.dark}
+  data-line-numbers={assigns[:crit_display] && @crit_display.line_numbers}
+  data-code-overflow={assigns[:crit_display] && @crit_display.code_overflow}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -78,6 +85,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href={~p"/apple-touch-icon.png"} />
     <link rel="manifest" href={~p"/site.webmanifest"} crossorigin="use-credentials" />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <%!-- Review pages: the reader's light/dark theme palette (CritWeb.ThemePalette).
+         Values are validated palette data; the client swaps this text when the
+         reader picks another theme. --%>
+    <style :if={assigns[:crit_palette]} id="crit-palette">
+      <%= raw(@crit_palette.css) %>
+    </style>
     <script phx-track-static type="module" src={~p"/assets/js/app.js"}>
     </script>
     <script>

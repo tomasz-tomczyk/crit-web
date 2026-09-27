@@ -25,6 +25,8 @@ import {
   resetAll,
   setBinding,
 } from "./shortcut-registry"
+import { loadPalettes, palettePair } from "./pierre-runtime"
+import { getSetting } from "./review-settings"
 
 const THEME_ICONS = {
   system: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 0 1 4.25 2h7.5A2.25 2.25 0 0 1 14 4.25v5.5A2.25 2.25 0 0 1 11.75 12h-1.312c.1.128.21.248.328.36a.75.75 0 0 1 .234.545v.345a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-.345a.75.75 0 0 1 .234-.545c.118-.111.228-.232.328-.36H4.25A2.25 2.25 0 0 1 2 9.75v-5.5Zm2.25-.75a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-7.5Z" clip-rule="evenodd"/></svg>',
@@ -108,11 +110,34 @@ function updatePillIndicator(indicatorId, values, current) {
   }
 }
 
+// Code renderer and theme rows (crit: crit-settings-panes.js renderer selects).
+// Files mode shows every setting that applies to a file review; the diff-only
+// ones (inline diff, change indicators, unchanged context) have no surface in
+// crit-web. Preview mode has no code view: only the theme choice applies,
+// as in crit's live mode.
+function rendererRows(mode, palettes) {
+  const pair = palettePair()
+  const themes = type => palettes.filter(p => p.type === type)
+    .map(p => ({ id: p.id, name: p.displayName }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const rows = [
+    { key: 'lineNumbers', label: 'Line numbers', value: getSetting('lineNumbers', 'on'), options: [{ id: 'on', name: 'On' }, { id: 'off', name: 'Off' }] },
+    { key: 'lightPalette', label: 'Light theme (UI + code)', value: pair.light, options: themes('light') },
+    { key: 'darkPalette', label: 'Dark theme (UI + code)', value: pair.dark, options: themes('dark'), themePreview: true },
+    { key: 'boostContrast', label: 'Syntax contrast', value: getSetting('boostContrast', 'off'), options: [{ id: 'off', name: 'Theme default' }, { id: 'on', name: 'Increased' }] },
+    { key: 'codeOverflow', label: 'Long code lines', value: getSetting('codeOverflow', 'scroll'), options: [{ id: 'scroll', name: 'Horizontal scrolling' }, { id: 'wrap', name: 'Wrap lines' }] },
+  ]
+  if (mode !== 'files') return rows.filter(r => r.key === 'lightPalette' || r.key === 'darkPalette').map(r => ({ ...r, themePreview: false }))
+  return rows
+}
+
 // createSettingsPanel(adapter) wires the shared overlay shell and returns a
 // handle. adapter:
 //   showWidth: bool, readWidth(): string, applyWidth(choice)          (files)
 //   showHideResolved: bool, readHideResolved(): bool, setHideResolved(v) (files)
 //   shortcutMode: "files" | "preview"
+//   rendererSettings: "files" | "preview", changeRendererSetting(key, value)
+//     → Promise (pierre-runtime.js changeRendererSetting)
 // Theme + About are universal and need no adapter input.
 export function createSettingsPanel(adapter) {
   const overlay = document.getElementById('settingsOverlay')
@@ -131,6 +156,15 @@ export function createSettingsPanel(adapter) {
   }
 
   if (adapter.shortcutMode === 'files') applyCodeFont(readCodeFont())
+
+  // Theme lists come from the vendored palettes.js, loaded once per page.
+  let palettes = null
+  if (adapter.rendererSettings) {
+    loadPalettes().then(list => {
+      palettes = list
+      if (panelOpen && panelTab === 'settings') renderSettingsPane()
+    })
+  }
 
   function renderSettingsPane() {
     const pane = document.getElementById('settingsPane')
@@ -171,6 +205,22 @@ export function createSettingsPanel(adapter) {
       html += '<input type="text" class="settings-text-input" id="codeFontCustomInput" spellcheck="false" autocomplete="off" maxlength="256"'
       html += ' placeholder="\'Fira Code\', monospace" value="' + escapeHtml(selectedId === 'custom' ? currentCodeFont : '') + '">'
       html += '</div>'
+    }
+
+    if (adapter.rendererSettings && palettes && palettes.length) {
+      rendererRows(adapter.rendererSettings, palettes).forEach(function(row) {
+        html += '<div class="settings-display-row">'
+        html += '<label class="settings-display-label" for="' + row.key + 'Select">' + escapeHtml(row.label) + '</label>'
+        html += '<select class="settings-select" id="' + row.key + 'Select" data-renderer-setting="' + row.key + '">'
+        row.options.forEach(function(o) {
+          html += '<option value="' + escapeHtml(o.id) + '"' + (o.id === row.value ? ' selected' : '') + '>' + escapeHtml(o.name) + '</option>'
+        })
+        html += '</select></div>'
+        if (row.themePreview) {
+          html += '<div class="settings-display-row"><span class="settings-display-label"></span>' +
+            '<a class="settings-theme-preview-link" href="/themes" target="_blank" rel="noopener">Preview all themes</a></div>'
+        }
+      })
     }
 
     // Content width row (files mode only)
@@ -256,6 +306,18 @@ export function createSettingsPanel(adapter) {
       const currentWidth = (adapter.readWidth && adapter.readWidth()) || 'default'
       updatePillIndicator('settingsWidthIndicator', ['compact', 'default', 'wide'], currentWidth)
     }
+
+    pane.querySelectorAll('[data-renderer-setting]').forEach(function(select) {
+      select.addEventListener('change', function() {
+        select.disabled = true
+        Promise.resolve(adapter.changeRendererSetting(select.dataset.rendererSetting, select.value))
+          .catch(function(err) {
+            console.error('Could not update display settings', err)
+            showError('Could not update display settings. Try again.')
+          })
+          .finally(function() { select.disabled = false })
+      })
+    })
 
     // Hide-resolved toggle
     if (adapter.showHideResolved) {

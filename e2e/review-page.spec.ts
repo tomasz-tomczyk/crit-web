@@ -56,9 +56,10 @@ test.describe("Review Page — Loading", () => {
 
     try {
       await loadReview(page, frontmatterToken);
-      const code = page.locator("#document-renderer code.hljs").filter({ hasText: "title: Hello" });
+      const code = page.locator("#document-renderer code.crit-code").filter({ hasText: "title: Hello" });
       await expect(code).toContainText("title: Hello");
-      await expect(code.locator(".hljs-attr")).toHaveText("title:");
+      // Shiki's YAML grammar colours the key as its own token.
+      await expect(code.locator('span[style*="--diffs-token"]').filter({ hasText: "title" }).first()).toBeVisible();
     } finally {
       await deleteReview(request, review.deleteToken);
     }

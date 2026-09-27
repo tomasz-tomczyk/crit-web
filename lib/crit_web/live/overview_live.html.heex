@@ -125,26 +125,8 @@
             id="reviews-list"
             class="flex flex-col gap-7"
             phx-update="stream"
-            phx-hook=".SnippetHighlight"
+            phx-hook="SnippetHighlight"
           >
-            <script :type={Phoenix.LiveView.ColocatedHook} name=".SnippetHighlight">
-              import hljs from "highlight.js"
-              export default {
-                mounted() { this.run() },
-                updated() { this.run() },
-                run() {
-                  this.el.querySelectorAll('[data-snippet-line]:not([data-hl])').forEach(el => {
-                    const lang = el.dataset.lang
-                    if (lang && hljs.getLanguage(lang)) {
-                      try {
-                        el.innerHTML = hljs.highlight(el.textContent, { language: lang, ignoreIllegals: true }).value
-                      } catch (_) {}
-                    }
-                    el.setAttribute('data-hl', '1')
-                  })
-                }
-              }
-            </script>
             <article
               :for={{dom_id, review} <- @streams.reviews}
               id={dom_id}

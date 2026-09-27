@@ -29,6 +29,7 @@
 
 import { renderCommentCard, attachSidebarResizeHandle, escapeHtml, startInlineBodyEdit } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
+import { changeThemePalette } from "./pierre-runtime"
 import { actionForEvent, getBinding } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 
@@ -144,6 +145,10 @@ export const PreviewMode = {
       showWidth: false,
       showHideResolved: false,
       shortcutMode: "preview",
+      // No code view here: only the light/dark theme choice applies.
+      rendererSettings: "preview",
+      changeRendererSetting: (key, value) => changeThemePalette(key, value, (event, payload) =>
+        new Promise(resolve => this.pushEvent(event, payload, reply => resolve(reply)))),
       onShortcutsChanged: () => {
         this.updateCommentModeLabel()
         this.updateModeHint()

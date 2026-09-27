@@ -14,7 +14,8 @@ defmodule CritWeb.Components.ReviewSnippetTest do
         )
 
       assert html =~ "data-snippet-line"
-      assert html =~ ~s(data-lang="elixir")
+      # The SnippetHighlight hook picks the Shiki grammar from the path.
+      assert html =~ ~s(data-snippet-path="lib/foo.ex")
       assert html =~ "defmodule Foo do"
       assert html =~ "def bar, do: :ok"
       # line numbers (rendered inside the gutter span with whitespace)
@@ -22,7 +23,7 @@ defmodule CritWeb.Components.ReviewSnippetTest do
       assert html =~ ~r{>\s*2\s*<}
     end
 
-    test "omits data-lang for unknown extensions" do
+    test "unknown extensions still render as a code preview" do
       html =
         render_component(&ReviewSnippet.review_snippet/1,
           path: "data.unknownext",
@@ -30,7 +31,8 @@ defmodule CritWeb.Components.ReviewSnippetTest do
         )
 
       assert html =~ "data-snippet-line"
-      refute html =~ "data-lang=\"elixir\""
+      assert html =~ ~s(data-snippet-path="data.unknownext")
+      refute html =~ "hljs"
     end
 
     test "renders rendered markdown for .md files" do

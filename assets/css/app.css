@@ -2,6 +2,9 @@
    https://tailwindcss.com/docs/configuration */
 
 @import "tailwindcss" source(none);
+/* Review page theme palettes (vendored from crit, scripts/sync-pierre.sh):
+   maps --crit-palette-* (CritWeb.ThemePalette) onto the --crit-* tokens. */
+@import "../vendor/crit/crit-palette.css";
 @source "../css";
 @source "../js";
 @source "../../lib/crit_web";
@@ -66,6 +69,9 @@
 
   /* ---- Foreground ---- */
   --crit-fg-primary:   #e8ebf5;
+  /* Logo: fixed per mode, not per code theme (brand blue). */
+  --crit-logo-fg:      #e8ebf5;
+  --crit-logo-dot:     #7aa2f7;
   --crit-fg-secondary: #9ba3bf;
   --crit-fg-muted:     #7a8399;
   --crit-fg-on-brand:  #ffffff;
@@ -167,6 +173,8 @@
     0 4px 12px -4px rgba(0, 0, 0, 0.5);
   --crit-row-hover: rgba(255, 255, 255, 0.04);
   --crit-focus-ring: rgba(122, 162, 247, 0.45);
+  --crit-option-hover:       rgba(133, 170, 248, 0.06);
+  --crit-option-selected-bg: rgba(133, 170, 248, 0.08);
 
   /* ---- Editor palette (Tokyo Night) ---- */
   --crit-editor-bg:              #1a1b26;
@@ -189,6 +197,37 @@
   --crit-comment-ref-underline:   rgba(133, 170, 248, 0.35);
   --crit-comment-ref-flash-bg:    rgba(187, 128, 9, 0.35);
   --crit-comment-ref-flash-ring:  rgba(187, 128, 9, 0.85);
+
+  /* Outdated comments (anchored to a line the file no longer has) */
+
+  --crit-drift-badge-fg:     #f0a030;
+
+  --crit-drift-badge-bg:     rgba(240, 160, 48, 0.14);
+
+  --crit-drift-badge-border: rgba(240, 160, 48, 0.30);
+
+  --crit-drift-card-border:  rgba(240, 160, 48, 0.25);
+
+
+  /* Author colors (comment badges) */
+  --author-0-bg: rgba(110,160,230,0.15);
+  --author-0-border: rgba(110,160,230,0.35);
+  --author-0-fg: #7ab0f0;
+  --author-1-bg: rgba(225,95,95,0.15);
+  --author-1-border: rgba(225,95,95,0.35);
+  --author-1-fg: #e87070;
+  --author-2-bg: rgba(90,190,115,0.15);
+  --author-2-border: rgba(90,190,115,0.35);
+  --author-2-fg: #6cc880;
+  --author-3-bg: rgba(215,175,70,0.15);
+  --author-3-border: rgba(215,175,70,0.35);
+  --author-3-fg: #d9b458;
+  --author-4-bg: rgba(165,105,220,0.15);
+  --author-4-border: rgba(165,105,220,0.35);
+  --author-4-fg: #b580e0;
+  --author-5-bg: rgba(85,200,200,0.15);
+  --author-5-border: rgba(85,200,200,0.35);
+  --author-5-fg: #60d0d0;
 }
 
 /* Content width toggle (matches crit local) */
@@ -209,6 +248,9 @@
 
   /* ---- Foreground ---- */
   --crit-fg-primary:   #e8ebf5;
+  /* Logo: fixed per mode, not per code theme (brand blue). */
+  --crit-logo-fg:      #e8ebf5;
+  --crit-logo-dot:     #7aa2f7;
   --crit-fg-secondary: #9ba3bf;
   --crit-fg-muted:     #7a8399;
   --crit-fg-on-brand:  #ffffff;
@@ -310,6 +352,8 @@
     0 4px 12px -4px rgba(0, 0, 0, 0.5);
   --crit-row-hover: rgba(255, 255, 255, 0.04);
   --crit-focus-ring: rgba(122, 162, 247, 0.45);
+  --crit-option-hover:       rgba(133, 170, 248, 0.06);
+  --crit-option-selected-bg: rgba(133, 170, 248, 0.08);
 
   /* ---- Editor palette (Tokyo Night) ---- */
   --crit-editor-bg:              #1a1b26;
@@ -330,6 +374,37 @@
   --crit-comment-ref-underline:   rgba(133, 170, 248, 0.35);
   --crit-comment-ref-flash-bg:    rgba(187, 128, 9, 0.35);
   --crit-comment-ref-flash-ring:  rgba(187, 128, 9, 0.85);
+
+  /* Outdated comments (anchored to a line the file no longer has) */
+
+  --crit-drift-badge-fg:     #f0a030;
+
+  --crit-drift-badge-bg:     rgba(240, 160, 48, 0.14);
+
+  --crit-drift-badge-border: rgba(240, 160, 48, 0.30);
+
+  --crit-drift-card-border:  rgba(240, 160, 48, 0.25);
+
+
+  /* Author colors (comment badges) */
+  --author-0-bg: rgba(110,160,230,0.15);
+  --author-0-border: rgba(110,160,230,0.35);
+  --author-0-fg: #7ab0f0;
+  --author-1-bg: rgba(225,95,95,0.15);
+  --author-1-border: rgba(225,95,95,0.35);
+  --author-1-fg: #e87070;
+  --author-2-bg: rgba(90,190,115,0.15);
+  --author-2-border: rgba(90,190,115,0.35);
+  --author-2-fg: #6cc880;
+  --author-3-bg: rgba(215,175,70,0.15);
+  --author-3-border: rgba(215,175,70,0.35);
+  --author-3-fg: #d9b458;
+  --author-4-bg: rgba(165,105,220,0.15);
+  --author-4-border: rgba(165,105,220,0.35);
+  --author-4-fg: #b580e0;
+  --author-5-bg: rgba(85,200,200,0.15);
+  --author-5-border: rgba(85,200,200,0.35);
+  --author-5-fg: #60d0d0;
 }
 
 [data-theme="light"] {
@@ -345,6 +420,9 @@
 
   /* ---- Foreground ---- */
   --crit-fg-primary:   #1a1d23;
+  /* Logo: fixed per mode, not per code theme (brand blue). */
+  --crit-logo-fg:      #1a1d23;
+  --crit-logo-dot:     #2960bc;
   --crit-fg-secondary: #57606a;
   --crit-fg-muted:     #656e80;
   --crit-fg-on-brand:  #ffffff;
@@ -446,6 +524,8 @@
     0 4px 12px -4px rgba(15, 23, 42, 0.08);
   --crit-row-hover: rgba(15, 23, 42, 0.05);
   --crit-focus-ring: rgba(58, 114, 212, 0.35);
+  --crit-option-hover:       rgba(61, 106, 224, 0.04);
+  --crit-option-selected-bg: rgba(61, 106, 224, 0.06);
 
   /* ---- Editor palette (light) ---- */
   --crit-editor-bg:              #ffffff;
@@ -466,6 +546,37 @@
   --crit-comment-ref-underline:   rgba(5, 80, 174, 0.50);
   --crit-comment-ref-flash-bg:    rgba(255, 212, 59, 0.55);
   --crit-comment-ref-flash-ring:  rgba(154, 103, 0, 0.70);
+
+  /* Outdated comments (anchored to a line the file no longer has) */
+
+  --crit-drift-badge-fg:     #8a5200;
+
+  --crit-drift-badge-bg:     rgba(138, 82, 0, 0.09);
+
+  --crit-drift-badge-border: rgba(138, 82, 0, 0.22);
+
+  --crit-drift-card-border:  rgba(138, 82, 0, 0.20);
+
+
+  /* Author colors (comment badges, higher-contrast text) */
+  --author-0-bg: rgba(26,95,160,0.10);
+  --author-0-border: rgba(26,95,160,0.25);
+  --author-0-fg: #1a5fa0;
+  --author-1-bg: rgba(179,46,46,0.10);
+  --author-1-border: rgba(179,46,46,0.25);
+  --author-1-fg: #b32e2e;
+  --author-2-bg: rgba(26,117,53,0.10);
+  --author-2-border: rgba(26,117,53,0.25);
+  --author-2-fg: #1a7535;
+  --author-3-bg: rgba(138,93,0,0.10);
+  --author-3-border: rgba(138,93,0,0.25);
+  --author-3-fg: #8a5d00;
+  --author-4-bg: rgba(112,48,165,0.10);
+  --author-4-border: rgba(112,48,165,0.25);
+  --author-4-fg: #7030a5;
+  --author-5-bg: rgba(14,110,110,0.10);
+  --author-5-border: rgba(14,110,110,0.25);
+  --author-5-fg: #0e6e6e;
 }
 
 /* System preference: light — overrides dark :root defaults when OS is light */
@@ -483,6 +594,9 @@
 
     /* ---- Foreground ---- */
     --crit-fg-primary:   #1a1d23;
+    /* Logo: fixed per mode, not per code theme (brand blue). */
+    --crit-logo-fg:      #1a1d23;
+    --crit-logo-dot:     #2960bc;
     --crit-fg-secondary: #57606a;
     --crit-fg-muted:     #656e80;
     --crit-fg-on-brand:  #ffffff;
@@ -584,6 +698,8 @@
       0 4px 12px -4px rgba(15, 23, 42, 0.08);
     --crit-row-hover: rgba(15, 23, 42, 0.05);
     --crit-focus-ring: rgba(58, 114, 212, 0.35);
+    --crit-option-hover:       rgba(61, 106, 224, 0.04);
+    --crit-option-selected-bg: rgba(61, 106, 224, 0.06);
 
     /* ---- Editor palette (light) ---- */
     --crit-editor-bg:              #ffffff;
@@ -604,7 +720,48 @@
     --crit-comment-ref-underline:   rgba(5, 80, 174, 0.50);
     --crit-comment-ref-flash-bg:    rgba(255, 212, 59, 0.55);
     --crit-comment-ref-flash-ring:  rgba(154, 103, 0, 0.70);
+
+    /* Outdated comments (anchored to a line the file no longer has) */
+
+    --crit-drift-badge-fg:     #8a5200;
+
+    --crit-drift-badge-bg:     rgba(138, 82, 0, 0.09);
+
+    --crit-drift-badge-border: rgba(138, 82, 0, 0.22);
+
+    --crit-drift-card-border:  rgba(138, 82, 0, 0.20);
+
+
+    /* Author colors (comment badges, higher-contrast text) */
+    --author-0-bg: rgba(26,95,160,0.10);
+    --author-0-border: rgba(26,95,160,0.25);
+    --author-0-fg: #1a5fa0;
+    --author-1-bg: rgba(179,46,46,0.10);
+    --author-1-border: rgba(179,46,46,0.25);
+    --author-1-fg: #b32e2e;
+    --author-2-bg: rgba(26,117,53,0.10);
+    --author-2-border: rgba(26,117,53,0.25);
+    --author-2-fg: #1a7535;
+    --author-3-bg: rgba(138,93,0,0.10);
+    --author-3-border: rgba(138,93,0,0.25);
+    --author-3-fg: #8a5d00;
+    --author-4-bg: rgba(112,48,165,0.10);
+    --author-4-border: rgba(112,48,165,0.25);
+    --author-4-fg: #7030a5;
+    --author-5-bg: rgba(14,110,110,0.10);
+    --author-5-border: rgba(14,110,110,0.25);
+    --author-5-fg: #0e6e6e;
   }
+}
+
+/* Palette values for crit-web tokens that crit-palette.css (shared with crit)
+   does not map. Same derivations as its neighbours there. */
+:root[data-crit-palette] {
+  --crit-code-bg: var(--crit-palette-surface);
+  --crit-comment-bg: color-mix(in srgb, var(--crit-palette-accent) 8%, var(--crit-palette-bg));
+  --crit-selection-bg: color-mix(in srgb, var(--crit-palette-yellow) 13%, transparent);
+  --crit-popover-bg: var(--crit-palette-elevated);
+  --crit-row-hover: color-mix(in srgb, var(--crit-palette-fg) 4%, transparent);
 }
 
 /* ===== Reduced motion ===== */
@@ -770,6 +927,10 @@
 .crit-header-logo {
   height: 16px;
   width: auto;
+  color: var(--crit-logo-fg);
+}
+.crit-header-logo .crit-header-logo-dot {
+  fill: var(--crit-logo-dot);
 }
 
 .crit-header-filename {
@@ -1113,20 +1274,42 @@ body.dragging { user-select: none; cursor: grabbing; }
 .line-content.code-line code { background: none !important; border: none; padding: 0; font-size: inherit; }
 .line-content.code-first { border-top: 1px solid var(--crit-border); border-top-left-radius: 8px; border-top-right-radius: 8px; padding-top: 8px; margin-top: 6px; }
 .line-content.code-last { border-bottom: 1px solid var(--crit-border); border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; padding-bottom: 8px; margin-bottom: 6px; }
-/* Full-file code document view — no borders, wrap long lines */
-.code-document .line-content.code-line {
-  border-left: none;
-  border-right: none;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.code-document .line-content.code-line code.hljs {
-  background: none;
-  padding: 0;
-}
 .fence-marker {
   display: none !important;
 }
+
+/* The reader's code display settings reach rendered markdown too (Pierre
+   applies them to code files): code blocks wrap instead of scrolling, and
+   gutter numbers hide. The gutter keeps its width, its "+" and its click
+   target; on touch the "+" cue stays visible. Attributes from
+   CritWeb.ReviewDisplay / review-settings.js applyDisplayAttributes. */
+[data-code-overflow="wrap"] .line-content.code-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+[data-line-numbers="off"] .line-num { visibility: hidden; }
+[data-line-numbers="off"] .line-num::before { visibility: visible; }
+
+/* ===== Code files (Pierre) =====
+   A code file's body is one Pierre File (Shiki highlighting in its shadow
+   root). Tabs render at 8 columns, as crit and GitHub do (Pierre's default
+   is 2), and code uses the reader's code font. */
+.file-body.crit-code-body {
+  padding: 0;
+  --crit-comment-width: var(--crit-content-width);
+  --crit-comment-inset: 0px;
+  --diffs-tab-size: 8;
+  --diffs-font-family: var(--crit-font-code, var(--crit-font-mono));
+}
+/* Threads and forms under a code line stay at reading width. Pierre's wrap
+   mode sets word-break: break-word on its host; inherited by comment content
+   it lets table columns shrink below a word. */
+.pierre-annotation {
+  padding-left: 0;
+  max-width: var(--crit-content-width);
+  word-break: normal;
+}
+.crit-code-load-error { color: var(--crit-red); }
 
 /* Mermaid */
 .line-content.mermaid-block {
@@ -1253,6 +1436,10 @@ body.dragging { user-select: none; cursor: grabbing; }
 .native-table-gutter > .line-gutter { position: absolute; inset: 0; box-sizing: border-box; width: 52px; }
 .native-table th.line-content,
 .native-table td.line-content { overflow-wrap: break-word; }
+/* Cells carry the block's `table-row` class, which Tailwind also generates as
+   a display utility (it scans assets/js); keep them cells. */
+.native-table th.line-content,
+.native-table td.line-content { display: table-cell; }
 .native-table th.line-content { text-align: left; font-weight: 600; padding: 10px 14px; color: var(--crit-editor-fg-secondary); border-bottom: 2px solid var(--crit-border); }
 .native-table td.line-content { padding: 8px 14px; border-bottom: 1px solid var(--crit-border); }
 .native-table .line-content code { white-space: pre-wrap; overflow-wrap: break-word; }
@@ -1282,7 +1469,7 @@ body.dragging { user-select: none; cursor: grabbing; }
 
 /* ===== Comment Cards ===== */
 .comment-block { padding: 0; }
-.comment-card { margin: 6px 0; border: 1px solid var(--crit-border-comment); border-radius: var(--crit-r-md); background: var(--crit-editor-comment-bg); overflow: hidden; }
+.comment-card { margin: 6px 0; border: 1px solid var(--crit-border-comment); border-radius: var(--crit-r-md); background: var(--crit-editor-comment-bg); overflow: hidden; font-family: var(--crit-font-body); }
 .comment-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: var(--crit-brand-subtle); border-bottom: 1px solid var(--crit-border); font-size: 12px; color: var(--crit-editor-fg-muted); }
 .comment-line-ref { font-weight: 600; color: var(--crit-brand); font-family: var(--crit-font-mono); }
 .comment-actions { display: flex; gap: 2px; }
@@ -1302,8 +1489,6 @@ body.dragging { user-select: none; cursor: grabbing; }
 .comment-actions .resolve-btn svg { width: 12px; height: 12px; opacity: 0.7; flex-shrink: 0; }
 .comment-actions .resolve-btn:hover { color: var(--crit-green); background: var(--crit-resolve-hover-bg); }
 .comment-actions .resolve-btn:hover svg { opacity: 1; }
-[data-theme="light"] .comment-actions .resolve-btn:hover { background: rgba(26, 127, 55, 0.08); }
-@media (prefers-color-scheme: light) { html:not([data-theme]) .comment-actions .resolve-btn:hover { background: rgba(26, 127, 55, 0.08); }}
 .comment-actions .resolve-btn--active { border-color: var(--crit-green); color: var(--crit-green); opacity: 0.65; }
 .comment-actions .resolve-btn--active svg { opacity: 1; }
 .comment-actions .resolve-btn--active:hover { opacity: 1; }
@@ -1315,7 +1500,7 @@ body.dragging { user-select: none; cursor: grabbing; }
   border-radius: 1px;
   padding: 1px 0;
 }
-.comment-body { padding: 10px 14px; color: var(--crit-editor-fg); font-size: 14px; line-height: 1.6; word-break: break-word; }
+.comment-body { padding: 10px 14px; color: var(--crit-editor-fg); font-family: var(--crit-font-body); font-size: 14px; line-height: 1.6; word-break: break-word; }
 .comment-body p { margin: 0 0 0.5em; }
 .comment-body p:last-child { margin-bottom: 0; }
 .comment-body code { background: var(--crit-editor-bg-elevated); padding: 1px 5px; border-radius: 3px; font-family: var(--crit-font-code); font-size: 0.9em; }
@@ -2059,29 +2244,50 @@ html[data-theme="light"] .crit-toggle-btn--active {
   white-space: nowrap;
 }
 
-/* Author colors — dark mode (default) */
-.author-color-0 { background: rgba(110,160,230,0.15); border-color: rgba(110,160,230,0.35); color: #7ab0f0; }
-.author-color-1 { background: rgba(225,95,95,0.15); border-color: rgba(225,95,95,0.35); color: #e87070; }
-.author-color-2 { background: rgba(90,190,115,0.15); border-color: rgba(90,190,115,0.35); color: #6cc880; }
-.author-color-3 { background: rgba(215,175,70,0.15); border-color: rgba(215,175,70,0.35); color: #d9b458; }
-.author-color-4 { background: rgba(165,105,220,0.15); border-color: rgba(165,105,220,0.35); color: #b580e0; }
-.author-color-5 { background: rgba(85,200,200,0.15); border-color: rgba(85,200,200,0.35); color: #60d0d0; }
-
-/* Author colors — light mode (higher contrast text) */
-[data-theme="light"] .author-color-0 { background: rgba(26,95,160,0.10); border-color: rgba(26,95,160,0.25); color: #1a5fa0; }
-[data-theme="light"] .author-color-1 { background: rgba(179,46,46,0.10); border-color: rgba(179,46,46,0.25); color: #b32e2e; }
-[data-theme="light"] .author-color-2 { background: rgba(26,117,53,0.10); border-color: rgba(26,117,53,0.25); color: #1a7535; }
-[data-theme="light"] .author-color-3 { background: rgba(138,93,0,0.10); border-color: rgba(138,93,0,0.25); color: #8a5d00; }
-[data-theme="light"] .author-color-4 { background: rgba(112,48,165,0.10); border-color: rgba(112,48,165,0.25); color: #7030a5; }
-[data-theme="light"] .author-color-5 { background: rgba(14,110,110,0.10); border-color: rgba(14,110,110,0.25); color: #0e6e6e; }
-@media (prefers-color-scheme: light) {
-  html:not([data-theme]) .author-color-0 { background: rgba(26,95,160,0.10); border-color: rgba(26,95,160,0.25); color: #1a5fa0; }
-  html:not([data-theme]) .author-color-1 { background: rgba(179,46,46,0.10); border-color: rgba(179,46,46,0.25); color: #b32e2e; }
-  html:not([data-theme]) .author-color-2 { background: rgba(26,117,53,0.10); border-color: rgba(26,117,53,0.25); color: #1a7535; }
-  html:not([data-theme]) .author-color-3 { background: rgba(138,93,0,0.10); border-color: rgba(138,93,0,0.25); color: #8a5d00; }
-  html:not([data-theme]) .author-color-4 { background: rgba(112,48,165,0.10); border-color: rgba(112,48,165,0.25); color: #7030a5; }
-  html:not([data-theme]) .author-color-5 { background: rgba(14,110,110,0.10); border-color: rgba(14,110,110,0.25); color: #0e6e6e; }
+/* Outdated comments: line comments whose line the file no longer has. They
+   are listed with the file-level comments (same styles as crit). */
+.outdated-diff-comments {
+  border-top: 1px solid var(--crit-border);
+  padding: 8px 0;
 }
+.outdated-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px 1px 4px;
+  border-radius: 10px;
+  background: var(--crit-drift-badge-bg);
+  color: var(--crit-drift-badge-fg);
+  border: 1px solid var(--crit-drift-badge-border);
+  white-space: nowrap;
+}
+.outdated-badge::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  background-color: var(--crit-drift-badge-fg);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M5.22 14.78a.75.75 0 001.06-1.06L4.56 12h8.69a.75.75 0 000-1.5H4.56l1.72-1.72a.75.75 0 00-1.06-1.06l-3 3a.75.75 0 000 1.06l3 3zM10.78 1.22a.75.75 0 00-1.06 1.06L11.44 4H2.75a.75.75 0 000 1.5h8.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3a.75.75 0 000-1.06l-3-3z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M5.22 14.78a.75.75 0 001.06-1.06L4.56 12h8.69a.75.75 0 000-1.5H4.56l1.72-1.72a.75.75 0 00-1.06-1.06l-3 3a.75.75 0 000 1.06l3 3zM10.78 1.22a.75.75 0 00-1.06 1.06L11.44 4H2.75a.75.75 0 000 1.5h8.69l-1.72 1.72a.75.75 0 101.06 1.06l3-3a.75.75 0 000-1.06l-3-3z'/%3E%3C/svg%3E");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.outdated-comment .comment-card {
+  border-color: var(--crit-drift-card-border);
+}
+
+/* Author colors: --author-N-* per theme (and per palette, see crit-palette.css) */
+.author-color-0 { background: var(--author-0-bg); border-color: var(--author-0-border); color: var(--author-0-fg); }
+.author-color-1 { background: var(--author-1-bg); border-color: var(--author-1-border); color: var(--author-1-fg); }
+.author-color-2 { background: var(--author-2-bg); border-color: var(--author-2-border); color: var(--author-2-fg); }
+.author-color-3 { background: var(--author-3-bg); border-color: var(--author-3-border); color: var(--author-3-fg); }
+.author-color-4 { background: var(--author-4-bg); border-color: var(--author-4-border); color: var(--author-4-fg); }
+.author-color-5 { background: var(--author-5-bg); border-color: var(--author-5-border); color: var(--author-5-fg); }
 
 /* ===== Resolved Comments ===== */
 .resolved-badge {
@@ -2323,129 +2529,17 @@ html[data-theme="light"] .crit-toggle-btn--active {
   display: none;
 }
 
-/* ===== highlight.js Dark Theme (Tokyo Night Dark) ===== */
-.hljs{color:#9aa5ce;background:#1a1b26}
-.hljs-tag,.hljs-doctag,.hljs-selector-id,.hljs-selector-class,.hljs-regexp,.hljs-template-tag,.hljs-selector-pseudo,.hljs-selector-attr,.hljs-variable.language_,.hljs-deletion{color:#f7768e}
-.hljs-variable,.hljs-template-variable,.hljs-number,.hljs-literal,.hljs-type,.hljs-params,.hljs-link{color:#ff9e64}
-.hljs-built_in,.hljs-attribute{color:#e0af68}
-.hljs-selector-tag{color:#73daca}
-.hljs-keyword,.hljs-title,.hljs-title.function_,.hljs-title.class_,.hljs-title.class_.inherited__,.hljs-subst,.hljs-property{color:#7dcfff}
-.hljs-quote,.hljs-string,.hljs-symbol,.hljs-bullet,.hljs-addition{color:#9ece6a}
-.hljs-code,.hljs-formula,.hljs-section{color:#85aaf8}
-.hljs-keyword,.hljs-operator,.hljs-attr,.hljs-name,.hljs-char.escape_{color:#bb9af7}
-.hljs-comment,.hljs-meta{color:#9aa1c8}
-.hljs-punctuation{color:#c0caf5}
-.hljs-emphasis{font-style:italic}
-.hljs-strong{font-weight:bold}
-.hljs-addition{color:#9ece6a;background-color:rgba(158,206,106,0.15)}
-.hljs-deletion{color:#f7768e;background-color:rgba(247,118,142,0.15)}
-
-[data-theme="dark"] .hljs{color:#9aa5ce;background:#1a1b26}
-[data-theme="dark"] .hljs-tag,[data-theme="dark"] .hljs-doctag,[data-theme="dark"] .hljs-selector-id,[data-theme="dark"] .hljs-selector-class,[data-theme="dark"] .hljs-regexp,[data-theme="dark"] .hljs-template-tag,[data-theme="dark"] .hljs-selector-pseudo,[data-theme="dark"] .hljs-selector-attr,[data-theme="dark"] .hljs-variable.language_,[data-theme="dark"] .hljs-deletion{color:#f7768e}
-[data-theme="dark"] .hljs-variable,[data-theme="dark"] .hljs-template-variable,[data-theme="dark"] .hljs-number,[data-theme="dark"] .hljs-literal,[data-theme="dark"] .hljs-type,[data-theme="dark"] .hljs-params,[data-theme="dark"] .hljs-link{color:#ff9e64}
-[data-theme="dark"] .hljs-built_in,[data-theme="dark"] .hljs-attribute{color:#e0af68}
-[data-theme="dark"] .hljs-selector-tag{color:#73daca}
-[data-theme="dark"] .hljs-keyword,[data-theme="dark"] .hljs-title,[data-theme="dark"] .hljs-title.function_,[data-theme="dark"] .hljs-title.class_,[data-theme="dark"] .hljs-title.class_.inherited__,[data-theme="dark"] .hljs-subst,[data-theme="dark"] .hljs-property{color:#7dcfff}
-[data-theme="dark"] .hljs-quote,[data-theme="dark"] .hljs-string,[data-theme="dark"] .hljs-symbol,[data-theme="dark"] .hljs-bullet,[data-theme="dark"] .hljs-addition{color:#9ece6a}
-[data-theme="dark"] .hljs-code,[data-theme="dark"] .hljs-formula,[data-theme="dark"] .hljs-section{color:#85aaf8}
-[data-theme="dark"] .hljs-keyword,[data-theme="dark"] .hljs-operator,[data-theme="dark"] .hljs-attr,[data-theme="dark"] .hljs-name,[data-theme="dark"] .hljs-char.escape_{color:#bb9af7}
-[data-theme="dark"] .hljs-comment,[data-theme="dark"] .hljs-meta{color:#9aa1c8}
-[data-theme="dark"] .hljs-punctuation{color:#c0caf5}
-[data-theme="dark"] .hljs-emphasis{font-style:italic}
-[data-theme="dark"] .hljs-strong{font-weight:bold}
-[data-theme="dark"] .hljs-addition{color:#9ece6a;background-color:rgba(158,206,106,0.15)}
-[data-theme="dark"] .hljs-deletion{color:#f7768e;background-color:rgba(247,118,142,0.15)}
-
-/* ===== highlight.js Light Theme ===== */
-[data-theme="light"] .hljs{color:#24292e;background:#fff}
-[data-theme="light"] .hljs-doctag,[data-theme="light"] .hljs-keyword,[data-theme="light"] .hljs-meta .hljs-keyword,[data-theme="light"] .hljs-template-tag,[data-theme="light"] .hljs-template-variable,[data-theme="light"] .hljs-type,[data-theme="light"] .hljs-variable.language_,[data-theme="light"] .hljs-tag{color:#cf222e}
-[data-theme="light"] .hljs-title,[data-theme="light"] .hljs-title.class_,[data-theme="light"] .hljs-title.class_.inherited__,[data-theme="light"] .hljs-title.function_{color:#6f42c1}
-[data-theme="light"] .hljs-attr,[data-theme="light"] .hljs-attribute,[data-theme="light"] .hljs-literal,[data-theme="light"] .hljs-meta,[data-theme="light"] .hljs-number,[data-theme="light"] .hljs-operator,[data-theme="light"] .hljs-selector-attr,[data-theme="light"] .hljs-selector-class,[data-theme="light"] .hljs-selector-id,[data-theme="light"] .hljs-variable,[data-theme="light"] .hljs-params,[data-theme="light"] .hljs-link,[data-theme="light"] .hljs-property,[data-theme="light"] .hljs-char.escape_{color:#005cc5}
-[data-theme="light"] .hljs-meta .hljs-string,[data-theme="light"] .hljs-regexp,[data-theme="light"] .hljs-string{color:#032f62}
-[data-theme="light"] .hljs-built_in,[data-theme="light"] .hljs-symbol{color:#953800}
-[data-theme="light"] .hljs-code,[data-theme="light"] .hljs-comment,[data-theme="light"] .hljs-formula{color:#59636e}
-[data-theme="light"] .hljs-name,[data-theme="light"] .hljs-quote,[data-theme="light"] .hljs-selector-pseudo,[data-theme="light"] .hljs-selector-tag{color:#22863a}
-[data-theme="light"] .hljs-subst{color:#24292e}
-[data-theme="light"] .hljs-section{color:#005cc5;font-weight:700}
-[data-theme="light"] .hljs-bullet{color:#735c0f}
-[data-theme="light"] .hljs-punctuation{color:#24292e}
-[data-theme="light"] .hljs-emphasis{color:#24292e;font-style:italic}
-[data-theme="light"] .hljs-strong{color:#24292e;font-weight:700}
-[data-theme="light"] .hljs-addition{color:#22863a;background-color:#f0fff4}
-[data-theme="light"] .hljs-deletion{color:#b31d28;background-color:#ffeef0}
-
-/* ===== highlight.js System Theme (light OS preference override) ===== */
+/* ===== Code tokens (Shiki, via Pierre) =====
+   Fenced code in comments and rendered documents (.crit-code) carries the
+   same per-token --diffs-token-light / --diffs-token-dark properties as
+   Pierre's code views (the reader's theme pair). Dark is the default, like
+   the variables above. Same rules as crit's theme.css. */
+.crit-code span[style] { color: var(--diffs-token-dark); }
 @media (prefers-color-scheme: light) {
-  html:not([data-theme]) .hljs{color:#24292e;background:#fff}
-  html:not([data-theme]) .hljs-doctag,html:not([data-theme]) .hljs-keyword,html:not([data-theme]) .hljs-meta .hljs-keyword,html:not([data-theme]) .hljs-template-tag,html:not([data-theme]) .hljs-template-variable,html:not([data-theme]) .hljs-type,html:not([data-theme]) .hljs-variable.language_,html:not([data-theme]) .hljs-tag{color:#cf222e}
-  html:not([data-theme]) .hljs-title,html:not([data-theme]) .hljs-title.class_,html:not([data-theme]) .hljs-title.class_.inherited__,html:not([data-theme]) .hljs-title.function_{color:#6f42c1}
-  html:not([data-theme]) .hljs-attr,html:not([data-theme]) .hljs-attribute,html:not([data-theme]) .hljs-literal,html:not([data-theme]) .hljs-meta,html:not([data-theme]) .hljs-number,html:not([data-theme]) .hljs-operator,html:not([data-theme]) .hljs-selector-attr,html:not([data-theme]) .hljs-selector-class,html:not([data-theme]) .hljs-selector-id,html:not([data-theme]) .hljs-variable,html:not([data-theme]) .hljs-params,html:not([data-theme]) .hljs-link,html:not([data-theme]) .hljs-property,html:not([data-theme]) .hljs-char.escape_{color:#005cc5}
-  html:not([data-theme]) .hljs-meta .hljs-string,html:not([data-theme]) .hljs-regexp,html:not([data-theme]) .hljs-string{color:#032f62}
-  html:not([data-theme]) .hljs-built_in,html:not([data-theme]) .hljs-symbol{color:#953800}
-  html:not([data-theme]) .hljs-code,html:not([data-theme]) .hljs-comment,html:not([data-theme]) .hljs-formula{color:#59636e}
-  html:not([data-theme]) .hljs-name,html:not([data-theme]) .hljs-quote,html:not([data-theme]) .hljs-selector-pseudo,html:not([data-theme]) .hljs-selector-tag{color:#22863a}
-  html:not([data-theme]) .hljs-subst{color:#24292e}
-  html:not([data-theme]) .hljs-section{color:#005cc5;font-weight:700}
-  html:not([data-theme]) .hljs-bullet{color:#735c0f}
-  html:not([data-theme]) .hljs-punctuation{color:#24292e}
-  html:not([data-theme]) .hljs-emphasis{color:#24292e;font-style:italic}
-  html:not([data-theme]) .hljs-strong{color:#24292e;font-weight:700}
-  html:not([data-theme]) .hljs-addition{color:#22863a;background-color:#f0fff4}
-  html:not([data-theme]) .hljs-deletion{color:#b31d28;background-color:#ffeef0}
+  html:not([data-theme]) .crit-code span[style] { color: var(--diffs-token-light); }
 }
-
-/* ===== Light-theme AA contrast fixes for diff backgrounds ===== */
-/* Deletion-row gutter line numbers: --crit-editor-fg-muted (#59636e) on #ffcecb fails AA. Darken to fg-default. */
-@media (prefers-color-scheme: light) {
-  html:not([data-theme]) .deletion .diff-gutter-num{color:#1f2328}
-}
-[data-theme="light"] .deletion .diff-gutter-num{color:#1f2328}
-
-/* Word-level deletion span (#ffcecb bg): when .diff-word-del is nested inside an
-   .hljs-* color class, the failing groups are keyword (#cf222e), name/quote (#22863a),
-   and comment (#59636e). DOM is .hljs-keyword > .diff-word-del — target the inner span. */
-@media (prefers-color-scheme: light) {
-  html:not([data-theme]) .hljs-doctag > .diff-word-del,
-  html:not([data-theme]) .hljs-keyword > .diff-word-del,
-  html:not([data-theme]) .hljs-template-tag > .diff-word-del,
-  html:not([data-theme]) .hljs-template-variable > .diff-word-del,
-  html:not([data-theme]) .hljs-type > .diff-word-del,
-  html:not([data-theme]) .hljs-variable > .diff-word-del,
-  html:not([data-theme]) .hljs-tag > .diff-word-del,
-  html:not([data-theme]) .hljs-name > .diff-word-del,
-  html:not([data-theme]) .hljs-quote > .diff-word-del,
-  html:not([data-theme]) .hljs-selector-pseudo > .diff-word-del,
-  html:not([data-theme]) .hljs-selector-tag > .diff-word-del,
-  html:not([data-theme]) .hljs-code > .diff-word-del,
-  html:not([data-theme]) .hljs-comment > .diff-word-del,
-  html:not([data-theme]) .hljs-formula > .diff-word-del{color:#1f2328}
-}
-[data-theme="light"] .hljs-doctag > .diff-word-del,
-[data-theme="light"] .hljs-keyword > .diff-word-del,
-[data-theme="light"] .hljs-template-tag > .diff-word-del,
-[data-theme="light"] .hljs-template-variable > .diff-word-del,
-[data-theme="light"] .hljs-type > .diff-word-del,
-[data-theme="light"] .hljs-variable > .diff-word-del,
-[data-theme="light"] .hljs-tag > .diff-word-del,
-[data-theme="light"] .hljs-name > .diff-word-del,
-[data-theme="light"] .hljs-quote > .diff-word-del,
-[data-theme="light"] .hljs-selector-pseudo > .diff-word-del,
-[data-theme="light"] .hljs-selector-tag > .diff-word-del,
-[data-theme="light"] .hljs-code > .diff-word-del,
-[data-theme="light"] .hljs-comment > .diff-word-del,
-[data-theme="light"] .hljs-formula > .diff-word-del{color:#1f2328}
-
-/* Whole-line addition rows (#dafbe1 bg): green hljs groups (#22863a) fail AA. Darken to fg-default. */
-@media (prefers-color-scheme: light) {
-  html:not([data-theme]) .addition .hljs-name,
-  html:not([data-theme]) .addition .hljs-quote,
-  html:not([data-theme]) .addition .hljs-selector-pseudo,
-  html:not([data-theme]) .addition .hljs-selector-tag{color:#1f2328}
-}
-[data-theme="light"] .addition .hljs-name,
-[data-theme="light"] .addition .hljs-quote,
-[data-theme="light"] .addition .hljs-selector-pseudo,
-[data-theme="light"] .addition .hljs-selector-tag{color:#1f2328}
+[data-theme="dark"] .crit-code span[style] { color: var(--diffs-token-dark); }
+[data-theme="light"] .crit-code span[style] { color: var(--diffs-token-light); }
 
 /* Comments panel — always in the flex row so margin-right can slide it.
    Closed (no .comments-panel-open): margin-right:-W parks it past the right
@@ -2657,7 +2751,6 @@ body.comments-panel-anim #commentsPanelResizer {
 /* File-level comments (between file header and file body) */
 .file-comments {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--crit-border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2665,7 +2758,7 @@ body.comments-panel-anim #commentsPanelResizer {
 
 .file-comments > * {
   width: 100%;
-  max-width: 900px;
+  max-width: var(--crit-content-width);
 }
 .file-comments .comment-card { margin-bottom: 8px; }
 .file-comments .comment-card:last-child { margin-bottom: 0; }
@@ -2935,11 +3028,13 @@ body.comments-panel-anim #commentsPanelResizer {
 
 /* ===== File Sections (multi-file mode) ===== */
 .files-container {
-  padding: 0 0 120px;
+  padding: 26px 32px 80px;
 }
 
 .file-section {
   scroll-margin-top: calc(var(--crit-header-height) + 4px);
+  margin-bottom: 18px;
+  background: var(--crit-editor-bg-card);
 }
 
 .file-header {
@@ -2948,8 +3043,8 @@ body.comments-panel-anim #commentsPanelResizer {
   top: var(--crit-header-height);
   z-index: 80;
   background: var(--crit-editor-bg-elevated);
-  border-bottom: 1px solid var(--crit-border);
-  border-top: 1px solid var(--crit-border);
+  border: 1px solid var(--crit-border);
+  border-radius: 6px 6px 0 0;
   padding: 8px 24px;
   display: flex;
   align-items: center;
@@ -3064,9 +3159,13 @@ body.comments-panel-anim #commentsPanelResizer {
 }
 
 .file-body {
-  max-width: 900px;
+  max-width: min(var(--crit-content-width), calc(100% - 32px));
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 32px 0 120px;
+}
+.file-body .comment-block,
+.file-body .comment-form-wrapper {
+  padding-inline: 0;
 }
 .file-body.diff-split {
   max-width: none;
@@ -3386,7 +3485,8 @@ body.sidebar-resizing * {
   .files-container { padding-left: 0; padding-right: 0; }
   #document-renderer { padding-left: 0; padding-right: 0; padding-top: 8px; }
   .file-header { padding: 8px 12px; }
-  .file-body { padding: 4px 8px; }
+  .file-body { padding: 4px 0; }
+  .files-container { padding: 18px 16px 60px; }
 
 }
 
@@ -3712,6 +3812,19 @@ body.sidebar-resizing * {
 .settings-select {
   max-width: 60%;
   cursor: pointer;
+  /* Own chevron: the native arrow sits against the border and can't be moved. */
+  appearance: none;
+  padding-right: 30px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--crit-editor-fg-muted) 50%),
+    linear-gradient(135deg, var(--crit-editor-fg-muted) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 55%, calc(100% - 12px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+.settings-theme-preview-link {
+  font-size: 13px;
+  color: var(--crit-brand);
 }
 .settings-text-input {
   width: 260px;
@@ -4216,30 +4329,17 @@ body.sidebar-resizing * {
   height: 16px;
   border-radius: var(--crit-r-sm);
   border: 1px dashed var(--crit-border-strong);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23646c85' stroke-width='1.5' stroke-linecap='round'><path d='M8 5.5v5M5.5 8h5'/></svg>");
-  background-repeat: no-repeat;
-  background-position: center;
+  /* A "+" drawn in currentColor, so it follows the theme palette (as crit). */
+  background:
+    linear-gradient(currentColor, currentColor) center / 1.5px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 6px 1.5px no-repeat;
   transition: border-color var(--crit-dur-fast) var(--crit-ease),
               border-style var(--crit-dur-fast) var(--crit-ease);
 }
 .review-conversation-add-more:hover::before {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%2385aaf8' stroke-width='1.5' stroke-linecap='round'><path d='M8 5.5v5M5.5 8h5'/></svg>");
+  color: var(--crit-brand);
   border-style: solid;
   border-color: var(--crit-brand);
-}
-[data-theme="light"] .review-conversation-add-more::before {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%238892a6' stroke-width='1.5' stroke-linecap='round'><path d='M8 5.5v5M5.5 8h5'/></svg>");
-}
-[data-theme="light"] .review-conversation-add-more:hover::before {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%232960bc' stroke-width='1.5' stroke-linecap='round'><path d='M8 5.5v5M5.5 8h5'/></svg>");
-}
-@media (prefers-color-scheme: light) {
-  html:not([data-theme]) .review-conversation-add-more::before {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%238892a6' stroke-width='1.5' stroke-linecap='round'><path d='M8 5.5v5M5.5 8h5'/></svg>");
-  }
-  html:not([data-theme]) .review-conversation-add-more:hover::before {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%232960bc' stroke-width='1.5' stroke-linecap='round'><path d='M8 5.5v5M5.5 8h5'/></svg>");
-  }
 }
 .review-conversation-add-more:hover {
   background: var(--crit-editor-bg-elevated);
@@ -4336,7 +4436,7 @@ body.sidebar-resizing * {
 
   /* Chrome on mobile computes viewport width from getBoundingClientRect() of
      all descendants, including those inside overflow:clip containers. A
-     wrapping inline <span> (e.g. hljs-string) has a bounding rect that is
+     wrapping inline <span> (e.g. a syntax token) has a bounding rect that is
      the union of all its line boxes. Converting these spans to inline-block +
      max-width:100% + overflow:hidden constrains each span's bounding rect to
      its container, which stops Chrome from expanding the scrollable viewport. */
@@ -4702,4 +4802,132 @@ body.sidebar-resizing * {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 8px;
+}
+
+/* ===== Theme preview page (/themes) =====
+   Same page as crit's /themes: the theme list on the left, fixed review
+   samples on the right, drawn in the previewed theme. */
+.theme-preview-page {
+  min-height: 100vh;
+  background: var(--crit-bg-page);
+  color: var(--crit-fg-primary);
+}
+.theme-preview-title {
+  font-weight: 600;
+  color: var(--crit-fg-secondary);
+}
+.theme-preview-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  height: calc(100vh - var(--crit-header-height));
+}
+.theme-preview-list {
+  overflow-y: auto;
+  border-right: 1px solid var(--crit-border);
+  background: var(--crit-bg-card);
+  padding: 8px;
+}
+.theme-preview-list-hint {
+  padding: 4px 8px 8px;
+  font-size: 12px;
+  color: var(--crit-fg-muted);
+}
+.theme-preview-list [role="listbox"]:focus-visible {
+  outline: none;
+}
+.theme-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--crit-r-md);
+  cursor: pointer;
+  font-size: 13px;
+}
+.theme-preview-item[hidden] { display: none; }
+.theme-preview-item:hover {
+  background: var(--crit-option-hover);
+}
+.theme-preview-item[aria-selected="true"] {
+  background: var(--crit-option-selected-bg);
+  color: var(--crit-brand);
+  font-weight: 600;
+}
+.theme-preview-list [role="listbox"]:focus-visible .theme-preview-item[aria-selected="true"] {
+  box-shadow: inset 0 0 0 1px var(--crit-focus-ring);
+}
+.theme-preview-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Each theme's own colours, drawn on its own background. */
+.theme-preview-swatches {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px 5px;
+  border: 1px solid;
+  border-radius: var(--crit-r-sm);
+}
+.theme-preview-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.theme-preview-current {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--crit-fg-muted);
+}
+.theme-preview-main {
+  overflow-y: auto;
+  padding: 24px 32px 80px;
+}
+.theme-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.theme-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.theme-preview-actions { flex-wrap: wrap; justify-content: flex-end; }
+.theme-preview-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--crit-fg-secondary);
+}
+.theme-preview-setting .settings-select { max-width: none; }
+.theme-preview-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+.theme-preview-status {
+  font-size: 13px;
+  color: var(--crit-fg-muted);
+  min-height: 1.2em;
+}
+.theme-preview-file {
+  margin-bottom: 18px;
+}
+.theme-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 768px) {
+  .theme-preview-layout { grid-template-columns: 1fr; grid-template-rows: 200px minmax(0, 1fr); }
+  .theme-preview-list { border-right: 0; border-bottom: 1px solid var(--crit-border); }
+  .theme-preview-main { padding: 16px; }
+  .theme-preview-bar { flex-wrap: wrap; }
 }
