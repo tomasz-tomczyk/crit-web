@@ -268,9 +268,56 @@ export async function seedComment(
  */
 export async function loadReview(page: Page, token: string) {
   await page.goto(`/r/${token}`);
-  // Wait for the LiveView to connect and the document renderer to initialize
-  await page.waitForSelector("#document-renderer .line-block", {
-    timeout: 15_000,
+  // Wait for the LiveView to connect and the document renderer to initialize:
+  // a rendered markdown block, or a line of a code file (Pierre, shadow DOM —
+  // Playwright's CSS engine pierces open shadow roots).
+  await page.waitForSelector(
+    "#document-renderer .line-block, #document-renderer .crit-code-file [data-line]",
+    { timeout: 15_000 }
+  );
+}
+
+/**
+ * A code file's rendered view (Pierre File). Its lines live in a shadow root;
+ * Playwright locators pierce it.
+ */
+export function codeFile(page: Page, path: string) {
+  return page.locator(`.crit-code-file[data-file-path="${path}"]`);
+}
+
+/** The content cell of line `n` of a code file. */
+export function codeLine(page: Page, path: string, n: number) {
+  return codeFile(page, path).locator(`[data-content] > [data-line="${n}"]`);
+}
+
+/** Hover a code line so Pierre shows its gutter "+" (crit: hoverLine). */
+export async function hoverCodeLine(page: Page, path: string, n: number, opts: { commentable?: boolean } = {}) {
+  // Pierre replaces its line elements when highlighting lands or annotations
+  // change; retry until the hover lands on the current element.
+  await expect(async () => {
+    await codeLine(page, path, n).hover({ timeout: 2_000 });
+    if (opts.commentable !== false) {
+      await expect(codeFile(page, path).locator("[data-utility-button]")).toBeVisible({ timeout: 1_000 });
+    }
+  }).toPass({ timeout: 10_000 });
+}
+
+/** Open a comment form on a code line through the gutter "+" (crit: openLineComment). */
+export async function openCodeLineComment(page: Page, path: string, n: number) {
+  await expect(async () => {
+    await hoverCodeLine(page, path, n);
+    await codeFile(page, path).locator("[data-utility-button]").click({ timeout: 2_000 });
+    await expect(page.locator(".comment-form textarea").last()).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
+/** Line numbers of a code file that carry Pierre's line selection (keyboard focus). */
+export async function selectedCodeLines(page: Page, path: string) {
+  return codeFile(page, path).evaluate((el) => {
+    const root = el.querySelector("diffs-container")?.shadowRoot;
+    if (!root) return [];
+    return Array.from(root.querySelectorAll("[data-content] > [data-line][data-selected-line]"))
+      .map((line) => Number((line as HTMLElement).dataset.line));
   });
 }
 
@@ -317,8 +364,15 @@ export async function addCommentViaUI(
   body: string,
   opts: { lineIndex?: number; waitText?: string } = {}
 ) {
-  const gutter = page.locator(".line-gutter").nth(opts.lineIndex ?? 0);
-  await gutter.click();
+  // Markdown documents comment from the line gutter; a review of code files
+  // only comments through Pierre's gutter "+" on line lineIndex + 1.
+  const gutters = page.locator(".line-gutter");
+  if ((await gutters.count()) > 0) {
+    await gutters.nth(opts.lineIndex ?? 0).click();
+  } else {
+    const path = await page.locator(".crit-code-file").first().getAttribute("data-file-path");
+    await openCodeLineComment(page, path!, (opts.lineIndex ?? 0) + 1);
+  }
 
   const textarea = page.locator(".comment-form textarea");
   await expect(textarea).toBeVisible({ timeout: 5_000 });

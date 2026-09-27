@@ -159,8 +159,9 @@ function initSentry(liveSocket) {
 import {Socket, LongPoll} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/crit"
+import { syncActivePalette } from "./review-settings.js"
 import topbar from "../vendor/topbar"
-// Load document-renderer (markdown-it + hljs + mermaid) only on review pages.
+// Load document-renderer (markdown-it + Pierre/Shiki + mermaid) only on review pages.
 // Top-level await is valid in ES modules — it blocks module evaluation so the
 // hook is ready synchronously when LiveView calls mounted().
 const isReviewPage = window.location.pathname.startsWith('/r/')
@@ -172,6 +173,16 @@ const DocumentRendererHook = isReviewPage
 // review type isn't known client-side until the LiveView mounts.
 const PreviewModeHook = isReviewPage
   ? (await import("./preview-mode")).PreviewMode
+  : { mounted() {} }
+
+// Review snippets on the selfhost overview: Shiki, loaded only there.
+const SnippetHighlightHook = window.location.pathname === '/overview'
+  ? (await import("./snippet-highlight")).SnippetHighlight
+  : { mounted() {} }
+
+// Theme preview page (/themes): Pierre samples, loaded only there.
+const ThemePreviewHook = window.location.pathname === '/themes'
+  ? (await import("./theme-preview")).ThemePreview
   : { mounted() {} }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
@@ -190,6 +201,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ...colocatedHooks,
     "CritWeb.ReviewLive.DocumentRenderer": DocumentRendererHook,
     "PreviewMode": PreviewModeHook,
+    "ThemePreview": ThemePreviewHook,
+    "SnippetHighlight": SnippetHighlightHook,
   },
   ...transportOpts,
 })
@@ -211,10 +224,14 @@ function setTheme(theme) {
   document.querySelectorAll("[data-phx-theme]").forEach(btn => {
     btn.setAttribute("aria-checked", btn.dataset.phxTheme === theme ? "true" : "false");
   });
+  syncActivePalette();
 }
 
 window.addEventListener("phx:set-theme", e => setTheme(e.target.dataset.phxTheme));
 window.addEventListener("storage", e => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+// Review pages: name the active theme palette (light or dark half).
+syncActivePalette();
+window.matchMedia?.("(prefers-color-scheme: light)").addEventListener("change", () => syncActivePalette());
 
 // Site header identity popover: close on outside-click / Escape.
 // Marketing pages are dead views (controller-rendered), so phx-hook

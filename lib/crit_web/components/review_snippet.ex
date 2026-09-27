@@ -7,8 +7,9 @@ defmodule CritWeb.Components.ReviewSnippet do
   syntax-highlighted code listing with line numbers, rendered markdown, or a
   "no preview" placeholder.
 
-  The parent must include the `SnippetHighlight` colocated hook to apply
-  highlight.js to elements with `[data-snippet-line]`.
+  The parent must carry the `SnippetHighlight` hook
+  (assets/js/snippet-highlight.js), which highlights each `[data-snippet-path]`
+  preview with Shiki, like code files on the review page.
   """
 
   use Phoenix.Component
@@ -20,12 +21,14 @@ defmodule CritWeb.Components.ReviewSnippet do
     assigns =
       assigns
       |> assign(:snippet, CritWeb.Helpers.snippet_preview(assigns.path, assigns.content))
-      |> assign(:lang, CritWeb.Helpers.language_for_path(assigns.path))
 
     ~H"""
     <%= case @snippet do %>
       <% {:code, lines} -> %>
-        <div class="border border-(--crit-border) rounded-md overflow-hidden h-[200px] relative font-mono text-xs leading-5">
+        <div
+          class="border border-(--crit-border) rounded-md overflow-hidden h-[200px] relative font-mono text-xs leading-5"
+          data-snippet-path={@path}
+        >
           <div class="py-2">
             <div
               :for={{line, idx} <- Enum.with_index(lines, 1)}
@@ -35,9 +38,8 @@ defmodule CritWeb.Components.ReviewSnippet do
                 {idx}
               </span>
               <code
-                class="hljs whitespace-pre overflow-hidden !bg-transparent p-0 text-(--crit-fg-primary)"
+                class="whitespace-pre overflow-hidden !bg-transparent p-0 text-(--crit-fg-primary)"
                 data-snippet-line
-                data-lang={@lang}
                 phx-no-format
               >{line}</code>
             </div>

@@ -25,6 +25,10 @@ defmodule CritWeb.Endpoint do
   plug CritWeb.Plugs.CanonicalHost
   plug CritWeb.Plugs.HostGate
 
+  # The vendored @pierre/diffs bundle ships as .js.gz only (see
+  # scripts/sync-pierre.sh); serve it with Content-Encoding: gzip.
+  plug CritWeb.Plugs.Precompressed
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # When code reloading is disabled (e.g., in production),

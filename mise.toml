@@ -68,6 +68,10 @@ run = "docker stop crit-web-postgres 2>/dev/null || true"
 description = "Install deps and setup DB (no server)"
 depends = ["deps", "db:setup"]
 
+[tasks."test:js"]
+description = "Run the review page JS unit tests (node --test)"
+run = "node --test 'assets/test/*.test.mjs'"
+
 [tasks.e2e]
 description = "Run the Playwright e2e suite (installs everything it needs first)"
 depends = ["deps", "db:start"]

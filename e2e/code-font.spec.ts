@@ -42,6 +42,9 @@ test.describe("Code font setting", () => {
     });
     expect(consumerFonts).toHaveLength(3);
     consumerFonts.forEach(font => expect(font).toContain("ui-monospace"));
+    // Code files (Pierre, shadow DOM) use the same font through --diffs-font-family.
+    await expect.poll(() => page.locator('.crit-code-file [data-content] > [data-line="1"]')
+      .evaluate(el => getComputedStyle(el).fontFamily)).toContain("ui-monospace");
 
     await page.reload();
     await expect.poll(codeFont).toBe("ui-monospace, SFMono-Regular, Menlo, Consolas, monospace");

@@ -16,7 +16,6 @@
 // delete_comment, add_reply, delete_reply, edit_reply).
 
 import markdownit from "markdown-it"
-import hljs from "highlight.js"
 import { sanitizeCommentHtml, normalizeCommentMarkdown } from "./comment-html"
 
 // ---- Shared helpers ---------------------------------------------------------
@@ -62,17 +61,15 @@ export function authorColorIndex(author) {
 // both modes (this also fixes preview's old raw-textContent bug). document-
 // renderer.js layers its files-mode-only ```suggestion fence rule onto this
 // same instance at runtime; that rule is inert for preview comments.
+//
+// Fenced code renders plain (the HTML is sanitised). Files mode highlights it
+// with Shiki once mounted (pierre-runtime.js watchCodeBlocks); preview mode
+// keeps it plain, like crit's live mode.
 
 export const commentMd = markdownit({
   html: true,
   linkify: true,
   typographer: true,
-  highlight(str, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try { return hljs.highlight(str, { language: lang }).value } catch (_) {}
-    }
-    return ''
-  },
 })
 // Disable (c)/(r)/(tm) → ©/®/™ replacements so enumerated options render
 // literally. Keep typographer (smart quotes) and disable only replacements.

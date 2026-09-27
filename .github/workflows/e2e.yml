@@ -89,6 +89,9 @@ jobs:
       - name: Install asset dependencies
         run: npm install --prefix assets
 
+      - name: Review page JS unit tests
+        run: node --test 'assets/test/*.test.mjs'
+
       - name: Build assets
         run: mix assets.build
 

@@ -13,9 +13,16 @@ defmodule CritWeb.ReviewLive do
   @pubsub Crit.PubSub
 
   @impl true
-  def mount(%{"token" => token}, _session, socket) do
+  def mount(%{"token" => token}, session, socket) do
     scope = socket.assigns.current_scope
     auth_required = Crit.Config.selfhosted_oauth?()
+    # Read by the root layout: the reader's light/dark theme and the display
+    # settings rendered markdown follows, applied as CSS before first paint
+    # (see CritWeb.ThemePalette, CritWeb.ReviewDisplay).
+    socket =
+      socket
+      |> assign(:crit_palette, CritWeb.ThemePalette.for_cookie(session["crit_settings"]))
+      |> assign(:crit_display, CritWeb.ReviewDisplay.for_cookie(session["crit_settings"]))
 
     mount_review(token, socket, scope, auth_required)
   end
@@ -138,6 +145,13 @@ defmodule CritWeb.ReviewLive do
          |> assign(:can_comment?, can_comment?(scope, review))
          |> assign(:current_path, ~p"/r/#{review.token}"), layout: {CritWeb.Layouts, :review}}
     end
+  end
+
+  # The reader picked another light or dark theme in Settings. The browser has
+  # already written the `crit-settings` cookie; reply with the validated pair
+  # and its stylesheet so the page re-themes without a reload.
+  def handle_event("theme_palette", params, socket) do
+    {:reply, CritWeb.ThemePalette.reply(params), socket}
   end
 
   def handle_event("make_public", _params, socket) do
@@ -591,7 +605,8 @@ defmodule CritWeb.ReviewLive do
       "user_id" => Plug.Conn.get_session(conn, "user_id"),
       "identity" => Plug.Conn.get_session(conn, "identity"),
       "display_name" => Plug.Conn.get_session(conn, "display_name"),
-      "request_path" => conn.request_path
+      "request_path" => conn.request_path,
+      "crit_settings" => conn.req_cookies[CritWeb.ThemePalette.cookie()]
     }
   end
 

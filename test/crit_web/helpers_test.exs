@@ -152,42 +152,4 @@ defmodule CritWeb.HelpersTest do
       assert {:markdown, _} = Helpers.snippet_preview("README.MD", "# x")
     end
   end
-
-  describe "language_for_path/1" do
-    test "returns nil for nil path" do
-      assert Helpers.language_for_path(nil) == nil
-    end
-
-    test "maps elixir extensions" do
-      assert Helpers.language_for_path("foo.ex") == "elixir"
-      assert Helpers.language_for_path("foo.exs") == "elixir"
-      assert Helpers.language_for_path("foo.heex") == "elixir"
-    end
-
-    test "maps javascript family" do
-      assert Helpers.language_for_path("foo.js") == "javascript"
-      assert Helpers.language_for_path("foo.mjs") == "javascript"
-      assert Helpers.language_for_path("foo.ts") == "typescript"
-      assert Helpers.language_for_path("foo.tsx") == "typescript"
-    end
-
-    test "maps shell scripts" do
-      assert Helpers.language_for_path("script.sh") == "bash"
-      assert Helpers.language_for_path("script.zsh") == "bash"
-    end
-
-    test "maps html and xml to xml" do
-      assert Helpers.language_for_path("page.html") == "xml"
-      assert Helpers.language_for_path("config.xml") == "xml"
-    end
-
-    test "returns nil for unknown extensions" do
-      assert Helpers.language_for_path("README") == nil
-      assert Helpers.language_for_path("data.unknownext") == nil
-    end
-
-    test "extension match is case-insensitive" do
-      assert Helpers.language_for_path("Foo.EX") == "elixir"
-    end
-  end
 end

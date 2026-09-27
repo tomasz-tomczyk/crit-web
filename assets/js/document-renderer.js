@@ -1,9 +1,4 @@
 import markdownit from "markdown-it"
-import hljs from "highlight.js"
-import { registerMarkdownPatch } from "./highlight-markdown-patch"
-import { heex } from "highlightjs-heex"
-import hljsAstro from "highlightjs-astro-js"
-import { vue } from "./highlightjs-vue"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 import { sanitizeCommentHtml } from "./comment-html"
 import {
@@ -21,13 +16,20 @@ import {
 import { createSettingsPanel } from "./settings-panel"
 import { actionForEvent, getBinding } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
-
-// Re-register hljs 'markdown' with patched grammar. Must run before any
-// hljs.highlight() call. See highlight-markdown-patch.js for rationale.
-registerMarkdownPatch(hljs)
-hljs.registerLanguage('heex', heex)
-hljs.registerLanguage('vue', vue)
-hljs.registerLanguage('astro', hljsAstro)
+import {
+  changeRendererSetting,
+  codeHighlight,
+  configureCodeHighlight,
+  displayOptions,
+  loadPierre,
+  onRendererChange,
+  themeType,
+  watchCodeBlocks,
+  workerPool,
+} from "./pierre-runtime"
+import { annotationsForCodeFile, createCodeFileView, isOutdatedLineComment, lineCount } from "./code-file-view"
+import pierreDOM from "../vendor/crit/crit-pierre-dom.js"
+import { themeChoice } from "./review-settings"
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -183,7 +185,7 @@ function applyWordDiffToHtml(html, ranges, cssClass) {
   while (i < html.length) {
     // Skip HTML tags (don't count them as visible characters).
     // Keep any open word-diff span across tags — closing/reopening at each tag
-    // boundary creates empty highlight spans inside nested hljs markup.
+    // boundary creates empty highlight spans inside nested token markup.
     if (html[i] === '<') {
       var tagEnd = html.indexOf('>', i)
       if (tagEnd === -1) { result += html.slice(i); break }
@@ -697,13 +699,68 @@ function restoreDrafts(ctx) {
   }
 }
 
-function getFocusedLineBlocks(ctx) {
-  if (!ctx.multiFile) return ctx.lineBlocks
-  const file = ctx.files.find(f => f.path === ctx.focusedFilePath)
-  return file ? file.lineBlocks : []
+// ===== Keyboard rows =====
+// j/k move through rows in page order: rendered document blocks (.line-block)
+// and code-file lines (one row per line; the lines live in Pierre's shadow
+// DOM). Collapsed files are skipped, as in crit. A row:
+//   { filePath, startLine, endLine, blockIndex, el }   document block
+//   { filePath, startLine, endLine, code: true }        code line
+function documentRows(root, filePath, rows) {
+  root.querySelectorAll('.line-block').forEach(el => {
+    rows.push({
+      el,
+      filePath: el.dataset.filePath || filePath || '',
+      startLine: parseInt(el.dataset.startLine),
+      endLine: parseInt(el.dataset.endLine),
+      blockIndex: el.dataset.blockIndex !== undefined ? parseInt(el.dataset.blockIndex) : null,
+    })
+  })
 }
 
-// Stable j/k position across re-renders (DOM indices alone are not enough).
+function codeRows(ctx, filePath, rows) {
+  const view = ctx._codeViews && ctx._codeViews.get(filePath)
+  if (!view || !view.element.isConnected) return
+  for (let n = 1; n <= view.lineTotal; n++) {
+    rows.push({ code: true, filePath, startLine: n, endLine: n, blockIndex: null })
+  }
+}
+
+function navRows(ctx) {
+  const rows = []
+  if (!ctx.multiFile) {
+    if (isCodeFile(ctx.singleFilePath)) codeRows(ctx, ctx.singleFilePath, rows)
+    else documentRows(ctx.el, ctx.singleFilePath, rows)
+    return rows
+  }
+  for (const file of ctx.files) {
+    if (file.collapsed) continue
+    if (file.fileType === 'code' && !file.orphaned) {
+      codeRows(ctx, file.path, rows)
+    } else {
+      const section = document.getElementById('file-section-' + CSS.escape(file.path))
+      if (section) documentRows(section, file.path, rows)
+    }
+  }
+  return rows
+}
+
+// Is a comment on the given row's file? Single-file reviews have one file,
+// whatever path (or none) a comment carries.
+function sameFile(ctx, commentPath, rowPath) {
+  if (!ctx.multiFile) return true
+  return (commentPath || null) === (rowPath || null)
+}
+
+function targetFromRow(row) {
+  const target = { filePath: row.filePath || '' }
+  if (row.code) target.code = true
+  if (row.blockIndex !== null && row.blockIndex !== undefined) target.blockIndex = String(row.blockIndex)
+  target.startLine = String(row.startLine)
+  target.endLine = String(row.endLine)
+  return target
+}
+
+// Stable j/k position across re-renders (row indices alone are not enough).
 function rememberKeyboardFocusTarget(ctx, target) {
   if (!target || !target.filePath) return
   ctx.keyboardFocusTarget = target
@@ -714,22 +771,12 @@ function rememberKeyboardFocusFromForm(ctx, formObj) {
   const target = { filePath: formObj.filePath }
   if (formObj.afterBlockIndex !== null && formObj.afterBlockIndex !== undefined) {
     target.blockIndex = String(formObj.afterBlockIndex)
+  } else if (isCodeFile(formObj.filePath)) {
+    target.code = true
   }
-  if (formObj.startLine) target.startLine = String(formObj.startLine)
+  // A code form sits after its end line; j/k continue from there.
+  if (formObj.startLine) target.startLine = String(target.code ? formObj.endLine : formObj.startLine)
   if (formObj.endLine) target.endLine = String(formObj.endLine)
-  rememberKeyboardFocusTarget(ctx, target)
-}
-
-function rememberKeyboardFocusFromBlock(ctx, block) {
-  if (!block) return
-  const fp = block.dataset.filePath
-  if (!fp) return
-  const target = { filePath: fp }
-  if (block.dataset.blockIndex !== undefined) {
-    target.blockIndex = block.dataset.blockIndex
-  }
-  if (block.dataset.startLine) target.startLine = block.dataset.startLine
-  if (block.dataset.endLine) target.endLine = block.dataset.endLine
   rememberKeyboardFocusTarget(ctx, target)
 }
 
@@ -740,83 +787,95 @@ function clearKeyboardFocusTarget(ctx) {
 function getKeyboardFocusTarget(ctx) {
   if (ctx.keyboardFocusTarget) return ctx.keyboardFocusTarget
   if (ctx.focusedBlockIndex < 0) return null
-  const blocks = ctx.el.querySelectorAll('.line-block')
-  const block = blocks[ctx.focusedBlockIndex]
-  if (!block) return null
-  const target = { filePath: block.dataset.filePath || '' }
-  if (block.dataset.blockIndex !== undefined) {
-    target.blockIndex = block.dataset.blockIndex
-  }
-  if (block.dataset.startLine) target.startLine = block.dataset.startLine
-  if (block.dataset.endLine) target.endLine = block.dataset.endLine
-  return target.filePath ? target : null
+  const row = navRows(ctx)[ctx.focusedBlockIndex]
+  return row && row.filePath ? targetFromRow(row) : null
 }
 
-function findLineBlockForFocusTarget(ctx, target) {
-  if (!target || !target.filePath) return null
-  const blocks = ctx.el.querySelectorAll('.line-block')
-  for (let i = 0; i < blocks.length; i++) {
-    const b = blocks[i]
-    const fp = b.dataset.filePath || ''
-    if (fp !== target.filePath) continue
-    if (target.blockIndex !== undefined && b.dataset.blockIndex === target.blockIndex) {
-      return { el: b, index: i }
+function findRowForFocusTarget(rows, target) {
+  if (!target || !target.filePath) return -1
+  return rows.findIndex(row => {
+    if ((row.filePath || '') !== target.filePath) return false
+    if (target.code || row.code) {
+      return !!row.code && !!target.code && String(row.startLine) === target.startLine
     }
-    if (target.startLine && b.dataset.startLine === target.startLine &&
-        (b.dataset.endLine || target.startLine) === (target.endLine || target.startLine)) {
-      return { el: b, index: i }
-    }
-  }
-  return null
+    if (target.blockIndex !== undefined && row.blockIndex !== null && String(row.blockIndex) === target.blockIndex) return true
+    return !!target.startLine && String(row.startLine) === target.startLine &&
+      String(row.endLine) === (target.endLine || target.startLine)
+  })
 }
 
-function restoreKeyboardFocus(ctx) {
-  const target = getKeyboardFocusTarget(ctx)
-  if (!target) return
-  const match = findLineBlockForFocusTarget(ctx, target)
-  if (!match) return
-  ctx.focusedBlockIndex = match.index
-  if (ctx.multiFile && match.el.dataset.filePath) {
-    ctx.focusedFilePath = match.el.dataset.filePath
-  }
+// Remove every focus cue (document .focused class, code line selection).
+function clearFocusMarks(ctx) {
   const prev = ctx.el.querySelector('.line-block.focused')
   if (prev) prev.classList.remove('focused')
-  // Keep j/k position while a comment form is open, but don't show the highlight
-  // behind the form (textarea focus is the active affordance).
-  if (ctx.activeForms.length > 0) return
-  match.el.classList.add('focused')
+  if (!ctx.visualMode) hideCodeSelection(ctx)
 }
 
-function focusBlock(ctx, index) {
-  const prev = ctx.el.querySelector('.line-block.focused')
-  if (prev) prev.classList.remove('focused')
+function codeLineElement(ctx, filePath, line) {
+  const view = ctx._codeViews && ctx._codeViews.get(filePath)
+  return view ? view.lineElement(line) : null
+}
 
-  const blocks = ctx.el.querySelectorAll('.line-block')
-  if (index < 0 || index >= blocks.length) return
-
-  ctx.focusedBlockIndex = index
-  const block = blocks[index]
-  block.classList.add('focused')
-
-  // Track which file has focus in multi-file mode
-  if (ctx.multiFile && block.dataset.filePath) {
-    ctx.focusedFilePath = block.dataset.filePath
-  }
-  rememberKeyboardFocusFromBlock(ctx, block)
-
+function scrollRowIntoView(el) {
+  if (!el) return
   const header = document.querySelector('.crit-header')
   const offset = header ? header.offsetHeight + 16 : 68
-  const rect = block.getBoundingClientRect()
+  const rect = el.getBoundingClientRect()
   if (rect.top < offset || rect.bottom > window.innerHeight) {
     window.scrollTo({ top: rect.top + window.scrollY - offset, behavior: 'smooth' })
   }
 }
 
+// Draw focus on a row: .focused on a document block, Pierre's line selection
+// on a code line.
+function showRowFocus(ctx, row, scroll) {
+  clearFocusMarks(ctx)
+  if (row.code) {
+    if (!ctx.visualMode) showCodeSelection(ctx, row.filePath, row.startLine, row.endLine)
+    if (scroll) scrollRowIntoView(codeLineElement(ctx, row.filePath, row.startLine))
+  } else {
+    row.el.classList.add('focused')
+    if (scroll) scrollRowIntoView(row.el)
+  }
+}
+
+function restoreKeyboardFocus(ctx) {
+  const target = getKeyboardFocusTarget(ctx)
+  if (!target) return
+  const rows = navRows(ctx)
+  const index = findRowForFocusTarget(rows, target)
+  if (index < 0) return
+  const row = rows[index]
+  ctx.focusedBlockIndex = index
+  if (ctx.multiFile && row.filePath) ctx.focusedFilePath = row.filePath
+  clearFocusMarks(ctx)
+  // Keep j/k position while a comment form is open, but don't show the highlight
+  // behind the form (textarea focus is the active affordance).
+  if (ctx.activeForms.length > 0) return
+  showRowFocus(ctx, row, false)
+}
+
+function focusBlock(ctx, index, rows = navRows(ctx)) {
+  if (index < 0 || index >= rows.length) return
+  const row = rows[index]
+  ctx.focusedBlockIndex = index
+  // Track which file has focus in multi-file mode
+  if (ctx.multiFile && row.filePath) ctx.focusedFilePath = row.filePath
+  rememberKeyboardFocusTarget(ctx, targetFromRow(row))
+  showRowFocus(ctx, row, true)
+}
+
 function clearFocus(ctx) {
   ctx.focusedBlockIndex = -1
   clearKeyboardFocusTarget(ctx)
-  const prev = ctx.el.querySelector('.line-block.focused')
-  if (prev) prev.classList.remove('focused')
+  clearFocusMarks(ctx)
+  hideCodeSelection(ctx)
+}
+
+// The focused row, if any.
+function focusedRow(ctx) {
+  if (ctx.focusedBlockIndex < 0) return null
+  return navRows(ctx)[ctx.focusedBlockIndex] || null
 }
 
 function changeNavAnchor(ctx) {
@@ -934,41 +993,41 @@ function navigateToChange(ctx, direction) {
     ? focusRoot
     : focusRoot.querySelector('.line-block')
   if (blockEl) {
-    const blocks = ctx.el.querySelectorAll('.line-block')
-    for (let i = 0; i < blocks.length; i++) {
-      if (blocks[i] !== blockEl) continue
-      const prev = ctx.el.querySelector('.line-block.focused')
-      if (prev) prev.classList.remove('focused')
-      ctx.focusedBlockIndex = i
+    const rows = navRows(ctx)
+    const index = rows.findIndex(row => row.el === blockEl)
+    if (index >= 0) {
+      clearFocusMarks(ctx)
+      ctx.focusedBlockIndex = index
       ctx.focusedFilePath = target.filePath || blockEl.dataset.filePath || ctx.focusedFilePath
       if (ctx.activeForms.length === 0) blockEl.classList.add('focused')
-      rememberKeyboardFocusFromBlock(ctx, blockEl)
-      break
+      rememberKeyboardFocusTarget(ctx, targetFromRow(rows[index]))
     }
   } else if (target.filePath) {
     ctx.focusedFilePath = target.filePath
   }
 }
 
-// Vim-style visual line mode: anchor on the focused block, extend with j/k.
+// Vim-style visual line mode: anchor on the focused row, extend with j/k.
+// Document blocks show the range with .selected; code lines with Pierre's
+// line selection (crit: pierreVisualAnchor).
 function enterVisualMode(ctx) {
-  if (ctx.focusedBlockIndex < 0) return
-  const lineBlocks = getFocusedLineBlocks(ctx)
-  const block = lineBlocks[ctx.focusedBlockIndex]
-  if (!block) return
+  const row = focusedRow(ctx)
+  if (!row) return
   ctx.visualMode = {
-    anchorStartLine: block.startLine,
-    anchorEndLine: block.endLine,
-    filePath: ctx.focusedFilePath || null,
+    anchorStartLine: row.startLine,
+    anchorEndLine: row.endLine,
+    filePath: row.filePath || null,
+    code: !!row.code,
   }
-  ctx.selectionStart = block.startLine
-  ctx.selectionEnd = block.endLine
+  ctx.selectionStart = row.startLine
+  ctx.selectionEnd = row.endLine
   document.body.classList.add('visual-mode')
   refreshVisualSelectionVisuals(ctx)
 }
 
 function exitVisualMode(ctx, clearSelection) {
   if (!ctx.visualMode) return
+  const wasCode = ctx.visualMode.code
   ctx.visualMode = null
   document.body.classList.remove('visual-mode')
   if (clearSelection) {
@@ -976,145 +1035,58 @@ function exitVisualMode(ctx, clearSelection) {
     ctx.selectionEnd = null
     refreshVisualSelectionVisuals(ctx)
   }
+  // Back to the single focused line.
+  if (wasCode) {
+    hideCodeSelection(ctx)
+    const row = focusedRow(ctx)
+    if (row && row.code) showRowFocus(ctx, row, false)
+  }
 }
 
 function extendVisualSelection(ctx) {
-  if (!ctx.visualMode || ctx.focusedBlockIndex < 0) return
-  const blocks = ctx.el.querySelectorAll('.line-block')
-  const focused = blocks[ctx.focusedBlockIndex]
-  if (!focused) return
-  const focusedFp = focused.dataset.filePath || null
-  if (focusedFp !== (ctx.visualMode.filePath || null)) {
+  const row = ctx.visualMode && focusedRow(ctx)
+  if (!row) return
+  if ((row.filePath || null) !== (ctx.visualMode.filePath || null)) {
     // Crossed file boundary — exit visual mode.
     exitVisualMode(ctx, true)
     return
   }
-  const sLine = parseInt(focused.dataset.startLine)
-  const eLine = parseInt(focused.dataset.endLine)
-  ctx.selectionStart = Math.min(ctx.visualMode.anchorStartLine, sLine)
-  ctx.selectionEnd = Math.max(ctx.visualMode.anchorEndLine, eLine)
+  ctx.selectionStart = Math.min(ctx.visualMode.anchorStartLine, row.startLine)
+  ctx.selectionEnd = Math.max(ctx.visualMode.anchorEndLine, row.endLine)
   refreshVisualSelectionVisuals(ctx)
 }
 
-// Toggle .selected on line-blocks for the currently active visual selection
-// without re-rendering the whole tree. A full render replaces .line-block nodes
-// and breaks the focusedBlockIndex / DOM-position contract j/k relies on.
+// Mark the active visual selection without re-rendering the whole tree. A
+// full render replaces .line-block nodes and breaks the row contract j/k
+// relies on.
 function refreshVisualSelectionVisuals(ctx) {
+  const visual = ctx.visualMode
+  const hasRange = ctx.selectionStart !== null && ctx.selectionEnd !== null
+  if (visual && visual.code) {
+    if (hasRange) showCodeSelection(ctx, visual.filePath, ctx.selectionStart, ctx.selectionEnd)
+    return
+  }
   const blocks = ctx.el.querySelectorAll('.line-block')
-  const fp = ctx.visualMode ? (ctx.visualMode.filePath || null) : null
+  const fp = visual ? (visual.filePath || null) : null
   for (let i = 0; i < blocks.length; i++) {
     const lb = blocks[i]
     const lbFp = lb.dataset.filePath || null
     const sLine = parseInt(lb.dataset.startLine)
     const eLine = parseInt(lb.dataset.endLine)
-    const matches = ctx.selectionStart !== null && ctx.selectionEnd !== null
+    const matches = hasRange
       && (fp === null || lbFp === fp)
       && sLine >= ctx.selectionStart && eLine <= ctx.selectionEnd
     lb.classList.toggle('selected', matches)
   }
 }
 
-// Split highlighted code HTML into per-line chunks,
-// properly handling <span> tags that cross line boundaries.
-function splitHighlightedCode(html) {
-  const rawLines = html.split("\n")
-  const result = []
-  let openTags = []
-
-  for (const rawLine of rawLines) {
-    const prefix = openTags.join("")
-    const newOpenTags = [...openTags]
-    const re = /<(\/?span)([^>]*)>/g
-    let m
-    while ((m = re.exec(rawLine)) !== null) {
-      if (m[1] === "/span") {
-        newOpenTags.pop()
-      } else {
-        newOpenTags.push("<span" + m[2] + ">")
-      }
-    }
-    const suffix = "</span>".repeat(newOpenTags.length)
-    result.push(prefix + rawLine + suffix)
-    openTags = newOpenTags
-  }
-  return result
-}
-
 // ---- Code file detection ----------------------------------------------------
 
-// Most extensions are resolved via hljs's built-in alias system
-// (e.g. .feature → gherkin, .md → markdown, .tsx → typescript, .toml → ini,
-// .scss → scss, .h/.hpp → c/cpp, .yml → yaml, .kt → kotlin, .rb → ruby,
-// .dockerfile → dockerfile, .makefile → makefile). Only extensions that hljs
-// does NOT cover via aliases need entries here.
-const EXT_OVERRIDES = {
-  tf: 'hcl',         // Terraform — hljs has no .tf alias
-  htm: 'xml',        // hljs aliases html but not htm
-  svg: 'xml',
-  cs: 'csharp',
-  sh: 'bash',
-  zig: 'zig',
-  md: 'markdown',    // normalize: callers compare lang against 'markdown'
-  heex: 'heex',
-  leex: 'heex',
-  vue: 'vue',        // third-party grammar (highlightjs-vue shim)
-  astro: 'astro',    // third-party grammar (highlightjs-astro-js)
-}
-// Files identified by basename rather than extension.
-const BASENAME_LANG = {
-  dockerfile: 'dockerfile',
-  makefile: 'makefile',
-  gemfile: 'ruby',
-  rakefile: 'ruby',
-}
-function langFromPath(filePath) {
-  if (!filePath) return null
-  const base = filePath.split('/').pop() || ''
-  const baseLower = base.toLowerCase()
-  if (!baseLower.includes('.') && BASENAME_LANG[baseLower]) {
-    return BASENAME_LANG[baseLower]
-  }
-  const ext = baseLower.includes('.') ? baseLower.split('.').pop() : ''
-  if (ext && EXT_OVERRIDES[ext]) return EXT_OVERRIDES[ext]
-  if (ext && hljs.getLanguage(ext)) return ext
-  return BASENAME_LANG[baseLower] || null
-}
-
+// crit's detectFileType: .md/.markdown/.mdown files are rendered markdown;
+// everything else is a code file (Pierre picks the grammar from the name).
 function isCodeFile(filePath) {
-  const lang = langFromPath(filePath)
-  return lang !== null && lang !== 'markdown'
-}
-
-function buildCodeLineBlocks(content, filePath) {
-  const lines = content.split('\n')
-  const lang = langFromPath(filePath)
-  let highlightedLines = null
-
-  if (lang && hljs.getLanguage(lang)) {
-    try {
-      const highlighted = hljs.highlight(content, { language: lang, ignoreIllegals: true }).value
-      highlightedLines = splitHighlightedCode(highlighted)
-    } catch (_) {}
-  }
-
-  const blocks = []
-  for (let i = 0; i < lines.length; i++) {
-    const lineNum = i + 1
-    let html
-    if (highlightedLines && highlightedLines[i]) {
-      html = '<code class="hljs">' + highlightedLines[i] + '</code>'
-    } else {
-      html = '<code class="hljs">' + escapeHtml(lines[i] || '') + '</code>'
-    }
-    blocks.push({
-      startLine: lineNum,
-      endLine: lineNum,
-      html: html,
-      isEmpty: lines[i].trim() === '',
-      cssClass: 'code-line'
-    })
-  }
-  return blocks
+  if (!filePath) return false
+  return !/\.(?:md|markdown|mdown)$/i.test(filePath)
 }
 
 // ---- Mermaid ----------------------------------------------------------------
@@ -1429,13 +1401,45 @@ function decorateMermaidBlocks(container) {
   })
 }
 
+function getMermaidTheme() {
+  const dataTheme = document.documentElement.getAttribute("data-theme")
+  if (dataTheme === "light") return "default"
+  if (dataTheme === "dark") return "dark"
+  // System theme: check prefers-color-scheme
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "default" : "dark"
+}
+
+// Diagrams follow the reader's theme palette (--crit-palette-*, set by
+// CritWeb.ThemePalette on review pages). Same mapping as crit.
+function mermaidOptions() {
+  if (!document.documentElement.hasAttribute("data-crit-palette")) return { startOnLoad: false, theme: getMermaidTheme() }
+  const css = getComputedStyle(document.documentElement)
+  const role = name => css.getPropertyValue("--crit-palette-" + name).trim()
+  return { startOnLoad: false, theme: "base", themeVariables: {
+    darkMode: getMermaidTheme() === "dark", background: role("bg"),
+    primaryColor: role("surface"), primaryTextColor: role("fg"), primaryBorderColor: role("border"),
+    secondaryColor: role("elevated"), tertiaryColor: role("bg"), lineColor: role("muted"),
+    textColor: role("fg"), mainBkg: role("surface"), nodeBorder: role("border"),
+    edgeLabelBackground: role("bg"), fontFamily: css.getPropertyValue("--crit-font-body").trim(),
+  } }
+}
+
 async function initMermaid() {
   if (mermaidReady) return
   const { default: mermaid } = await import("mermaid")
-  const theme = document.documentElement.getAttribute("data-theme") === "light" ? "default" : "dark"
-  mermaid.initialize({ startOnLoad: false, theme })
+  mermaid.initialize(mermaidOptions())
   window.__critMermaid = mermaid
   mermaidReady = true
+}
+
+// Theme or palette changed: rendered diagrams keep the old colours, so
+// re-initialize and re-render them (a render rebuilds them as pending).
+function rethemeMermaid(ctx) {
+  closeMermaidOverlay()
+  const mermaid = window.__critMermaid
+  if (!mermaid || !ctx.el.querySelector(".mermaid-rendered")) return
+  mermaid.initialize(mermaidOptions())
+  render(ctx)
 }
 
 async function renderMermaidBlocks(container) {
@@ -1482,6 +1486,46 @@ function rewriteFrontmatterAsYamlFence(content) {
   }
 
   return content
+}
+
+// Fenced code blocks of markdown documents, for codeHighlight.prime. Same
+// parse as buildLineBlocks (frontmatter becomes a yaml fence); mermaid is
+// rendered as a diagram, not highlighted.
+function fencesIn(md, content) {
+  return md.parse(rewriteFrontmatterAsYamlFence(content || ""), {})
+    .filter(t => t.type === "fence")
+    .map(t => ({ code: t.content, lang: t.info.trim().split(/\s+/)[0] }))
+    .filter(f => f.lang && f.lang !== "mermaid")
+}
+
+// Tokenize every fence of the given documents in Pierre's workers, so the
+// synchronous buildLineBlocks that follows renders them highlighted.
+function primeFences(ctx, contents) {
+  const fences = []
+  for (const content of contents) {
+    if (typeof content === "string" && content) fences.push(...fencesIn(ctx.md, content))
+  }
+  return codeHighlight.prime(fences)
+}
+
+// Rebuild every rendered document's line blocks after the theme changed:
+// fence token colours belong to the theme, so fences are re-primed first.
+// Diagrams pick up the new palette on the same render.
+async function rebuildDocuments(ctx) {
+  const seq = ctx._rebuildSeq = (ctx._rebuildSeq || 0) + 1
+  const documents = ctx.multiFile
+    ? ctx.files.filter(f => f.fileType !== 'code' && !f.orphaned)
+    : (isCodeFile(ctx.singleFilePath) ? [] : [{ content: ctx.rawContent }])
+  const snapshots = Object.entries(ctx.prevRoundSnapshots || {}).filter(([path]) => !isCodeFile(path)).map(([, content]) => content)
+  await primeFences(ctx, documents.map(d => d.content).concat(snapshots))
+  if (seq !== ctx._rebuildSeq || ctx._destroyed) return
+  if (ctx.multiFile) {
+    for (const file of documents) file.lineBlocks = buildLineBlocks(ctx.md, file.content)
+  } else if (documents.length) {
+    ctx.lineBlocks = buildLineBlocks(ctx.md, ctx.rawContent)
+  }
+  if (window.__critMermaid) window.__critMermaid.initialize(mermaidOptions())
+  render(ctx)
 }
 
 function buildLineBlocks(md, rawContent) {
@@ -1689,14 +1733,9 @@ function buildLineBlocks(md, rawContent) {
         continue
       }
 
-      let highlighted
-      if (lang && hljs.getLanguage(lang)) {
-        try { highlighted = hljs.highlight(code, { language: lang }).value } catch (_) { highlighted = escapeHtml(code) }
-      } else {
-        highlighted = escapeHtml(code)
-      }
-
-      const codeLines = splitHighlightedCode(highlighted)
+      // Shiki lines primed before this synchronous build (primeFences);
+      // plain text for unknown languages. Copy: the cache owns its array.
+      const codeLines = ((lang && codeHighlight.lines(code, lang)) || code.split("\n").map(escapeHtml)).slice()
       while (codeLines.length > 0 && codeLines[codeLines.length - 1].replace(/<[^>]*>/g, "").trim() === "") {
         codeLines.pop()
       }
@@ -1713,7 +1752,7 @@ function buildLineBlocks(md, rawContent) {
       for (let ci = 0; ci < codeLines.length; ci++) {
         blocks.push({
           startLine: fenceOpen + 2 + ci, endLine: fenceOpen + 2 + ci,
-          html: '<code class="hljs">' + (codeLines[ci] || "&nbsp;") + "</code>",
+          html: '<code class="crit-code">' + (codeLines[ci] || "&nbsp;") + "</code>",
           isEmpty: false, cssClass: "code-line code-mid",
         })
       }
@@ -2201,7 +2240,13 @@ function setHideResolved(ctx, value) {
   if (ctx) ctx._hideResolved = next
   localStorage.setItem('crit-hide-resolved', next ? 'true' : 'false')
   applyHideResolved(ctx)
-  if (ctx) refreshCommentHighlights(ctx)
+  if (ctx) {
+    refreshCommentHighlights(ctx)
+    // Code files drop resolved threads (and their line tints) from Pierre.
+    if (ctx._codeViews) {
+      for (const view of ctx._codeViews.values()) refreshCodeFile(ctx, view.path)
+    }
+  }
 }
 
 // ---- Tracked timers ---------------------------------------------------------
@@ -2228,6 +2273,8 @@ function render(ctx) {
   }
   renderReviewConversation(ctx)
   applyHideResolved(ctx)
+  pruneCodeViews(ctx)
+  syncCodeRanges(ctx)
   restoreKeyboardFocus(ctx)
   buildChangeGroups(ctx)
 }
@@ -2669,6 +2716,229 @@ function renderRenderedDiffUnified(ctx, md, file, prevContent) {
   return container
 }
 
+// ===== Code files (Pierre) =====
+// Code files render through Pierre's File component (code-file-view.js), as
+// crit renders files-mode code files: Shiki highlighting, line numbers, the
+// hover "+" and gutter range selection, comment threads and open forms as line
+// annotations. Views are kept per path across render(ctx): a render moves each
+// view's element into the new section and re-publishes its annotations, so a
+// comment or form change never re-highlights the file.
+
+// Shadow-root decorations shared by every code view: comment-range and
+// open-form line tints (one adopted stylesheet), quote highlights, labels.
+const pierreDecorations = pierreDOM.createDecorations()
+
+function codeViewOptions(ctx) {
+  return { display: displayOptions(), themeType: themeType(), commentable: ctx.canComment !== false }
+}
+
+function commentsForPath(ctx, filePath) {
+  if (!ctx.multiFile) return ctx.comments
+  const file = ctx.files.find(f => f.path === filePath)
+  return file ? file.comments : []
+}
+
+// Forms opened on a file. Single-file reviews may hold forms without a path
+// (opened before the path was known); they belong to the one file.
+function formsForPath(ctx, filePath) {
+  return ctx.activeForms.filter(f => (f.filePath || (ctx.multiFile ? null : ctx.singleFilePath)) === filePath)
+}
+
+function codeFileAnnotations(ctx, view) {
+  return annotationsForCodeFile({
+    comments: commentsForPath(ctx, view.path),
+    forms: formsForPath(ctx, view.path),
+    lineTotal: view.lineTotal,
+    hideResolved: isHideResolved(ctx),
+  })
+}
+
+function buildCodeAnnotation(ctx, filePath, metadata) {
+  let el = null
+  if (metadata.kind === 'thread') {
+    const comment = commentsForPath(ctx, filePath).find(c => c.id === metadata.id)
+    const editForm = findFormForEdit(ctx, metadata.id)
+    if (editForm && editForm.codeAnnotation) return editForm.codeAnnotation
+    if (comment) el = createCommentElement(comment, ctx)
+    if (editForm) editForm.codeAnnotation = el
+  } else if (metadata.kind === 'form') {
+    const form = ctx.activeForms.find(f => f.formKey === metadata.id)
+    if (form) el = createCommentForm(form, ctx)
+  }
+  if (el) el.classList.add('pierre-annotation')
+  return el
+}
+
+// Quoted text of comments and open forms, highlighted inside the file's
+// shadow root (CSS Custom Highlight API, crit-pierre-dom.js).
+function codeQuotes(ctx, filePath) {
+  const quoted = commentsForPath(ctx, filePath)
+    .filter(c => c.quote && !c.resolved && c.scope !== 'file' && c.scope !== 'review')
+    .map(c => ({ start: c.start_line, end: c.end_line, side: '', quote: c.quote, offset: c.quote_offset }))
+  for (const f of formsForPath(ctx, filePath)) {
+    if (f.quote && !f.editingId) quoted.push({ start: f.startLine, end: f.endLine, side: '', quote: f.quote, offset: f.quoteOffset })
+  }
+  return quoted
+}
+
+function codeViewFor(ctx, filePath, content) {
+  const P = window.PierreDiffs
+  if (!P) return null
+  if (!ctx._codeViews) ctx._codeViews = new Map()
+  let view = ctx._codeViews.get(filePath)
+  if (view && view.content !== content) {
+    view.destroy()
+    view = null
+  }
+  if (view) return view
+  view = createCodeFileView({
+    P,
+    pool: workerPool(),
+    path: filePath,
+    content,
+    options: codeViewOptions(ctx),
+    handlers: {
+      buildAnnotation: metadata => buildCodeAnnotation(ctx, filePath, metadata),
+      onGutterRange: range => openForm(ctx, {
+        filePath, afterBlockIndex: null, startLine: range.startLine, endLine: range.endLine, editingId: null,
+      }),
+      onTouchLine: line => openForm(ctx, {
+        filePath, afterBlockIndex: null, startLine: line, endLine: line, editingId: null,
+      }),
+      // Pierre pins its hover "+" to a selected line, so keyboard focus drawn
+      // with the line selection hides while the mouse is over code (crit:
+      // pierreLineEnter). The focus itself stays; j/k continue from it.
+      onLineEnter: props => {
+        if (props.event && props.event.pointerType === 'mouse' && !ctx.visualMode) hideCodeSelection(ctx)
+      },
+      onPostRender: (host, phase) => {
+        if (!host) return
+        if (phase === 'unmount') pierreDecorations.unmount(host)
+        else pierreDecorations.mount(host, filePath, codeQuotes(ctx, filePath))
+      },
+    },
+  })
+  ctx._codeViews.set(filePath, view)
+  return view
+}
+
+function codeRendererError() {
+  const el = document.createElement('div')
+  el.className = 'diff-deleted-placeholder crit-code-load-error'
+  el.setAttribute('role', 'alert')
+  el.textContent = 'The code renderer failed to load. Reload the page to try again.'
+  return el
+}
+
+// Mount a code file's view into `body` and publish its annotations.
+function renderCodeBody(ctx, filePath, content, body) {
+  const view = codeViewFor(ctx, filePath, content)
+  if (!view) {
+    body.appendChild(codeRendererError())
+    return
+  }
+  body.appendChild(view.element)
+  view.update(codeFileAnnotations(ctx, view))
+}
+
+// Re-publish one code file's annotations (comment added/removed/resolved).
+// Returns false when the path is not a rendered code file.
+function refreshCodeFile(ctx, filePath) {
+  const view = ctx._codeViews && ctx._codeViews.get(filePath || (ctx.multiFile ? null : ctx.singleFilePath))
+  if (!view || !view.element.isConnected) return false
+  const focused = document.activeElement
+  const editing = focused && view.element.contains(focused) && focused.matches('.comment-form textarea')
+  view.update(codeFileAnnotations(ctx, view))
+  // Removing an earlier annotation can change Pierre's slot index. The
+  // cached editor survives, but its brief detachment drops browser focus.
+  if (editing) requestAnimationFrame(() => {
+    if (focused.isConnected && document.activeElement === document.body) focused.focus({ preventScroll: true })
+  })
+  syncCodeRanges(ctx)
+  return true
+}
+
+// Views whose file is no longer on the page (review reloaded with other
+// files) are torn down after a render.
+function pruneCodeViews(ctx) {
+  if (!ctx._codeViews) return
+  for (const [path, view] of ctx._codeViews) {
+    if (!view.element.isConnected) {
+      view.destroy()
+      ctx._codeViews.delete(path)
+    }
+  }
+}
+
+// Line tints like the document's .has-comment / .form-selected blocks: lines a
+// comment covers, and the range of each open form. Pierre has no per-line
+// decoration option, so this is CSS in its shadow roots keyed on the host's
+// data-crit-path (crit: pierreCommentRangeCSS).
+function syncCodeRanges(ctx) {
+  const hideResolved = isHideResolved(ctx)
+  const commented = []
+  const forming = []
+  for (const view of (ctx._codeViews ? ctx._codeViews.values() : [])) {
+    const file = { path: view.path }
+    const commentRanges = commentsForPath(ctx, view.path)
+      .filter(c => c.scope !== 'file' && c.scope !== 'review' && c.start_line && c.end_line && !(hideResolved && c.resolved))
+      .map(c => ({ start: c.start_line, end: c.end_line }))
+    const formRanges = formsForPath(ctx, view.path)
+      .filter(f => !f.editingId && f.scope !== 'file' && f.scope !== 'review' && f.startLine)
+      .map(f => ({ start: f.startLine, end: f.endLine }))
+    commented.push(...pierreDOM.pierreLineSelectors(file, commentRanges, false, true, []))
+    forming.push(...pierreDOM.pierreLineSelectors(file, formRanges, false, true, []))
+  }
+  let css = ''
+  if (commented.length) css += Array.from(new Set(commented)).join(',\n') + ' { background-color: var(--crit-comment-range-bg); }'
+  if (forming.length) css += Array.from(new Set(forming)).join(',\n') + ' { background-color: var(--crit-brand-subtle); }'
+  pierreDecorations.setRangeCSS(css)
+}
+
+// Display settings, theme or theme type changed: every code view re-renders
+// with the current options.
+function refreshCodeViewOptions(ctx) {
+  if (!ctx._codeViews) return
+  const options = codeViewOptions(ctx)
+  for (const view of ctx._codeViews.values()) view.setOptions(options)
+}
+
+// Keyboard focus in code is drawn with Pierre's line selection.
+function showCodeSelection(ctx, filePath, start, end) {
+  const view = ctx._codeViews && ctx._codeViews.get(filePath)
+  if (!view) return null
+  if (ctx._codeSelectionView && ctx._codeSelectionView !== view) ctx._codeSelectionView.setSelectedLines(null)
+  view.setSelectedLines({ start, end })
+  ctx._codeSelectionView = view
+  return view
+}
+
+function hideCodeSelection(ctx) {
+  if (!ctx._codeSelectionView) return
+  ctx._codeSelectionView.setSelectedLines(null)
+  ctx._codeSelectionView = null
+}
+
+// Comments on lines past the end of a code file, shown with the file-level
+// comments (crit: the "outdated" block).
+function buildOutdatedComments(ctx, comments) {
+  const section = document.createElement('div')
+  section.className = 'outdated-diff-comments'
+  for (const c of comments) {
+    const el = createCommentElement(c, ctx)
+    el.classList.add('outdated-comment')
+    const headerLeft = el.querySelector('.comment-header-left')
+    if (headerLeft) {
+      const badge = document.createElement('span')
+      badge.className = 'outdated-badge'
+      badge.textContent = 'Outdated'
+      headerLeft.appendChild(badge)
+    }
+    section.appendChild(el)
+  }
+  return section
+}
+
 function renderFileSection(ctx, file) {
   const section = document.createElement('details')
   section.className = 'file-section'
@@ -2767,7 +3037,11 @@ function renderFileSection(ctx, file) {
   // For orphaned files, render ALL comments here (no line blocks to anchor to)
   const isOrphaned = file.orphaned
   const displayComments = isOrphaned ? file.comments : fileComments
-  if (displayComments.length > 0 || (!isOrphaned && ctx.activeForms.some(f => f.scope === 'file' && f.filePath === file.path))) {
+  // Code-file comments on lines the file no longer has
+  const outdatedComments = (!isOrphaned && file.fileType === 'code')
+    ? file.comments.filter(c => isOutdatedLineComment(c, lineCount(file.content)) && !(c.resolved && isHideResolved(ctx)))
+    : []
+  if (displayComments.length > 0 || outdatedComments.length > 0 || (!isOrphaned && ctx.activeForms.some(f => f.scope === 'file' && f.filePath === file.path))) {
     const fileCommentsContainer = document.createElement('div')
     fileCommentsContainer.className = 'file-comments'
     for (const c of displayComments) {
@@ -2782,12 +3056,15 @@ function renderFileSection(ctx, file) {
         fileCommentsContainer.appendChild(renderCommentFormUI(ctx, fileForm))
       }
     }
+    if (outdatedComments.length > 0) {
+      fileCommentsContainer.appendChild(buildOutdatedComments(ctx, outdatedComments))
+    }
     section.appendChild(fileCommentsContainer)
   }
 
   // File body — render using renderBlock per block, or diff view if round diff is active
   const body = document.createElement('div')
-  body.className = 'file-body' + (file.fileType === 'code' ? ' code-document' : '')
+  body.className = 'file-body' + (file.fileType === 'code' ? ' crit-code-body' : '')
 
   if (file.orphaned) {
     // Orphaned files show a placeholder instead of content
@@ -2795,9 +3072,11 @@ function renderFileSection(ctx, file) {
     placeholder.className = 'diff-deleted-placeholder orphaned-placeholder'
     placeholder.textContent = 'This file is no longer part of the review.'
     body.appendChild(placeholder)
+  } else if (file.fileType === 'code') {
+    renderCodeBody(ctx, file.path, file.content, body)
   } else {
     const prevContent = ctx.prevRoundSnapshots[file.path]
-    if (ctx.showRoundDiff && prevContent != null && file.fileType !== 'code') {
+    if (ctx.showRoundDiff && prevContent != null) {
       // Round diff mode — render split or unified diff view
       const isSplit = ctx.diffMode === 'split'
       body.classList.toggle('diff-split', isSplit)
@@ -2810,10 +3089,7 @@ function renderFileSection(ctx, file) {
       const commentedLineSet = buildCommentedLineSet(file.comments, ctx)
       appendDocumentBlocks(ctx, body, file.lineBlocks, commentsMap, commentedLineSet, file.path)
     }
-
-    if (file.fileType !== 'code') {
-      replaceBrokenImages(body)
-    }
+    replaceBrokenImages(body)
   }
 
   section.appendChild(body)
@@ -3298,6 +3574,18 @@ function renderDocument(ctx) {
     }
   }
   container.classList.remove('round-diff-split')
+
+  // Single code file: Pierre File, no line blocks.
+  if (isCodeFile(ctx.singleFilePath)) {
+    const outdated = ctx.comments.filter(c => isOutdatedLineComment(c, lineCount(ctx.rawContent)) && !(c.resolved && isHideResolved(ctx)))
+    if (outdated.length > 0) container.appendChild(buildOutdatedComments(ctx, outdated))
+    const body = document.createElement('div')
+    body.className = 'file-body crit-code-body'
+    container.appendChild(body)
+    renderCodeBody(ctx, ctx.singleFilePath, ctx.rawContent, body)
+    updateCommentCount(ctx)
+    return
+  }
 
   const commentsMap = buildCommentsMap(ctx.comments)
   const commentedLineSet = buildCommentedLineSet(ctx.comments, ctx)
@@ -3818,8 +4106,9 @@ function createInlineEditor(comment, formObj, ctx) {
 
   const textarea = document.createElement("textarea")
   textarea.placeholder = "Leave a review comment… (Ctrl+Enter to submit, Escape to cancel)"
-  textarea.value = comment.body
+  textarea.value = formObj.draftBody ?? comment.body
   textarea.dataset.formKey = formObj.formKey
+  textarea.addEventListener('input', () => { formObj.draftBody = textarea.value })
 
   textarea.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
@@ -4451,6 +4740,14 @@ function renderCommentFormUI(ctx, formObj) {
 
 // ---- Delta sync DOM helpers -------------------------------------------------
 
+// The rendered code view a line comment belongs to, if its file is code.
+function codeViewForComment(ctx, comment) {
+  if (!ctx._codeViews) return null
+  const path = ctx.multiFile ? comment.file_path : ctx.singleFilePath
+  const view = path ? ctx._codeViews.get(path) : null
+  return view && view.element.isConnected ? view : null
+}
+
 function insertInlineComment(ctx, comment) {
   if (comment.scope === 'review') return // review-scope comments are panel-only
   if (comment.scope === 'file') {
@@ -4473,8 +4770,16 @@ function insertInlineComment(ctx, comment) {
     }
     return
   }
-  // Line-scope: find the .line-block for end_line, append after it
+  // Line-scope in a code file: Pierre annotation. A comment past the end of
+  // the file is listed as outdated, which a full render places.
   if (!comment.end_line) return
+  const codeView = codeViewForComment(ctx, comment)
+  if (codeView) {
+    if (isOutdatedLineComment(comment, codeView.lineTotal)) render(ctx)
+    else refreshCodeFile(ctx, codeView.path)
+    return
+  }
+  // Line-scope: find the .line-block for end_line, append after it
   const lineBlocks = ctx.el.querySelectorAll('.line-block')
   let targetBlock = null
   for (const lb of lineBlocks) {
@@ -4517,6 +4822,12 @@ function insertInlineComment(ctx, comment) {
 }
 
 function removeInlineComment(ctx, comment) {
+  const codeView = comment.scope !== 'file' && codeViewForComment(ctx, comment)
+  if (codeView) {
+    if (isOutdatedLineComment(comment, codeView.lineTotal)) render(ctx)
+    else refreshCodeFile(ctx, codeView.path)
+    return
+  }
   // Remove inline DOM
   const card = ctx.el.querySelector(`.comment-card[data-comment-id="${comment.id}"]`)
   if (card) {
@@ -5187,6 +5498,9 @@ function applyWidth(choice) {
 
 function filesSettingsAdapter(ctx) {
   return {
+    rendererSettings: 'files',
+    changeRendererSetting: (key, value) => changeRendererSetting(key, value, (event, payload) =>
+      new Promise(resolve => ctx.pushEvent(event, payload, reply => resolve(reply)))),
     showWidth: true,
     readWidth: () => localStorage.getItem('crit-width') || 'default',
     applyWidth: applyWidth,
@@ -5260,21 +5574,42 @@ export const DocumentRenderer = {
     initWidth()
     ctx._settings = createSettingsPanel(filesSettingsAdapter(ctx))
 
+    // Code renderer: fences tokenize in Pierre's worker pool; fences in
+    // comments render plain and are highlighted once mounted. Code views
+    // re-render when display settings, the theme or the theme type change.
+    configureCodeHighlight()
+    ctx._stopWatchingCode = watchCodeBlocks(document.body)
+    ctx._stopRendererUpdates = onRendererChange(kind => {
+      refreshCodeViewOptions(ctx)
+      // New token colours: fences baked into line blocks are rebuilt.
+      if (kind === 'theme') rebuildDocuments(ctx)
+    })
+    ctx._themeHandler = () => {
+      refreshCodeViewOptions(ctx)
+      rethemeMermaid(ctx)
+    }
+    window.addEventListener('phx:set-theme', ctx._themeHandler)
+    ctx._storageThemeHandler = event => {
+      if (event.key === 'phx:theme') ctx._themeHandler()
+    }
+    window.addEventListener('storage', ctx._storageThemeHandler)
+    // "System" follows the OS: diagrams take the other palette half.
+    ctx._systemThemeHandler = () => { if (themeChoice() === 'system') rethemeMermaid(ctx) }
+    ctx._systemThemeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null
+    if (ctx._systemThemeQuery) ctx._systemThemeQuery.addEventListener('change', ctx._systemThemeHandler)
+
     const rawContent = ctx.el.dataset.content || ""
     ctx.rawContent = rawContent
     ctx.reviewToken = window.location.pathname.split('/').pop()
 
     // Build the markdown parser (same config as crit)
+    // Fences are Shiki lines from codeHighlight's cache, primed before each
+    // build (primeFences); unknown languages render plain.
     const md = markdownit({
       html: true,
       typographer: true,
       linkify: true,
-      highlight(str, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-          try { return hljs.highlight(str, { language: lang }).value } catch (_) {}
-        }
-        return ""
-      },
+      highlight: (str, lang) => codeHighlight.html(str, lang),
     })
     // Disable (c)/(r)/(tm) → ©/®/™ replacements so enumerated options render
     // literally. Keep typographer (smart quotes) and disable only replacements.
@@ -5473,6 +5808,10 @@ export const DocumentRenderer = {
     commentsResizer.setAttribute('tabindex', '0')
     commentsResizer.setAttribute('aria-orientation', 'vertical')
     commentsResizer.setAttribute('aria-label', 'Resize comments panel')
+    // A focusable separator needs a value (same attributes as crit's handles).
+    commentsResizer.setAttribute('aria-valuenow', '50')
+    commentsResizer.setAttribute('aria-valuemin', '0')
+    commentsResizer.setAttribute('aria-valuemax', '100')
     mainLayout.appendChild(commentsResizer)
     mainLayout.appendChild(commentsPanel)
     ctx._commentsPanel = commentsPanel
@@ -5506,15 +5845,27 @@ export const DocumentRenderer = {
       ctx.canComment = next
       if (changed && ctx.md) {
         ctx.activeForms = ctx.activeForms.filter((f) => f.editingId)
+        // Code views keep their Pierre options across renders: the gutter "+"
+        // and tap-to-comment follow the new policy.
+        refreshCodeViewOptions(ctx)
         render(ctx)
       }
     })
 
-    ctx.handleEvent("init", ({ comments, display_name, files, can_comment, is_admin }) => {
+    ctx.handleEvent("init", async ({ comments, display_name, files, can_comment, is_admin }) => {
+      // The code renderer and each document's fence grammars load before the
+      // first build, so code and fences paint highlighted (crit does the
+      // same while loading files). Both resolve (plain text) on failure.
+      const initSeq = ctx._initSeq = (ctx._initSeq || 0) + 1
+      // Publish the snapshot before yielding: LiveView can deliver comment
+      // deltas and policy changes while the renderer is still loading.
       ctx.displayName = display_name || null
       ctx.comments = comments
       ctx.canComment = can_comment !== false
       ctx.isAdmin = is_admin === true
+      await loadPierre()
+      await primeFences(ctx, (files || []).filter(f => !isCodeFile(f.path)).map(f => f.content))
+      if (initSeq !== ctx._initSeq || ctx._destroyed) return
 
       if (files && files.length > 1) {
         ctx.multiFile = true
@@ -5526,10 +5877,9 @@ export const DocumentRenderer = {
             content: f.content,
             position: f.position,
             fileType: isCodeFile(f.path) ? 'code' : 'markdown',
-            lineBlocks: orphaned ? [] : (isCodeFile(f.path)
-              ? buildCodeLineBlocks(f.content, f.path)
-              : buildLineBlocks(md, f.content)),
-            comments: comments.filter(c => c.file_path === f.path),
+            // Code files render through Pierre (renderCodeBody), not blocks.
+            lineBlocks: orphaned || isCodeFile(f.path) ? [] : buildLineBlocks(md, f.content),
+            comments: ctx.comments.filter(c => c.file_path === f.path),
             collapsed: orphaned || generated,
             viewed: false,
             generated,
@@ -5542,9 +5892,7 @@ export const DocumentRenderer = {
         const f = files[0]
         ctx.rawContent = f.content
         ctx.singleFilePath = f.path
-        ctx.lineBlocks = isCodeFile(f.path)
-          ? buildCodeLineBlocks(f.content, f.path)
-          : buildLineBlocks(md, f.content)
+        ctx.lineBlocks = isCodeFile(f.path) ? [] : buildLineBlocks(md, f.content)
         // Rebuild TOC with actual content (mount ran before content arrived).
         // ctx.rebuildToc updates the items used by scroll spy and re-runs
         // the auto-open heuristic now that we know there are headings.
@@ -5617,11 +5965,19 @@ export const DocumentRenderer = {
       const comment = ctx.comments.find(c => c.id === id)
       if (!comment) return
       comment.resolved = resolved
-      // Re-render just this comment inline (resolved/unresolved have different renderers)
-      const block = ctx.el.querySelector(`.comment-block:has(> .comment-card[data-comment-id="${id}"])`)
-      if (block) {
-        const newEl = createCommentElement(comment, ctx)
-        block.replaceWith(newEl)
+      // Re-render just this comment inline (resolved/unresolved have different
+      // renderers). In a code file the thread is a Pierre annotation, rebuilt
+      // with the file's annotations (hide-resolved drops it there).
+      const codeView = comment.scope !== 'file' && codeViewForComment(ctx, comment)
+      if (codeView) {
+        if (isOutdatedLineComment(comment, codeView.lineTotal)) render(ctx)
+        else refreshCodeFile(ctx, codeView.path)
+      } else {
+        const block = ctx.el.querySelector(`.comment-block:has(> .comment-card[data-comment-id="${id}"])`)
+        if (block) {
+          const newEl = createCommentElement(comment, ctx)
+          block.replaceWith(newEl)
+        }
       }
       applyHideResolved(ctx)
       updateCommentCount(ctx)
@@ -5713,7 +6069,11 @@ export const DocumentRenderer = {
       rerenderPanel(ctx)
     })
 
-    ctx.handleEvent("round_diff_updated", ({ enabled, snapshots }) => {
+    ctx.handleEvent("round_diff_updated", async ({ enabled, snapshots }) => {
+      const seq = ctx._roundDiffSeq = (ctx._roundDiffSeq || 0) + 1
+      // The previous round's fences highlight like the current ones.
+      await primeFences(ctx, Object.entries(snapshots || {}).filter(([path]) => !isCodeFile(path)).map(([, content]) => content))
+      if (seq !== ctx._roundDiffSeq || ctx._destroyed) return
       ctx.showRoundDiff = enabled
       ctx.prevRoundSnapshots = snapshots || {}
       render(ctx)
@@ -5732,6 +6092,22 @@ export const DocumentRenderer = {
     // Returns true if a form was opened from an active selection.
     const tryOpenFormFromSelection = () => {
       const selection = window.getSelection()
+      // A selection inside a code file lives in Pierre's shadow root; only its
+      // composed range knows the lines (crit-pierre-dom.js).
+      const code = pierreDOM.pierreSelectionForComment(selection)
+      if (code) {
+        selection.removeAllRanges()
+        openForm(ctx, {
+          filePath: code.filePath,
+          afterBlockIndex: null,
+          startLine: code.startLine,
+          endLine: code.endLine,
+          editingId: null,
+          quote: code.quote,
+          quoteOffset: code.quoteOffset,
+        })
+        return true
+      }
       const range = getLineRangeFromSelection(selection)
       if (!range) return false
 
@@ -5883,21 +6259,34 @@ export const DocumentRenderer = {
         return
       }
 
-      const blocks = ctx.el.querySelectorAll('.line-block')
-      const blockCount = blocks.length
+      const rows = navRows(ctx)
+      const rowCount = rows.length
+
+      // Own comment ending on the focused row (e / d shortcuts).
+      const ownCommentOnFocusedRow = () => {
+        const row = rows[ctx.focusedBlockIndex]
+        if (!row) return null
+        return ctx.comments.find(c =>
+          isOwnComment(c, ctx) &&
+          c.end_line >= row.startLine && c.end_line <= row.endLine &&
+          sameFile(ctx, c.file_path, row.filePath)
+        ) || null
+      }
 
       switch (shortcutAction || e.key) {
         case 'next_block': {
           e.preventDefault()
-          const next = ctx.focusedBlockIndex < blockCount - 1 ? ctx.focusedBlockIndex + 1 : 0
-          focusBlock(ctx, next)
+          if (rowCount === 0) break
+          const next = ctx.focusedBlockIndex < rowCount - 1 ? ctx.focusedBlockIndex + 1 : 0
+          focusBlock(ctx, next, rows)
           if (ctx.visualMode) extendVisualSelection(ctx)
           break
         }
         case 'previous_block': {
           e.preventDefault()
-          const prev = ctx.focusedBlockIndex > 0 ? ctx.focusedBlockIndex - 1 : blockCount - 1
-          focusBlock(ctx, prev)
+          if (rowCount === 0) break
+          const prev = ctx.focusedBlockIndex > 0 ? ctx.focusedBlockIndex - 1 : rowCount - 1
+          focusBlock(ctx, prev, rows)
           if (ctx.visualMode) extendVisualSelection(ctx)
           break
         }
@@ -5915,82 +6304,58 @@ export const DocumentRenderer = {
           // Visual mode: comment on the active selection.
           if (ctx.visualMode && ctx.selectionStart !== null && ctx.selectionEnd !== null) {
             const fp = ctx.visualMode.filePath
-            const lineBlocks = fp
-              ? (ctx.files.find(f => f.path === fp)?.lineBlocks || [])
-              : ctx.lineBlocks
-            let lastBlockIndex = -1
-            for (let i = 0; i < lineBlocks.length; i++) {
-              if (lineBlocks[i].startLine >= ctx.selectionStart && lineBlocks[i].endLine <= ctx.selectionEnd) {
-                lastBlockIndex = i
+            const startLine = ctx.selectionStart
+            const endLine = ctx.selectionEnd
+            // Document forms sit after the last selected block; code forms
+            // after their end line.
+            let afterBlockIndex = null
+            if (!ctx.visualMode.code) {
+              const lineBlocks = fp && ctx.multiFile
+                ? (ctx.files.find(f => f.path === fp)?.lineBlocks || [])
+                : ctx.lineBlocks
+              afterBlockIndex = -1
+              for (let i = 0; i < lineBlocks.length; i++) {
+                if (lineBlocks[i].startLine >= startLine && lineBlocks[i].endLine <= endLine) afterBlockIndex = i
               }
+              if (afterBlockIndex < 0) break
             }
-            if (lastBlockIndex >= 0) {
-              const startLine = ctx.selectionStart
-              const endLine = ctx.selectionEnd
-              ctx.visualMode = null
-              document.body.classList.remove('visual-mode')
-              openForm(ctx, {
-                afterBlockIndex: lastBlockIndex,
-                startLine: startLine,
-                endLine: endLine,
-                editingId: null,
-                filePath: fp,
-              })
-            }
+            ctx.visualMode = null
+            document.body.classList.remove('visual-mode')
+            hideCodeSelection(ctx)
+            openForm(ctx, { afterBlockIndex, startLine, endLine, editingId: null, filePath: fp })
             break
           }
           // If text is selected, comment on the selection (with quote).
-          // Otherwise fall back to the focused block.
+          // Otherwise fall back to the focused row.
           if (ctx._tryOpenFormFromSelection && ctx._tryOpenFormFromSelection()) break
-          if (ctx.focusedBlockIndex < 0) break
-          const lineBlocks = getFocusedLineBlocks(ctx)
-          const block = lineBlocks[ctx.focusedBlockIndex]
-          if (!block) break
+          const row = rows[ctx.focusedBlockIndex]
+          if (!row) break
           openForm(ctx, {
-            afterBlockIndex: ctx.focusedBlockIndex,
-            startLine: block.startLine,
-            endLine: block.endLine,
+            afterBlockIndex: row.code ? null : row.blockIndex,
+            startLine: row.startLine,
+            endLine: row.endLine,
             editingId: null,
-            filePath: ctx.focusedFilePath || null,
+            filePath: row.filePath || null,
           })
           break
         }
         case 'edit_comment': {
           e.preventDefault()
-          if (ctx.focusedBlockIndex < 0) break
-          const lineBlocks = getFocusedLineBlocks(ctx)
-          const block = lineBlocks[ctx.focusedBlockIndex]
-          if (!block) break
-          const filePath = ctx.focusedFilePath || null
-          const comment = ctx.comments.find(c =>
-            isOwnComment(c, ctx) &&
-            c.end_line >= block.startLine && c.end_line <= block.endLine &&
-            (c.file_path || null) === filePath
-          )
+          const comment = ownCommentOnFocusedRow()
           if (!comment) break
-          const editFormObj = {
+          addForm(ctx, {
             afterBlockIndex: null,
             startLine: comment.start_line,
             endLine: comment.end_line,
             editingId: comment.id,
-            filePath: filePath,
-          }
-          addForm(ctx, editFormObj)
+            filePath: comment.file_path || null,
+          })
           render(ctx)
           break
         }
         case 'delete_comment': {
           e.preventDefault()
-          if (ctx.focusedBlockIndex < 0) break
-          const lineBlocks = getFocusedLineBlocks(ctx)
-          const block = lineBlocks[ctx.focusedBlockIndex]
-          if (!block) break
-          const filePath = ctx.focusedFilePath || null
-          const comment = ctx.comments.find(c =>
-            isOwnComment(c, ctx) &&
-            c.end_line >= block.startLine && c.end_line <= block.endLine &&
-            (c.file_path || null) === filePath
-          )
+          const comment = ownCommentOnFocusedRow()
           if (comment) pushCommentMutation(ctx, 'delete_comment', { id: comment.id })
           break
         }
@@ -6028,7 +6393,19 @@ export const DocumentRenderer = {
   },
 
   destroyed() {
+    this._destroyed = true
     document.body.classList.remove("dragging")
+    if (this._stopWatchingCode) this._stopWatchingCode()
+    if (this._stopRendererUpdates) this._stopRendererUpdates()
+    if (this._themeHandler) {
+      window.removeEventListener('phx:set-theme', this._themeHandler)
+      if (this._systemThemeQuery) this._systemThemeQuery.removeEventListener('change', this._systemThemeHandler)
+    }
+    if (this._storageThemeHandler) window.removeEventListener('storage', this._storageThemeHandler)
+    if (this._codeViews) {
+      for (const view of this._codeViews.values()) view.destroy()
+      this._codeViews.clear()
+    }
     // Drop any visual-mode state so a remount starts clean.
     this.visualMode = null
     this.selectionStart = null

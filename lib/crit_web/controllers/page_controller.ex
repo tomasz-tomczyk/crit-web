@@ -99,14 +99,14 @@ defmodule CritWeb.PageController do
     },
     "syntax-highlighting" => %{
       title: "Syntax Highlighting",
-      tagline: "190+ languages with per-line commenting",
+      tagline: "146 languages, the same highlighter as the Crit CLI",
       description:
-        "Fenced code blocks are syntax-highlighted with highlight.js and split into individual lines so you can comment on specific lines inside code - not just the block as a whole.",
+        "Code files and fenced code blocks are highlighted with Shiki, the same grammars and themes the Crit CLI uses. Every line is commentable - in code files and inside the code blocks of a plan.",
       details: [
-        "Supports 190+ languages via highlight.js — Go, Python, JavaScript, TypeScript, Rust, Ruby, Java, C, C++, Shell, SQL, YAML, and many more.",
-        "Each line inside a fenced code block is a separate commentable element. Select line 3 of a code block and leave a review note right there.",
-        "Highlighting respects your current theme - dark and light palettes are both fully styled.",
-        "Code blocks preserve whitespace and formatting exactly as written. Long lines wrap so nothing is hidden off-screen."
+        "146 languages via Shiki — Go, Python, JavaScript, TypeScript, Rust, Ruby, Elixir, Java, C, C++, Shell, SQL, YAML, and many more.",
+        "Each line of a code file, and each line inside a fenced code block, is a separate commentable element. Select line 3 and leave a review note right there.",
+        "Pick any bundled theme for light and dark mode in Settings. The whole review page, not just the code, follows the theme you pick.",
+        "Code preserves whitespace and formatting exactly as written. Long lines scroll or wrap, whichever you prefer."
       ],
       why_this_matters: [
         "AI agents frequently produce output that mixes prose and code — a plan document that includes shell commands, a spec that has SQL examples, a markdown file with embedded TypeScript snippets. When you're reviewing that output, you need the code to actually render as code, not as a wall of monospace text.",
