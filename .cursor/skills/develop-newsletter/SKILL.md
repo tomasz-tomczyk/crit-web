@@ -69,11 +69,12 @@ When a confirmation send is approved, hard-limit recipients in code (`To` exact 
 
 Opt-in source of truth is Postgres on crit-web: latest row per user in `marketing_consent_events` where action is opt-in.
 
-Postmark does **not** auto-sync. Before a Broadcast send:
+Postmark does **not** auto-sync consent into its address book. Before a Broadcast send:
 
-1. Export current opt-in emails from prod (read-only `fly ssh` / rpc query).
-2. Check Postmark’s suppression list (unsubscribes via `{{{ pm:unsubscribe }}}` do not update `marketing_consent_events`).
-3. Intersection = send list for that blast (or import a one-off Postmark segment).
+1. Export current opt-in emails from prod (latest `marketing_consent_events` row per user).
+2. Prefer sending that list via the Postmark API on stream `broadcast`.
+
+**Unsubscribers:** you do **not** need to sync Postmark suppressions into Postgres for delivery safety. On Broadcast with Postmark unsubscribe handling, Postmark refuses suppressed addresses automatically. Optionally sync suppressions back into `marketing_consent_events` later so Settings UI stays accurate — that is product hygiene, not a send blocker.
 
 Longer-term: a mix task that exports consent → Postmark recipients is fine; do not invent continuous sync without a design pass.
 
