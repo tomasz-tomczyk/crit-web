@@ -136,8 +136,6 @@
   --crit-diff-del-line-bg: rgba(247, 118, 142, 0.14);
   --crit-diff-word-add-bg: rgba(63, 185, 80, 0.18);
   --crit-diff-word-del-bg: rgba(248, 81, 73, 0.18);
-  --crit-diff-add-gutter: rgba(86, 211, 100, 0.12);
-  --crit-diff-del-gutter: rgba(247, 118, 142, 0.08);
   --crit-scrollbar-bg: #0e0f13;
   --crit-scrollbar-thumb: #3b4261;
   --crit-badge-resolved-bg: rgba(86, 211, 100, 0.12);
@@ -181,7 +179,6 @@
   --crit-editor-bg-card:         #16171f;
   --crit-editor-bg-elevated:     #262940;
   --crit-editor-bg-hover:        #2d3150;
-  --crit-editor-bg-gutter:       #131420;
   --crit-editor-code-bg:         #1e2030;
   --crit-editor-comment-bg:      #1a1f36;
   --crit-editor-fg:              #c0caf5;
@@ -315,8 +312,6 @@
   --crit-diff-del-line-bg: rgba(247, 118, 142, 0.14);
   --crit-diff-word-add-bg: rgba(63, 185, 80, 0.18);
   --crit-diff-word-del-bg: rgba(248, 81, 73, 0.18);
-  --crit-diff-add-gutter: rgba(86, 211, 100, 0.12);
-  --crit-diff-del-gutter: rgba(247, 118, 142, 0.08);
   --crit-scrollbar-bg: #0e0f13;
   --crit-scrollbar-thumb: #3b4261;
   --crit-badge-resolved-bg: rgba(86, 211, 100, 0.12);
@@ -360,7 +355,6 @@
   --crit-editor-bg-card:         #16171f;
   --crit-editor-bg-elevated:     #262940;
   --crit-editor-bg-hover:        #2d3150;
-  --crit-editor-bg-gutter:       #131420;
   --crit-editor-code-bg:         #1e2030;
   --crit-editor-comment-bg:      #1a1f36;
   --crit-editor-fg:              #c0caf5;
@@ -487,8 +481,6 @@
   --crit-diff-del-line-bg: #ffebe9;
   --crit-diff-word-add-bg: #aceebb;
   --crit-diff-word-del-bg: #ffcecb;
-  --crit-diff-add-gutter: #aceebb;
-  --crit-diff-del-gutter: #ffcecb;
   --crit-scrollbar-bg: #ffffff;
   --crit-scrollbar-thumb: #d0d0d0;
   --crit-badge-resolved-bg: rgba(26, 127, 55, 0.1);
@@ -532,7 +524,6 @@
   --crit-editor-bg-card:         #f6f8fa;
   --crit-editor-bg-elevated:     #eff2f5;
   --crit-editor-bg-hover:        #eff2f5;
-  --crit-editor-bg-gutter:       #f6f8fa;
   --crit-editor-code-bg:         #eff1f3;
   --crit-editor-comment-bg:      #ddf4ff;
   --crit-editor-fg:              #1f2328;
@@ -661,8 +652,6 @@
     --crit-diff-del-line-bg: #ffebe9;
     --crit-diff-word-add-bg: #aceebb;
     --crit-diff-word-del-bg: #ffcecb;
-    --crit-diff-add-gutter: #aceebb;
-    --crit-diff-del-gutter: #ffcecb;
     --crit-scrollbar-bg: #ffffff;
     --crit-scrollbar-thumb: #d0d0d0;
     --crit-badge-resolved-bg: rgba(26, 127, 55, 0.1);
@@ -706,7 +695,6 @@
     --crit-editor-bg-card:         #f6f8fa;
     --crit-editor-bg-elevated:     #eff2f5;
     --crit-editor-bg-hover:        #eff2f5;
-    --crit-editor-bg-gutter:       #f6f8fa;
     --crit-editor-code-bg:         #eff1f3;
     --crit-editor-comment-bg:      #ddf4ff;
     --crit-editor-fg:              #1f2328;
@@ -846,6 +834,8 @@
 
 /* ===== Crit Review Page Layout ===== */
 :root { --crit-header-height: 53px; }
+/* Pierre code (code files, theme preview) uses the reader's code font. */
+:root { --diffs-font-family: var(--crit-font-code, var(--crit-font-mono)); }
 @media (max-width: 600px) { :root { --crit-header-height: 90px; } }
 
 .crit-page {
@@ -1133,7 +1123,10 @@ body.visual-mode .line-block.focused {
 }
 @media (pointer: fine) {
   .line-gutter:hover .line-add { display: flex; }
-  body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; }
+  body.dragging .line-block.drag-endpoint .line-gutter .line-add { display: flex; pointer-events: none; }
+  /* While dragging, only the row at the selection end shows the + (matches
+     crit/Pierre); hovering other rows must not flash it. */
+  body.dragging .line-block:not(.drag-endpoint) .line-gutter .line-add { display: none; }
 }
 body.dragging { user-select: none; cursor: grabbing; }
 /* Document-path comment gutter: overlay column between line numbers and content */
@@ -1149,22 +1142,6 @@ body.dragging { user-select: none; cursor: grabbing; }
   padding-top: 1px;
   z-index: 5;
 }
-/* Blue connecting line between drag endpoints */
-.line-block.drag-range .line-comment-gutter::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  margin-left: -1px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--crit-brand);
-  pointer-events: none;
-  z-index: 0;
-}
-.line-block.drag-range-start .line-comment-gutter::after { top: 10px; }
-.line-block.drag-range-end .line-comment-gutter::after { bottom: calc(100% - 10px); }
-.line-block.drag-range-start.drag-range-end .line-comment-gutter::after { display: none; }
 .line-num { padding-top: 1px; line-height: inherit; }
 .line-add {
   display: none;
@@ -1299,7 +1276,6 @@ body.dragging { user-select: none; cursor: grabbing; }
   --crit-comment-width: var(--crit-content-width);
   --crit-comment-inset: 0px;
   --diffs-tab-size: 8;
-  --diffs-font-family: var(--crit-font-code, var(--crit-font-mono));
 }
 /* Threads and forms under a code line stay at reading width. Pierre's wrap
    mode sets word-break: break-word on its host; inherited by comment content
@@ -1937,14 +1913,6 @@ html[data-theme="light"] .crit-toggle-btn--active {
   background: var(--crit-diff-del-bg);
 }
 
-/* ===== Diff Gutter Backgrounds ===== */
-/* Unified diff */
-.diff-container.unified .addition .diff-gutter-num:last-child { background: var(--crit-diff-add-gutter); }
-.diff-container.unified .deletion .diff-gutter-num:first-child { background: var(--crit-diff-del-gutter); }
-/* Split diff */
-.diff-split-side.deletion .diff-gutter-num { background: var(--crit-diff-del-gutter); }
-.diff-split-side.addition .diff-gutter-num { background: var(--crit-diff-add-gutter); }
-
 .comment-body a { color: var(--crit-brand); text-decoration: none; border-bottom: 1px solid var(--crit-brand-subtle); }
 .comment-body a:hover { color: var(--crit-brand-hover); }
 
@@ -2538,13 +2506,12 @@ html[data-theme="light"] .crit-toggle-btn--active {
 @media (prefers-color-scheme: light) {
   html:not([data-theme]) .crit-code span[style] { color: var(--diffs-token-light); }
 }
-[data-theme="dark"] .crit-code span[style] { color: var(--diffs-token-dark); }
 [data-theme="light"] .crit-code span[style] { color: var(--diffs-token-light); }
 
 /* Comments panel — always in the flex row so margin-right can slide it.
    Closed (no .comments-panel-open): margin-right:-W parks it past the right
-   edge; .crit-main-layout / .crit-preview-body { overflow-x: clip } prevents a
-   page scrollbar. Open class restores margin and visibility. */
+   edge; .crit-main-layout { overflow: clip } / .crit-preview-body
+   { overflow-x: clip } prevent a page scrollbar. Open class restores margin and visibility. */
 .comments-panel {
   width: 480px;
   flex-shrink: 0;
@@ -3013,9 +2980,15 @@ body.comments-panel-anim #commentsPanelResizer {
   align-items: flex-start;
   min-height: calc(100vh - var(--crit-header-height, 53px));
   /* Clip the comments panel when it slides past the right edge (margin-right:-W).
-     clip (not hidden) avoids creating a scroll container that can break
-     position:sticky descendants. */
-  overflow-x: clip;
+     Without this the off-canvas box extends scrollWidth and shows a horizontal
+     scrollbar. clip (not hidden) avoids creating a scroll container that can
+     break position:sticky descendants.
+     Clip BOTH axes: single-axis overflow-x: clip on an element this tall makes
+     Chrome stop painting and hit-testing everything below ~4,194,304px (2^22)
+     of the document — the whole page below the header, sticky sidebar
+     included, goes white on 2k+ file reviews. The vertical clip is free here:
+     .crit-main-layout ends where the page does. */
+  overflow: clip;
 }
 
 .crit-main-content {
@@ -4440,7 +4413,6 @@ body.sidebar-resizing * {
      the union of all its line boxes. Converting these spans to inline-block +
      max-width:100% + overflow:hidden constrains each span's bounding rect to
      its container, which stops Chrome from expanding the scrollable viewport. */
-  .diff-container,
   .diff-view,
   .diff-view-unified { overflow-x: auto; }
 

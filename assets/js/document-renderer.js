@@ -2516,14 +2516,11 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
       block.startLine >= ctx.selectionStart && block.endLine <= ctx.selectionEnd
     if (inCurrentSelection) lineBlockEl.classList.add('selected')
     if (hasFormForBlock && !inCurrentSelection) lineBlockEl.classList.add('form-selected')
-    if (inCurrentSelection && ctx.dragState) {
-      const ds = ctx.dragState
-      const isAnchor = block.startLine <= ds.anchorEndLine && block.endLine >= ds.anchorStartLine
-      const isCurrent = block.startLine <= ds.currentEndLine && block.endLine >= ds.currentStartLine
-      if (isAnchor || isCurrent) lineBlockEl.classList.add('drag-endpoint')
-      lineBlockEl.classList.add('drag-range')
-      if (block.startLine === ctx.selectionStart) lineBlockEl.classList.add('drag-range-start')
-      if (block.endLine === ctx.selectionEnd) lineBlockEl.classList.add('drag-range-end')
+    // Match crit/Pierre: one gutter utility at the bottom of the selected range.
+    if (inCurrentSelection && ctx.dragState &&
+        (ctx.dragState.filePath || null) === (file.path || null) &&
+        block.startLine <= ctx.selectionEnd && block.endLine >= ctx.selectionEnd) {
+      lineBlockEl.classList.add('drag-endpoint')
     }
 
     // Comment gutter
@@ -3415,14 +3412,11 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
   if (hasFormForBlock && !inCurrentSelection) {
     lineBlockEl.classList.add("form-selected")
   }
-  if (inCurrentSelection && ctx.dragState) {
-    const ds = ctx.dragState
-    const isAnchor = block.startLine <= ds.anchorEndLine && block.endLine >= ds.anchorStartLine
-    const isCurrent = block.startLine <= ds.currentEndLine && block.endLine >= ds.currentStartLine
-    if (isAnchor || isCurrent) lineBlockEl.classList.add("drag-endpoint")
-    lineBlockEl.classList.add("drag-range")
-    if (block.startLine === ctx.selectionStart) lineBlockEl.classList.add("drag-range-start")
-    if (block.endLine === ctx.selectionEnd) lineBlockEl.classList.add("drag-range-end")
+  // Match crit/Pierre: one gutter utility at the bottom of the selected range.
+  if (inCurrentSelection && ctx.dragState &&
+      (ctx.dragState.filePath || null) === (filePath || null) &&
+      block.startLine <= ctx.selectionEnd && block.endLine >= ctx.selectionEnd) {
+    lineBlockEl.classList.add("drag-endpoint")
   }
 
   // Gutter
