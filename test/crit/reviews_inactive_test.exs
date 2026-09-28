@@ -15,7 +15,7 @@ defmodule Crit.ReviewsInactiveTest do
     )
   end
 
-  describe "delete_inactive/1" do
+  describe "delete_inactive/2" do
     test "deletes reviews inactive for more than the given days" do
       review = review_fixture()
       set_last_activity(review, 31)

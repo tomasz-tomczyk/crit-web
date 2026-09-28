@@ -19,7 +19,8 @@ config :crit, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        {"17 3 * * *", Crit.Notifications.CleanupWorker},
-       {"47 3 * * *", Crit.Reviews.InactiveCleanupWorker}
+       {"47 3 * * *", Crit.Reviews.InactiveCleanupWorker},
+       {"32 4 * * *", Crit.DeviceCodes.CleanupWorker}
      ]},
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7}
   ]

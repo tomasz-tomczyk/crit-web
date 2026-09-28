@@ -29,7 +29,7 @@ crit-web/
 │   │   ├── organizations/                 # Organization, OrganizationMembership, OrganizationInvite schemas + OrgNotifier
 │   │   ├── mailer.ex                      # Swoosh mailer (local in dev/test, SMTP in prod)
 │   │   ├── user.ex / user_api_token.ex     # Authenticated user + CLI bearer tokens
-│   │   ├── device_codes.ex / device_code.ex / device_code_cleaner.ex # OAuth device flow
+│   │   ├── device_codes.ex / device_code.ex / device_codes/cleanup_worker.ex # OAuth device flow (Oban cron cleanup)
 │   │   ├── sentry_filter.ex / sentry_http_client.ex # Sentry plumbing
 │   ├── crit_web/
 │   │   ├── router.ex                # Routes: marketing, /r/:token, /dashboard, /settings, /overview, /api/*, /api/device/*, /api/auth/*, /auth/cli/*

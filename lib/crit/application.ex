@@ -18,7 +18,6 @@ defmodule Crit.Application do
         {Phoenix.PubSub, name: Crit.PubSub},
         {Crit.RateLimit, clean_period: :timer.minutes(10)}
       ] ++
-        device_code_cleaner() ++
         changelog() ++
         github_stars() ++
         [
@@ -29,14 +28,6 @@ defmodule Crit.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Crit.Supervisor]
     Supervisor.start_link(children, opts)
-  end
-
-  defp device_code_cleaner do
-    if Application.get_env(:crit, :start_device_code_cleaner, true) do
-      [Crit.DeviceCodeCleaner]
-    else
-      []
-    end
   end
 
   defp attach_sentry_logger_handler do
