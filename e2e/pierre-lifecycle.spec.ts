@@ -11,6 +11,36 @@ import {
 
 const files = [{ path: "server.go", content: "package main\n\nfunc main() {}\n" }];
 
+for (const surface of ["document", "code file"] as const) {
+  test(`worker startup errors preserve ${surface} rendering and commenting`, async ({ page, request }) => {
+    const review = await createReview(request, {
+      files: surface === "document"
+        ? [{ path: "plan.md", content: "# Plan\n\n```go\npackage main\nfunc main() {}\n```\n" }]
+        : files,
+    });
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.route("**/pierre/pierre-worker.js", route => route.fulfill({
+      contentType: "application/javascript",
+      body: "throw new Error('Simulated highlight worker startup failure')",
+    }));
+    try {
+      await loadReview(page, review.token);
+      const line = surface === "document"
+        ? page.locator('.line-block code.crit-code').filter({ hasText: "package main" })
+        : codeLine(page, "server.go", 1);
+      await expect(line).toBeVisible();
+      await expect.poll(() => page.evaluate(() => (window as any).PierreDiffs
+        .getOrCreateWorkerPoolSingleton({}).getStats().totalWorkers)).toBe(0);
+      await addCommentViaUI(page, "Comment after worker failure");
+      await waitForCommentCard(page, "Comment after worker failure");
+      expect(errors).toEqual([]);
+    } finally {
+      await deleteReview(request, review.deleteToken);
+    }
+  });
+}
+
 test("comment deltas received while Pierre loads survive initialization", async ({ page, context, request }) => {
   const review = await createReview(request, { files });
   const peer = await context.newPage();
