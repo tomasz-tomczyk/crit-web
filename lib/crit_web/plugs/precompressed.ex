@@ -47,7 +47,7 @@ defmodule CritWeb.Plugs.Precompressed do
       |> put_resp_header("etag", etag)
 
     cond do
-      etag in get_req_header(conn, "if-none-match") ->
+      etag_matches?(conn, etag) ->
         conn |> send_resp(304, "") |> halt()
 
       accepts_gzip?(conn) ->
@@ -60,6 +60,19 @@ defmodule CritWeb.Plugs.Precompressed do
         conn |> send_resp(200, :zlib.gunzip(File.read!(path))) |> halt()
     end
   end
+
+  # If-None-Match uses weak comparison (RFC 9110 13.1.2): `*` matches any
+  # current representation, and a `W/` prefix is ignored on either side.
+  defp etag_matches?(conn, etag) do
+    conn
+    |> get_req_header("if-none-match")
+    |> Enum.flat_map(&String.split(&1, ","))
+    |> Enum.map(&String.trim/1)
+    |> Enum.any?(&(&1 == "*" or weak(&1) == weak(etag)))
+  end
+
+  defp weak("W/" <> tag), do: tag
+  defp weak(tag), do: tag
 
   defp cache_control("chunk-" <> _), do: "public, max-age=31536000, immutable"
   defp cache_control(_), do: "public, no-cache"

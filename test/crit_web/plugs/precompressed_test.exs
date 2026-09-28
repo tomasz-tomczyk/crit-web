@@ -68,6 +68,28 @@ defmodule CritWeb.Plugs.PrecompressedTest do
     assert conn.resp_body == ""
   end
 
+  test "answers 304 for a list, a weak match or *", %{conn: conn} do
+    [etag] = conn |> get("/pierre/palettes.js") |> get_resp_header("etag")
+
+    for header <- [~s("other", #{etag}), "W/" <> etag, "*"] do
+      conn =
+        build_conn()
+        |> put_req_header("if-none-match", header)
+        |> get("/pierre/palettes.js")
+
+      assert conn.status == 304, "expected 304 for If-None-Match: #{header}"
+    end
+  end
+
+  test "serves the file when no listed ETag matches", %{conn: conn} do
+    conn =
+      conn
+      |> put_req_header("if-none-match", ~s("other", W/"stale"))
+      |> get("/pierre/palettes.js")
+
+    assert conn.status == 200
+  end
+
   test "HEAD returns headers without a body", %{conn: conn} do
     conn =
       conn
