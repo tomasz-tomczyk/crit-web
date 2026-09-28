@@ -54,6 +54,10 @@ run = "mix run priv/repo/seeds.exs"
 description = "Upload article images to Cloudflare R2 (requires wrangler login + CRIT_ASSETS_BUCKET)"
 run = "./scripts/upload-article-assets.sh"
 
+[tasks."assets:upload-newsletter"]
+description = "Upload newsletter images to Cloudflare R2 (requires wrangler login + CRIT_ASSETS_BUCKET)"
+run = "./scripts/upload-newsletter-assets.sh"
+
 [tasks.up]
 description = "Start everything"
 depends = ["deps", "db:setup"]

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>Story mode, a new renderer, and finish hooks</title>
+  <!--
+  DRAFT. Not sent.
+  Subject:   Story mode, a new renderer, and finish hooks
+  Preheader: Everything that shipped in crit since you signed up.
+  From:      Tomasz from crit <hello@crit.md>
+  Stream:    Postmark Broadcast stream (not the transactional one)
+
+  Images use relative paths (images/...) so this file previews locally.
+  Before sending, upload images/ to a public URL (e.g. crit.md/images/newsletter/2026-10/)
+  and replace every src="images/ with that absolute URL.
+-->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    a {
+      color: #7aa2f7;
+    }
+
+    @media (max-width: 620px) {
+      .px {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+
+      .h1 {
+        font-size: 28px !important;
+      }
+
+      .outer {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+      }
+
+      .t-h2 {
+        font-size: 27px !important;
+      }
+
+      .t-step {
+        display: block !important;
+        width: auto !important;
+        padding: 14px 20px 14px 20px !important;
+      }
+
+      .t-step-n {
+        border-left: 0 !important;
+        border-top: 1px solid #2f3342 !important;
+      }
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background:#0e0f13;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Everything that shipped in crit since you signed
+    up.&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0e0f13"
+    style="background:#0e0f13;">
+    <tr>
+      <td align="center" class="outer" style="padding:28px 12px 40px 12px;">
+
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
+          style="width:100%;max-width:600px;">
+
+          <!-- Header -->
+          <tr>
+            <td class="px" style="padding:4px 8px 28px 8px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;"><a href="https://crit.md" style="text-decoration:none;"><img
+                        src="images/crit-logo.png" width="55" height="26" alt="crit."
+                        style="display:block;border:0;"></a></td>
+                  <td align="right"
+                    style="vertical-align:middle;font:500 12px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7a8399;letter-spacing:0.02em;">
+                    <a href="https://crit.md/newsletter/2026-10-first-update"
+                      style="color:#7a8399;text-decoration:underline;">View in browser</a>
+                    &nbsp;&nbsp;·&nbsp;&nbsp;September 2026</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Hero -->
+          <tr>
+            <td bgcolor="#171922" style="background:#171922;border:1px solid #232632;border-radius:14px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px"
+                    style="padding:36px 36px 8px 36px;font:16px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#c9cee0;">
+                    <h1 class="h1"
+                      style="margin:0 0 16px 0;font:700 32px/1.2 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;letter-spacing:-0.02em;">
+                      Story mode, a new renderer, and finish hooks</h1>
+                    <p style="margin:0 0 14px 0;">Hi! Welcome to crit's first newsletter! It's been an exciting summer
+                      where together with support from many contributors we shipped a lot of cool stuff detailed below.
+                      If you'd like to
+                      get the latest goodies, upgrade now:</p>
+                  </td>
+                </tr>
+                <!-- Upgrade -->
+                <tr>
+                  <td class="px" style="padding:6px 36px 34px 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0e0f13"
+                      style="background:#0e0f13;border:1px solid #2f3342;border-radius:10px;">
+                      <tr>
+                        <td
+                          style="padding:14px 16px;font:13px/1.9 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#e8ebf5;word-break:break-all;">
+                          <span style="color:#7aa2f7;">$</span> brew upgrade crit<br>
+                          <span style="color:#7a8399;"># or</span><br>
+                          <span style="color:#7aa2f7;">$</span> go install
+                          github.com/tomasz-tomczyk/crit/cmd/crit@latest
+                        </td>
+                      </tr>
+                    </table>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;">
+                      <tr>
+                        <td bgcolor="#406fcc" style="background:#406fcc;border-radius:8px;"><a
+                            href="https://github.com/tomasz-tomczyk/crit"
+                            style="display:inline-block;padding:12px 20px;font:600 15px/1 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;text-decoration:none;">&#9733;&nbsp;
+                            Star on GitHub</a></td>
+                        <td style="width:14px;">&nbsp;</td>
+                        <td style="border:1px solid #2f3342;border-radius:8px;"><a
+                            href="https://github.com/tomasz-tomczyk/crit/releases"
+                            style="display:inline-block;padding:11px 18px;font:600 15px/1 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;text-decoration:none;">Release
+                            notes</a></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- 01 Story mode -->
+          <tr>
+            <td bgcolor="#171922" style="background:#171922;border:1px solid #232632;border-radius:14px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px"
+                    style="padding:32px 36px 20px 36px;font:16px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#c9cee0;">
+                    <div
+                      style="font:600 12px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7aa2f7;letter-spacing:0.08em;margin-bottom:12px;">
+                      STORY MODE</div>
+                    <h2
+                      style="margin:0 0 12px 0;font:700 23px/1.3 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;letter-spacing:-0.01em;">
+                      Read a big diff like a <span style="color:#7aa2f7;">story</span> from a coworker</h2>
+                    <p style="margin:0 0 14px 0;">Reviewing code is more time-consuming than ever! Story mode groups
+                      diffs from a
+                      given PR or branch into logical chapters.</p>
+                    <p style="margin:0;">Ask your agent for it: <code
+                        style="font:500 14px 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#e8ebf5;background:#242835;padding:2px 7px;border-radius:5px;">/crit-story</code>
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px" style="padding:4px 20px 0 20px;">
+                    <img src="images/story-mode.jpg" width="558"
+                      alt="crit story mode: a prologue with key changes, a flow diagram, and four chapters to read in order"
+                      style="display:block;width:100%;max-width:558px;height:auto;border:1px solid #2f3342;border-radius:10px;">
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px"
+                    style="padding:14px 36px 30px 36px;font:13px/1.55 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#7a8399;">
+                    You can customise what chapters you generate with custom agent prompts.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- 02 Renderer -->
+          <tr>
+            <td bgcolor="#171922" style="background:#171922;border:1px solid #232632;border-radius:14px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px"
+                    style="padding:32px 36px 20px 36px;font:16px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#c9cee0;">
+                    <div
+                      style="font:600 12px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7aa2f7;letter-spacing:0.08em;margin-bottom:12px;">
+                      NEW BLAZING FAST RENDERER</div>
+                    <h2
+                      style="margin:0 0 12px 0;font:700 23px/1.3 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;letter-spacing:-0.01em;">
+                      Diff engine that stays <span style="color:#7aa2f7;">fast</span> on huge reviews</h2>
+                    <p style="margin:0 0 14px 0;">We replaced crit's hand-written diff view with <a
+                        href="https://github.com/pierrecomputer/pierre"
+                        style="color:#9ba3bf;text-decoration:none;">@pierre/diffs</a>.
+                      Thanks to support from <a href="https://github.com/jakebf"
+                        style="color:#9ba3bf;text-decoration:none;">@jakebf</a>!</p>
+                    <p style="margin:0;">It supports every Shiki theme. Pick one for light mode and one
+                      for dark, and the whole review UI takes on its colours.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px" style="padding:4px 20px 0 20px;">
+                    <img src="images/renderer-themes.jpg" width="558"
+                      alt="The same crit diff shown in three themes: Tokyo Night, Monokai and Catppuccin Latte"
+                      style="display:block;width:100%;max-width:558px;height:auto;border-radius:10px;">
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px" style="padding:22px 20px 32px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0e0f13"
+                      style="background:#0e0f13;border:1px solid #232632;border-radius:10px;">
+                      <tr>
+                        <td width="50%" style="padding:16px 18px;vertical-align:top;">
+                          <div
+                            style="font:700 22px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#56d364;">
+                            36 ms</div>
+                          <div
+                            style="font:13px/1.45 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;margin-top:6px;">
+                            of blocking on page load for a 300-file, 9k-line review. 0 ms while scrolling.</div>
+                        </td>
+                        <td width="50%" style="padding:16px 18px;vertical-align:top;border-left:1px solid #232632;">
+                          <div
+                            style="font:700 22px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#56d364;">
+                            350 &rarr; 5 ms</div>
+                          <div
+                            style="font:13px/1.45 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;margin-top:6px;">
+                            main-thread cost to highlight a 2,000-line code block in a plan.</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- 03 Finish hooks -->
+          <tr>
+            <td bgcolor="#171922" style="background:#171922;border:1px solid #232632;border-radius:14px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px"
+                    style="padding:32px 36px 20px 36px;font:16px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#c9cee0;">
+                    <div
+                      style="font:600 12px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7aa2f7;letter-spacing:0.08em;margin-bottom:12px;">
+                      CUSTOM AGENT HOOKS</div>
+                    <h2
+                      style="margin:0 0 12px 0;font:700 23px/1.3 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;letter-spacing:-0.01em;">
+                      Decide what the agent does after a review</h2>
+                    <p style="margin:0 0 14px 0;">When you finish a round or approve, crit hands your agent a prompt.
+                      Now you can customise that prompt, per project, and per review type. Inspired by a <a
+                        href="https://github.com/tomasz-tomczyk/crit/issues/691"
+                        style="color:#9ba3bf;text-decoration:none;">GH issue</a> from <a
+                        href="https://github.com/TheCoreMan"
+                        style="color:#9ba3bf;text-decoration:none;">@TheCoreMan</a>.</p>
+                    <p style="margin:0;">This one splits a big review across subagents so your main session doesn't get bloated with too much context:</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px" style="padding:4px 20px 0 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0e0f13"
+                      style="background:#0e0f13;border:1px solid #2f3342;border-radius:10px;">
+                      <tr>
+                        <td
+                          style="padding:10px 16px;border-bottom:1px solid #232632;font:500 12px/1.4 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7a8399;">
+                          .crit/prompts/on_finish_unresolved.diff.md</td>
+                      </tr>
+                      <tr>
+                        <td
+                          style="padding:10px 16px;font:13px/1.7 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#c9cee0;white-space:pre-wrap;"><span style="color:#bb9af7;">{{if gt .unresolved_count 10}}</span>
+This review has <span style="color:#e0af68;">{{.unresolved_count}}</span> comments
+across <span style="color:#e0af68;">{{len .files_with_comments}}</span> files.
+
+1. Group by topic and spawn one subagent per group.
+2. Reply with `crit comment --reply-to`
+3. When done: <span style="color:#e0af68;">{{.next_round_cmd}}</span>
+<span style="color:#bb9af7;">{{end}}</span></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px"
+                    style="padding:18px 36px 32px 36px;font:15px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#c9cee0;">
+                    <p style="margin:0 0 12px 0;font:13px/1.55 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#7a8399;">Using a knowledge base? Save learnings from reviews there.</p>
+                    <p style="margin:0 0 16px 0;">There are <strong style="color:#e8ebf5;">command hooks</strong> too.
+                      They run your own shell scripts at the same points, for things you want to run programmatically. No LLM involved.
+                      Inspired by a <a href="https://github.com/tomasz-tomczyk/crit/issues/723"
+                        style="color:#9ba3bf;text-decoration:none;">GH issue</a> from <a
+                        href="https://github.com/bezbec"
+                        style="color:#9ba3bf;text-decoration:none;">@bezbec</a>.</p>
+                    <a href="https://github.com/tomasz-tomczyk/crit/blob/main/docs/agent-prompts.md"
+                      style="font:600 14px/1 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#7aa2f7;text-decoration:none;">Prompt
+                      hook guide &rarr;</a>
+                    &nbsp;&nbsp;
+                    <a href="https://github.com/tomasz-tomczyk/crit/blob/main/docs/agent-hooks.md"
+                      style="font:600 14px/1 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#7aa2f7;text-decoration:none;">Command
+                      hooks guide &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- 04 Teams: open grid, square corners, drawn with 1px lines on the page colour.
+       It is the only section that is not a filled card, and the only light button. -->
+          <tr>
+            <td bgcolor="#0e0f13" style="background:#0e0f13;border:1px solid #3d4256;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+                <!-- Head + steps: one visual block, no divider between title and steps -->
+                <tr>
+                  <td class="px"
+                    style="padding:40px 36px 8px 36px;font:16px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;">
+                    <h2 class="t-h2"
+                      style="margin:0;font:700 32px/1.12 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ffffff;letter-spacing:-0.035em;">
+                      Review with your team on crit<span style="color:#7aa2f7;">.</span>md</h2>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td class="t-step" width="33%"
+                          style="width:33.33%;padding:8px 16px 24px 36px;vertical-align:top;font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;">
+                          <span
+                            style="font:500 12px/1.3 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7a8399;">01</span>&nbsp;&nbsp;<span
+                            style="font:600 15px/1.3 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;">Create
+                            a team</span>
+                        </td>
+                        <td class="t-step t-step-n" width="33%"
+                          style="width:33.33%;padding:8px 16px 24px 20px;vertical-align:top;font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;">
+                          <span
+                            style="font:500 12px/1.3 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7a8399;">02</span>&nbsp;&nbsp;<span
+                            style="font:600 15px/1.3 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;">Invite
+                            coworkers</span>
+                        </td>
+                        <td class="t-step t-step-n" width="34%"
+                          style="width:33.34%;padding:8px 36px 24px 20px;vertical-align:top;font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;">
+                          <span
+                            style="font:500 12px/1.3 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7a8399;">03</span>&nbsp;&nbsp;<span
+                            style="font:600 15px/1.3 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ebf5;">Share
+                            a review</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Command -->
+                <tr>
+                  <td class="px" bgcolor="#13151b"
+                    style="background:#13151b;border-top:1px solid #2f3342;padding:16px 36px;font:13px/1.6 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#e8ebf5;word-break:break-all;">
+                    <span style="color:#7a8399;">$</span> crit share <span style="color:#7aa2f7;">--org acme</span>
+                    plan.md
+                  </td>
+                </tr>
+
+                <!-- CTA -->
+                <tr>
+                  <td class="px" style="border-top:1px solid #2f3342;padding:26px 36px 28px 36px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td bgcolor="#ffffff" style="background:#ffffff;border-radius:6px;"><a
+                            href="https://crit.md/orgs/new"
+                            style="display:inline-block;padding:12px 20px;font:600 15px/1 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#0e0f13;text-decoration:none;">Create
+                            a team</a></td>
+                        <td
+                          style="padding-left:16px;vertical-align:middle;font:13px/1.4 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#7a8399;">
+                          No credit card required.</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- Also new -->
+          <tr>
+            <td bgcolor="#171922" style="background:#171922;border:1px solid #232632;border-radius:14px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px"
+                    style="padding:32px 36px 0 36px;font:15px/1.6 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;">
+                    <div
+                      style="font:600 12px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7aa2f7;letter-spacing:0.08em;margin-bottom:12px;">
+                      ALSO NEW</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px"
+                    style="padding:0 36px 32px 20px;font:15px/1.6 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#9ba3bf;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="16"
+                          style="width:16px;vertical-align:top;padding:2px 0 14px 0;color:#7aa2f7;font:700 15px/1.6 'JetBrains Mono',monospace;">
+                          &rsaquo;</td>
+                        <td style="vertical-align:top;padding:0 0 14px 0;"><strong style="color:#e8ebf5;">GitLab merge
+                            requests.</strong> <code
+                            style="font:13px 'JetBrains Mono',Menlo,monospace;color:#c9cee0;">crit pull</code> and <code
+                            style="font:13px 'JetBrains Mono',Menlo,monospace;color:#c9cee0;">crit push</code> work with
+                          MRs, the same as GitHub PRs.</td>
+                      </tr>
+                      <tr>
+                        <td width="16"
+                          style="width:16px;vertical-align:top;padding:2px 0 14px 0;color:#7aa2f7;font:700 15px/1.6 'JetBrains Mono',monospace;">
+                          &rsaquo;</td>
+                        <td style="vertical-align:top;padding:0 0 14px 0;"><strong style="color:#e8ebf5;">crit
+                            resume.</strong> Lists your saved reviews and reopens one from anywhere.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="16"
+                          style="width:16px;vertical-align:top;padding:2px 0 14px 0;color:#7aa2f7;font:700 15px/1.6 'JetBrains Mono',monospace;">
+                          &rsaquo;</td>
+                        <td style="vertical-align:top;padding:0 0 14px 0;"><strong style="color:#e8ebf5;">Custom shortcuts.</strong> Remap any keyboard shortcut, locally and on crit.md.</td>
+                      </tr>
+                      <tr>
+                        <td width="16"
+                          style="width:16px;vertical-align:top;padding:2px 0 14px 0;color:#7aa2f7;font:700 15px/1.6 'JetBrains Mono',monospace;">
+                          &rsaquo;</td>
+                        <td style="vertical-align:top;padding:0 0 14px 0;"><strong style="color:#e8ebf5;">Mermaid full
+                            screen.</strong> Open them in full screen with pan and zoom.</td>
+                      </tr>
+                      <tr>
+                        <td width="16"
+                          style="width:16px;vertical-align:top;padding:2px 0 0 0;color:#7aa2f7;font:700 15px/1.6 'JetBrains Mono',monospace;">
+                          &rsaquo;</td>
+                        <td style="vertical-align:top;padding:0;"><strong style="color:#e8ebf5;">Round-ready
+                            notifications.</strong> Get a desktop ping when the agent finishes a round. The tab can
+                          close itself after you approve.</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td>
+          </tr>
+
+          <!-- Thanks -->
+          <tr>
+            <td bgcolor="#171922" style="background:#171922;border:1px solid #232632;border-radius:14px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px"
+                    style="padding:30px 36px 30px 36px;font:15px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#c9cee0;">
+                    <div
+                      style="font:600 12px/1 'JetBrains Mono',SFMono-Regular,Menlo,Consolas,monospace;color:#7aa2f7;letter-spacing:0.08em;margin-bottom:14px;">
+                      THANK YOU</div>
+                    <p style="margin:0 0 14px 0;color:#9ba3bf">I read and appreciate every bug report and feature idea. GitLab support, the 300-file speedup, the code font setting and many other features and bug fixes
+                      came from these wonderful people.</p>
+                    <p style="margin:0;font-size:12\px;line-height:1.75;color:#9ba3bf;"><a
+                        href="https://github.com/acatxnamedvirtue"
+                        style="color:#c9cee0;text-decoration:none;">@acatxnamedvirtue</a>, <a
+                        href="https://github.com/AndreyMalykhin"
+                        style="color:#c9cee0;text-decoration:none;">@AndreyMalykhin</a>, <a
+                        href="https://github.com/bewa1t" style="color:#c9cee0;text-decoration:none;">@bewa1t</a>, <a
+                        href="https://github.com/blyoa" style="color:#c9cee0;text-decoration:none;">@blyoa</a>, <a
+                        href="https://github.com/CarlosZ" style="color:#c9cee0;text-decoration:none;">@CarlosZ</a>, <a
+                        href="https://github.com/csharp-neet"
+                        style="color:#c9cee0;text-decoration:none;">@csharp-neet</a>, <a href="https://github.com/ekisu"
+                        style="color:#c9cee0;text-decoration:none;">@ekisu</a>, <a href="https://github.com/felix-dumit"
+                        style="color:#c9cee0;text-decoration:none;">@felix-dumit</a>, <a
+                        href="https://github.com/FlorentDhamma"
+                        style="color:#c9cee0;text-decoration:none;">@FlorentDhamma</a>, <a
+                        href="https://github.com/gmatev" style="color:#c9cee0;text-decoration:none;">@gmatev</a>, <a
+                        href="https://github.com/hbogaeus" style="color:#c9cee0;text-decoration:none;">@hbogaeus</a>, <a
+                        href="https://github.com/hitochan777"
+                        style="color:#c9cee0;text-decoration:none;">@hitochan777</a>, <a
+                        href="https://github.com/Igal-Kraisler-Forter"
+                        style="color:#c9cee0;text-decoration:none;">@Igal-Kraisler-Forter</a>, <a
+                        href="https://github.com/jacob-winkler"
+                        style="color:#c9cee0;text-decoration:none;">@jacob-winkler</a>, <a
+                        href="https://github.com/jalopez" style="color:#c9cee0;text-decoration:none;">@jalopez</a>, <a
+                        href="https://github.com/jbrooksbartlett"
+                        style="color:#c9cee0;text-decoration:none;">@jbrooksbartlett</a>, <a
+                        href="https://github.com/jmehnle" style="color:#c9cee0;text-decoration:none;">@jmehnle</a>, <a
+                        href="https://github.com/John-Isr" style="color:#c9cee0;text-decoration:none;">@John-Isr</a>, <a
+                        href="https://github.com/jvaldiviezo9"
+                        style="color:#c9cee0;text-decoration:none;">@jvaldiviezo9</a>, <a
+                        href="https://github.com/keoz-higidi"
+                        style="color:#c9cee0;text-decoration:none;">@keoz-higidi</a>, <a
+                        href="https://github.com/kizashi1122"
+                        style="color:#c9cee0;text-decoration:none;">@kizashi1122</a>, <a
+                        href="https://github.com/komase" style="color:#c9cee0;text-decoration:none;">@komase</a>, <a
+                        href="https://github.com/Laveshka" style="color:#c9cee0;text-decoration:none;">@Laveshka</a>, <a
+                        href="https://github.com/littlefyr" style="color:#c9cee0;text-decoration:none;">@littlefyr</a>,
+                      <a href="https://github.com/makotodejima"
+                        style="color:#c9cee0;text-decoration:none;">@makotodejima</a>, <a
+                        href="https://github.com/mariaines" style="color:#c9cee0;text-decoration:none;">@mariaines</a>,
+                      <a href="https://github.com/mattnworb" style="color:#c9cee0;text-decoration:none;">@mattnworb</a>,
+                      <a href="https://github.com/meganemura"
+                        style="color:#c9cee0;text-decoration:none;">@meganemura</a>, <a
+                        href="https://github.com/miyataka" style="color:#c9cee0;text-decoration:none;">@miyataka</a>, <a
+                        href="https://github.com/mochadwi" style="color:#c9cee0;text-decoration:none;">@mochadwi</a>, <a
+                        href="https://github.com/omervk" style="color:#c9cee0;text-decoration:none;">@omervk</a>, <a
+                        href="https://github.com/omry" style="color:#c9cee0;text-decoration:none;">@omry</a>, <a
+                        href="https://github.com/pqppq" style="color:#c9cee0;text-decoration:none;">@pqppq</a>, <a
+                        href="https://github.com/prateek" style="color:#c9cee0;text-decoration:none;">@prateek</a>, <a
+                        href="https://github.com/pstibrany" style="color:#c9cee0;text-decoration:none;">@pstibrany</a>,
+                      <a href="https://github.com/rsanheim" style="color:#c9cee0;text-decoration:none;">@rsanheim</a>,
+                      <a href="https://github.com/schrek1" style="color:#c9cee0;text-decoration:none;">@schrek1</a>, <a
+                        href="https://github.com/scottbradybuckii"
+                        style="color:#c9cee0;text-decoration:none;">@scottbradybuckii</a>, <a
+                        href="https://github.com/sethfitz" style="color:#c9cee0;text-decoration:none;">@sethfitz</a>, <a
+                        href="https://github.com/simenbrekken"
+                        style="color:#c9cee0;text-decoration:none;">@simenbrekken</a>, <a
+                        href="https://github.com/ssemakov" style="color:#c9cee0;text-decoration:none;">@ssemakov</a>, <a
+                        href="https://github.com/stevenpollack"
+                        style="color:#c9cee0;text-decoration:none;">@stevenpollack</a>, <a
+                        href="https://github.com/technicalpickles"
+                        style="color:#c9cee0;text-decoration:none;">@technicalpickles</a>, <a
+                        href="https://github.com/usadamasa" style="color:#c9cee0;text-decoration:none;">@usadamasa</a>,
+                      <a href="https://github.com/Yofou" style="color:#c9cee0;text-decoration:none;">@Yofou</a> and <a
+                        href="https://github.com/yoshitsugu"
+                        style="color:#c9cee0;text-decoration:none;">@yoshitsugu</a>.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Sign-off -->
+          <tr>
+            <td class="px"
+              style="padding:32px 12px 8px 12px;font:15px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#c9cee0;">
+              <p style="margin:0 0 12px 0;">Got thoughts, feedback, or something that bugs you?
+                Just hit reply. I read every email. And if crit saves you time, a <a
+                  href="https://github.com/tomasz-tomczyk/crit" style="color:#7aa2f7;text-decoration:none;">star on
+                  GitHub</a> or passing it on to a coworker helps a lot! Thank you!</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:4px;">
+                <tr>
+                  <td style="vertical-align:middle;"><img src="images/tomasz.jpg" width="44" height="44" alt=""
+                      style="display:block;border:0;border-radius:22px;"></td>
+                  <td
+                    style="vertical-align:middle;padding-left:12px;font:14px/1.4 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                    <span style="color:#e8ebf5;font-weight:600;">Tomasz</span><br><a href="https://crit.md"
+                      style="color:#7a8399;font-size:13px;text-decoration:none;">crit.md</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="px" style="padding:28px 12px 0 12px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="border-top:1px solid #232632;">
+                <tr>
+                  <td
+                    style="padding-top:20px;font:12px/1.7 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#7a8399;">
+                    Written 100% by a human. You get this because you turned on "Email me about new features and releases" on crit.md. Promise to only email you when really cool stuff ships!<br>
+                    <a href="{{{ pm:unsubscribe }}}" style="color:#9ba3bf;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a
+                      href="https://crit.md/settings" style="color:#9ba3bf;">Email settings</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
