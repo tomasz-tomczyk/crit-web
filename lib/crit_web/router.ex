@@ -77,6 +77,14 @@ defmodule CritWeb.Router do
     delete "/auth/logout", OAuthController, :delete
   end
 
+  # Hosted-only marketing archives (not available on self-hosted instances)
+  scope "/", CritWeb do
+    pipe_through [:browser, CritWeb.Plugs.HostedOnly]
+
+    get "/newsletter/:slug", NewsletterController, :show
+    get "/newsletter/:slug/images/:name", NewsletterController, :image
+  end
+
   # CLI auth browser pages — noindexed
   scope "/", CritWeb do
     pipe_through [:browser, :noindex]
