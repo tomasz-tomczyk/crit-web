@@ -923,25 +923,6 @@
   fill: var(--crit-logo-dot);
 }
 
-.crit-header-filename {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--crit-font-mono);
-  font-size: 12px;
-  color: var(--crit-brand);
-  background: var(--crit-brand-subtle);
-  border: 1px solid var(--crit-brand-bg);
-  padding: 3px 10px;
-  border-radius: 6px;
-}
-.crit-filename-icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  color: var(--crit-brand);
-}
-
 .crit-header-identity {
   display: flex;
   align-items: center;
@@ -1967,7 +1948,6 @@ html[data-theme="light"] .crit-toggle-btn--active {
 .comment-time { font-size: 11px; color: var(--crit-editor-fg-muted); }
 .comment-author { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--crit-editor-fg-secondary); font-family: var(--crit-font-mono); }
 .comment-author-icon { width: 13px; height: 13px; flex-shrink: 0; }
-.comment-header-sep { font-size: 10px; color: var(--crit-editor-fg-muted); }
 .comment-round-badge { font-size: 10px; font-weight: 500; color: var(--crit-editor-fg-muted); font-family: var(--crit-font-mono); letter-spacing: 0.02em; white-space: nowrap; }
 .comment-round-badge.round-current, .comment-round-badge.round-latest { color: var(--crit-editor-fg-muted); }
 
@@ -2256,16 +2236,6 @@ html[data-theme="light"] .crit-toggle-btn--active {
 .author-color-3 { background: var(--author-3-bg); border-color: var(--author-3-border); color: var(--author-3-fg); }
 .author-color-4 { background: var(--author-4-bg); border-color: var(--author-4-border); color: var(--author-4-fg); }
 .author-color-5 { background: var(--author-5-bg); border-color: var(--author-5-border); color: var(--author-5-fg); }
-
-/* ===== Resolved Comments ===== */
-.resolved-badge {
-  font-size: 11px;
-  padding: 1px 8px;
-  border: 1px solid var(--crit-green);
-  border-radius: 12px;
-  color: var(--crit-green);
-  white-space: nowrap;
-}
 
 /* ===== Thread Replies ===== */
 .comment-replies {
@@ -3322,10 +3292,6 @@ body.file-tree-anim #fileTreeResizer {
   text-overflow: ellipsis;
 }
 
-.tree-dir {
-  color: var(--crit-editor-fg-muted);
-}
-
 /* Copy path button in file header */
 .file-header-copy-path {
   display: inline-flex;
@@ -3449,7 +3415,6 @@ body.sidebar-resizing * {
     border-top: 1px solid var(--crit-border);
     padding-top: 8px;
   }
-  .crit-header-filename { display: none; }
   .crit-viewed-count { display: none !important; }
 
   .comment-block { padding: 0 6px; }
@@ -3564,36 +3529,7 @@ body.sidebar-resizing * {
 .crit-toc-toggle svg { width: 16px; height: 16px; display: block; }
 .crit-toc-toggle:hover { color: var(--crit-editor-fg); background: var(--crit-editor-bg-elevated); }
 
-/* Keyboard shortcuts overlay */
-.shortcuts-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 400;
-  align-items: center;
-  justify-content: center;
-}
-
-.shortcuts-overlay.visible {
-  display: flex;
-}
-
-.shortcuts-dialog {
-  background: var(--crit-editor-bg-card);
-  border: 1px solid var(--crit-border);
-  border-radius: 12px;
-  padding: 24px 32px;
-  max-width: 560px;
-  width: 90vw;
-}
-
-.shortcuts-dialog h3 {
-  color: var(--crit-editor-fg);
-  margin: 0 0 16px;
-  font-size: 16px;
-}
-
+/* Keyboard shortcuts table (settings panel) */
 .shortcuts-table {
   width: 100%;
   border-collapse: collapse;
@@ -4439,12 +4375,6 @@ body.sidebar-resizing * {
      because order:0 < 5 < 10. */
   .file-header-badge  { order: 20; margin-left: auto; }
 
-  /* Inline comment forms / comment blocks: zero the desktop gutter padding */
-  .inline-comment-form,
-  .line-comment-block { padding-left: 0 !important; width: 100% !important; }
-  .diff-inline-comment-form,
-  .diff-comment-block { padding-left: 0 !important; width: 100% !important; }
-
   /* Mobile file picker */
   .mobile-file-picker-bar:not(.mobile-file-picker-hidden) {
     display: flex;
@@ -4866,10 +4796,11 @@ body.sidebar-resizing * {
 }
 .theme-preview-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
-.theme-preview-actions { flex-wrap: wrap; justify-content: flex-end; }
 .theme-preview-setting {
   display: flex;
   align-items: center;

@@ -5,7 +5,7 @@
 // assets/js (as ESM) and assets/vendor/crit (crit's UMD modules, as CJS) into
 // a temp directory once per test process and imports from there.
 
-import { cpSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -16,6 +16,8 @@ let root = null
 function mirror() {
   if (root) return root
   root = mkdtempSync(join(tmpdir(), 'crit-web-js-'))
+  const dir = root
+  process.on('exit', () => rmSync(dir, { recursive: true, force: true }))
   cpSync(join(assets, 'js'), join(root, 'js'), { recursive: true })
   cpSync(join(assets, 'vendor', 'crit'), join(root, 'vendor', 'crit'), { recursive: true })
   writeFileSync(join(root, 'package.json'), '{"type":"module"}')

@@ -3,11 +3,14 @@
     <div class="crit-header-bar">
       <div class="crit-header-left">
         <%!-- File-tree sidebar toggle. Hidden until multi-file init (JS).
-             aria-expanded / title / aria-label are owned by document-renderer.js. --%>
+             style / aria-expanded / title / aria-label are owned by
+             document-renderer.js. phx-update="ignore" keeps LiveView patches
+             from restoring the static values below. --%>
         <button
           type="button"
           class="ft-toggle"
           id="fileTreeToggle"
+          phx-update="ignore"
           title="Hide sidebar (b)"
           aria-label="Hide sidebar"
           aria-expanded="true"
@@ -131,7 +134,13 @@
         <% end %>
       </div>
       <div class="crit-header-actions-right">
-        <span id="viewedCount" class="crit-viewed-count" style="display:none"></span>
+        <%!-- Text and visibility are owned by updateViewedCount in document-renderer.js. --%>
+        <span
+          id="viewedCount"
+          class="crit-viewed-count"
+          style="display:none"
+          phx-update="ignore"
+        ></span>
         <div class="comment-nav-group" id="comment-nav-group">
           <%= if not @preview? do %>
             <button
@@ -152,13 +161,17 @@
             </button>
           <% end %>
           <%!--
-            aria-expanded is owned by JS (see syncCommentsPanelAria in
-            document-renderer.js). Do not set it statically here — the static
-            value would race with the JS-owned value across LiveView patches.
+            aria-expanded, title, the comment-count-resolved class and the
+            #commentCountNumber text are owned by JS (updateCommentCount /
+            syncCommentsPanelAria in document-renderer.js, renderCounts in
+            preview-mode.js). phx-update="ignore" keeps LiveView patches from
+            resetting them. phx-click only depends on @preview?, which is fixed
+            at mount, so ignoring server updates is safe.
           --%>
           <button
             class="comment-count-btn"
             id="comment-count"
+            phx-update="ignore"
             title="Toggle comments panel"
             aria-label="Toggle comments panel"
             phx-click={

@@ -315,7 +315,7 @@ export const PreviewMode = {
       '      <iframe id="critPreviewIframe" title="Preview" referrerpolicy="no-referrer" sandbox="' + this.iframeSandboxValue() + '"></iframe>',
       "    </div>",
       "  </div>",
-      '  <div class="sidebar-resize-handle" id="commentsPanelResizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize comments panel"></div>',
+      '  <div class="sidebar-resize-handle" id="commentsPanelResizer" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize comments panel" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>',
       '  <aside class="comments-panel" id="commentsPanel" aria-label="Comments">',
       '    <div class="comments-panel-header">',
       '      <div class="comments-panel-header-row1">',
@@ -588,12 +588,15 @@ export const PreviewMode = {
 
   setCommentsPanelOpen(open, animate) {
     if (!this.panel) return
+    // Always measure — including the no-op early return — so a resized-but-still-
+    // closed panel keeps --comments-panel-width aligned with margin-right:-W
+    // (same as files mode's setCommentsPanelOpen in document-renderer.js).
+    const w = this.panel.getBoundingClientRect().width
+    if (w > 0) document.body.style.setProperty("--comments-panel-width", w + "px")
     if (this.panel.classList.contains("comments-panel-open") === open) {
       this.syncToggleAria(open)
       return
     }
-    const w = this.panel.getBoundingClientRect().width
-    if (w > 0) document.body.style.setProperty("--comments-panel-width", w + "px")
     if (animate) this.startCommentsPanelAnimation()
     this.panel.classList.toggle("comments-panel-open", open)
     this.syncToggleAria(open)

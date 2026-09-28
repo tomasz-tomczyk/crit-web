@@ -104,6 +104,33 @@ test.describe("comment policy", () => {
     await deleteReview(request, deleteToken);
   });
 
+  test("owner menu — picking a policy closes the panel", async ({ request, page }) => {
+    const { user_id: userId, token: bearer } = await seedUserAndToken(request);
+    const createRes = await request.post(`${BASE_URL}/api/reviews`, {
+      headers: { Authorization: `Bearer ${bearer}` },
+      data: { files: [{ path: "a.md", content: "# hi\n" }], comments: [] },
+    });
+    expect(createRes.status()).toBe(201);
+    const { url, delete_token: deleteToken } = await createRes.json();
+    const token = (url as string).split("/r/")[1];
+
+    await page.goto(`/test/login-as/${userId}`);
+    await loadReview(page, token);
+
+    const panel = page.locator("#comment-policy-menu-panel");
+    await page.locator("#comment-policy-menu-trigger").click();
+    await expect(panel).toHaveAttribute("data-open", "true");
+    await expect(panel).toBeVisible();
+
+    await page.locator('[data-test="comment-policy-set-logged_in_only"]').click();
+    await expect(panel).toHaveAttribute("data-open", "false");
+    await expect(panel).toBeHidden();
+    await expect(page.locator("#comment-policy-menu-trigger")).toHaveAttribute("aria-expanded", "false");
+    await expect(page.locator("#comment-policy-menu-trigger")).toContainText("Login required");
+
+    await deleteReview(request, deleteToken);
+  });
+
   test("open — no banner, no badge for anon viewer", async ({ request, page }) => {
     const { token, deleteToken } = await createReview(request);
     await loadReview(page, token);

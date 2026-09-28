@@ -2778,13 +2778,20 @@ function codeQuotes(ctx, filePath) {
   return quoted
 }
 
+// Destroy a code view and drop it as the keyboard-selection target, so a
+// later hideCodeSelection / showCodeSelection never calls into a dead view.
+function destroyCodeView(ctx, view) {
+  if (ctx._codeSelectionView === view) ctx._codeSelectionView = null
+  view.destroy()
+}
+
 function codeViewFor(ctx, filePath, content) {
   const P = window.PierreDiffs
   if (!P) return null
   if (!ctx._codeViews) ctx._codeViews = new Map()
   let view = ctx._codeViews.get(filePath)
   if (view && view.content !== content) {
-    view.destroy()
+    destroyCodeView(ctx, view)
     view = null
   }
   if (view) return view
@@ -2861,7 +2868,7 @@ function pruneCodeViews(ctx) {
   if (!ctx._codeViews) return
   for (const [path, view] of ctx._codeViews) {
     if (!view.element.isConnected) {
-      view.destroy()
+      destroyCodeView(ctx, view)
       ctx._codeViews.delete(path)
     }
   }
@@ -5502,6 +5509,8 @@ function filesSettingsAdapter(ctx) {
     readHideResolved: () => isHideResolved(ctx),
     setHideResolved: (v) => setHideResolved(ctx, v),
     shortcutMode: 'files',
+    // The sidebar toggle's title names its binding ("Hide sidebar (b)").
+    onShortcutsChanged: () => syncSidebarToggleAria(),
   }
 }
 
@@ -6051,18 +6060,6 @@ export const DocumentRenderer = {
       rerenderPanel(ctx)
     })
 
-    // Legacy handler — kept for backwards compatibility during rollout
-    ctx.handleEvent("comments_updated", ({ comments }) => {
-      ctx.comments = comments
-      if (ctx.multiFile) {
-        for (const f of ctx.files) {
-          f.comments = comments.filter(c => c.file_path === f.path)
-        }
-      }
-      render(ctx)
-      rerenderPanel(ctx)
-    })
-
     ctx.handleEvent("round_diff_updated", async ({ enabled, snapshots }) => {
       const seq = ctx._roundDiffSeq = (ctx._roundDiffSeq || 0) + 1
       // The previous round's fences highlight like the current ones.
@@ -6400,6 +6397,7 @@ export const DocumentRenderer = {
       for (const view of this._codeViews.values()) view.destroy()
       this._codeViews.clear()
     }
+    this._codeSelectionView = null
     // Drop any visual-mode state so a remount starts clean.
     this.visualMode = null
     this.selectionStart = null
@@ -6422,16 +6420,6 @@ export const DocumentRenderer = {
     if (this._timers) {
       for (const id of this._timers) clearTimeout(id)
       this._timers.clear()
-    }
-    // Defensive: panel-internal handlers may have been attached to
-    // document/window in future changes — remove them here if present.
-    if (this._panelDocClickHandler) {
-      document.removeEventListener('click', this._panelDocClickHandler)
-      this._panelDocClickHandler = null
-    }
-    if (this._panelDocKeyHandler) {
-      document.removeEventListener('keydown', this._panelDocKeyHandler)
-      this._panelDocKeyHandler = null
     }
     if (this._commentsPanel) {
       this._commentsPanel.remove()

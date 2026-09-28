@@ -81,7 +81,7 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
         if (r) handlers.onGutterRange({ startLine: r.startLine, endLine: r.endLine })
         // Pierre keeps the clicked range selected and would extend it on the
         // next gutter press; the form marks the range from here on.
-        requestAnimationFrame(() => instance.setSelectedLines(null))
+        requestAnimationFrame(() => { if (instance) instance.setSelectedLines(null) })
       },
       onLineNumberClick(props) {
         // Touch has no hover "+": a tap on a line number comments on it.
@@ -125,7 +125,10 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
     return out
   }
 
+  // After destroy() every method is a no-op: a caller holding a stale view
+  // (or a queued callback) must not reach the cleaned-up Pierre instance.
   function render() {
+    if (!instance) return
     instance.render({ file: contents, lineAnnotations: annotations, containerWrapper: element })
   }
 
@@ -141,17 +144,20 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
     },
     // Display settings, theme or theme type changed.
     setOptions(next) {
+      if (!instance) return
       instance.setOptions(fileOptions(next))
       instance.rerender()
     },
     // Keyboard focus / visual range (null clears).
     setSelectedLines(range) {
+      if (!instance) return
       instance.setSelectedLines(range ? { start: range.start, end: range.end, side: 'additions', endSide: 'additions' } : null)
     },
     lineElement(line) {
       return pierreDOM.pierreLineElement(element, line, '')
     },
     destroy() {
+      if (!instance) return
       instance.cleanUp()
       instance = null
       element.remove()
