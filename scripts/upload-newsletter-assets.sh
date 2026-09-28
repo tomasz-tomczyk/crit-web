@@ -10,13 +10,13 @@
 #   ./scripts/upload-newsletter-assets.sh [slug] [source-dir]
 #
 # Example:
-#   ./scripts/upload-newsletter-assets.sh 2026-10-first-update \
+#   ./scripts/upload-newsletter-assets.sh 2026-09-first-update \
 #     ../crit-meta/newsletter/images
 #
 
 set -euo pipefail
 
-slug="${1:-2026-10-first-update}"
+slug="${1:-2026-09-first-update}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
 default_src="${repo_root}/priv/newsletters/${slug}/images"

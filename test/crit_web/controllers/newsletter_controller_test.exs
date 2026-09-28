@@ -16,16 +16,16 @@ defmodule CritWeb.NewsletterControllerTest do
   test "serves newsletter HTML on hosted instances", %{conn: conn} do
     Application.put_env(:crit, :selfhosted, false)
 
-    conn = get(conn, ~p"/newsletter/2026-10-first-update")
+    conn = get(conn, ~p"/newsletter/2026-09-first-update")
     assert response(conn, 200) =~ "Story mode, a new renderer, and finish hooks"
-    assert response(conn, 200) =~ ~s(src="/newsletter/2026-10-first-update/images/)
+    assert response(conn, 200) =~ ~s(src="/newsletter/2026-09-first-update/images/)
     refute response(conn, 200) =~ "{{{ pm:unsubscribe }}}"
   end
 
   test "serves newsletter images on hosted instances", %{conn: conn} do
     Application.put_env(:crit, :selfhosted, false)
 
-    conn = get(conn, ~p"/newsletter/2026-10-first-update/images/crit-logo.png")
+    conn = get(conn, ~p"/newsletter/2026-09-first-update/images/crit-logo.png")
     assert response(conn, 200)
     assert get_resp_header(conn, "content-type") |> hd() =~ "image/png"
   end
@@ -33,7 +33,7 @@ defmodule CritWeb.NewsletterControllerTest do
   test "404s newsletter on selfhosted instances", %{conn: conn} do
     Application.put_env(:crit, :selfhosted, true)
 
-    conn = get(conn, ~p"/newsletter/2026-10-first-update")
+    conn = get(conn, ~p"/newsletter/2026-09-first-update")
     assert response(conn, 404)
   end
 
