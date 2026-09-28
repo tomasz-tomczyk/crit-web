@@ -317,10 +317,12 @@ test.describe("Review Page — Rendered Tables", () => {
     expect(await previousTarget.textContent()).not.toBe(firstText);
   });
 
-  test("drag selection has continuous row-height gutter segments", async ({ page }) => {
+  test("drag highlights every selected table row with one endpoint utility and no bracket", async ({ page }) => {
     await loadReview(page, token);
-    const first = page.getByRole("cell", { name: "x", exact: true }).locator("..").locator(".line-gutter");
-    const last = page.getByRole("cell", { name: "gamma", exact: true }).locator("..").locator(".line-gutter");
+    const firstRow = page.getByRole("cell", { name: "x", exact: true }).locator("..");
+    const lastRow = page.getByRole("cell", { name: "gamma", exact: true }).locator("..");
+    const first = firstRow.locator(".line-gutter");
+    const last = lastRow.locator(".line-gutter");
     await first.scrollIntoViewIfNeeded();
     const firstBox = await first.boundingBox();
     const lastBox = await last.boundingBox();
@@ -331,16 +333,16 @@ test.describe("Review Page — Rendered Tables", () => {
     await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + 10);
     await page.mouse.down();
     await page.mouse.move(lastBox.x + lastBox.width / 2, lastBox.y + 10, { steps: 5 });
-    const segments = await page.locator(".native-table .line-block.drag-range .line-comment-gutter")
-      .evaluateAll(gutters => gutters.map(gutter => {
-        const rect = gutter.getBoundingClientRect();
-        return { top: rect.top, bottom: rect.bottom, height: rect.height };
-      }));
-    expect(segments).toHaveLength(3);
-    for (let index = 0; index < segments.length - 1; index++) {
-      expect(Math.abs(segments[index].bottom - segments[index + 1].top)).toBeLessThanOrEqual(0.5);
-      expect(segments[index].height).toBeGreaterThan(20);
-    }
+
+    const selected = page.locator(".native-table .line-block.selected");
+    await expect(selected).toHaveCount(3);
+    await expect(page.locator(".native-table .line-block.drag-endpoint")).toHaveCount(1);
+    await expect(lastRow).toHaveClass(/drag-endpoint/);
+    await expect(lastRow.locator(".line-add").first()).toBeVisible();
+    await expect(firstRow.locator(".line-add").first()).toBeHidden();
+    const lastGutter = lastRow.locator(".line-comment-gutter");
+    expect(await lastGutter.evaluate(el => getComputedStyle(el, "::after").content)).toBe("none");
+
     await page.mouse.up();
     await expect(page.locator(".comment-form")).toBeVisible();
   });
