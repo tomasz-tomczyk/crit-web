@@ -55,7 +55,8 @@ test("comment deltas received while Pierre loads survive initialization", async 
       await blocked;
       await route.continue();
     });
-    await page.goto(`/r/${review.token}`);
+    // The intercepted renderer script may delay the load event itself.
+    await page.goto(`/r/${review.token}`, { waitUntil: "domcontentloaded" });
     await started;
     await addCommentViaUI(peer, "Arrived during renderer startup");
     await expect(page.locator("#commentCountNumber")).toHaveText("1");
