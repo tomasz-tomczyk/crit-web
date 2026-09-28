@@ -35,7 +35,21 @@ function initSentry(liveSocket) {
       release: release || undefined,
       tracesSampleRate: 0,
       // Privacy: never attach personal data, never record DOM/inputs.
-      sendDefaultPii: false,
+      // SDK v11 collects user info (incl. IP), cookies, headers and bodies by
+      // default; this restores the v10 sendDefaultPii: false behavior.
+      dataCollection: {
+        userInfo: false,
+        cookies: false,
+        httpHeaders: {
+          request: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          response: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+        },
+        httpBodies: [],
+        urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+      },
+      // v11 attaches synthetic stack traces to captureMessage events, which
+      // changes issue grouping. Keep the v10 behavior.
+      attachStacktrace: false,
       // Homepage <video autoplay> on iOS Safari/Chrome iOS surfaces these as
       // unhandled errors (play() policy / media element state). Not actionable.
       ignoreErrors: [
@@ -44,12 +58,12 @@ function initSentry(liveSocket) {
         /NotAllowedError/,
         /^The media resource indicated by the src attribute or assigned media provider object was not suitable\.$/,
       ],
-      // Replace the default Breadcrumbs integration with one that doesn't
-      // capture console output or DOM text — review/comment content must not leak.
+      // Drop console breadcrumbs (the Console integration) and replace the
+      // default Breadcrumbs integration with one that doesn't capture DOM
+      // text — review/comment content must not leak.
       integrations: defaults => [
-        ...defaults.filter(i => i.name !== "Breadcrumbs"),
+        ...defaults.filter(i => i.name !== "Breadcrumbs" && i.name !== "Console"),
         Sentry.breadcrumbsIntegration({
-          console: false,
           dom: false,
           fetch: true,
           xhr: true,
