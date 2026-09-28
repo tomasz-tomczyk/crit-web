@@ -10,6 +10,7 @@ function fakePierre() {
   const primed = []
   const results = new Map()
   const pool = {
+    initialize: () => Promise.resolve(),
     isInitialized: () => true,
     subscribeToStatChanges: () => () => {},
     primeFileHighlightCache(file) {
