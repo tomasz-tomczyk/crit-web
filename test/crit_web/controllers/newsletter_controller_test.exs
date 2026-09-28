@@ -3,6 +3,7 @@ defmodule CritWeb.NewsletterControllerTest do
 
   setup do
     orig = Application.get_env(:crit, :selfhosted)
+
     on_exit(fn ->
       if is_nil(orig),
         do: Application.delete_env(:crit, :selfhosted),
