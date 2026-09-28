@@ -4,7 +4,7 @@
 // palette stylesheet comes from the server (`theme_palette`, as on the review
 // page) instead of crit's client-side palette module.
 
-import { adapter, applyPalette, codeHighlight, configureCodeHighlight, displayOptions, loadPierre, workerPool } from "./pierre-runtime"
+import { adapter, applyPalette, codeHighlight, configureCodeHighlight, displayOptions, loadPierre, palettePair, workerPool } from "./pierre-runtime"
 import pierreDOM from "../vendor/crit/crit-pierre-dom.js"
 import { applyDisplayAttributes, getSetting, setSetting, themeChoice } from "./review-settings"
 
@@ -96,7 +96,7 @@ function documentSample() {
 export const ThemePreview = {
   async mounted() {
     const hook = this
-    hook.saved = palettePairFromPage()
+    hook.saved = palettePair()
     hook.state = { mode: initialMode(), id: null }
     hook.list = document.getElementById('themeList')
 
@@ -241,11 +241,6 @@ export const ThemePreview = {
   destroyed() {
     if (this.file) this.file.cleanUp()
   },
-}
-
-function palettePairFromPage() {
-  const root = document.documentElement.dataset
-  return { light: root.critPaletteLight || adapter.THEME.light, dark: root.critPaletteDark || adapter.THEME.dark }
 }
 
 function initialMode() {

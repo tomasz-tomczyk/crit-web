@@ -185,6 +185,10 @@ test.describe("Code display and theme settings", () => {
     });
     await loadReview(page, token);
     await expect(codeLine(page, "server.go", 4)).toContainText("func main");
+    // Highlighted without workers: Shiki colors "func" and "main" differently.
+    await expect.poll(() => codeLine(page, "server.go", 4).locator("span[style]").evaluateAll(
+      (spans) => new Set(spans.map((s) => getComputedStyle(s).color)).size,
+    )).toBeGreaterThan(1);
   });
 });
 
