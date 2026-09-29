@@ -18,7 +18,7 @@ defmodule CritWeb.NewsletterControllerTest do
 
     conn = get(conn, ~p"/newsletter/2026-09-first-update")
     assert response(conn, 200) =~ "Story mode, a new renderer, and finish hooks"
-    assert response(conn, 200) =~ ~s(src="/newsletter/2026-09-first-update/images/)
+    assert response(conn, 200) =~ ~s(src="https://assets.crit.md/newsletter/2026-09-first-update/)
     refute response(conn, 200) =~ "{{{ pm:unsubscribe }}}"
   end
 
