@@ -1145,6 +1145,11 @@ defmodule CritWeb.Layouts do
 
   attr :page_path, :string, default: nil
 
+  attr :marketing_base, :string,
+    default: nil,
+    doc:
+      "absolute base URL (e.g. \"https://crit.md\") for marketing links. Set on app pages so the footer keeps working on instances that serve no marketing pages. When nil, links stay relative."
+
   def site_footer(assigns) do
     assigns =
       assign_new(assigns, :newsletter_footer_form, fn ->
@@ -1158,12 +1163,12 @@ defmodule CritWeb.Layouts do
           <%!-- Brand --%>
           <div>
             <span class="text-lg font-extrabold tracking-tight">
-              Crit<span class="text-(--crit-brand)">.</span>
+              crit<span class="text-(--crit-brand)">.</span>
             </span>
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3">
               A local-first review tool for the loop between you and your coding agent.
             </p>
-            <div :if={Crit.Config.hosted?()} class="mt-8">
+            <div :if={Crit.Config.hosted?() and is_nil(@marketing_base)} class="mt-8">
               <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
                 Newsletter
               </h2>
@@ -1184,31 +1189,31 @@ defmodule CritWeb.Layouts do
             </h2>
             <div class="flex flex-col gap-2">
               <a
-                href="/modes/plans-docs"
+                href={marketing_url(@marketing_base, "/modes/plans-docs")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Review plans & docs
               </a>
               <a
-                href="/modes/code"
+                href={marketing_url(@marketing_base, "/modes/code")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Review code diffs
               </a>
               <a
-                href="/modes/story"
+                href={marketing_url(@marketing_base, "/modes/story")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Review diffs as a story
               </a>
               <a
-                href="/modes/live"
+                href={marketing_url(@marketing_base, "/modes/live")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Review running apps
               </a>
               <a
-                href="/modes/preview"
+                href={marketing_url(@marketing_base, "/modes/preview")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Review HTML artifacts
@@ -1253,20 +1258,20 @@ defmodule CritWeb.Layouts do
                 Releases
               </a>
               <a
-                href={~p"/changelog"}
+                href={marketing_url(@marketing_base, "/changelog")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Changelog
               </a>
               <a
-                :if={Crit.Config.hosted?()}
-                href={~p"/newsletter"}
+                :if={Crit.Config.hosted?() or @marketing_base != nil}
+                href={marketing_url(@marketing_base, "/newsletter")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Newsletter
               </a>
               <a
-                href={~p"/articles"}
+                href={marketing_url(@marketing_base, "/articles")}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Articles
@@ -1274,8 +1279,8 @@ defmodule CritWeb.Layouts do
             </div>
           </div>
 
-          <%!-- Share --%>
-          <div>
+          <%!-- Share (marketing pages) / Resources (app pages) --%>
+          <div :if={is_nil(@marketing_base)}>
             <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
               Share
             </h2>
@@ -1291,6 +1296,31 @@ defmodule CritWeb.Layouts do
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
                 Self-host
+              </a>
+            </div>
+          </div>
+          <div :if={@marketing_base != nil}>
+            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+              Resources
+            </h2>
+            <div class="flex flex-col gap-2">
+              <a
+                href={marketing_url(@marketing_base, "/getting-started")}
+                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
+              >
+                Get started
+              </a>
+              <a
+                href={marketing_url(@marketing_base, "/self-hosting")}
+                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
+              >
+                Self-host
+              </a>
+              <a
+                href={marketing_url(@marketing_base, "/features")}
+                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
+              >
+                Features
               </a>
             </div>
           </div>
@@ -1310,15 +1340,31 @@ defmodule CritWeb.Layouts do
             </a>
           </span>
           <span class="flex items-center gap-1.5">
-            <a href={~p"/terms"} class="hover:text-(--crit-fg-primary) no-underline">Terms</a>
+            <a
+              href={marketing_url(@marketing_base, "/terms")}
+              class="hover:text-(--crit-fg-primary) no-underline"
+            >
+              Terms
+            </a>
             <span aria-hidden="true">·</span>
-            <a href={~p"/privacy"} class="hover:text-(--crit-fg-primary) no-underline">Privacy</a>
+            <a
+              href={marketing_url(@marketing_base, "/privacy")}
+              class="hover:text-(--crit-fg-primary) no-underline"
+            >
+              Privacy
+            </a>
           </span>
         </div>
       </div>
     </footer>
     """
   end
+
+  # Resolves a marketing path against the optional absolute base. Marketing
+  # pages use relative links; app pages pass `marketing_base` so the same
+  # footer links out to crit.md from instances with no marketing pages.
+  defp marketing_url(nil, path), do: path
+  defp marketing_url(base, path), do: base <> path
 
   @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.

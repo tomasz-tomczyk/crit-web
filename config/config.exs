@@ -10,7 +10,8 @@ import Config
 config :crit,
   ecto_repos: [Crit.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true],
-  smtp_from: "test@localhost"
+  smtp_from: "test@localhost",
+  env: config_env()
 
 config :crit, Oban,
   repo: Crit.Repo,

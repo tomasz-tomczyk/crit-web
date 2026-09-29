@@ -8,7 +8,7 @@
     orgs={@orgs}
   />
 
-  <div class="max-w-[640px] mx-auto w-full px-10 my-10 max-sm:px-4">
+  <div class="max-w-[640px] mx-auto w-full flex-1 px-10 my-10 max-sm:px-4">
     <.link
       navigate={~p"/orgs"}
       class="inline-flex items-center gap-1 text-sm text-(--crit-fg-muted) hover:text-(--crit-fg-primary) no-underline mb-4"
@@ -102,4 +102,6 @@
       </.form>
     </div>
   </div>
+
+  <Layouts.site_footer marketing_base="https://crit.md" />
 </div>

@@ -101,7 +101,7 @@
         }
       })();
     </script>
-    <%= if Crit.Config.hosted?() do %>
+    <%= if Crit.Config.hosted?() and Application.get_env(:crit, :env) == :prod do %>
       <script
         defer
         src="https://cloud.umami.is/script.js"

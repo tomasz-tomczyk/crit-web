@@ -8,7 +8,7 @@
     orgs={assigns[:orgs] || []}
   />
 
-  <div class="max-w-7xl mx-auto w-full px-8 py-14 max-sm:px-4 max-sm:py-8">
+  <div class="max-w-7xl mx-auto w-full flex-1 px-8 py-14 max-sm:px-4 max-sm:py-8">
     <%= case @status do %>
       <% :ok -> %>
         <div class="bg-(--crit-bg-card) border border-(--crit-border) rounded-[14px] overflow-hidden">
@@ -166,4 +166,6 @@
         </div>
     <% end %>
   </div>
+
+  <Layouts.site_footer marketing_base="https://crit.md" />
 </div>

@@ -139,9 +139,19 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
   end
 
   describe "Umami analytics script" do
-    test "renders on hosted deployments", %{conn: conn} do
+    test "renders on hosted prod deployments", %{conn: conn} do
+      old_selfhosted = Application.get_env(:crit, :selfhosted)
+      old_env = Application.get_env(:crit, :env)
       Application.put_env(:crit, :selfhosted, false)
-      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+      Application.put_env(:crit, :env, :prod)
+
+      on_exit(fn ->
+        if is_nil(old_selfhosted),
+          do: Application.delete_env(:crit, :selfhosted),
+          else: Application.put_env(:crit, :selfhosted, old_selfhosted)
+
+        Application.put_env(:crit, :env, old_env)
+      end)
 
       html = get(conn, ~p"/") |> html_response(200)
 
@@ -149,9 +159,34 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
       assert html =~ "24d521a2-4440-4f90-9cbb-f0b2abcd67e2"
     end
 
+    test "omits outside prod even on hosted deployments", %{conn: conn} do
+      old_selfhosted = Application.get_env(:crit, :selfhosted)
+      Application.put_env(:crit, :selfhosted, false)
+
+      on_exit(fn ->
+        if is_nil(old_selfhosted),
+          do: Application.delete_env(:crit, :selfhosted),
+          else: Application.put_env(:crit, :selfhosted, old_selfhosted)
+      end)
+
+      html = get(conn, ~p"/") |> html_response(200)
+
+      refute html =~ "cloud.umami.is/script.js"
+    end
+
     test "omits on self-hosted deployments", %{conn: conn} do
+      old_selfhosted = Application.get_env(:crit, :selfhosted)
+      old_env = Application.get_env(:crit, :env)
       Application.put_env(:crit, :selfhosted, true)
-      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+      Application.put_env(:crit, :env, :prod)
+
+      on_exit(fn ->
+        if is_nil(old_selfhosted),
+          do: Application.delete_env(:crit, :selfhosted),
+          else: Application.put_env(:crit, :selfhosted, old_selfhosted)
+
+        Application.put_env(:crit, :env, old_env)
+      end)
 
       html = get(conn, ~p"/privacy") |> html_response(200)
 
