@@ -21,7 +21,10 @@ defmodule CritWeb.NewsletterController do
   end
 
   def subscribe(conn, params) do
-    case Newsletters.request_subscription(Map.get(params, "newsletter", %{})) do
+    attrs = Map.get(params, "newsletter", %{})
+    attrs = if is_map(attrs), do: attrs, else: %{}
+
+    case Newsletters.request_subscription(attrs) do
       {:ok, :check_inbox} ->
         render_index(
           conn,

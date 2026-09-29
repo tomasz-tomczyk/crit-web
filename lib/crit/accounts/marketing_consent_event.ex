@@ -13,7 +13,8 @@ defmodule Crit.Accounts.MarketingConsentEvent do
         :dashboard_checkbox,
         :newsletter_form,
         :newsletter_confirmation,
-        :newsletter_unsubscribe
+        :newsletter_unsubscribe,
+        :account_deletion
       ]
 
     field :email, :string

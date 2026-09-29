@@ -52,6 +52,19 @@ defmodule CritWeb.NewsletterControllerTest do
     assert html =~ ~s(action="/newsletter/subscribe")
   end
 
+  test "malformed newsletter payloads return validation errors", %{conn: conn} do
+    Application.put_env(:crit, :selfhosted, false)
+
+    for attrs <- [nil, "not-a-map", ["not-a-map"], 12] do
+      assert conn
+             |> recycle()
+             |> post(~p"/newsletter/subscribe", %{"newsletter" => attrs})
+             |> html_response(422)
+    end
+
+    refute_receive {:email, _}
+  end
+
   test "anonymous signup can be confirmed and unsubscribed; GETs do not change consent", %{
     conn: conn
   } do

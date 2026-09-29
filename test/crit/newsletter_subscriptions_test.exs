@@ -154,6 +154,57 @@ defmodule Crit.MarketingConsentEventsTest do
     assert Newsletters.recipients() == [user.email]
   end
 
+  test "an account opt-out cancels an older public confirmation" do
+    user = user_fixture(email: "reader@example.com")
+    assert {:ok, true} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+    {token, _} = request(user.email)
+    assert {:ok, false} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+    assert {:error, :invalid_token} = Newsletters.confirm_subscription(token)
+    assert Newsletters.recipients() == []
+  end
+
+  test "account email changes and deletion do not revive an opted-out address" do
+    user = user_fixture(email: "reader@example.com")
+    {token, _} = request(user.email)
+    assert {:ok, _} = Newsletters.confirm_subscription(token)
+    assert {:ok, false} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+    assert {:ok, user} = Accounts.update_user_profile(user, %{"email" => "new@example.com"})
+    refute Newsletters.opted_in?("reader@example.com")
+    assert Newsletters.recipients() == []
+    assert :ok = Accounts.delete_user(user)
+    refute Newsletters.opted_in?("reader@example.com")
+    assert Newsletters.recipients() == []
+  end
+
+  test "account opt-in follows an updated email while old opt-outs remain suppressed" do
+    user = user_fixture(email: "reader@example.com")
+    assert {:ok, true} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+    assert {:ok, updated} = Accounts.update_user_profile(user, %{"email" => "new@example.com"})
+    assert Accounts.marketing_opted_in?(updated)
+    assert Newsletters.recipients() == ["new@example.com"]
+  end
+
+  test "account opt-ins are not sent to an old address when its current email is removed" do
+    user = user_fixture(email: "reader@example.com")
+    assert {:ok, true} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+    user |> Ecto.Changeset.change(email: nil) |> Repo.update!()
+    refute Newsletters.opted_in?("reader@example.com")
+    assert Newsletters.recipients() == []
+  end
+
+  test "deletion preserves the effective opt-out at a changed account email" do
+    {token, _} = request("new@example.com")
+    assert {:ok, _} = Newsletters.confirm_subscription(token)
+    user = user_fixture(email: "reader@example.com")
+    assert {:ok, true} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+    assert {:ok, false} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+    assert {:ok, updated} = Accounts.update_user_profile(user, %{"email" => "new@example.com"})
+    refute Accounts.marketing_opted_in?(updated)
+    assert :ok = Accounts.delete_user(updated)
+    refute Newsletters.opted_in?("new@example.com")
+    assert Newsletters.recipients() == []
+  end
+
   test "signup source is stored separately and preserved on duplicate requests" do
     for source <- ~w(homepage archive footer) do
       email = "#{source}@example.com"

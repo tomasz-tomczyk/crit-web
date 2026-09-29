@@ -180,7 +180,13 @@ defmodule Crit.Newsletters do
       left_join: u in Crit.User,
       on: u.id == e.user_id,
       where: e.action in [:opted_in, :opted_out],
-      select: {fragment("lower(coalesce(?, ?))", e.email, u.email), e.action, e.inserted_at}
+      select:
+        {fragment(
+           "lower(CASE WHEN ? IS NOT NULL THEN ? ELSE ? END)",
+           e.user_id,
+           u.email,
+           e.email
+         ), e.action, e.inserted_at, e.id}
   end
 
   @doc "Current consent across account and anonymous events; requests do not count as opt-ins."
@@ -189,26 +195,41 @@ defmodule Crit.Newsletters do
       consent_query()
       |> where(
         [e, u],
-        fragment("lower(coalesce(?, ?))", e.email, u.email) == ^String.downcase(email)
+        fragment("lower(CASE WHEN ? IS NOT NULL THEN ? ELSE ? END)", e.user_id, u.email, e.email) ==
+          ^String.downcase(email) or
+          (e.action == :opted_out and e.email == ^String.downcase(email))
       )
       |> order_by([e], desc: e.inserted_at, desc: e.id)
       |> limit(1)
       |> Repo.one()
 
-    match?({_, :opted_in, _}, latest)
+    match?({_, :opted_in, _, _}, latest)
   end
 
   def opted_in?(_), do: false
 
   @doc "Confirmed newsletter recipients from the existing consent event history, deduplicated."
   def recipients do
-    consent_query()
-    |> order_by([e], desc: e.inserted_at, desc: e.id)
-    |> Repo.all()
-    |> Enum.reject(fn {email, _, _} -> is_nil(email) end)
-    |> Enum.group_by(fn {email, _, _} -> email end)
+    current_addresses = Repo.all(consent_query())
+
+    suppressed_addresses =
+      Repo.all(
+        from e in MarketingConsentEvent,
+          where: e.action == :opted_out and not is_nil(e.email),
+          select: {e.email, e.action, e.inserted_at, e.id}
+      )
+
+    # Account preferences follow the current account email; historical opt-outs
+    # also remain attached to the address at which they were made.
+    (current_addresses ++ suppressed_addresses)
+    |> Enum.reject(fn {email, _, _, _} -> is_nil(email) end)
+    |> Enum.group_by(fn {email, _, _, _} -> email end)
     |> Enum.filter(fn {_, events} ->
-      {_, action, _} = hd(events)
+      {_, action, _, _} =
+        Enum.max_by(events, fn {_, _, time, id} ->
+          {DateTime.to_unix(time, :microsecond), id}
+        end)
+
       action == :opted_in
     end)
     |> Enum.map(&elem(&1, 0))

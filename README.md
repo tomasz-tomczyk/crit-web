@@ -20,6 +20,10 @@ When you click **Share** in the crit CLI, your review (document + comments) is u
 
 Reviews auto-expire after 30 days of inactivity.
 
+## Newsletter
+
+On crit.md, visitors can subscribe from the homepage, footer, or [newsletter archive](https://crit.md/newsletter) without creating an account. Public signups require email confirmation; signed-in dashboard and settings toggles apply immediately. Consent events record the signup source and page, confirmation, and unsubscribe history. Confirmation emails use the configured `SMTP_FROM` address.
+
 ## Self-Hosting
 
 Crit Web can be self-hosted with Docker. You need PostgreSQL 17+.
