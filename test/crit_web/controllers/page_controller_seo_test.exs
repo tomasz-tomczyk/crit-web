@@ -94,5 +94,15 @@ defmodule CritWeb.PageControllerSeoTest do
       older_idx = :binary.match(body, "/r/#{older.token}") |> elem(0)
       assert newer_idx < older_idx
     end
+
+    test "returns an empty urlset on selfhosted instances", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+
+      body = conn |> get(~p"/sitemap.xml") |> response(200)
+      assert body =~ ~s(<?xml version="1.0" encoding="UTF-8"?>)
+      assert body =~ "<urlset"
+      assert body =~ "</urlset>"
+      refute body =~ "<loc>"
+    end
   end
 end
