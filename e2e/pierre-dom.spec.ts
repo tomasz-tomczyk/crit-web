@@ -11,8 +11,13 @@ test("Pierre controls are labelled and lines resolve through the shared helpers"
   });
   try {
     await loadReview(page, review.token);
-    await hoverCodeLine(page, "a.go", 3);
-    await expect(codeFile(page, "a.go").locator("[data-utility-button]")).toHaveAttribute("aria-label", "Add comment");
+    // Re-hover inside the retry: Pierre re-renders drop a hover that landed
+    // outside the retry, leaving no utility button (flaked in CI).
+    await expect(async () => {
+      await codeFile(page, "a.go").locator('[data-line="3"]').scrollIntoViewIfNeeded({ timeout: 2_000 });
+      await hoverCodeLine(page, "a.go", 3);
+      await expect(codeFile(page, "a.go").locator("[data-utility-button]")).toHaveAttribute("aria-label", "Add comment", { timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
     const host = codeFile(page, "a.go").locator("diffs-container");
     await expect(host).toHaveAttribute("data-crit-path", "a.go");
     const text = await codeFile(page, "a.go").evaluate((el) => {

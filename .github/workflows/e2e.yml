@@ -13,9 +13,18 @@ env:
 
 jobs:
   e2e:
-    name: Playwright E2E
+    name: Playwright E2E (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Two shards halve the ~6m wall time and give the CI retry backstop
+        # (playwright.config.ts: retries 2 on CI) headroom under the timeout.
+        # Each shard gets its own Postgres service (isolated VMs), and reviews
+        # are per-test tokens so shards never share DB state.
+        shard: ["1/2", "2/2"]
 
     services:
       postgres:
@@ -96,7 +105,7 @@ jobs:
         run: mix assets.build
 
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --shard=${{ matrix.shard }}
         env:
           E2E: "true"
           CI: "true"
@@ -105,7 +114,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: |
             test-results/
             playwright-report/

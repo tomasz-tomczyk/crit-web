@@ -159,14 +159,18 @@ test.describe("Code display and theme settings", () => {
     await page.locator("#darkPaletteSelect").selectOption("monokai");
     await expect(page.locator("#darkPaletteSelect")).toBeEnabled();
     await page.keyboard.press("Escape");
-    await hoverCodeLine(page, "server.go", 4);
-    const utility = codeFile(page, "server.go").locator("[data-utility-button]");
-    await expect(utility).toBeVisible();
-    expect(await utility.evaluate((el) => {
-      const probe = document.createElement("span");
-      probe.style.color = getComputedStyle(document.documentElement).getPropertyValue("--crit-palette-accent");
-      return getComputedStyle(el).backgroundColor === probe.style.color;
-    })).toBe(true);
+    // Hover + visible + color must be atomic: a re-render between hover and
+    // the color read drops the button (same flake as code-files drag test).
+    await expect(async () => {
+      await hoverCodeLine(page, "server.go", 4);
+      const utility = codeFile(page, "server.go").locator("[data-utility-button]");
+      await expect(utility).toBeVisible({ timeout: 2_000 });
+      expect(await utility.evaluate((el) => {
+        const probe = document.createElement("span");
+        probe.style.color = getComputedStyle(document.documentElement).getPropertyValue("--crit-palette-accent");
+        return getComputedStyle(el).backgroundColor === probe.style.color;
+      })).toBe(true);
+    }).toPass({ timeout: 20_000 });
   });
 
   test("review chrome and settings keep contrast in both modes", async ({ page }) => {

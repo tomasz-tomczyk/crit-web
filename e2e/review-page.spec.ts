@@ -323,16 +323,26 @@ test.describe("Review Page — Rendered Tables", () => {
     const lastRow = page.getByRole("cell", { name: "gamma", exact: true }).locator("..");
     const first = firstRow.locator(".line-gutter");
     const last = lastRow.locator(".line-gutter");
+    // Boxes must be read atomically after both gutters are visible + stable:
+    // separate reads across a layout shift flake with null boxes.
+    await expect(first).toBeVisible({ timeout: 10_000 });
+    await expect(last).toBeVisible({ timeout: 10_000 });
     await first.scrollIntoViewIfNeeded();
-    const firstBox = await first.boundingBox();
-    const lastBox = await last.boundingBox();
-    expect(firstBox).toBeTruthy();
-    expect(lastBox).toBeTruthy();
-    if (!firstBox || !lastBox) return;
+    await last.scrollIntoViewIfNeeded();
+    let firstBox = await first.boundingBox();
+    let lastBox = await last.boundingBox();
+    await expect(async () => {
+      firstBox = await first.boundingBox();
+      lastBox = await last.boundingBox();
+      expect(firstBox).not.toBeNull();
+      expect(lastBox).not.toBeNull();
+    }).toPass({ timeout: 15_000 });
+    expect(firstBox).not.toBeNull();
+    expect(lastBox).not.toBeNull();
 
-    await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + 10);
+    await page.mouse.move(firstBox!.x + firstBox!.width / 2, firstBox!.y + 10);
     await page.mouse.down();
-    await page.mouse.move(lastBox.x + lastBox.width / 2, lastBox.y + 10, { steps: 5 });
+    await page.mouse.move(lastBox!.x + lastBox!.width / 2, lastBox!.y + 10, { steps: 5 });
 
     const selected = page.locator(".native-table .line-block.selected");
     await expect(selected).toHaveCount(3);
