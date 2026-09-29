@@ -9,7 +9,7 @@
     orgs={assigns[:orgs] || []}
   />
 
-  <div class="max-w-7xl mx-auto w-full px-8 my-10 max-sm:px-4">
+  <div class="max-w-7xl mx-auto w-full flex-1 px-8 my-10 max-sm:px-4">
     <div class="flex justify-between items-baseline mb-6 pb-4 border-b border-(--crit-border)">
       <h1 class="text-3xl font-extrabold tracking-tight">Overview</h1>
       <span class="text-xs text-(--crit-fg-muted) max-sm:hidden">Last 30 days</span>
@@ -157,4 +157,6 @@
       </div>
     <% end %>
   </div>
+
+  <Layouts.site_footer marketing_base="https://crit.md" />
 </div>
