@@ -1,6 +1,6 @@
 defmodule CritWeb.Plugs.RateLimit do
   @moduledoc """
-  Global per-IP rate limit. Backstop against scanners and runaway clients;
+  Configurable per-IP rate limit. Backstop against scanners and runaway clients;
   tighter per-route limits (write API, invalid-token 404s) live alongside
   this and apply on top.
 
@@ -9,6 +9,8 @@ defmodule CritWeb.Plugs.RateLimit do
     * `:limit`    — requests per minute per IP (default `180`).
     * `:response` — `:text` (default) or `:json`. Sets the body and content-type
       sent on a 429 response. Pass `:json` from API pipelines.
+    * `:bucket` — independent rate-limit bucket (default `"global"`).
+    * `:methods` — HTTP methods to limit (default all methods).
   """
 
   import Plug.Conn
@@ -26,14 +28,17 @@ defmodule CritWeb.Plugs.RateLimit do
   end
 
   def call(conn, opts) do
-    if disabled?() do
+    methods = Keyword.get(opts, :methods)
+
+    if disabled?() || (methods && conn.method not in methods) do
       conn
     else
       limit = Keyword.get(opts, :limit, @default_limit)
       response = Keyword.get(opts, :response, :text)
+      bucket = Keyword.get(opts, :bucket, "global")
       ip = conn.remote_ip |> :inet.ntoa() |> to_string()
 
-      case Crit.RateLimit.hit("global:#{ip}", @window, limit) do
+      case Crit.RateLimit.hit("#{bucket}:#{ip}", @window, limit) do
         {:allow, _} ->
           conn
 

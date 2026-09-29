@@ -63,6 +63,24 @@ defmodule CritWeb.Plugs.RateLimitTest do
       refute other.halted
     end
 
+    test "route buckets do not consume the global allowance", %{conn: conn, ip: ip} do
+      for _ <- 1..3, do: conn |> with_ip(ip) |> call_plug(limit: 3)
+      route = conn |> with_ip(ip) |> call_plug(bucket: "route-test", limit: 1)
+      refute route.halted
+      blocked = conn |> with_ip(ip) |> call_plug(bucket: "route-test", limit: 1)
+      assert blocked.status == 429
+    end
+
+    test "method filters leave reads outside the write bucket", %{conn: conn, ip: ip} do
+      for _ <- 1..3 do
+        refute (conn |> with_ip(ip) |> call_plug(limit: 1, methods: ["POST"])).halted
+      end
+
+      post = %{conn | method: "POST"} |> with_ip(ip)
+      refute call_plug(post, limit: 1, methods: ["POST"]).halted
+      assert call_plug(post, limit: 1, methods: ["POST"]).status == 429
+    end
+
     test "is bypassed when E2E=true", %{conn: conn, ip: ip} do
       System.put_env("E2E", "true")
       on_exit(fn -> System.delete_env("E2E") end)

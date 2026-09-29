@@ -377,7 +377,7 @@ defmodule Crit.Accounts do
   """
   def toggle_marketing_consent(%User{} = user, method) do
     new_value = !marketing_opted_in?(user)
-    action = if new_value, do: "opted_in", else: "opted_out"
+    action = if new_value, do: :opted_in, else: :opted_out
 
     case insert_consent_event(user, action, method) do
       {:ok, _event} -> {:ok, new_value}
@@ -392,19 +392,25 @@ defmodule Crit.Accounts do
   end
 
   @doc """
-  Returns `true` if the user's most recent marketing consent event is `"opted_in"`,
-  `false` otherwise (including when no events exist).
+  Returns the latest newsletter consent across account settings and confirmed
+  email subscriptions. Returns `false` when no consent exists.
   """
-  def marketing_opted_in?(%User{id: user_id}), do: marketing_opted_in?(user_id)
-
-  def marketing_opted_in?(user_id) when is_binary(user_id) do
-    query =
+  def marketing_opted_in?(%User{id: user_id, email: nil}) do
+    Repo.one(
       from e in MarketingConsentEvent,
-        where: e.user_id == ^user_id,
-        order_by: [desc: e.inserted_at],
+        where: e.user_id == ^user_id and e.action in [:opted_in, :opted_out],
+        order_by: [desc: e.inserted_at, desc: e.id],
         limit: 1,
         select: e.action
+    ) == :opted_in
+  end
 
-    Repo.one(query) == "opted_in"
+  def marketing_opted_in?(%User{email: email}), do: Crit.Newsletters.opted_in?(email)
+
+  def marketing_opted_in?(user_id) when is_binary(user_id) do
+    case Repo.get(User, user_id) do
+      nil -> false
+      user -> marketing_opted_in?(user)
+    end
   end
 end

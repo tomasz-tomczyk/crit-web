@@ -9,6 +9,212 @@ defmodule Crit.Newsletters do
   archives that still use relative paths.
   """
 
+  import Ecto.Query
+  alias Crit.{Mailer, Repo}
+  alias Crit.Accounts.MarketingConsentEvent
+
+  @issues [
+    %{
+      slug: "2026-09-first-update",
+      title: "Story mode, a new renderer, and finish hooks",
+      published_at: ~D[2026-09-29],
+      description:
+        "The first Crit update: a new way to review diffs, faster rendering, and hooks for your review loop."
+    }
+  ]
+
+  @doc "Published issues, newest first. Draft directories are never listed."
+  def list, do: Enum.sort_by(@issues, & &1.published_at, {:desc, Date})
+
+  def change_subscription(attrs \\ %{}),
+    do: MarketingConsentEvent.newsletter_changeset(%MarketingConsentEvent{}, attrs)
+
+  @doc "Request confirmation. Requests do not grant consent and are throttled per email."
+  def request_subscription(attrs) do
+    changeset = change_subscription(attrs)
+
+    if changeset.valid? do
+      Repo.transact(fn ->
+        email = Ecto.Changeset.get_field(changeset, :email)
+        lock_email(email)
+        latest = latest_request(email)
+
+        if (latest && opted_in?(email)) ||
+             (latest && DateTime.diff(DateTime.utc_now(), latest.inserted_at) < 600) do
+          {:ok, :check_inbox}
+        else
+          invalidate_requests(email)
+
+          request =
+            changeset
+            |> Ecto.Changeset.put_change(:confirmation_nonce, Ecto.UUID.generate())
+            |> Repo.insert!()
+
+          token =
+            Phoenix.Token.sign(
+              CritWeb.Endpoint,
+              "newsletter-confirm",
+              {request.id, request.confirmation_nonce}
+            )
+
+          url = CritWeb.Endpoint.url() <> "/newsletter/confirm/" <> token
+
+          message =
+            Swoosh.Email.new()
+            |> Swoosh.Email.to(request.email)
+            |> Swoosh.Email.from({"Crit", Application.fetch_env!(:crit, :smtp_from)})
+            |> Swoosh.Email.subject("Confirm your Crit newsletter subscription")
+            |> Swoosh.Email.text_body("""
+            You asked to receive occasional Crit updates.
+
+            Confirm your subscription (this link expires in 24 hours):
+            #{url}
+
+            No account needed. You can unsubscribe at any time:
+            #{unsubscribe_url(request)}
+
+            If you didn't request this, you can ignore this email.
+            """)
+
+          case Mailer.deliver(message) do
+            {:ok, _} -> {:ok, :check_inbox}
+            {:error, _} -> {:error, :delivery_failed}
+          end
+        end
+      end)
+    else
+      {:error, %{changeset | action: :insert}}
+    end
+  end
+
+  def confirmation(token) do
+    with {:ok, {id, nonce}} when is_binary(nonce) <-
+           Phoenix.Token.verify(CritWeb.Endpoint, "newsletter-confirm", token, max_age: 86_400),
+         %MarketingConsentEvent{action: :subscription_requested, confirmation_nonce: ^nonce} =
+           request <-
+           Repo.get(MarketingConsentEvent, id) do
+      {:ok, request}
+    else
+      _ -> {:error, :invalid_token}
+    end
+  end
+
+  def confirm_subscription(token) do
+    with {:ok, request} <- confirmation(token) do
+      Repo.transact(fn ->
+        lock_email(request.email)
+
+        # Recheck after the lock: an unsubscribe or newer request may have invalidated it.
+        with {:ok, current} <- confirmation(token) do
+          invalidate_requests(current.email)
+          append_consent(current, :opted_in, "newsletter_confirmation")
+        end
+      end)
+    end
+  end
+
+  def unsubscribe_url(request) do
+    token = Phoenix.Token.sign(CritWeb.Endpoint, "newsletter-unsubscribe", request.id)
+    CritWeb.Endpoint.url() <> "/newsletter/unsubscribe/" <> token
+  end
+
+  def subscription_for_unsubscribe(token) do
+    with {:ok, id} <-
+           Phoenix.Token.verify(CritWeb.Endpoint, "newsletter-unsubscribe", token,
+             max_age: :infinity
+           ),
+         %MarketingConsentEvent{action: :subscription_requested, email: email} = request
+         when is_binary(email) <-
+           Repo.get(MarketingConsentEvent, id) do
+      {:ok, request}
+    else
+      _ -> {:error, :invalid_token}
+    end
+  end
+
+  def unsubscribe(token) do
+    with {:ok, request} <- subscription_for_unsubscribe(token) do
+      Repo.transact(fn ->
+        lock_email(request.email)
+        invalidate_requests(request.email)
+        append_consent(request, :opted_out, "newsletter_unsubscribe")
+      end)
+    end
+  end
+
+  defp append_consent(request, action, method) do
+    %MarketingConsentEvent{
+      email: request.email,
+      source: request.source,
+      source_path: request.source_path
+    }
+    |> MarketingConsentEvent.changeset(%{action: action, method: method})
+    |> Repo.insert()
+  end
+
+  defp lock_email(email) do
+    # A row lock cannot serialize the first request, because no row exists yet.
+    Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [email])
+  end
+
+  defp invalidate_requests(email) do
+    from(e in MarketingConsentEvent,
+      where:
+        e.email == ^email and e.action == :subscription_requested and
+          not is_nil(e.confirmation_nonce)
+    )
+    |> Repo.update_all(set: [confirmation_nonce: nil])
+  end
+
+  defp latest_request(email) do
+    Repo.one(
+      from e in MarketingConsentEvent,
+        where: e.email == ^email and e.action == :subscription_requested,
+        order_by: [desc: e.inserted_at, desc: e.id],
+        limit: 1
+    )
+  end
+
+  defp consent_query do
+    from e in MarketingConsentEvent,
+      left_join: u in Crit.User,
+      on: u.id == e.user_id,
+      where: e.action in [:opted_in, :opted_out],
+      select: {fragment("lower(coalesce(?, ?))", e.email, u.email), e.action, e.inserted_at}
+  end
+
+  @doc "Current consent across account and anonymous events; requests do not count as opt-ins."
+  def opted_in?(email) when is_binary(email) do
+    latest =
+      consent_query()
+      |> where(
+        [e, u],
+        fragment("lower(coalesce(?, ?))", e.email, u.email) == ^String.downcase(email)
+      )
+      |> order_by([e], desc: e.inserted_at, desc: e.id)
+      |> limit(1)
+      |> Repo.one()
+
+    match?({_, :opted_in, _}, latest)
+  end
+
+  def opted_in?(_), do: false
+
+  @doc "Confirmed newsletter recipients from the existing consent event history, deduplicated."
+  def recipients do
+    consent_query()
+    |> order_by([e], desc: e.inserted_at, desc: e.id)
+    |> Repo.all()
+    |> Enum.reject(fn {email, _, _} -> is_nil(email) end)
+    |> Enum.group_by(fn {email, _, _} -> email end)
+    |> Enum.filter(fn {_, events} ->
+      {_, action, _} = hd(events)
+      action == :opted_in
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.sort()
+  end
+
   @assets_prefix "https://assets.crit.md/newsletter"
 
   @doc "Lookup a newsletter by slug. Returns nil when missing."

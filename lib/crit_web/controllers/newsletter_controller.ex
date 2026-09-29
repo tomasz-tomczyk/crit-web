@@ -8,6 +8,103 @@ defmodule CritWeb.NewsletterController do
 
   alias Crit.Newsletters
 
+  plug :private_subscription_response when action not in [:index, :show, :image]
+
+  defp private_subscription_response(conn, _) do
+    conn
+    |> put_resp_header("referrer-policy", "no-referrer")
+    |> put_resp_header("cache-control", "no-store")
+  end
+
+  def index(conn, _params) do
+    render_index(conn, Newsletters.change_subscription())
+  end
+
+  def subscribe(conn, params) do
+    case Newsletters.request_subscription(Map.get(params, "newsletter", %{})) do
+      {:ok, :check_inbox} ->
+        render_index(
+          conn,
+          Newsletters.change_subscription(),
+          "Check your inbox to confirm your subscription. If you're already subscribed, you're all set."
+        )
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        conn |> put_status(:unprocessable_entity) |> render_index(changeset)
+
+      {:error, :delivery_failed} ->
+        conn
+        |> put_status(:service_unavailable)
+        |> render_index(
+          Newsletters.change_subscription(),
+          "We couldn't send the confirmation email. Please try again in a moment."
+        )
+    end
+  end
+
+  def confirm(conn, %{"token" => token}) do
+    render_token_page(conn, token, :confirm, Newsletters.confirmation(token))
+  end
+
+  def confirm_subscription(conn, %{"token" => token}) do
+    case Newsletters.confirm_subscription(token) do
+      {:ok, _} ->
+        render_index(
+          conn,
+          Newsletters.change_subscription(),
+          "You're subscribed. The next Crit update will arrive in your inbox."
+        )
+
+      {:error, _} ->
+        invalid_token(conn)
+    end
+  end
+
+  def unsubscribe(conn, %{"token" => token}) do
+    render_token_page(conn, token, :unsubscribe, Newsletters.subscription_for_unsubscribe(token))
+  end
+
+  def unsubscribe_subscription(conn, %{"token" => token}) do
+    case Newsletters.unsubscribe(token) do
+      {:ok, _} ->
+        render_index(
+          conn,
+          Newsletters.change_subscription(),
+          "You're unsubscribed from Crit updates."
+        )
+
+      {:error, _} ->
+        invalid_token(conn)
+    end
+  end
+
+  defp render_index(conn, changeset, message \\ nil) do
+    render(conn, :index,
+      newsletters: Newsletters.list(),
+      newsletter_form: Phoenix.Component.to_form(changeset, as: :newsletter),
+      message: message,
+      page_title: "Newsletter · Crit",
+      canonical_url: CritWeb.Endpoint.url() <> "/newsletter",
+      meta_description:
+        "Occasional updates from Crit. Read previous newsletters or subscribe by email."
+    )
+  end
+
+  defp render_token_page(conn, token, action, {:ok, _}) do
+    render(conn, :subscription, token: token, action: action, page_title: "Newsletter · Crit")
+  end
+
+  defp render_token_page(conn, _, _, {:error, _}), do: invalid_token(conn)
+
+  defp invalid_token(conn) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> render_index(
+      Newsletters.change_subscription(),
+      "This link has expired or has already been used. You can subscribe again below."
+    )
+  end
+
   def show(conn, %{"slug" => slug}) do
     case Newsletters.get(slug) do
       nil ->

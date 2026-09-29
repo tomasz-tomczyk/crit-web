@@ -1143,7 +1143,14 @@ defmodule CritWeb.Layouts do
     """
   end
 
+  attr :page_path, :string, default: nil
+
   def site_footer(assigns) do
+    assigns =
+      assign_new(assigns, :newsletter_footer_form, fn ->
+        Phoenix.Component.to_form(Crit.Newsletters.change_subscription(), as: :newsletter)
+      end)
+
     ~H"""
     <footer class="border-t border-(--crit-border) py-14 mt-14 max-sm:py-8 max-sm:mt-8">
       <div class="max-w-7xl mx-auto px-8 max-sm:px-4">
@@ -1156,13 +1163,25 @@ defmodule CritWeb.Layouts do
             <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3">
               A local-first review tool for the loop between you and your coding agent.
             </p>
+            <div :if={Crit.Config.hosted?()} class="mt-8">
+              <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+                Newsletter
+              </h2>
+              <CritWeb.NewsletterSignup.signup
+                form={@newsletter_footer_form}
+                id="footer-newsletter"
+                source="footer"
+                source_path={@page_path}
+                compact
+              />
+            </div>
           </div>
 
           <%!-- Modes --%>
           <div>
-            <h4 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
               Modes
-            </h4>
+            </h2>
             <div class="flex flex-col gap-2">
               <a
                 href="/modes/plans-docs"
@@ -1199,9 +1218,9 @@ defmodule CritWeb.Layouts do
 
           <%!-- Project --%>
           <div>
-            <h4 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
               Project
-            </h4>
+            </h2>
             <div class="flex flex-col gap-2">
               <a
                 href="https://github.com/tomasz-tomczyk/crit"
@@ -1240,6 +1259,13 @@ defmodule CritWeb.Layouts do
                 Changelog
               </a>
               <a
+                :if={Crit.Config.hosted?()}
+                href={~p"/newsletter"}
+                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
+              >
+                Newsletter
+              </a>
+              <a
                 href={~p"/articles"}
                 class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
               >
@@ -1250,9 +1276,9 @@ defmodule CritWeb.Layouts do
 
           <%!-- Share --%>
           <div>
-            <h4 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
               Share
-            </h4>
+            </h2>
             <div class="flex flex-col gap-2">
               <a
                 href={~p"/auth/login"}

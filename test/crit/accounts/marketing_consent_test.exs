@@ -11,6 +11,7 @@ defmodule Crit.Accounts.MarketingConsentTest do
 
       assert {:ok, true} = Accounts.toggle_marketing_consent(user, "registration_checkbox")
       assert Accounts.marketing_opted_in?(user)
+      refute_receive {:email, _}
     end
 
     test "opts out a user who is currently opted in" do
@@ -65,6 +66,15 @@ defmodule Crit.Accounts.MarketingConsentTest do
       {:ok, true} = Accounts.toggle_marketing_consent(user, "registration_checkbox")
 
       assert Accounts.marketing_opted_in?(user.id)
+    end
+
+    test "users without an email retain their account consent" do
+      user = AccountsFixtures.oauth_user_fixture()
+      user = user |> Ecto.Changeset.change(email: nil) |> Repo.update!()
+      assert {:ok, true} = Accounts.toggle_marketing_consent(user, "settings_toggle")
+      assert Accounts.marketing_opted_in?(user.id)
+      assert Crit.Newsletters.recipients() == []
+      assert {:ok, false} = Accounts.toggle_marketing_consent(user, "settings_toggle")
     end
 
     test "events for one user do not affect another" do
