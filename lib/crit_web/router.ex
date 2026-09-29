@@ -41,6 +41,10 @@ defmodule CritWeb.Router do
     plug CritWeb.Plugs.RequireBearerAuth
   end
 
+  pipeline :newsletter_writes do
+    plug CritWeb.Plugs.RateLimit, bucket: "newsletter", limit: 5, methods: ["POST"]
+  end
+
   pipeline :noindex do
     plug :put_noindex
   end
@@ -81,8 +85,19 @@ defmodule CritWeb.Router do
   scope "/", CritWeb do
     pipe_through [:browser, CritWeb.Plugs.HostedOnly]
 
+    get "/newsletter", NewsletterController, :index
     get "/newsletter/:slug", NewsletterController, :show
     get "/newsletter/:slug/images/:name", NewsletterController, :image
+  end
+
+  scope "/", CritWeb do
+    pipe_through [:browser, :noindex, CritWeb.Plugs.HostedOnly, :newsletter_writes]
+
+    post "/newsletter/subscribe", NewsletterController, :subscribe
+    get "/newsletter/confirm/:token", NewsletterController, :confirm
+    post "/newsletter/confirm/:token", NewsletterController, :confirm_subscription
+    get "/newsletter/unsubscribe/:token", NewsletterController, :unsubscribe
+    post "/newsletter/unsubscribe/:token", NewsletterController, :unsubscribe_subscription
   end
 
   # CLI auth browser pages — noindexed

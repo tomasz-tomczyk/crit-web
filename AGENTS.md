@@ -108,6 +108,10 @@ CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, El
 - `/features`, `/features/:slug` — feature pages
 - `/integrations`, `/integrations/:tool` — integrations
 - `/getting-started`, `/self-hosting`, `/changelog` — docs / release notes
+- `/newsletter` — hosted-only published newsletter archive and email signup
+- `/newsletter/:slug`, `/newsletter/:slug/images/:name` — hosted-only issue HTML and images
+- `POST /newsletter/subscribe` — requests a confirmation email (no account required)
+- `GET`/`POST /newsletter/confirm/:token`, `/newsletter/unsubscribe/:token` — hosted-only subscription actions; GET renders a confirmation form, POST changes consent (noindex)
 - `/terms`, `/privacy` — legal
 - `GET /health` — healthcheck (no pipeline)
 

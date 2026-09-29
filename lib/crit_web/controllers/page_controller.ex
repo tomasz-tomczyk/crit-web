@@ -572,6 +572,9 @@ defmodule CritWeb.PageController do
       redirect(conn, to: "/overview")
     else
       render(conn, :home,
+        latest_newsletter: List.first(Crit.Newsletters.list()),
+        newsletter_form:
+          Phoenix.Component.to_form(Crit.Newsletters.change_subscription(), as: :newsletter),
         demo_token: Application.get_env(:crit, :demo_review_token),
         recent_articles: Crit.Articles.recent(),
         testimonials: @testimonials,
@@ -943,6 +946,7 @@ defmodule CritWeb.PageController do
     {"/getting-started", "monthly", "0.9"},
     {"/self-hosting", "monthly", "0.7"},
     {"/articles", "weekly", "0.8"},
+    {"/newsletter", "monthly", "0.5"},
     {"/changelog", "daily", "0.7"},
     {"/terms", "monthly", "0.3"},
     {"/privacy", "monthly", "0.3"}
@@ -996,6 +1000,11 @@ defmodule CritWeb.PageController do
             sitemap_entry(base <> "/articles/#{article.slug}", "monthly", "0.6")
           end)
 
+        newsletter_entries =
+          Enum.map(Crit.Newsletters.list(), fn newsletter ->
+            sitemap_entry(base <> "/newsletter/#{newsletter.slug}", "yearly", "0.4")
+          end)
+
         review_entries =
           Crit.Reviews.list_public_review_tokens()
           |> Enum.map(fn token -> sitemap_entry(base <> "/r/#{token}", "weekly", "0.5") end)
@@ -1003,7 +1012,7 @@ defmodule CritWeb.PageController do
         """
         <?xml version="1.0" encoding="UTF-8"?>
         <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-        #{Enum.join(static_entries ++ article_entries ++ review_entries, "\n")}
+        #{Enum.join(static_entries ++ article_entries ++ newsletter_entries ++ review_entries, "\n")}
         </urlset>
         """
       end

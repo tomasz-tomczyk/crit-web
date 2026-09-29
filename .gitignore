@@ -50,3 +50,5 @@ mise.local.toml
 .env
 .envrc.local
 .wrangler/
+# Local design prototypes
+/.design-exploration/

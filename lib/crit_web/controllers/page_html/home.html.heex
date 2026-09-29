@@ -244,6 +244,9 @@
     </div>
   </section>
 
+  <%!-- ===== Newsletter ===== --%>
+  <CritWeb.NewsletterSignup.homepage form={@newsletter_form} latest_issue={@latest_newsletter} />
+
   <%!-- ===== Recent articles ===== --%>
   <section id="articles" class="py-16 max-sm:py-10">
     <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
@@ -395,5 +398,5 @@
 
   <CritWeb.PageHTML.install_section id="bottom-install" />
 
-  <Layouts.site_footer />
+  <Layouts.site_footer page_path={@conn.request_path} />
 </div>

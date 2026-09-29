@@ -314,14 +314,38 @@ defmodule Crit.Accounts do
         {:error, :not_found}
 
       user ->
-        # Detach org-scoped reviews so the CASCADE on user deletion doesn't
-        # destroy them — they belong to the org, not the departing user.
-        from(r in Crit.Review,
-          where: r.user_id == ^id and not is_nil(r.organization_id)
-        )
-        |> Repo.update_all(set: [user_id: nil])
+        result =
+          Repo.transact(fn ->
+            lock_consent_email(user.email)
 
-        case Repo.delete(user) do
+            # Keep email-level opt-outs after the account's event rows cascade away.
+            if user.email && !marketing_opted_in?(user) &&
+                 Repo.exists?(
+                   from e in MarketingConsentEvent,
+                     where:
+                       e.action == :opted_out and
+                         (e.user_id == ^id or e.email == ^String.downcase(user.email))
+                 ) do
+              cancel_pending_newsletter_requests(user.email)
+
+              %MarketingConsentEvent{email: String.downcase(user.email)}
+              |> MarketingConsentEvent.changeset(%{action: :opted_out, method: :account_deletion})
+              |> Repo.insert!()
+            end
+
+            from(e in MarketingConsentEvent,
+              where: e.user_id == ^id and e.action == :opted_out and not is_nil(e.email)
+            )
+            |> Repo.update_all(set: [user_id: nil])
+
+            # Org-scoped reviews belong to the org, not the departing user.
+            from(r in Crit.Review, where: r.user_id == ^id and not is_nil(r.organization_id))
+            |> Repo.update_all(set: [user_id: nil])
+
+            Repo.delete(user)
+          end)
+
+        case result do
           {:ok, _} -> :ok
           {:error, _} -> {:error, :delete_failed}
         end
@@ -376,35 +400,62 @@ defmodule Crit.Accounts do
   Toggles marketing consent for a user. Returns `{:ok, new_opted_in_boolean}` or `{:error, changeset}`.
   """
   def toggle_marketing_consent(%User{} = user, method) do
-    new_value = !marketing_opted_in?(user)
-    action = if new_value, do: "opted_in", else: "opted_out"
+    Repo.transact(fn ->
+      lock_consent_email(user.email)
+      new_value = !marketing_opted_in?(user)
+      action = if new_value, do: :opted_in, else: :opted_out
 
-    case insert_consent_event(user, action, method) do
-      {:ok, _event} -> {:ok, new_value}
-      {:error, changeset} -> {:error, changeset}
-    end
+      if !new_value && user.email do
+        cancel_pending_newsletter_requests(user.email)
+      end
+
+      case insert_consent_event(user, action, method) do
+        {:ok, _event} -> {:ok, new_value}
+        {:error, changeset} -> {:error, changeset}
+      end
+    end)
   end
 
-  defp insert_consent_event(%User{id: user_id}, action, method) do
-    %MarketingConsentEvent{user_id: user_id}
+  defp lock_consent_email(nil), do: :ok
+
+  defp lock_consent_email(email) do
+    # Share the public newsletter flow's lock so consent choices are serialized.
+    Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [String.downcase(email)])
+  end
+
+  defp cancel_pending_newsletter_requests(email) do
+    from(e in MarketingConsentEvent,
+      where: e.email == ^String.downcase(email) and e.action == :subscription_requested
+    )
+    |> Repo.update_all(set: [confirmation_nonce: nil])
+  end
+
+  defp insert_consent_event(%User{id: user_id, email: email}, action, method) do
+    %MarketingConsentEvent{user_id: user_id, email: email && String.downcase(email)}
     |> MarketingConsentEvent.changeset(%{action: action, method: method})
     |> Repo.insert()
   end
 
   @doc """
-  Returns `true` if the user's most recent marketing consent event is `"opted_in"`,
-  `false` otherwise (including when no events exist).
+  Returns the latest newsletter consent across account settings and confirmed
+  email subscriptions. Returns `false` when no consent exists.
   """
-  def marketing_opted_in?(%User{id: user_id}), do: marketing_opted_in?(user_id)
-
-  def marketing_opted_in?(user_id) when is_binary(user_id) do
-    query =
+  def marketing_opted_in?(%User{id: user_id, email: nil}) do
+    Repo.one(
       from e in MarketingConsentEvent,
-        where: e.user_id == ^user_id,
-        order_by: [desc: e.inserted_at],
+        where: e.user_id == ^user_id and e.action in [:opted_in, :opted_out],
+        order_by: [desc: e.inserted_at, desc: e.id],
         limit: 1,
         select: e.action
+    ) == :opted_in
+  end
 
-    Repo.one(query) == "opted_in"
+  def marketing_opted_in?(%User{email: email}), do: Crit.Newsletters.opted_in?(email)
+
+  def marketing_opted_in?(user_id) when is_binary(user_id) do
+    case Repo.get(User, user_id) do
+      nil -> false
+      user -> marketing_opted_in?(user)
+    end
   end
 end

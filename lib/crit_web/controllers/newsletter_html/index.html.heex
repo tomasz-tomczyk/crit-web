@@ -1,0 +1,57 @@
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
+  <Layouts.site_header current_scope={@current_scope} />
+  <main class="max-w-7xl mx-auto w-full px-10 mt-16 pb-20 max-sm:px-4 max-sm:mt-10 max-sm:pb-10">
+    <header class="mb-14 max-sm:mb-10">
+      <h1 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl">
+        Newsletter<span class="text-(--crit-brand)">.</span>
+      </h1>
+      <p class="text-xl text-(--crit-fg-secondary) mt-3 leading-relaxed max-w-lg">
+        Occasional notes on what's new in Crit.
+        We email only when it's actually worth your time.
+      </p>
+    </header>
+
+    <div class="max-w-lg">
+      <CritWeb.NewsletterSignup.signup
+        form={@newsletter_form}
+        message={@message}
+        id="archive-newsletter"
+        source_path="/newsletter"
+        appearance="filled"
+        show_note={false}
+      />
+    </div>
+
+    <section aria-labelledby="previous-newsletters" class="mt-14">
+      <h2
+        id="previous-newsletters"
+        class="font-mono text-xs uppercase tracking-widest text-(--crit-fg-muted) mb-6"
+      >
+        Previous newsletters
+      </h2>
+      <article
+        :for={newsletter <- @newsletters}
+        class="grid grid-cols-[160px_1fr] gap-10 py-8 border-t border-(--crit-border) max-sm:grid-cols-1 max-sm:gap-2"
+      >
+        <time
+          datetime={Date.to_iso8601(newsletter.published_at)}
+          class="font-mono text-xs text-(--crit-fg-muted) pt-1"
+        >
+          {Calendar.strftime(newsletter.published_at, "%B %-d, %Y")}
+        </time>
+        <div>
+          <h3 class="text-lg font-semibold">
+            <a
+              href={~p"/newsletter/#{newsletter.slug}"}
+              class="hover:text-(--crit-brand) transition-colors"
+            >{newsletter.title}</a>
+          </h3>
+          <p class="mt-2 text-sm text-(--crit-fg-secondary) leading-relaxed">
+            {newsletter.description}
+          </p>
+        </div>
+      </article>
+    </section>
+  </main>
+  <Layouts.site_footer page_path="/newsletter" />
+</div>
