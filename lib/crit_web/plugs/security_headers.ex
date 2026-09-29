@@ -22,6 +22,7 @@ defmodule CritWeb.Plugs.SecurityHeaders do
     |> maybe_put_x_frame_options()
     |> put_resp_header("permissions-policy", Enum.join(@permissions_policy, ", "))
     |> maybe_put_hsts()
+    |> maybe_put_robots_tag()
   end
 
   defp maybe_put_x_frame_options(conn) do
@@ -35,6 +36,17 @@ defmodule CritWeb.Plugs.SecurityHeaders do
   defp maybe_put_hsts(conn) do
     if Application.get_env(:crit, :hsts_enabled) do
       put_resp_header(conn, "strict-transport-security", "max-age=31536000; includeSubDomains")
+    else
+      conn
+    end
+  end
+
+  # Self-hosted copies must never compete in search. The noindex meta tag in
+  # the root layout is the primary signal; this header is the backstop for
+  # crawlers that ignore meta tags, and survives layout restyling in forks.
+  defp maybe_put_robots_tag(conn) do
+    if Application.get_env(:crit, :selfhosted) do
+      put_resp_header(conn, "x-robots-tag", "noindex, nofollow")
     else
       conn
     end

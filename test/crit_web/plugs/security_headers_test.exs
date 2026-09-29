@@ -80,6 +80,24 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
       refute csp =~ "cloud.umami.is"
     end
 
+    test "sets x-robots-tag noindex on self-hosted deployments", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, true)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      conn = get(conn, ~p"/")
+
+      assert get_resp_header(conn, "x-robots-tag") == ["noindex, nofollow"]
+    end
+
+    test "omits x-robots-tag on hosted deployments", %{conn: conn} do
+      Application.put_env(:crit, :selfhosted, false)
+      on_exit(fn -> Application.delete_env(:crit, :selfhosted) end)
+
+      conn = get(conn, ~p"/")
+
+      assert get_resp_header(conn, "x-robots-tag") == []
+    end
+
     test "allows preview origin in frame-src when PREVIEW_HOST is set", %{conn: conn} do
       Application.put_env(:crit, :canonical_host, "app.example.test")
       Application.put_env(:crit, :preview_host, "preview.example.test")

@@ -974,27 +974,39 @@ defmodule CritWeb.PageController do
   end
 
   def sitemap_xml(conn, _params) do
-    base = CritWeb.Endpoint.url()
+    # Self-hosted copies must not advertise URLs: an empty urlset keeps
+    # crawlers from discovering the copy's pages (robots.txt already
+    # disallows everything and omits the Sitemap directive there).
+    body =
+      if Application.get_env(:crit, :selfhosted, false) do
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        </urlset>
+        """
+      else
+        base = CritWeb.Endpoint.url()
 
-    static_entries =
-      Enum.map(@sitemap_paths, fn {p, f, pr} -> sitemap_entry(base <> p, f, pr) end)
+        static_entries =
+          Enum.map(@sitemap_paths, fn {p, f, pr} -> sitemap_entry(base <> p, f, pr) end)
 
-    article_entries =
-      Crit.Articles.list()
-      |> Enum.map(fn article ->
-        sitemap_entry(base <> "/articles/#{article.slug}", "monthly", "0.6")
-      end)
+        article_entries =
+          Crit.Articles.list()
+          |> Enum.map(fn article ->
+            sitemap_entry(base <> "/articles/#{article.slug}", "monthly", "0.6")
+          end)
 
-    review_entries =
-      Crit.Reviews.list_public_review_tokens()
-      |> Enum.map(fn token -> sitemap_entry(base <> "/r/#{token}", "weekly", "0.5") end)
+        review_entries =
+          Crit.Reviews.list_public_review_tokens()
+          |> Enum.map(fn token -> sitemap_entry(base <> "/r/#{token}", "weekly", "0.5") end)
 
-    body = """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    #{Enum.join(static_entries ++ article_entries ++ review_entries, "\n")}
-    </urlset>
-    """
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        #{Enum.join(static_entries ++ article_entries ++ review_entries, "\n")}
+        </urlset>
+        """
+      end
 
     conn
     |> put_resp_content_type("application/xml")
