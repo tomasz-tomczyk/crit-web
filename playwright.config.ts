@@ -19,8 +19,18 @@ const SEC_BASE_URL = `http://${SEC_CANONICAL_HOST}:${SEC_PORT}`;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
-  retries: 0,
+  // E2E flakes are Pierre worker races (highlight/tint/hover landing async).
+  // The specs now poll for Pierre readiness, but keep one CI retry as a
+  // backstop for slow-runner timing outliers. Local runs stay at 0 so flakes
+  // surface immediately during development.
+  retries: process.env.CI ? 2 : 0,
   workers: 1,
+  // Pierre Shiki highlighting + LiveView round-trips can exceed the 30s
+  // default on loaded CI runners; the drag test hit it on boundingBox.
+  timeout: 45_000,
+  expect: {
+    timeout: 10_000,
+  },
   reporter: [["html", { open: "never" }], ["list"]],
 
   use: {

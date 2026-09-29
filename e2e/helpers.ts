@@ -265,6 +265,12 @@ export async function seedComment(
 
 /**
  * Navigate to a review page and wait for the document to render.
+ *
+ * For code files this also waits for Pierre to mount (diffs-container gets
+ * data-crit-path in onPostRender, which is when the range-tint stylesheet is
+ * adopted) and for Shiki tokens to land (async worker pool). Without this,
+ * tint/backgroundColor assertions and hover "+" checks race the worker and
+ * flake (see code-files.spec.ts:192, :224 and pierre-dom.spec.ts).
  */
 export async function loadReview(page: Page, token: string) {
   await page.goto(`/r/${token}`);
@@ -275,6 +281,24 @@ export async function loadReview(page: Page, token: string) {
     "#document-renderer .line-block, #document-renderer .crit-code-file [data-line]",
     { timeout: 15_000 }
   );
+  // When code files are present, wait for Pierre's post-render mount + Shiki
+  // highlighting so later assertions see a stable DOM.
+  if ((await page.locator(".crit-code-file").count()) > 0) {
+    await expect
+      .poll(() => page.locator("diffs-container[data-crit-path]").count(), {
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(0);
+    await expect
+      .poll(
+        () =>
+          page
+            .locator('.crit-code-file [data-line] span[style*="--diffs-token"]')
+            .count(),
+        { timeout: 15_000 }
+      )
+      .toBeGreaterThan(0);
+  }
 }
 
 /**
@@ -290,25 +314,79 @@ export function codeLine(page: Page, path: string, n: number) {
   return codeFile(page, path).locator(`[data-content] > [data-line="${n}"]`);
 }
 
-/** Hover a code line so Pierre shows its gutter "+" (crit: hoverLine). */
+/** Hover a code line so Pierre shows its gutter "+" (crit: hoverLine).
+ *
+ * Pierre replaces its line elements when highlighting lands or annotations
+ * change, which drops a hover that landed on the old element. Retry until the
+ * hover lands on the current element and the utility button is visible, and
+ * scroll the line into view first so the hover position is stable on CI.
+ */
 export async function hoverCodeLine(page: Page, path: string, n: number, opts: { commentable?: boolean } = {}) {
   // Pierre replaces its line elements when highlighting lands or annotations
   // change; retry until the hover lands on the current element.
   await expect(async () => {
+    await codeLine(page, path, n).scrollIntoViewIfNeeded({ timeout: 2_000 });
     await codeLine(page, path, n).hover({ timeout: 2_000 });
     if (opts.commentable !== false) {
       await expect(codeFile(page, path).locator("[data-utility-button]")).toBeVisible({ timeout: 1_000 });
     }
-  }).toPass({ timeout: 10_000 });
+  }).toPass({ timeout: 15_000 });
 }
 
-/** Open a comment form on a code line through the gutter "+" (crit: openLineComment). */
+/** Open a comment form on a code line through the gutter "+" (crit: openLineComment).
+ *
+ * Retries hover + click + form-visible as one unit: Pierre can replace the
+ * utility button between a successful hover and the click, so hovering once
+ * outside the retry (then clicking) flakes.
+ */
 export async function openCodeLineComment(page: Page, path: string, n: number) {
   await expect(async () => {
-    await hoverCodeLine(page, path, n);
+    await codeLine(page, path, n).scrollIntoViewIfNeeded({ timeout: 2_000 });
+    await codeLine(page, path, n).hover({ timeout: 2_000 });
+    await expect(codeFile(page, path).locator("[data-utility-button]")).toBeVisible({ timeout: 2_000 });
     await codeFile(page, path).locator("[data-utility-button]").click({ timeout: 2_000 });
     await expect(page.locator(".comment-form textarea").last()).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
+  }).toPass({ timeout: 20_000 });
+}
+
+/**
+ * Drag from the gutter "+" of `fromLine` to the line-number cell `toSelector`
+ * to comment on a range (e.g. "Comment on Lines 9–11").
+ *
+ * The whole hover + boundingBox + mouse sequence runs inside one toPass
+ * retry: Pierre re-renders drop the hover and null out bounding boxes, so
+ * reading the boxes outside the retry flakes (boundingBox null, utility not
+ * found). Early-exits when the expected form header is already visible so a
+ * retry after a successful drag does not open a second form.
+ */
+export async function dragCodeRange(
+  page: Page,
+  path: string,
+  fromLine: number,
+  toSelector: string,
+  expectedHeader: string
+) {
+  await expect(async () => {
+    if (await page.locator(".comment-form-header", { hasText: expectedHeader }).count()) {
+      await expect(page.locator(".comment-form-header")).toHaveText(expectedHeader, { timeout: 2_000 });
+      return;
+    }
+    await codeLine(page, path, fromLine).scrollIntoViewIfNeeded({ timeout: 2_000 });
+    await codeLine(page, path, fromLine).hover({ timeout: 2_000 });
+    const utility = codeFile(page, path).locator("[data-utility-button]");
+    await expect(utility).toBeVisible({ timeout: 2_000 });
+    const to = codeFile(page, path).locator(toSelector);
+    await expect(to).toBeVisible({ timeout: 2_000 });
+    const start = await utility.boundingBox();
+    const end = await to.boundingBox();
+    expect(start).not.toBeNull();
+    expect(end).not.toBeNull();
+    await page.mouse.move(start!.x + start!.width / 2, start!.y + start!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(start!.x + start!.width / 2, end!.y + end!.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect(page.locator(".comment-form-header")).toHaveText(expectedHeader, { timeout: 5_000 });
+  }).toPass({ timeout: 20_000 });
 }
 
 /** Line numbers of a code file that carry Pierre's line selection (keyboard focus). */
@@ -319,6 +397,33 @@ export async function selectedCodeLines(page: Page, path: string) {
     return Array.from(root.querySelectorAll("[data-content] > [data-line][data-selected-line]"))
       .map((line) => Number((line as HTMLElement).dataset.line));
   });
+}
+
+/**
+ * Drag from one markdown gutter to another to comment on a range.
+ *
+ * Reads both bounding boxes inside a single toPass retry with visible +
+ * scrolled checks so a layout shift between the two reads cannot null one
+ * out. Early-exits when a comment form is already open (retry after a
+ * successful drag).
+ */
+export async function dragGutterRange(page: Page, from: Locator, to: Locator) {
+  await expect(async () => {
+    if (await page.locator(".comment-form").count()) return;
+    await expect(from).toBeVisible({ timeout: 2_000 });
+    await expect(to).toBeVisible({ timeout: 2_000 });
+    await from.scrollIntoViewIfNeeded({ timeout: 2_000 });
+    await to.scrollIntoViewIfNeeded({ timeout: 2_000 });
+    const start = await from.boundingBox();
+    const end = await to.boundingBox();
+    expect(start).not.toBeNull();
+    expect(end).not.toBeNull();
+    await page.mouse.move(start!.x + start!.width / 2, start!.y + start!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(end!.x + end!.width / 2, end!.y + end!.height / 2, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.locator(".comment-form")).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 /**

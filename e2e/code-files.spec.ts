@@ -4,6 +4,7 @@ import {
   codeLine,
   createReview,
   deleteReview,
+  dragCodeRange,
   hoverCodeLine,
   loadReview,
   openCodeLineComment,
@@ -206,9 +207,15 @@ test.describe("Code files", () => {
       expect(cardBox!.y).toBeGreaterThan(line7!.y);
       expect(cardBox!.y).toBeLessThan(line8!.y);
     }).toPass();
+    // Range tints land with Pierre's post-render mount + adopted stylesheet,
+    // which is async after the Shiki worker resolves. Poll so the assertion
+    // waits for the tint instead of racing it (flaked in CI with "" vs tint).
     const tint = (n: number) => codeLine(page, "server.go", n).evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(await tint(6)).not.toBe(await tint(3));
-    expect(await tint(7)).toBe(await tint(6));
+    await expect(async () => {
+      const [tinted6, plain3, tinted7] = await Promise.all([tint(6), tint(3), tint(7)]);
+      expect(tinted6).not.toBe(plain3);
+      expect(tinted7).toBe(tinted6);
+    }).toPass({ timeout: 15_000 });
   });
 
   test("the gutter + opens a form and a new comment appears live", async ({ page }) => {
@@ -222,17 +229,10 @@ test.describe("Code files", () => {
   });
 
   test("dragging across line numbers comments on the range", async ({ page }) => {
-    const to = codeFile(page, "server.go").locator('[data-column-number="11"]');
-    await hoverCodeLine(page, "server.go", 9);
-    const utility = codeFile(page, "server.go").locator("[data-utility-button]");
-    await expect(utility).toBeVisible();
-    const start = await utility.boundingBox();
-    const end = await to.boundingBox();
-    await page.mouse.move(start!.x + start!.width / 2, start!.y + start!.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(start!.x + start!.width / 2, end!.y + end!.height / 2, { steps: 6 });
-    await page.mouse.up();
-    await expect(page.locator(".comment-form-header")).toHaveText("Comment on Lines 9–11");
+    // Hover + boxes + mouse must be atomic: Pierre re-renders between a
+    // standalone hover and the drag null out the utility button (flaked in CI
+    // with "element(s) not found" and boundingBox null).
+    await dragCodeRange(page, "server.go", 9, '[data-column-number="11"]', "Comment on Lines 9–11");
   });
 
   test("an open form keeps its text when another form opens elsewhere", async ({ page }) => {
@@ -266,27 +266,31 @@ test.describe("Code files", () => {
   });
 
   test("selecting text in code comments on its lines with a quote", async ({ page }) => {
-    await hoverCodeLine(page, "server.go", 9);
-    await page.evaluate(() => {
-      const host = document.querySelector('.crit-code-file[data-file-path="server.go"] diffs-container')!;
-      const line = host.shadowRoot!.querySelector('[data-content] > [data-line="9"]')!;
-      const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
-      let node: Node | null;
-      while ((node = walker.nextNode())) {
-        const at = node.textContent!.indexOf("invalid key");
-        if (at < 0) continue;
-        const range = document.createRange();
-        range.setStart(node, at);
-        range.setEnd(node, at + "invalid key".length);
-        const selection = window.getSelection()!;
-        selection.removeAllRanges();
-        selection.addRange(range);
-        return;
-      }
-      throw new Error("text not found");
-    });
-    await page.keyboard.press("c");
-    await expect(page.locator(".comment-form-header")).toHaveText("Comment on Line 9");
+    // Select + "c" must be atomic: a Pierre re-render between setting the
+    // selection and pressing "c" clears it, losing the quote (flaked in CI).
+    await expect(async () => {
+      await codeLine(page, "server.go", 9).scrollIntoViewIfNeeded({ timeout: 2_000 });
+      await page.evaluate(() => {
+        const host = document.querySelector('.crit-code-file[data-file-path="server.go"] diffs-container')!;
+        const line = host.shadowRoot!.querySelector('[data-content] > [data-line="9"]')!;
+        const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+        let node: Node | null;
+        while ((node = walker.nextNode())) {
+          const at = node.textContent!.indexOf("invalid key");
+          if (at < 0) continue;
+          const range = document.createRange();
+          range.setStart(node, at);
+          range.setEnd(node, at + "invalid key".length);
+          const selection = window.getSelection()!;
+          selection.removeAllRanges();
+          selection.addRange(range);
+          return;
+        }
+        throw new Error("text not found");
+      });
+      await page.keyboard.press("c");
+      await expect(page.locator(".comment-form-header")).toHaveText("Comment on Line 9", { timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     await page.locator(".comment-form textarea").fill("Quoted");
     await page.locator(".comment-form textarea").press("Control+Enter");
     await waitForCommentCard(page, "Quoted");

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createReview, deleteReview, loadReview } from "./helpers";
+import { createReview, deleteReview, dragGutterRange, loadReview } from "./helpers";
 
 test.describe("Drag Selection — Multi-line Comment Range", () => {
   let token: string;
@@ -33,19 +33,9 @@ test.describe("Drag Selection — Multi-line Comment Range", () => {
     const firstGutter = gutters.nth(0);
     const thirdGutter = gutters.nth(2);
 
-    await expect(firstGutter).toBeAttached();
-    await expect(thirdGutter).toBeAttached();
-
-    // Perform drag from first to third gutter
-    const firstBox = await firstGutter.boundingBox();
-    const thirdBox = await thirdGutter.boundingBox();
-    expect(firstBox).toBeTruthy();
-    expect(thirdBox).toBeTruthy();
-
-    await page.mouse.move(firstBox!.x + firstBox!.width / 2, firstBox!.y + firstBox!.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(thirdBox!.x + thirdBox!.width / 2, thirdBox!.y + thirdBox!.height / 2, { steps: 5 });
-    await page.mouse.up();
+    // Boxes + mouse must be atomic: a layout shift between two separate
+    // boundingBox reads nulls one out. dragGutterRange retries as one unit.
+    await dragGutterRange(page, firstGutter, thirdGutter);
 
     // Comment form should open with "Lines" in the header (multi-line range)
     const form = page.locator(".comment-form");
@@ -72,16 +62,7 @@ test.describe("Drag Selection — Multi-line Comment Range", () => {
     const firstGutter = gutters.nth(0);
     const thirdGutter = gutters.nth(2);
 
-    await expect(firstGutter).toBeAttached();
-    await expect(thirdGutter).toBeAttached();
-
-    const firstBox = await firstGutter.boundingBox();
-    const thirdBox = await thirdGutter.boundingBox();
-
-    await page.mouse.move(firstBox!.x + firstBox!.width / 2, firstBox!.y + firstBox!.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(thirdBox!.x + thirdBox!.width / 2, thirdBox!.y + thirdBox!.height / 2, { steps: 5 });
-    await page.mouse.up();
+    await dragGutterRange(page, firstGutter, thirdGutter);
 
     // At least one line block should have the selected class
     const selectedBlocks = page.locator(".line-block.selected");
