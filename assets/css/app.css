@@ -2974,10 +2974,17 @@ body.comments-panel-anim #commentsPanelResizer {
   padding: 26px 32px 80px;
 }
 
+/* One border around each file: header, file-level comments and body. The
+   section uses the code background, so file-level comments sit on the same
+   surface as the code. overflow: clip rounds the corners without making a
+   scroll container, so the sticky header still sticks. */
 .file-section {
   scroll-margin-top: calc(var(--crit-header-height) + 4px);
   margin-bottom: 18px;
-  background: var(--crit-editor-bg-card);
+  background: var(--crit-editor-bg);
+  border: 1px solid var(--crit-border);
+  border-radius: var(--crit-r-md);
+  overflow: clip;
 }
 
 .file-header {
@@ -2986,8 +2993,7 @@ body.comments-panel-anim #commentsPanelResizer {
   top: var(--crit-header-height);
   z-index: 80;
   background: var(--crit-editor-bg-elevated);
-  border: 1px solid var(--crit-border);
-  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid var(--crit-border);
   padding: 8px 24px;
   display: flex;
   align-items: center;
@@ -3012,6 +3018,11 @@ body.comments-panel-anim #commentsPanelResizer {
   justify-content: center;
 }
 .file-section:not([open]) .file-header-chevron { transform: rotate(-90deg); }
+/* Collapsed: the section's own border closes the header. */
+.file-section:not([open]) .file-header { border-bottom: none; }
+/* The section clips overflow, which would cut off the default outline drawn
+   outside the header; draw the focus ring inside it instead. */
+.file-header:focus-visible { outline: 2px solid var(--crit-brand); outline-offset: -2px; }
 
 .file-header-icon { width: 16px; height: 16px; flex-shrink: 0; }
 

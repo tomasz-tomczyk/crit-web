@@ -182,7 +182,7 @@ test.describe("Code files", () => {
       await card.locator('.comment-collapse-btn').click();
       await expect(card).not.toHaveClass(/collapsed/);
       await page.setViewportSize({ width: 1900, height: 1000 });
-      await expect(page.locator(".file-header").first()).toHaveCSS("border-top-left-radius", "6px");
+      await expect(page.locator(".file-section").first()).toHaveCSS("border-top-left-radius", "6px");
       await expect(page.locator(".files-container")).toHaveCSS("padding-left", "32px");
       await expect(page.locator(".file-section").first()).toHaveCSS("margin-bottom", "18px");
     } finally {
