@@ -81,10 +81,12 @@ export default defineConfig({
     },
     {
       // Isolated Phoenix instance for the security/isolation spec.
-      // Shares the same DB (idempotent ecto.migrate) and loopback (Port
-      // 4004) as the canonical instance; only PREVIEW_HOST + PHX_HOST differ,
-      // enabling HostGate + the canonical→preview 308 redirect.
-      command: `MIX_ENV=test mix do ecto.migrate --quiet + phx.server`,
+      // Shares the same DB and loopback (Port 4004) as the canonical
+      // instance; only PREVIEW_HOST + PHX_HOST differ, enabling HostGate +
+      // the canonical→preview 308 redirect. Both servers boot concurrently,
+      // so this one also runs the idempotent ecto.create in case it wins the
+      // race to a fresh crit_e2e database.
+      command: `MIX_ENV=test mix do ecto.create --quiet + ecto.migrate --quiet + phx.server`,
       url: `${SEC_BASE_URL}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
