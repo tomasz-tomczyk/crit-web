@@ -7,6 +7,11 @@ import Config
 # Run `mix help test` for more information.
 # When E2E=true (Playwright), use a real connection pool so the
 # web server process can access the database. ExUnit tests keep the sandbox.
+#
+# E2E also gets its own database. Its server commits real rows (no sandbox
+# rollback), and in crit_test those rows break count- and uniqueness-based
+# ExUnit tests on the next `mix test`. The database is shared by every
+# worktree, so one local e2e run would break unit tests everywhere.
 e2e_mode? = System.get_env("E2E") == "true"
 
 config :crit, Crit.Repo,
@@ -14,7 +19,8 @@ config :crit, Crit.Repo,
   password: "postgres",
   hostname: "localhost",
   port: String.to_integer(System.get_env("DB_PORT", "5432")),
-  database: "crit_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database:
+    "#{if e2e_mode?, do: "crit_e2e", else: "crit_test"}#{System.get_env("MIX_TEST_PARTITION")}",
   pool: if(e2e_mode?, do: DBConnection.ConnectionPool, else: Ecto.Adapters.SQL.Sandbox),
   pool_size: System.schedulers_online() * 2
 

@@ -17,8 +17,17 @@ direnv-allow = "direnv allow"
 
 # Copy build caches + deps (deps/, _build/, node_modules/, assets/node_modules/,
 # .envrc.local) from the source worktree so a new worktree is ready immediately.
+#
+# Then drop the copied Erlang compile manifests. They hold absolute paths into
+# the source worktree's _build, so the next time mix compiles a dep here it
+# treats those paths as stale outputs and deletes them: the Erlang modules
+# (expo's parsers, plug_multipart, mint_shims) vanish from the SOURCE
+# checkout, and every worktree copied from it after that inherits the gap.
+# The copied .beam files stay; the next dep compile writes a fresh manifest
+# with this worktree's paths. Chained after the copy because post-start
+# commands run concurrently.
 [post-start]
-copy = "wt step copy-ignored"
+copy = "wt step copy-ignored && find _build -path '*/.mix/compile.erlang' -delete"
 # Ensure the shared Postgres container is running so `mix test` works without
 # anyone running `mise run db:start` first. Idempotent and machine-global.
 db = "mise run db:start"
