@@ -1266,7 +1266,6 @@ body.dragging { user-select: none; cursor: grabbing; }
   max-width: var(--crit-content-width);
   word-break: normal;
 }
-.crit-code-load-error { color: var(--crit-red); }
 
 /* Mermaid */
 .line-content.mermaid-block {
@@ -2697,6 +2696,11 @@ body.comments-panel-anim #commentsPanelResizer {
   width: 100%;
   max-width: var(--crit-content-width);
 }
+/* Orphaned files have no code column: left-align their threads at the
+   container's 16px inset (matches crit #1008). */
+.file-section:has(.orphaned-placeholder) .file-comments {
+  align-items: flex-start;
+}
 .file-comments .comment-card { margin-bottom: 8px; }
 .file-comments .comment-card:last-child { margin-bottom: 0; }
 .file-comments .panel-comment-block { padding: 0; }
@@ -3128,9 +3132,10 @@ body.comments-panel-anim #commentsPanelResizer {
 .diff-deleted-placeholder {
   padding: 32px 24px;
   text-align: center;
-  color: var(--crit-fg-muted);
+  color: var(--crit-editor-fg-muted);
   font-size: 14px;
 }
+.diff-deleted-placeholder.crit-code-load-error { color: var(--crit-red); }
 .orphaned-placeholder {
   font-style: italic;
   color: var(--crit-editor-fg-muted);
