@@ -19,13 +19,24 @@
     return count === 1 ? String(start) : start + ',' + count;
   }
 
+  // A new file has no old side: Pierre renders it as additions only.
+  function isNewFileStatus(status) {
+    return status === 'added' || status === 'untracked';
+  }
+
+  // Side for file-level annotations in a diff: the old (left) side when the
+  // file has one. Pierre drops annotations on a side it does not render.
+  function fileLevelSide(status) {
+    return isNewFileStatus(status) ? 'additions' : 'deletions';
+  }
+
   // One file's unified diff in git format, from Crit hunks. Pierre parses
   // this with processFile(); oldFile/newFile make it a full (expandable) diff.
   function hunksToPatch(file) {
     var path = file.path;
     var oldPath = file.old_path || file.oldPath || path;
     var status = file.status;
-    var isNew = status === 'added' || status === 'untracked';
+    var isNew = isNewFileStatus(status);
     var isDeleted = status === 'deleted' || status === 'removed';
     var out = ['diff --git a/' + oldPath + ' b/' + path];
     if (isNew) out.push('new file mode 100644');
@@ -153,10 +164,13 @@
 
   // Crit comment → Pierre DiffLineAnnotation. Comments anchor on their end
   // line; old-side comments sit on the deletions side. File-level comments use
-  // lineNumber 0 (Pierre renders those above the first hunk).
-  function annotationForComment(comment) {
+  // lineNumber 0 (Pierre renders those above the first hunk) on fileSide:
+  // 'deletions' puts them on the left of a split diff, but a view with no old
+  // side (new file, source, document) drops them there, so it defaults to
+  // 'additions'.
+  function annotationForComment(comment, fileSide) {
     if (comment.scope === 'file') {
-      return { side: 'additions', lineNumber: 0, metadata: { kind: 'thread', id: comment.id } };
+      return { side: fileSide || 'additions', lineNumber: 0, metadata: { kind: 'thread', id: comment.id } };
     }
     return {
       side: comment.side === 'old' ? 'deletions' : 'additions',
@@ -166,9 +180,9 @@
   }
 
   // Crit open comment form → annotation after its end line.
-  function annotationForForm(form) {
+  function annotationForForm(form, fileSide) {
     if (form.scope === 'file') {
-      return { side: 'additions', lineNumber: 0, metadata: { kind: 'form', id: form.formKey } };
+      return { side: fileSide || 'additions', lineNumber: 0, metadata: { kind: 'form', id: form.formKey } };
     }
     return {
       side: form.side === 'old' ? 'deletions' : 'additions',
@@ -269,6 +283,7 @@
     estimatedLineCount: estimatedLineCount,
     annotationForComment: annotationForComment,
     annotationForForm: annotationForForm,
+    fileLevelSide: fileLevelSide,
     formRangeFromSelection: formRangeFromSelection,
     themeTypeFor: themeTypeFor,
     navRowsForHunks: navRowsForHunks,
