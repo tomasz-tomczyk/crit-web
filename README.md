@@ -11,6 +11,8 @@ When you click **Share** in the crit CLI, your review (document + comments) is u
 
 **Hosted version:** [crit.md](https://crit.md)
 
+This README is for people who want to run their own instance or work on crit-web. If you just want to use Crit, start at [crit.md/getting-started](https://crit.md/getting-started).
+
 ## How it works
 
 1. You run `crit` locally to review files and add inline comments
@@ -176,6 +178,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 ## Privacy
 
 Self-hosted Crit Web collects no analytics or tracking data. The public crit.md deployment uses [Umami](https://umami.is) for cookieless, aggregate website analytics (page views and traffic sources only - not linked to individual users or review content). See the [privacy policy](https://crit.md/privacy) for details.
+
+## Getting help
+
+- Bug in the hosted site or in self-hosting: [open an issue](https://github.com/tomasz-tomczyk/crit-web/issues).
+- Bug in the `crit` CLI or in an agent integration: [open an issue on crit](https://github.com/tomasz-tomczyk/crit/issues).
+- Security problem: see [SECURITY.md](SECURITY.md).
 
 ## License
 
