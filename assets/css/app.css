@@ -3038,7 +3038,10 @@ body.comments-panel-anim #commentsPanelResizer {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
+  /* .dir and .filename are separate flex items so long paths can shrink the
+     directory first. A gap between them reads as a space before the filename.
+     The copy button keeps its own inset margin. */
+  gap: 0;
   min-width: 0;
   overflow: hidden;
 }
@@ -3316,6 +3319,7 @@ body.file-tree-anim #fileTreeResizer {
   flex-shrink: 0;
   background: none;
   border: none;
+  margin-left: 6px;
   padding: 2px;
   cursor: pointer;
   color: var(--crit-editor-fg-muted);
