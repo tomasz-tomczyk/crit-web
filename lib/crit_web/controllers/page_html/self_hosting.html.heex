@@ -174,7 +174,7 @@
       <div phx-no-format class="mb-5 max-w-[640px] border-t border-(--crit-border) pt-10">
         <h2 class="text-2xl font-extrabold tracking-tight mb-2">Environment variables</h2>
         <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-          Every knob lives in <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code> — grouped below by what they control.
+          Every knob lives in <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">.env</code> - grouped below by what they control.
         </p>
       </div>
 
@@ -215,7 +215,7 @@
           <div class="grid grid-cols-[minmax(160px,320px)_1fr_80px] gap-x-4 items-baseline px-4 py-3 bg-(--crit-bg-card) max-sm:grid-cols-1 max-sm:gap-y-1">
             <code class="text-sm font-mono text-(--crit-fg-primary)">DB_HOST</code>
             <p class="text-sm text-(--crit-fg-secondary)">
-              Database host — alternative to
+              Database host - alternative to
               <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">DATABASE_URL</code>
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required*</span>
@@ -336,17 +336,17 @@
         <p>Pick one of three ways for your team to sign in:</p>
         <ul class="list-disc pl-5 space-y-1">
           <li>
-            <strong class="text-(--crit-fg-primary)">GitHub OAuth</strong> — set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_SECRET</code>.
+            <strong class="text-(--crit-fg-primary)">GitHub OAuth</strong> - set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_ID</code> and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">GITHUB_CLIENT_SECRET</code>.
           </li>
           <li>
-            <strong class="text-(--crit-fg-primary)">Bring your own OAuth / OIDC</strong> — set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_ID</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_SECRET</code>, and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code> for Google, GitLab, Keycloak, Okta, or any other OIDC provider.
+            <strong class="text-(--crit-fg-primary)">Bring your own OAuth / OIDC</strong> - set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_ID</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_CLIENT_SECRET</code>, and <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">OAUTH_BASE_URL</code> for Google, GitLab, Keycloak, Okta, or any other OIDC provider.
           </li>
           <li>
-            <strong class="text-(--crit-fg-primary)">Basic accounts</strong> — email + password managed by crit-web. No OAuth setup. Set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">LOCAL_REGISTRATION_ENABLED=true</code>, then sign up at <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/users/register</code> and flip it back to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">false</code> once your team is in.
+            <strong class="text-(--crit-fg-primary)">Basic accounts</strong> - email + password managed by crit-web. No OAuth setup. Set <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">LOCAL_REGISTRATION_ENABLED=true</code>, then sign up at <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/users/register</code> and flip it back to <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">false</code> once your team is in.
           </li>
         </ul>
         <p>
-          The two OAuth options are mutually exclusive. Basic accounts are off by default and can run on their own or alongside either OAuth provider — useful for service accounts or users without an SSO identity.
+          The two OAuth options are mutually exclusive. Basic accounts are off by default and can run on their own or alongside either OAuth provider - useful for service accounts or users without an SSO identity.
         </p>
       </div>
 
@@ -459,7 +459,7 @@
           <span class="text-(--crit-brand) text-sm leading-none select-none">&#9432;</span>
           <p class="text-sm text-(--crit-fg-secondary)">
             All Sentry vars are optional. Leave them unset and no error data is sent
-            anywhere — the browser SDK isn't even loaded.
+            anywhere - the browser SDK isn't even loaded.
           </p>
         </div>
         <div class="divide-y divide-(--crit-border)">
@@ -638,7 +638,7 @@
         <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-3">
           Preview reviews render a live page inside an iframe so reviewers can click around
           while commenting. That page is built from HTML, CSS, and JavaScript you (or an agent)
-          authored — and anyone with the share link can open it.
+          authored - and anyone with the share link can open it.
         </p>
         <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mb-3">
           Without <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PREVIEW_HOST</code>,
@@ -690,7 +690,7 @@
         <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PREVIEW_HOST/agent-marker.css</code>
         (not the app host), so an SSO proxy on
         <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">PHX_HOST</code>
-        does not need to allowlist that path — keep the preview host reachable without a login wall.
+        does not need to allowlist that path - keep the preview host reachable without a login wall.
       </p>
     </section>
 
@@ -702,7 +702,7 @@
           If your Crit instance sits behind an SSO reverse proxy (Cloudflare Access,
           Tailscale Funnel, oauth2-proxy, etc.), the local CLI can't authenticate
           to <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">/api/reviews</code>
-          from the terminal — the proxy redirects to a login page. Set
+          from the terminal - the proxy redirects to a login page. Set
           <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">proxy_auth: true</code>
           in your
           <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">~/.crit.config.json</code>
@@ -742,7 +742,7 @@
         <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">proxy_auth</code> is a <strong>CLI</strong>-side setting, not a server env var.
         The terminal commands <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit share</code>, <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit fetch</code>,
         and <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">crit unpublish</code>
-        remain unavailable behind SSO — use the in-browser buttons. For terminal
+        remain unavailable behind SSO - use the in-browser buttons. For terminal
         or CI access, ask the proxy admin about
         <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">Authorization: Bearer</code>
         passthrough on <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">/api/reviews*</code>,
@@ -794,7 +794,7 @@
             </code>
             <p phx-no-format class="text-sm text-(--crit-fg-secondary)">
               Comma-separated CIDR ranges your proxy forwards from, e.g. <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">10.0.0.0/8,172.16.0.0/12</code>.
-              <strong class="text-(--crit-fg-primary)">Mandatory</strong> — Crit refuses to start if the header is set without CIDRs.
+              <strong class="text-(--crit-fg-primary)">Mandatory</strong> - Crit refuses to start if the header is set without CIDRs.
             </p>
             <span class="text-xs font-mono text-(--crit-brand) sm:text-right">required</span>
           </div>
@@ -833,7 +833,7 @@
         <p phx-no-format class="text-sm text-(--crit-fg-secondary) leading-relaxed">
           Your proxy must <strong class="text-(--crit-fg-primary)">overwrite</strong> the header on every request, not append to incoming values.
           This authenticates browser-driven flows only (review pages, dashboard, the in-browser Share popup).
-          The CLI's direct <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/api/reviews</code> uploads still require a bearer token from <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">crit auth</code> — use <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">proxy_auth: true</code> on the CLI side if the proxy blocks direct API access.
+          The CLI's direct <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">/api/reviews</code> uploads still require a bearer token from <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">crit auth</code> - use <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">proxy_auth: true</code> on the CLI side if the proxy blocks direct API access.
         </p>
       </div>
 
@@ -845,14 +845,14 @@
         <p>Two common proxy quirks are handled automatically:</p>
         <ul class="list-disc pl-5 space-y-1">
           <li>
-            <strong class="text-(--crit-fg-primary)">Double-encoding</strong> —
+            <strong class="text-(--crit-fg-primary)">Double-encoding</strong> -
             some proxies re-compress responses that are already gzipped, producing
             garbled output. Crit sets
             <code class="text-xs bg-(--crit-bg-elevated) px-1 rounded">Cache-Control: no-transform</code>
             on every response, which tells conformant proxies to leave the body alone.
           </li>
           <li>
-            <strong class="text-(--crit-fg-primary)">Redirect-collapse loops</strong> —
+            <strong class="text-(--crit-fg-primary)">Redirect-collapse loops</strong> -
             when no auth backend is configured, crit-web renders inline auth gates
             instead of HTTP redirects. This avoids the situation where a proxy
             silently follows the redirect, the browser URL never changes, and the
