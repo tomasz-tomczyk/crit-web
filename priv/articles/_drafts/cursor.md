@@ -21,7 +21,7 @@ Source: [Cursor Plan Mode](https://cursor.com/docs/agent/planning).
 crit install cursor
 ```
 
-This installs the Crit skills into `.cursor/skills/`. There is no hook. The skill only runs when you explicitly invoke `/crit` or ask for Crit by name. A generic "review this plan" will not trigger it.
+This installs the `crit`, `crit-cli` and `crit-story` skills into `.cursor/skills/`. Cursor has no stable user-level config directory, so it is project-only. There is no hook. The skill only runs when you explicitly invoke `/crit` or ask for Crit by name. A generic "review this plan" will not trigger it.
 
 1. Build the plan in Plan Mode and click "Save to workspace".
 2. In chat, run `/crit <path to the plan>`.
