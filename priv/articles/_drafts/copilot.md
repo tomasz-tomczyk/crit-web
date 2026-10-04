@@ -21,7 +21,7 @@ Copilot has a plan step in two places.
 crit install github-copilot
 ```
 
-This installs the Crit skills into `.github/skills/` (or `~/.copilot/skills/` for a global install). There is no hook, so you ask for the review. Point Crit at the plan file: [[CONFIRM: exact way to invoke the skill in Copilot CLI and in VS Code]]
+This installs the `crit`, `crit-cli` and `crit-story` skills into `.github/skills/`. For a global install, run `cd ~ && crit install github-copilot` and they land in `~/.agents/skills/`, because Copilot does not read `~/.github/skills/`. There is no hook, so you ask for the review: run `/crit` in Copilot, then point it at the plan file.
 
 For the CLI, the plan is already a Markdown file in the session folder, so `crit <path to plan.md>` works from a second terminal. [[CONFIRM: path of the session folder]]
 
