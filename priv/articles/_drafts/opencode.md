@@ -19,7 +19,7 @@ Source: [OpenCode agents](https://opencode.ai/docs/agents/).
 crit install opencode
 ```
 
-This creates `.opencode/commands/crit.md` and `.opencode/skills/crit/SKILL.md`. There is no plan-mode hook for OpenCode, so the review is something you ask for rather than something that interrupts the agent.
+This creates `.opencode/commands/crit.md`, `.opencode/commands/crit-story.md` and the skills under `.opencode/skills/`, plus a small plugin that adds sharing instructions to the system prompt only when `share_url` is set. For a global install, run it from `~`. There is no plan-mode hook for OpenCode, so the review is something you ask for rather than something that interrupts the agent.
 
 1. In the Plan agent, ask for a plan and have it write the plan to a file.
 2. Run `/crit`. If a plan was written earlier in the conversation, the command opens it. You can also pass the file: `/crit plan.md`.
