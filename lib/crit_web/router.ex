@@ -104,6 +104,16 @@ defmodule CritWeb.Router do
   scope "/", CritWeb do
     pipe_through [:browser, :noindex]
 
+    get "/settings/notification-emails/confirm/:token", NotificationEmailController, :confirm
+
+    post "/settings/notification-emails/confirm/:token",
+         NotificationEmailController,
+         :confirm_address
+
+    get "/settings/notification-emails/unsubscribe/:token",
+        NotificationEmailController,
+        :unsubscribe
+
     get "/auth/cli", DeviceController, :index
     get "/auth/cli/authorize", DeviceController, :authorize
     post "/auth/cli/authorize", DeviceController, :confirm_authorize

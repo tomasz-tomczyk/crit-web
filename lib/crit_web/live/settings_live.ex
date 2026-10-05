@@ -28,6 +28,9 @@ defmodule CritWeb.SettingsLive do
         :discussion_notifications_enabled,
         user.preferences.discussion_notifications_enabled
       )
+      |> assign(:notification_emails, user.preferences.notification_emails)
+      |> assign(:pending_notification_emails, user.preferences.pending_notification_emails)
+      |> assign(:notification_email_error, nil)
       |> assign(:notifications_enabled, Crit.Settings.get().notifications_enabled)
       |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
@@ -169,6 +172,37 @@ defmodule CritWeb.SettingsLive do
   end
 
   @impl true
+  def handle_event("add_notification_email", %{"email" => email}, socket) do
+    %{current_scope: scope} = socket.assigns
+
+    case Crit.Notifications.ExtraAddresses.request(scope.user, email) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> assign_notification_emails(updated)
+         |> assign(:current_scope, Scope.put_user(scope, updated))
+         |> put_flash(
+           :info,
+           "Check that inbox. Digests start after they confirm."
+         )}
+
+      {:error, :blank} ->
+        {:noreply, socket}
+
+      {:error, reason} ->
+        {:noreply, assign(socket, :notification_email_error, notification_email_error(reason))}
+    end
+  end
+
+  @impl true
+  def handle_event("remove_notification_email", %{"email" => email}, socket) do
+    save_notification_emails(socket, %{
+      notification_emails: List.delete(socket.assigns.notification_emails, email),
+      pending_notification_emails: List.delete(socket.assigns.pending_notification_emails, email)
+    })
+  end
+
+  @impl true
   def handle_event("create_token", %{"name" => name}, socket) do
     user = socket.assigns.current_scope.user
 
@@ -230,6 +264,50 @@ defmodule CritWeb.SettingsLive do
       {:noreply, put_flash(socket, :error, "Confirmation text does not match.")}
     end
   end
+
+  defp save_notification_emails(socket, prefs) do
+    %{current_scope: scope} = socket.assigns
+
+    case Accounts.update_preferences(scope.user, prefs) do
+      {:ok, updated_user} ->
+        {:noreply,
+         socket
+         |> assign_notification_emails(updated_user)
+         |> assign(:current_scope, Scope.put_user(scope, updated_user))}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :notification_email_error, notification_email_error(changeset))}
+    end
+  end
+
+  defp assign_notification_emails(socket, user) do
+    socket
+    |> assign(:notification_emails, user.preferences.notification_emails)
+    |> assign(:pending_notification_emails, user.preferences.pending_notification_emails)
+    |> assign(:notification_email_error, nil)
+  end
+
+  defp notification_email_error(:included), do: "That address is already included."
+  defp notification_email_error(:pending), do: "That address is already waiting for confirmation."
+
+  defp notification_email_error(:delivery_failed),
+    do: "Couldn't send the confirmation email. Try again in a moment."
+
+  defp notification_email_error(%Ecto.Changeset{} = changeset) do
+    case changeset.changes[:preferences] do
+      %Ecto.Changeset{errors: errors} ->
+        case Keyword.get(errors, :notification_emails) ||
+               Keyword.get(errors, :pending_notification_emails) do
+          {msg, _opts} -> msg
+          nil -> "Failed to update addresses."
+        end
+
+      _ ->
+        "Failed to update addresses."
+    end
+  end
+
+  defp notification_email_error(_), do: "Failed to update addresses."
 
   defp delete_confirmation_text(user) do
     user.email || user.name || "delete my account"

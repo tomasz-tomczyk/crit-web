@@ -159,7 +159,7 @@ defmodule Crit.NotificationsTest do
       assert email.html_body =~ "&lt;script&gt;"
       refute email.html_body =~ "<script>alert"
       assert email.html_body =~ "display:none"
-      assert email.html_body =~ "Notification settings"
+      assert email.html_body =~ "Manage notifications"
       refute email.text_body =~ "quiet period"
       refute email.html_body =~ "quiet period"
       true
@@ -698,6 +698,114 @@ defmodule Crit.NotificationsTest do
     )
 
     Repo.get!(NotificationBatch, batch.id)
+  end
+
+  test "digest goes to the account address and any extra notification addresses" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, _owner} =
+      Crit.Accounts.update_preferences(owner, %{
+        notification_emails: ["Work@Example.com", "second@example.com"]
+      })
+
+    {:ok, _comment} =
+      Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+
+    assert_email_sent(fn email ->
+      assert Enum.map(email.to, &elem(&1, 1)) == [owner.email]
+      assert email.bcc == []
+      assert email.text_body =~ "Manage notifications"
+      refute email.text_body =~ "Stop these emails"
+      true
+    end)
+
+    for address <- ["work@example.com", "second@example.com"] do
+      assert_email_sent(fn email ->
+        assert Enum.map(email.to, &elem(&1, 1)) == [address]
+        assert email.bcc == []
+        assert email.text_body =~ "Stop these emails"
+        assert email.text_body =~ "/settings/notification-emails/unsubscribe/"
+        refute email.text_body =~ "Manage notifications"
+        true
+      end)
+    end
+  end
+
+  test "pending notification addresses do not receive the digest" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, _owner} =
+      Crit.Accounts.update_preferences(owner, %{
+        pending_notification_emails: ["work@example.com"]
+      })
+
+    {:ok, _comment} =
+      Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+
+    assert_email_sent(fn email ->
+      assert Enum.map(email.to, &elem(&1, 1)) == [owner.email]
+      assert email.bcc == []
+      refute email.text_body =~ "Stop these emails"
+      true
+    end)
+
+    refute_email_sent()
+  end
+
+  test "notification_emails are limited to three, validated and de-duplicated" do
+    owner = user_fixture(%{name: "Owner"})
+
+    assert {:error, _} =
+             Crit.Accounts.update_preferences(owner, %{
+               notification_emails: [
+                 "a@example.com",
+                 "b@example.com",
+                 "c@example.com",
+                 "d@example.com"
+               ]
+             })
+
+    assert {:error, _} =
+             Crit.Accounts.update_preferences(owner, %{notification_emails: ["not-an-email"]})
+
+    assert {:error, _} =
+             Crit.Accounts.update_preferences(owner, %{
+               notification_emails: ["a@example.com", "b@example.com"],
+               pending_notification_emails: ["c@example.com", "d@example.com"]
+             })
+
+    assert {:error, _} =
+             Crit.Accounts.update_preferences(owner, %{
+               notification_emails: ["a@example.com"],
+               pending_notification_emails: ["a@example.com"]
+             })
+
+    assert {:ok, updated} =
+             Crit.Accounts.update_preferences(owner, %{
+               notification_emails: [" A@example.com ", "a@example.com"]
+             })
+
+    assert updated.preferences.notification_emails == ["a@example.com"]
   end
 
   defp enable_notifications! do

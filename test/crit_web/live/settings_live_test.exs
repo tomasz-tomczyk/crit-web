@@ -439,6 +439,59 @@ defmodule CritWeb.SettingsLiveTest do
     end
   end
 
+  describe "extra notification addresses" do
+    test "is hidden when notifications are disabled for the instance", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+      {:ok, view, _html} = live(conn, ~p"/settings")
+      refute has_element?(view, "#notification-emails")
+    end
+
+    test "adds and removes addresses", %{conn: conn} do
+      enable_notifications!()
+      {conn, user} = login_user(conn)
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      view
+      |> form("#notification-email-form", %{"email" => "Work@Example.com"})
+      |> render_submit()
+
+      assert render(view) =~ "work@example.com"
+      assert render(view) =~ "Waiting for confirmation"
+      {:ok, updated} = Crit.Accounts.get_user(user.id)
+      assert updated.preferences.notification_emails == []
+      assert updated.preferences.pending_notification_emails == ["work@example.com"]
+
+      view
+      |> element("#pending-notification-emails button[phx-value-email='work@example.com']")
+      |> render_click()
+
+      refute render(view) =~ "work@example.com"
+      {:ok, updated} = Crit.Accounts.get_user(user.id)
+      assert updated.preferences.notification_emails == []
+      assert updated.preferences.pending_notification_emails == []
+    end
+
+    test "hides the form at three addresses and rejects duplicates", %{conn: conn} do
+      enable_notifications!()
+      {conn, user} = login_user(conn)
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      for e <- ["a@example.com", "b@example.com"] do
+        view |> form("#notification-email-form", %{"email" => e}) |> render_submit()
+      end
+
+      view |> form("#notification-email-form", %{"email" => "a@example.com"}) |> render_submit()
+      assert has_element?(view, "#notification-email-error")
+
+      view |> form("#notification-email-form", %{"email" => "c@example.com"}) |> render_submit()
+      refute has_element?(view, "#notification-email-form")
+
+      {:ok, updated} = Crit.Accounts.get_user(user.id)
+      assert updated.preferences.notification_emails == []
+      assert length(updated.preferences.pending_notification_emails) == 3
+    end
+  end
+
   describe "marketing consent toggle" do
     test "shows toggle in off state by default", %{conn: conn} do
       {conn, _user} = login_user(conn)

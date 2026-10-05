@@ -1,0 +1,42 @@
+<div class="min-h-screen flex flex-col bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
+  <Layouts.site_header current_scope={@current_scope} />
+  <main class="flex-1 max-w-lg mx-auto px-6 py-20 w-full">
+    <%= case @state do %>
+      <% :pending -> %>
+        <h1 class="text-2xl font-bold">Confirm this address</h1>
+        <p class="mt-3 text-(--crit-fg-secondary)">
+          Crit will send discussion notifications to {@email} after you confirm.
+          Nothing has been sent there yet.
+        </p>
+        <.form
+          for={%{}}
+          id="notification-email-confirmation"
+          action={~p"/settings/notification-emails/confirm/#{@token}"}
+          class="mt-6"
+        >
+          <button
+            type="submit"
+            class="min-h-11 px-4 py-2 rounded-md border border-(--crit-border) bg-(--crit-bg-elevated) hover:border-(--crit-fg-muted) cursor-pointer"
+          >
+            Confirm address
+          </button>
+        </.form>
+      <% :confirmed -> %>
+        <h1 class="text-2xl font-bold">This address is confirmed</h1>
+        <p class="mt-3 text-(--crit-fg-secondary)">
+          {@email} already receives discussion notifications.
+        </p>
+      <% :done -> %>
+        <h1 class="text-2xl font-bold">Address confirmed</h1>
+        <p class="mt-3 text-(--crit-fg-secondary)">
+          {@email} will now receive discussion notifications.
+        </p>
+      <% :invalid -> %>
+        <h1 class="text-2xl font-bold">Link not valid</h1>
+        <p class="mt-3 text-(--crit-fg-secondary)">
+          This link has expired, or the address was removed before it was confirmed.
+        </p>
+    <% end %>
+  </main>
+  <Layouts.site_footer page_path="/settings/notification-emails/confirm" />
+</div>
