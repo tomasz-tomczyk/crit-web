@@ -515,7 +515,7 @@ defmodule CritWeb.PageController do
     %{
       q: "Does it work with my agent?",
       a:
-        "If your agent can read a file and execute a shell command, yes. Crit ships first-class plugins for Claude Code, Cursor, Copilot, Codex, OpenCode, Aider, Cline, Windsurf, Gemini and Qwen."
+        "If your agent can read a file and execute a shell command, yes. Crit ships first-class plugins for Claude Code, Cursor, Copilot, Codex, OpenCode, Gemini, Qwen, Hermes, Pi, Grok, Amp, Windsurf, Cline and Aider."
     }
   ]
 
@@ -580,7 +580,7 @@ defmodule CritWeb.PageController do
         testimonials: @testimonials,
         faq: @faq,
         canonical_url: canonical_url(conn),
-        page_title: "Crit - Point at the line. Tell the agent.",
+        page_title: "Crit - Review AI agent plans and code diffs in your browser",
         meta_description:
           "Review your AI agent's code changes in a browser with inline comments and round-to-round diffs. Comment on specific lines, the agent fixes them. Single binary, works locally, any agent.",
         json_ld: %{
