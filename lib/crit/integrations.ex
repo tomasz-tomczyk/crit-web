@@ -15,7 +15,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/claude-code-light.svg",
         dark: "/images/integrations/claude-code-dark.svg"
       },
-      page_title: "Crit + Claude Code — plan-mode review for AI agents",
+      page_title: "Crit + Claude Code - plan-mode review for AI agents",
       meta:
         "Install crit's plugin for Claude Code: a /crit slash command, the crit-cli skill, and an automatic plan-mode review hook that opens every plan for inline review before any code is written.",
       intro:
@@ -39,7 +39,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/cursor-light.svg",
         dark: "/images/integrations/cursor-dark.svg"
       },
-      page_title: "Crit + Cursor — inline review for plans and code",
+      page_title: "Crit + Cursor - inline review for plans and code",
       meta:
         "Install crit for Cursor: drops a /crit slash command and the crit-cli skill into .cursor/skills/. Cursor auto-loads them so the agent reviews plans with you before writing code.",
       intro:
@@ -55,11 +55,11 @@ defmodule Crit.Integrations do
         light: "/images/integrations/github-copilot-light.svg",
         dark: "/images/integrations/github-copilot-dark.svg"
       },
-      page_title: "Crit + GitHub Copilot — review AI plans inline",
+      page_title: "Crit + GitHub Copilot - review AI plans inline",
       meta:
         "Install crit as a GitHub Copilot Agent Skill. Drops .github/skills/crit/SKILL.md and .github/skills/crit-cli/SKILL.md so Copilot auto-loads the review workflow.",
       intro:
-        "Copilot auto-discovers Agent Skills under .github/skills/ in your repo, or under ~/.copilot/skills/ for a global install.",
+        "Copilot auto-discovers Agent Skills under .github/skills/ in your repo, or under ~/.agents/skills/ for a global install.",
       command: "crit install github-copilot",
       components: [:crit_command, :crit_cli_skill]
     },
@@ -71,7 +71,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/opencode-light.svg",
         dark: "/images/integrations/opencode-dark.svg"
       },
-      page_title: "Crit + OpenCode — inline plan review",
+      page_title: "Crit + OpenCode - inline plan review",
       meta:
         "Install crit's OpenCode skill. Drops .opencode/skills/crit/SKILL.md so OpenCode auto-activates the review workflow when you ask it to plan or review changes.",
       intro:
@@ -87,7 +87,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/codex-light.svg",
         dark: "/images/integrations/codex-dark.svg"
       },
-      page_title: "Crit + OpenAI Codex CLI — plan-mode review for AI agents",
+      page_title: "Crit + OpenAI Codex CLI - plan-mode review for AI agents",
       meta:
         "Install crit's Codex plugin: a $crit skill, the crit-cli skill, and a proposed-plan Stop hook that opens every in-chat plan for inline review before the turn ends.",
       intro:
@@ -102,7 +102,7 @@ defmodule Crit.Integrations do
         ]
       },
       per_project_note:
-        "Run from the project root for skills only — $crit and crit-cli land in .agents/skills/. No plan hook. For the hook too, run crit install codex-plugin instead and commit plugins/crit/."
+        "Run from the project root for skills only - $crit and crit-cli land in .agents/skills/. No plan hook. For the hook too, run crit install codex-plugin instead and commit plugins/crit/."
     },
     %{
       id: "gemini",
@@ -112,7 +112,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/gemini-light.svg",
         dark: "/images/integrations/gemini-dark.svg"
       },
-      page_title: "Crit + Gemini CLI — review AI plans inline",
+      page_title: "Crit + Gemini CLI - review AI plans inline",
       meta:
         "Install crit's Gemini CLI integration. Drops a /crit slash command, the crit-cli skill, and merges an exit_plan_mode hook into .gemini/settings.json so Gemini routes every plan through Crit for inline review.",
       intro:
@@ -128,7 +128,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/qwen-light.svg",
         dark: "/images/integrations/qwen-dark.svg"
       },
-      page_title: "Crit + Qwen Code — review AI plans inline",
+      page_title: "Crit + Qwen Code - review AI plans inline",
       meta:
         "Install crit's Qwen Code skill. Drops .qwen/skills/crit/ and .qwen/skills/crit-cli/ so Qwen Code auto-loads the review workflow.",
       intro:
@@ -141,7 +141,7 @@ defmodule Crit.Integrations do
       name: "Hermes",
       tagline: "Crit as a Hermes skill",
       logo: nil,
-      page_title: "Crit + Hermes — review AI plans inline",
+      page_title: "Crit + Hermes - review AI plans inline",
       meta:
         "Install crit's Hermes integration. A global install (`cd ~ && crit install hermes`) drops skills into ~/.hermes/skills/ where Hermes auto-discovers them across every project.",
       intro:
@@ -157,7 +157,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/pi-light.svg",
         dark: "/images/integrations/pi-dark.svg"
       },
-      page_title: "Crit + Pi — review AI plans inline",
+      page_title: "Crit + Pi - review AI plans inline",
       meta:
         "Install crit's Pi integration. Drops skills into .pi/skills/ (project) or ~/.pi/agent/skills/ (global) so Pi auto-discovers the review workflow.",
       intro:
@@ -173,7 +173,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/grok-light.svg",
         dark: "/images/integrations/grok-dark.svg"
       },
-      page_title: "Crit + Grok — review AI plans inline",
+      page_title: "Crit + Grok - review AI plans inline",
       meta:
         "Install crit's Grok skill. Drops .grok/skills/crit/ and .grok/skills/crit-cli/ so Grok auto-loads the review workflow.",
       intro:
@@ -189,7 +189,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/ampcode-light.svg",
         dark: "/images/integrations/ampcode-dark.svg"
       },
-      page_title: "Crit + Amp — review AI plans inline",
+      page_title: "Crit + Amp - review AI plans inline",
       meta:
         "Install crit's Amp skill. Drops .agents/skills/crit/ and .agents/skills/crit-cli/ (or ~/.config/agents/skills/ globally) so Amp auto-loads the review workflow.",
       intro:
@@ -205,7 +205,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/windsurf-light.svg",
         dark: "/images/integrations/windsurf-dark.svg"
       },
-      page_title: "Crit + Windsurf — review plans before coding",
+      page_title: "Crit + Windsurf - review plans before coding",
       meta:
         "Install crit's Windsurf rule. Drops .windsurf/rules/crit.md so Cascade always knows to launch Crit for plan review before writing code.",
       intro:
@@ -222,7 +222,7 @@ defmodule Crit.Integrations do
         light: "/images/integrations/cline-light.svg",
         dark: "/images/integrations/cline-dark.svg"
       },
-      page_title: "Crit + Cline — review plans before coding",
+      page_title: "Crit + Cline - review plans before coding",
       meta:
         "Install crit's Cline rule. Drops .clinerules/crit.md so Cline follows the plan-first review loop with inline feedback before any code change.",
       intro:
@@ -235,7 +235,7 @@ defmodule Crit.Integrations do
       name: "Aider",
       tagline: "Crit conventions for Aider",
       logo: nil,
-      page_title: "Crit + Aider — inline plan review",
+      page_title: "Crit + Aider - inline plan review",
       meta:
         "Use Crit with Aider by appending the crit conventions to your CONVENTIONS.md. Aider then follows the plan-first review loop with inline feedback before any code change.",
       intro:
@@ -312,7 +312,7 @@ defmodule Crit.Integrations do
     codex_plan_hook: %{
       label: "Proposed-plan review hook",
       summary:
-        "Intercepts Codex's Stop hook when the agent proposes a plan in Plan mode. Reads the in-chat <proposed_plan>, writes it to disk, and runs crit plan-hook --mode codex so you can comment inline before the turn ends. Ships only with crit install codex-plugin — bare $crit needs a file path and cannot review in-chat plans on its own.",
+        "Intercepts Codex's Stop hook when the agent proposes a plan in Plan mode. Reads the in-chat <proposed_plan>, writes it to disk, and runs crit plan-hook --mode codex so you can comment inline before the turn ends. Ships only with crit install codex-plugin - bare $crit needs a file path and cannot review in-chat plans on its own.",
       use_cases: [
         %{
           title: nil,
@@ -368,7 +368,7 @@ defmodule Crit.Integrations do
 
       :error ->
         raise ArgumentError,
-              "unknown integration component #{inspect(id)} — " <>
+              "unknown integration component #{inspect(id)} - " <>
                 "check Crit.Integrations.@components for valid keys"
     end
   end
