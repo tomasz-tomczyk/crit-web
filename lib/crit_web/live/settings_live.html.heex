@@ -401,6 +401,60 @@
           </div>
 
           <div
+            :if={@notifications_enabled}
+            id="notification-emails"
+            class="mt-6 pt-6 border-t border-(--crit-border)"
+          >
+            <div class="text-sm font-medium text-(--crit-fg-primary)">
+              Also send notifications to
+            </div>
+            <div class="text-xs text-(--crit-fg-muted) mt-1">
+              Discussion digests go to your account address and up to {Crit.User.Preferences.max_notification_emails()} more.
+            </div>
+            <ul :if={@notification_emails != []} class="mt-3 space-y-2">
+              <li
+                :for={email <- @notification_emails}
+                class="flex items-center justify-between gap-4 text-sm text-(--crit-fg-primary)"
+              >
+                <span>{email}</span>
+                <button
+                  type="button"
+                  phx-click="remove_notification_email"
+                  phx-value-email={email}
+                  class="text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer"
+                >
+                  Remove
+                </button>
+              </li>
+            </ul>
+            <form
+              :if={length(@notification_emails) < Crit.User.Preferences.max_notification_emails()}
+              id="notification-email-form"
+              phx-submit="add_notification_email"
+              class="mt-3 flex items-center gap-2"
+            >
+              <input
+                type="email"
+                name="email"
+                required
+                maxlength="160"
+                placeholder="name@example.com"
+                autocomplete="off"
+                class="flex-1 bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border border-(--crit-border) focus:outline-none focus:border-(--crit-brand)"
+              />
+              <button
+                type="submit"
+                class="bg-(--crit-brand-cta) text-(--crit-fg-on-brand) hover:bg-(--crit-brand-cta-hover) rounded-lg px-4 py-2 text-sm font-bold cursor-pointer transition-all"
+              >
+                Add
+              </button>
+            </form>
+            <p :if={@notification_email_error} id="notification-email-error" class="mt-2 text-xs text-red-500">
+              {@notification_email_error}
+            </p>
+          </div>
+
+          <div
             :if={!@selfhosted}
             class="flex items-start justify-between gap-4 mt-6 pt-6 border-t border-(--crit-border)"
           >
