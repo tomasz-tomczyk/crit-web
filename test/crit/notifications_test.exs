@@ -700,6 +700,54 @@ defmodule Crit.NotificationsTest do
     Repo.get!(NotificationBatch, batch.id)
   end
 
+  test "digest goes to the account address and any extra notification addresses" do
+    owner = user_fixture(%{name: "Owner"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, _owner} =
+      Crit.Accounts.update_preferences(owner, %{
+        notification_emails: ["Work@Example.com", "second@example.com"]
+      })
+
+    {:ok, _comment} =
+      Reviews.create_comment(Scope.for_user(actor), review, valid_comment_attrs())
+
+    batch = Repo.one!(NotificationBatch)
+
+    Repo.update_all(from(b in NotificationBatch, where: b.id == ^batch.id),
+      set: [deliver_after: DateTime.add(DateTime.utc_now(), -1, :second)]
+    )
+
+    assert :ok = perform_job(DeliverBatchWorker, %{batch_id: batch.id})
+
+    assert_email_sent(fn email ->
+      assert Enum.map(email.to, &elem(&1, 1)) ==
+               [owner.email, "work@example.com", "second@example.com"]
+
+      true
+    end)
+  end
+
+  test "notification_emails are limited to three, validated and de-duplicated" do
+    owner = user_fixture(%{name: "Owner"})
+
+    assert {:error, _} =
+             Crit.Accounts.update_preferences(owner, %{
+               notification_emails: ["a@example.com", "b@example.com", "c@example.com", "d@example.com"]
+             })
+
+    assert {:error, _} =
+             Crit.Accounts.update_preferences(owner, %{notification_emails: ["not-an-email"]})
+
+    assert {:ok, updated} =
+             Crit.Accounts.update_preferences(owner, %{
+               notification_emails: [" A@example.com ", "a@example.com"]
+             })
+
+    assert updated.preferences.notification_emails == ["a@example.com"]
+  end
+
   defp enable_notifications! do
     setting = Settings.get()
 
