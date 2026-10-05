@@ -582,7 +582,7 @@ defmodule CritWeb.PageController do
         canonical_url: canonical_url(conn),
         page_title: "Crit - Review AI agent plans and code diffs in your browser",
         meta_description:
-          "Review your AI agent's code changes in a browser with inline comments and round-to-round diffs. Comment on specific lines, the agent fixes them. Single binary, works locally, any agent.",
+          "Review AI coding agents' plans, diffs and running apps in the browser. Inline comments, round-by-round diffs. Local-first, works with any agent.",
         json_ld: %{
           "@context" => "https://schema.org",
           "@type" => "SoftwareApplication",
@@ -590,7 +590,7 @@ defmodule CritWeb.PageController do
           "applicationCategory" => "DeveloperApplication",
           "operatingSystem" => "macOS, Linux, Windows",
           "description" =>
-            "Review your AI agent's code changes in a browser with inline comments and round-to-round diffs. Comment on specific lines, the agent fixes them.",
+            "Review AI coding agents' plans, diffs and running apps in the browser. Local-first, works with any agent.",
           "url" => "https://crit.md",
           "offers" => %{
             "@type" => "Offer",
