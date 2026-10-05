@@ -11,6 +11,8 @@ defmodule Crit.Comment do
     field :file_path, :string
     field :quote, :string
     field :quote_offset, :integer
+    field :anchor, :string
+    field :drifted, :boolean, default: false
 
     field :scope, :string, default: "line"
     field :resolved, :boolean, default: false
@@ -39,6 +41,8 @@ defmodule Crit.Comment do
       :file_path,
       :quote,
       :quote_offset,
+      :anchor,
+      :drifted,
       :resolved,
       :resolved_round,
       :scope,

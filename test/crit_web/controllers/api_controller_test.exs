@@ -800,6 +800,51 @@ defmodule CritWeb.ApiControllerTest do
       assert %{"changed" => false} = json_response(conn, 200)
     end
 
+    test "keeps comments when comments is omitted and follows inserted lines", %{conn: conn} do
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(
+          scope,
+          [%{"path" => "plan.md", "content" => "# Plan\n\nStep 1\n\nStep 2\n"}],
+          1,
+          [],
+          []
+        )
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          scope,
+          review,
+          %{
+            "start_line" => 3,
+            "end_line" => 3,
+            "body" => "Expand this",
+            "scope" => "line"
+          },
+          file_path: "plan.md"
+        )
+
+      conn =
+        conn
+        |> unique_ip()
+        |> put_req_header("content-type", "application/json")
+        |> put("/api/reviews/#{review.token}", %{
+          delete_token: review.delete_token,
+          files: [
+            %{path: "plan.md", content: "# Plan\n\nNew line A\nNew line B\nStep 1\n\nStep 2\n"}
+          ],
+          review_round: 9
+        })
+
+      assert %{"changed" => true, "review_round" => 2} = json_response(conn, 200)
+
+      kept = Crit.Repo.get!(Crit.Comment, comment.id)
+      assert kept.start_line == 5
+      assert kept.anchor == "Step 1"
+      refute kept.drifted
+    end
+
     test "returns 401 with wrong delete_token", %{conn: conn} do
       {:ok, review} =
         Crit.Reviews.create_review(
