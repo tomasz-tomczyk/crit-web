@@ -244,6 +244,9 @@ defmodule CritWeb.ApiController do
   end
 
   def update(conn, %{"token" => token} = params) do
+    # `comments` is taken only when present. A missing key is not "delete
+    # every comment". `review_round` is accepted and ignored; the server
+    # owns the round counter.
     delete_token = params["delete_token"]
     payload = Map.take(params, ["files", "comments", "review_round", "cli_args"])
     scope = api_scope(conn)

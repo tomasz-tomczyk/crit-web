@@ -2228,6 +2228,116 @@ html[data-theme="light"] .crit-toggle-btn--active {
   border-color: var(--crit-drift-card-border);
 }
 
+/* Drifted anchor context — the lines as they were when the comment was made. */
+.drifted-context {
+  font-size: 12px;
+  border-top: 1px solid var(--crit-border);
+}
+.drifted-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  cursor: pointer;
+  color: var(--crit-editor-fg-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+.drifted-toggle:hover {
+  color: var(--crit-editor-fg-muted);
+  background: var(--crit-editor-bg-elevated);
+}
+.drifted-toggle:focus-visible {
+  outline: 2px solid var(--crit-brand);
+  outline-offset: -2px;
+}
+.drifted-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.drifted-context.expanded .drifted-chevron {
+  transform: rotate(90deg);
+}
+.drifted-toggle-label {
+  flex: 1;
+  text-align: left;
+}
+.drifted-toggle-meta {
+  font-family: var(--crit-font-mono);
+  font-size: 11px;
+  color: var(--crit-editor-fg-muted);
+  white-space: nowrap;
+}
+.drifted-panel-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.drifted-context.expanded .drifted-panel-wrapper {
+  grid-template-rows: 1fr;
+}
+.drifted-panel-inner {
+  overflow: hidden;
+}
+.drifted-panel {
+  border-top: 1px solid var(--crit-border);
+  background: var(--crit-editor-code-bg);
+}
+.drifted-anchor-text {
+  font-family: var(--crit-font-code);
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--crit-editor-fg-muted);
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  max-height: 240px;
+  overflow-y: auto;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+}
+.drifted-line {
+  display: flex;
+  min-height: 20px;
+}
+.drifted-line:first-child { padding-top: 8px; }
+.drifted-line:last-child { padding-bottom: 8px; }
+.drifted-line-number {
+  flex-shrink: 0;
+  width: 44px;
+  padding-right: 12px;
+  text-align: right;
+  color: var(--crit-editor-fg-muted);
+  font-size: 11px;
+  user-select: none;
+  -webkit-user-select: none;
+  line-height: 1.65;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+.drifted-line-content {
+  flex: 1;
+  min-width: 0;
+  padding-right: 14px;
+  white-space: pre;
+  line-height: 1.65;
+}
+.drifted-line-content:empty::after { content: ' '; }
+.comment-card.collapsed .drifted-context {
+  display: none;
+}
+
 /* Author colors: --author-N-* per theme (and per palette, see crit-palette.css) */
 .author-color-0 { background: var(--author-0-bg); border-color: var(--author-0-border); color: var(--author-0-fg); }
 .author-color-1 { background: var(--author-1-bg); border-color: var(--author-1-border); color: var(--author-1-fg); }

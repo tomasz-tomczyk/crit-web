@@ -1860,4 +1860,190 @@ defmodule Crit.ReviewsTest do
       assert Repo.get(Review, review.id)
     end
   end
+
+  describe "upsert_review/4 when comments are omitted" do
+    setup do
+      scope = anon_scope()
+      content = "# Plan\n\nStep 1\n\nStep 2\n"
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "plan.md", "content" => content}], 1, [], [])
+
+      {:ok, comment} =
+        Reviews.create_comment(
+          scope,
+          review,
+          %{
+            "start_line" => 3,
+            "end_line" => 3,
+            "body" => "Expand this",
+            "scope" => "line"
+          },
+          file_path: "plan.md"
+        )
+
+      %{scope: scope, review: review, comment: comment, content: content}
+    end
+
+    test "stores the line text as the anchor when the comment is created", %{comment: comment} do
+      assert comment.anchor == "Step 1"
+      refute comment.drifted
+    end
+
+    test "leaves comments in place when the file is unchanged", %{
+      scope: scope,
+      review: review,
+      comment: comment,
+      content: content
+    } do
+      assert {:ok, :no_changes, _} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "plan.md", "content" => content}],
+                 "review_round" => 99
+               })
+
+      kept = Repo.get!(Crit.Comment, comment.id)
+      assert kept.body == "Expand this"
+      assert kept.start_line == 3
+      assert kept.end_line == 3
+      assert Repo.get!(Review, review.id).review_round == 1
+    end
+
+    test "follows the commented line when text is inserted above it", %{
+      scope: scope,
+      review: review,
+      comment: comment
+    } do
+      new = "# Plan\n\nNew line A\nNew line B\nStep 1\n\nStep 2\n"
+
+      assert {:ok, :updated, updated} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "plan.md", "content" => new}],
+                 "review_round" => 99
+               })
+
+      assert updated.review_round == 2
+      kept = Repo.get!(Crit.Comment, comment.id)
+      assert kept.start_line == 5
+      assert kept.end_line == 5
+      assert kept.anchor == "Step 1"
+      refute kept.drifted
+    end
+
+    test "marks the comment drifted when the anchored text is gone", %{
+      scope: scope,
+      review: review,
+      comment: comment
+    } do
+      assert {:ok, :updated, _} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "plan.md", "content" => "# Plan\n\nSomething else\n"}]
+               })
+
+      kept = Repo.get!(Crit.Comment, comment.id)
+      assert kept.anchor == "Step 1"
+      assert kept.drifted
+      assert kept.start_line == 2
+      assert kept.end_line == 2
+    end
+
+    test "an explicit empty comment list still clears comments", %{
+      scope: scope,
+      review: review,
+      comment: comment
+    } do
+      assert {:ok, :updated, _} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [%{"path" => "plan.md", "content" => "# Plan\n\nrewritten\n"}],
+                 "comments" => []
+               })
+
+      assert Repo.get(Crit.Comment, comment.id) == nil
+    end
+
+    test "a provided comment list is stored as sent", %{
+      scope: scope,
+      review: review,
+      comment: comment
+    } do
+      assert {:ok, :updated, _} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [
+                   %{"path" => "plan.md", "content" => "# Plan\n\nNew line A\nStep 1\n"}
+                 ],
+                 "comments" => [
+                   %{
+                     "file" => "plan.md",
+                     "start_line" => 3,
+                     "end_line" => 3,
+                     "body" => "still here",
+                     "external_id" => "c_local",
+                     "scope" => "line"
+                   }
+                 ]
+               })
+
+      assert Repo.get(Crit.Comment, comment.id) == nil
+      [stored] = Reviews.list_comments(review.id)
+      assert stored.body == "still here"
+      assert stored.start_line == 3
+      assert stored.end_line == 3
+    end
+
+    test "follows a comment that has no file path on a one-file review", %{
+      scope: scope,
+      review: review
+    } do
+      {:ok, comment} =
+        Reviews.create_comment(scope, review, %{
+          "start_line" => 3,
+          "end_line" => 3,
+          "body" => "no path",
+          "scope" => "line"
+        })
+
+      assert comment.file_path == nil
+      assert comment.anchor == "Step 1"
+
+      assert {:ok, :updated, _} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [
+                   %{
+                     "path" => "plan.md",
+                     "content" => "# Plan\n\nNew line A\nNew line B\nStep 1\n\nStep 2\n"
+                   }
+                 ]
+               })
+
+      kept = Repo.get!(Crit.Comment, comment.id)
+      assert kept.start_line == 5
+      assert kept.anchor == "Step 1"
+      refute kept.drifted
+    end
+
+    test "keeps a file-level comment where it is", %{scope: scope, review: review} do
+      {:ok, file_comment} =
+        Reviews.create_comment(
+          scope,
+          review,
+          %{"body" => "whole file", "scope" => "file"},
+          file_path: "plan.md"
+        )
+
+      assert {:ok, :updated, _} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [
+                   %{
+                     "path" => "plan.md",
+                     "content" => "# Plan\n\nNew line A\nNew line B\nStep 1\n\nStep 2\n"
+                   }
+                 ]
+               })
+
+      kept = Repo.get!(Crit.Comment, file_comment.id)
+      assert kept.scope == "file"
+      assert kept.body == "whole file"
+      refute kept.drifted
+    end
+  end
 end

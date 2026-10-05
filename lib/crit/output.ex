@@ -135,6 +135,8 @@ defmodule Crit.Output do
       body: c.body,
       quote: c.quote,
       quote_offset: c.quote_offset,
+      anchor: c.anchor,
+      drifted: c.drifted,
       scope: c.scope || "line",
       author: c.author_display_name,
       dom_anchor: c.dom_anchor,

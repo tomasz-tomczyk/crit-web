@@ -3811,6 +3811,84 @@ function attachGutterTouchHandler(container, ctx) {
 
 // ---- Comment elements -------------------------------------------------------
 
+// A comment whose lines no longer match the file shows the text that was
+// there when it was written. Same disclosure as crit.
+function attachDriftedContext(wrapper, headerLeft, comment) {
+  if (!comment.drifted || !comment.anchor) return null
+  wrapper.classList.add('outdated-comment')
+
+  const badge = document.createElement('span')
+  badge.className = 'outdated-badge'
+  badge.textContent = 'Drifted'
+  headerLeft.appendChild(badge)
+
+  const driftedCtx = document.createElement('div')
+  driftedCtx.className = 'drifted-context'
+
+  const toggle = document.createElement('button')
+  toggle.className = 'drifted-toggle'
+  toggle.type = 'button'
+
+  const chevron = document.createElement('span')
+  chevron.className = 'drifted-chevron'
+  chevron.innerHTML = '<svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5,1.5 7,5 3.5,8.5"/></svg>'
+
+  const toggleLabel = document.createElement('span')
+  toggleLabel.className = 'drifted-toggle-label'
+  toggleLabel.textContent = 'Referenced content at time of review'
+
+  const anchorLines = comment.anchor.split('\n')
+  const toggleMeta = document.createElement('span')
+  toggleMeta.className = 'drifted-toggle-meta'
+  toggleMeta.textContent = anchorLines.length === 1 ? '1 line' : anchorLines.length + ' lines'
+
+  toggle.appendChild(chevron)
+  toggle.appendChild(toggleLabel)
+  toggle.appendChild(toggleMeta)
+
+  const panelId = 'drifted-panel-' + comment.id
+  const dwrap = document.createElement('div')
+  dwrap.className = 'drifted-panel-wrapper'
+  const inner = document.createElement('div')
+  inner.className = 'drifted-panel-inner'
+  const panel = document.createElement('div')
+  panel.className = 'drifted-panel'
+  panel.id = panelId
+
+  const pre = document.createElement('pre')
+  pre.className = 'drifted-anchor-text'
+  const startLine = comment.start_line || 1
+  anchorLines.forEach(function (line, i) {
+    const lineEl = document.createElement('span')
+    lineEl.className = 'drifted-line'
+    const numEl = document.createElement('span')
+    numEl.className = 'drifted-line-number'
+    numEl.textContent = String(startLine + i)
+    const contentEl = document.createElement('span')
+    contentEl.className = 'drifted-line-content'
+    contentEl.textContent = line
+    lineEl.appendChild(numEl)
+    lineEl.appendChild(contentEl)
+    pre.appendChild(lineEl)
+  })
+
+  panel.appendChild(pre)
+  inner.appendChild(panel)
+  dwrap.appendChild(inner)
+
+  toggle.setAttribute('aria-expanded', 'false')
+  toggle.setAttribute('aria-controls', panelId)
+  toggle.addEventListener('click', function () {
+    const isExpanded = driftedCtx.classList.contains('expanded')
+    driftedCtx.classList.toggle('expanded', !isExpanded)
+    toggle.setAttribute('aria-expanded', String(!isExpanded))
+  })
+
+  driftedCtx.appendChild(toggle)
+  driftedCtx.appendChild(dwrap)
+  return driftedCtx
+}
+
 function commentMarkdownEnv(comment, ctx) {
   const env = {}
   if (ctx && comment.start_line && comment.end_line && !comment.side) {
@@ -3927,6 +4005,8 @@ function createCommentElement(comment, ctx) {
   headerLeft.appendChild(lineRef)
   headerLeft.appendChild(time)
 
+  const driftedContext = attachDriftedContext(wrapper, headerLeft, comment)
+
   header.appendChild(headerLeft)
 
   const actions = document.createElement("div")
@@ -3981,6 +4061,7 @@ function createCommentElement(comment, ctx) {
   renderMarkdown(body, comment.body, commentMarkdownEnv(comment, ctx))
 
   card.appendChild(header)
+  if (driftedContext) card.appendChild(driftedContext)
   card.appendChild(body)
 
   // Render replies (threading)
@@ -4463,6 +4544,8 @@ function createResolvedElement(comment, ctx) {
   headerLeft.appendChild(lineRef)
   headerLeft.appendChild(time)
 
+  const driftedContext = attachDriftedContext(wrapper, headerLeft, comment)
+
   const actions = document.createElement('div')
   actions.className = 'comment-actions'
 
@@ -4508,6 +4591,7 @@ function createResolvedElement(comment, ctx) {
   renderMarkdown(body, comment.body, commentMarkdownEnv(comment, ctx))
 
   card.appendChild(header)
+  if (driftedContext) card.appendChild(driftedContext)
   card.appendChild(body)
 
   // Render replies

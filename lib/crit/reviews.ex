@@ -15,6 +15,7 @@ defmodule Crit.Reviews do
   }
 
   alias Crit.Accounts.Scope
+  alias Crit.CommentCarryForward
   alias Crit.Organizations
 
   @doc "Returns the review-page label used for titles and notification digests."
@@ -138,6 +139,7 @@ defmodule Crit.Reviews do
       |> then(fn cs ->
         if file_path, do: Ecto.Changeset.put_change(cs, :file_path, file_path), else: cs
       end)
+      |> maybe_stamp_anchor(review)
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:comment, changeset)
@@ -541,6 +543,14 @@ defmodule Crit.Reviews do
   within the given scope. Appends a new round of snapshots if anything changed —
   no data is deleted.
 
+  `review_round` in the payload is ignored. The server bumps the round when
+  file content changes.
+
+  A missing `comments` key leaves stored comments in place. When that update
+  also changes file content, line comments are carried onto the new text
+  (see `Crit.CommentCarryForward`). An explicit `comments` list, including
+  `[]`, replaces stored comments and is saved at the line numbers it sends.
+
   Returns {:ok, :updated, review}, {:ok, :no_changes, review}, or {:error, reason}.
   """
   def upsert_review(%Scope{} = scope, token, delete_token, payload) do
@@ -548,7 +558,6 @@ defmodule Crit.Reviews do
 
     with {:ok, review} <- fetch_review_for_update(token, delete_token) do
       files = payload["files"] || []
-      comments = payload["comments"] || []
       cli_args = payload["cli_args"]
 
       review_changes =
@@ -566,7 +575,7 @@ defmodule Crit.Reviews do
           end
         end)
         |> Ecto.Multi.run(:comments, fn _repo, _changes ->
-          case replace_comments(review, comments, user_id) do
+          case apply_comment_payload(review, payload, files, user_id) do
             :ok -> {:ok, :ok}
             {:error, _} = error -> error
           end
@@ -593,7 +602,7 @@ defmodule Crit.Reviews do
 
         multi =
           Ecto.Multi.run(multi, :comments, fn _repo, _changes ->
-            case replace_comments(review, comments, user_id) do
+            case apply_comment_payload(review, payload, files, user_id) do
               :ok -> {:ok, :ok}
               {:error, _} = error -> error
             end
@@ -658,11 +667,178 @@ defmodule Crit.Reviews do
     current != incoming
   end
 
+  # Missing `comments` keeps the stored rows. A content change then slides
+  # line comments onto the new file. A present list, including [], replaces.
+  defp apply_comment_payload(review, payload, files, user_id) do
+    if is_list(payload["comments"]) do
+      replace_comments(review, payload["comments"], user_id, files)
+    else
+      carry_stored_comments(review, files)
+    end
+  end
+
+  defp carry_stored_comments(review, new_files) do
+    old_by_path =
+      review
+      |> get_current_files()
+      |> Map.new(fn file -> {file.file_path, file.content} end)
+
+    new_by_path = Map.new(new_files, fn file -> {file["path"], file["content"] || ""} end)
+
+    comments =
+      Repo.all(from c in Comment, where: c.review_id == ^review.id and is_nil(c.parent_id))
+
+    Enum.reduce_while(comments, :ok, fn comment, :ok ->
+      case carry_comment(comment, old_by_path, new_by_path) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp carry_comment(%Comment{scope: scope}, _old_by_path, _new_by_path)
+       when scope in ["file", "review"],
+       do: :ok
+
+  defp carry_comment(%Comment{dom_anchor: dom}, _old_by_path, _new_by_path)
+       when not is_nil(dom),
+       do: :ok
+
+  defp carry_comment(%Comment{} = comment, old_by_path, new_by_path) do
+    {old, new} = file_contents_for(comment.file_path, old_by_path, new_by_path)
+
+    if is_nil(old) or is_nil(new) do
+      :ok
+    else
+      anchor =
+        present_anchor(comment.anchor) ||
+          present_anchor(
+            CommentCarryForward.extract_anchor(old, comment.start_line, comment.end_line)
+          )
+
+      {start_line, end_line, drifted} =
+        CommentCarryForward.place(old, new, comment.start_line, comment.end_line, anchor)
+
+      attrs = %{start_line: start_line, end_line: end_line, drifted: drifted, anchor: anchor}
+
+      if attrs.start_line == comment.start_line and attrs.end_line == comment.end_line and
+           attrs.drifted == comment.drifted and attrs.anchor == comment.anchor do
+        :ok
+      else
+        case comment |> Ecto.Changeset.change(attrs) |> Repo.update() do
+          {:ok, _} -> :ok
+          {:error, changeset} -> {:error, changeset}
+        end
+      end
+    end
+  end
+
+  defp maybe_stamp_anchor(changeset, review) do
+    scope = Ecto.Changeset.get_field(changeset, :scope) || "line"
+    dom = Ecto.Changeset.get_field(changeset, :dom_anchor)
+
+    if scope == "line" and is_nil(dom) and
+         is_nil(present_anchor(Ecto.Changeset.get_field(changeset, :anchor))) do
+      extracted =
+        CommentCarryForward.extract_anchor(
+          current_file_content(review, Ecto.Changeset.get_field(changeset, :file_path)) || "",
+          Ecto.Changeset.get_field(changeset, :start_line),
+          Ecto.Changeset.get_field(changeset, :end_line)
+        )
+
+      case present_anchor(extracted) do
+        nil -> changeset
+        text -> Ecto.Changeset.put_change(changeset, :anchor, text)
+      end
+    else
+      changeset
+    end
+  end
+
+  defp current_file_content(review, file_path) do
+    files = get_current_files(review)
+
+    cond do
+      is_binary(file_path) and file_path != "" ->
+        Enum.find_value(files, fn file ->
+          if file.file_path == file_path, do: file.content
+        end)
+
+      length(files) == 1 ->
+        hd(files).content
+
+      true ->
+        nil
+    end
+  end
+
+  # A line comment on a one-file review may have no file_path. It still
+  # belongs to that file.
+  defp file_contents_for(file_path, old_by_path, new_by_path)
+       when is_binary(file_path) and file_path != "" do
+    {Map.get(old_by_path, file_path), Map.get(new_by_path, file_path)}
+  end
+
+  defp file_contents_for(_file_path, old_by_path, new_by_path)
+       when map_size(old_by_path) == 1 and map_size(new_by_path) == 1 do
+    {[old], [new]} = {Map.values(old_by_path), Map.values(new_by_path)}
+    {old, new}
+  end
+
+  defp file_contents_for(_file_path, _old_by_path, _new_by_path), do: {nil, nil}
+
+  defp present_anchor(anchor) when is_binary(anchor) and anchor != "", do: anchor
+  defp present_anchor(_), do: nil
+
+  defp replacement_anchor(attrs, existing, scope, files_by_path) do
+    cond do
+      present_anchor(attrs["anchor"]) ->
+        attrs["anchor"]
+
+      existing && present_anchor(existing.anchor) ->
+        existing.anchor
+
+      scope == "line" ->
+        present_anchor(
+          CommentCarryForward.extract_anchor(
+            Map.get(files_by_path, attrs["file"]) || "",
+            attrs["start_line"],
+            attrs["end_line"]
+          )
+        )
+
+      true ->
+        nil
+    end
+  end
+
+  defp replacement_drifted(attrs, existing, scope, anchor, files_by_path) do
+    dom = attrs["dom_anchor"] || (existing && existing.dom_anchor)
+
+    cond do
+      scope != "line" or not is_nil(dom) ->
+        false
+
+      Map.has_key?(attrs, "drifted") ->
+        attrs["drifted"] in [true, "true"]
+
+      true ->
+        CommentCarryForward.drifted_at?(
+          Map.get(files_by_path, attrs["file"]) || "",
+          attrs["start_line"],
+          attrs["end_line"],
+          anchor
+        )
+    end
+  end
+
   # Re-share path. We capture existing comments by external_id BEFORE deleting,
   # so we can preserve their server-verified `user_id` on roundtrip. Without
   # this carry-forward, every re-share would strip attribution from comments
   # authored by other users.
-  defp replace_comments(review, new_comments, current_user_id) do
+  defp replace_comments(review, new_comments, current_user_id, new_files) do
+    files_by_path = Map.new(new_files, fn file -> {file["path"], file["content"] || ""} end)
+
     existing_by_external_id =
       from(c in Comment,
         where: c.review_id == ^review.id and not is_nil(c.external_id) and is_nil(c.parent_id)
@@ -692,6 +868,8 @@ defmodule Crit.Reviews do
       {resolved_user_id, resolved_identity, resolved_display_name} =
         resolve_attribution(existing, attrs, current_user_id)
 
+      anchor = replacement_anchor(attrs, existing, scope, files_by_path)
+
       %Comment{}
       |> Comment.create_changeset(%{
         "start_line" => attrs["start_line"],
@@ -700,6 +878,8 @@ defmodule Crit.Reviews do
         "file_path" => attrs["file"],
         "quote" => attrs["quote"],
         "quote_offset" => attrs["quote_offset"],
+        "anchor" => anchor,
+        "drifted" => replacement_drifted(attrs, existing, scope, anchor, files_by_path),
         "author_display_name" => resolved_display_name,
         "review_round" => attrs["review_round"] || 1,
         "resolved" => attrs["resolved"] || false,
@@ -1556,6 +1736,8 @@ defmodule Crit.Reviews do
       body: c.body,
       quote: c.quote,
       quote_offset: c.quote_offset,
+      anchor: c.anchor,
+      drifted: c.drifted,
       scope: c.scope || "line",
       author_identity: c.author_identity,
       author_display_name: resolve_display_name(c),
