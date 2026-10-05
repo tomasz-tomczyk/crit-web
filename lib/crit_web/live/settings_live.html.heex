@@ -402,6 +402,42 @@
 
           <div
             :if={@notifications_enabled}
+            class="mt-6 pt-6 border-t border-(--crit-border) flex items-start justify-between gap-4"
+          >
+            <div>
+              <div class="text-sm font-medium text-(--crit-fg-primary)">
+                Include my own comments
+              </div>
+              <div class="text-xs text-(--crit-fg-muted) mt-1">
+                Also email digests for comments and replies you write yourself.
+                Off by default, so you are only emailed about other people.
+              </div>
+            </div>
+            <button
+              id="notify-own-activity-toggle"
+              phx-click="toggle_notify_own_activity"
+              role="switch"
+              aria-checked={to_string(@notify_own_activity)}
+              class={[
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                if(@notify_own_activity,
+                  do: "bg-(--crit-brand)",
+                  else: "bg-(--crit-border)"
+                )
+              ]}
+            >
+              <span class={[
+                "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out",
+                if(@notify_own_activity,
+                  do: "translate-x-5",
+                  else: "translate-x-0"
+                )
+              ]} />
+            </button>
+          </div>
+
+          <div
+            :if={@notifications_enabled}
             id="notification-emails"
             class="mt-6 pt-6 border-t border-(--crit-border)"
           >
