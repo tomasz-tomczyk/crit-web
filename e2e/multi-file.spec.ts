@@ -39,6 +39,28 @@ test.describe("Multi-File Review", () => {
     }
   });
 
+  test("centers the review conversation at reading width with mobile gutters", async ({ page }) => {
+    await loadReview(page, token);
+
+    const conversation = page.locator("#reviewConversation");
+    await expect(conversation).toBeVisible();
+
+    const desktop = await conversation.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const parent = element.parentElement!.getBoundingClientRect();
+      return { x: rect.x, width: rect.width, parentX: parent.x, parentWidth: parent.width };
+    });
+    expect(desktop.width).toBeLessThanOrEqual(1040);
+    expect(Math.abs(desktop.x - desktop.parentX - (desktop.parentWidth - desktop.width) / 2)).toBeLessThan(2);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobile = await conversation.boundingBox();
+    expect(mobile).not.toBeNull();
+    expect(mobile!.x).toBeGreaterThanOrEqual(16);
+    expect(390 - mobile!.x - mobile!.width).toBeGreaterThanOrEqual(16);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  });
+
   test("clicking a file in the tree expands and scrolls to it", async ({
     page,
   }) => {
