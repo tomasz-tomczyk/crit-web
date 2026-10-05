@@ -456,16 +456,19 @@ defmodule CritWeb.SettingsLiveTest do
       |> render_submit()
 
       assert render(view) =~ "work@example.com"
+      assert render(view) =~ "Waiting for confirmation"
       {:ok, updated} = Crit.Accounts.get_user(user.id)
-      assert updated.preferences.notification_emails == ["work@example.com"]
+      assert updated.preferences.notification_emails == []
+      assert updated.preferences.pending_notification_emails == ["work@example.com"]
 
       view
-      |> element("#notification-emails button[phx-value-email='work@example.com']")
+      |> element("#pending-notification-emails button[phx-value-email='work@example.com']")
       |> render_click()
 
       refute render(view) =~ "work@example.com"
       {:ok, updated} = Crit.Accounts.get_user(user.id)
       assert updated.preferences.notification_emails == []
+      assert updated.preferences.pending_notification_emails == []
     end
 
     test "hides the form at three addresses and rejects duplicates", %{conn: conn} do
@@ -484,7 +487,8 @@ defmodule CritWeb.SettingsLiveTest do
       refute has_element?(view, "#notification-email-form")
 
       {:ok, updated} = Crit.Accounts.get_user(user.id)
-      assert length(updated.preferences.notification_emails) == 3
+      assert updated.preferences.notification_emails == []
+      assert length(updated.preferences.pending_notification_emails) == 3
     end
   end
 

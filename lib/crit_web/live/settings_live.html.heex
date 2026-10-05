@@ -409,47 +409,105 @@
               Also send notifications to
             </div>
             <div class="text-xs text-(--crit-fg-muted) mt-1">
-              Discussion digests go to your account address and up to {Crit.User.Preferences.max_notification_emails()} more.
+              Up to {Crit.User.Preferences.max_notification_emails()} extra addresses.
+              Crit emails each one a confirmation link, and digests start after they confirm.
             </div>
-            <ul :if={@notification_emails != []} class="mt-3 space-y-2">
-              <li
-                :for={email <- @notification_emails}
-                class="flex items-center justify-between gap-4 text-sm text-(--crit-fg-primary)"
+            <div class="mt-4 overflow-hidden rounded-md border border-(--crit-border)">
+              <table
+                :if={@notification_emails != [] or @pending_notification_emails != []}
+                class="w-full table-fixed text-sm"
               >
-                <span>{email}</span>
+                <thead>
+                  <tr class="text-xs text-(--crit-fg-muted)">
+                    <th scope="col" class="px-3 py-2 text-left font-medium">Address</th>
+                    <th scope="col" class="w-36 px-3 py-2 text-left font-medium sm:w-56">Status</th>
+                    <th scope="col" class="w-20 px-3 py-2 text-right">
+                      <span class="sr-only">Remove</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    :for={email <- @notification_emails}
+                    class="border-t border-(--crit-border)"
+                  >
+                    <td class="px-3 py-2.5 text-(--crit-fg-primary)">
+                      <span class="block truncate" title={email}>{email}</span>
+                    </td>
+                    <td class="px-3 py-2.5 text-xs text-(--crit-fg-muted) sm:whitespace-nowrap">Sending</td>
+                    <td class="px-3 py-2.5 text-right">
+                      <button
+                        type="button"
+                        phx-click="remove_notification_email"
+                        phx-value-email={email}
+                        aria-label={"Remove #{email}"}
+                        class="text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--crit-brand)"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody id="pending-notification-emails">
+                  <tr
+                    :for={email <- @pending_notification_emails}
+                    class="border-t border-(--crit-border)"
+                  >
+                    <td class="px-3 py-2.5 text-(--crit-fg-primary)">
+                      <span class="block truncate" title={email}>{email}</span>
+                    </td>
+                    <td class="px-3 py-2.5 text-xs text-(--crit-fg-muted) sm:whitespace-nowrap">
+                      Waiting for confirmation
+                    </td>
+                    <td class="px-3 py-2.5 text-right">
+                      <button
+                        type="button"
+                        phx-click="remove_notification_email"
+                        phx-value-email={email}
+                        aria-label={"Remove #{email}"}
+                        class="text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--crit-brand)"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <form
+                :if={
+                  length(@notification_emails) + length(@pending_notification_emails) <
+                    Crit.User.Preferences.max_notification_emails()
+                }
+                id="notification-email-form"
+                phx-submit="add_notification_email"
+                class={[
+                  "flex items-center gap-2 p-2",
+                  (@notification_emails != [] or @pending_notification_emails != []) &&
+                    "border-t border-(--crit-border)"
+                ]}
+              >
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  maxlength="160"
+                  placeholder="name@example.com"
+                  autocomplete="off"
+                  class="min-w-0 flex-1 bg-transparent rounded-md px-2 py-1.5 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border border-transparent focus:outline-none focus:border-(--crit-brand)"
+                />
                 <button
-                  type="button"
-                  phx-click="remove_notification_email"
-                  phx-value-email={email}
-                  class="text-xs text-(--crit-fg-muted) hover:text-(--crit-fg-primary) cursor-pointer"
+                  type="submit"
+                  class="bg-(--crit-brand-cta) text-(--crit-fg-on-brand) hover:bg-(--crit-brand-cta-hover) rounded-lg px-4 py-2 text-sm font-bold cursor-pointer transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--crit-brand)"
                 >
-                  Remove
+                  Add
                 </button>
-              </li>
-            </ul>
-            <form
-              :if={length(@notification_emails) < Crit.User.Preferences.max_notification_emails()}
-              id="notification-email-form"
-              phx-submit="add_notification_email"
-              class="mt-3 flex items-center gap-2"
+              </form>
+            </div>
+            <p
+              :if={@notification_email_error}
+              id="notification-email-error"
+              class="mt-2 text-xs text-red-500"
             >
-              <input
-                type="email"
-                name="email"
-                required
-                maxlength="160"
-                placeholder="name@example.com"
-                autocomplete="off"
-                class="flex-1 bg-(--crit-bg-page) rounded-md px-3 py-2 text-sm text-(--crit-fg-primary) placeholder-(--crit-fg-muted) border border-(--crit-border) focus:outline-none focus:border-(--crit-brand)"
-              />
-              <button
-                type="submit"
-                class="bg-(--crit-brand-cta) text-(--crit-fg-on-brand) hover:bg-(--crit-brand-cta-hover) rounded-lg px-4 py-2 text-sm font-bold cursor-pointer transition-all"
-              >
-                Add
-              </button>
-            </form>
-            <p :if={@notification_email_error} id="notification-email-error" class="mt-2 text-xs text-red-500">
               {@notification_email_error}
             </p>
           </div>

@@ -60,10 +60,8 @@ defmodule Crit.Notifications.DeliverBatchWorker do
         :ok
 
       true ->
-        email = Notifier.email(batch)
-
-        case Crit.Mailer.deliver(email) do
-          {:ok, _metadata} ->
+        case deliver_all(Notifier.emails(batch)) do
+          :ok ->
             Notifications.finish(batch.id, :sent)
             :ok
 
@@ -73,6 +71,15 @@ defmodule Crit.Notifications.DeliverBatchWorker do
     end
   rescue
     error -> fail(job, batch, error)
+  end
+
+  defp deliver_all([]), do: :ok
+
+  defp deliver_all([email | rest]) do
+    case Crit.Mailer.deliver(email) do
+      {:ok, _metadata} -> deliver_all(rest)
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp delivery_enabled?(batch) do

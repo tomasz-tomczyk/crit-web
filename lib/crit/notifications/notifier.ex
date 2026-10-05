@@ -3,14 +3,19 @@ defmodule Crit.Notifications.Notifier do
 
   import Swoosh.Email
 
-  alias Crit.Notifications.NotificationBatch
+  alias Crit.Notifications.{ExtraAddresses, NotificationBatch}
 
   @max_items 20
   @excerpt_length 240
   @filename_max 28
   @avatar_size 32
 
-  def email(%NotificationBatch{items: items} = batch) when is_list(items) do
+  def email(%NotificationBatch{} = batch), do: hd(emails(batch))
+
+  # One message for the account, plus a separate copy per confirmed extra address.
+  # Each copy carries that address's unsubscribe link. A shared blind copy cannot,
+  # because every recipient would see the same body.
+  def emails(%NotificationBatch{items: items} = batch) when is_list(items) do
     shown = Enum.take(items, @max_items)
     more = max(length(items) - length(shown), 0)
     review_url = CritWeb.Endpoint.url() <> "/r/" <> batch.review.token
@@ -21,18 +26,61 @@ defmodule Crit.Notifications.Notifier do
     headline_text = headline_text(actors, filename)
     preheader_text = preheader_text(actors, shown, filename)
 
-    new()
-    |> to(recipient_addresses(batch.recipient))
-    |> from(from_address(actors))
-    |> subject(subject_line)
-    |> text_body(text_body(headline_text, shown, more, review_url, settings_url))
-    |> html_body(html_body(headline_text, preheader_text, shown, more, review_url, settings_url))
+    account =
+      digest(
+        actors,
+        subject_line,
+        headline_text,
+        preheader_text,
+        shown,
+        more,
+        review_url,
+        {:settings, settings_url}
+      )
+      |> to(batch.recipient.email)
+
+    copies =
+      Enum.map(extra_addresses(batch.recipient), fn address ->
+        url = ExtraAddresses.unsubscribe_url(batch.recipient, address)
+
+        digest(
+          actors,
+          subject_line,
+          headline_text,
+          preheader_text,
+          shown,
+          more,
+          review_url,
+          {:unsubscribe, url}
+        )
+        |> to(address)
+      end)
+
+    [account | copies]
   end
 
-  # The account address plus any extra addresses the user added in settings.
-  defp recipient_addresses(recipient) do
-    extras = recipient.preferences.notification_emails || []
-    Enum.uniq([recipient.email | extras])
+  defp digest(
+         actors,
+         subject_line,
+         headline_text,
+         preheader_text,
+         shown,
+         more,
+         review_url,
+         footer
+       ) do
+    new()
+    |> from(from_address(actors))
+    |> subject(subject_line)
+    |> text_body(text_body(headline_text, shown, more, review_url, footer))
+    |> html_body(html_body(headline_text, preheader_text, shown, more, review_url, footer))
+  end
+
+  # Confirmed extras only. Pending addresses receive nothing until the inbox owner confirms.
+  defp extra_addresses(recipient) do
+    (recipient.preferences.notification_emails || [])
+    |> Enum.reject(&(&1 == "" or &1 == recipient.email))
+    |> Enum.uniq()
   end
 
   defp from_address(actors) do
@@ -79,7 +127,7 @@ defmodule Crit.Notifications.Notifier do
     |> String.slice(0, 100)
   end
 
-  defp text_body(headline, items, more, review_url, settings_url) do
+  defp text_body(headline, items, more, review_url, footer) do
     entries =
       items
       |> group_by_thread()
@@ -98,11 +146,22 @@ defmodule Crit.Notifications.Notifier do
 
     Open review: #{review_url}
 
-    Notification settings: #{settings_url}
+    #{footer_text(footer)}
     """
   end
 
-  defp html_body(headline, preheader, items, more, review_url, settings_url) do
+  defp footer_text({:settings, url}), do: "Manage notifications: #{url}"
+  defp footer_text({:unsubscribe, url}), do: "Stop these emails: #{url}"
+
+  defp footer_html({:settings, url}) do
+    ~s(<a href="#{escape(url)}" style="color:#9ca3af;">Manage notifications</a>)
+  end
+
+  defp footer_html({:unsubscribe, url}) do
+    ~s(<a href="#{escape(url)}" style="color:#9ca3af;">Stop these emails</a>)
+  end
+
+  defp html_body(headline, preheader, items, more, review_url, footer) do
     entries =
       items
       |> group_by_thread()
@@ -168,7 +227,7 @@ defmodule Crit.Notifications.Notifier do
               <tr>
                 <td>
                   <p class="email-footer" style="margin:0;font-size:13px;color:#9ca3af;line-height:1.5;">
-                    <a href="#{escape(settings_url)}" style="color:#9ca3af;">Notification settings</a>
+                    #{footer_html(footer)}
                   </p>
                 </td>
               </tr>

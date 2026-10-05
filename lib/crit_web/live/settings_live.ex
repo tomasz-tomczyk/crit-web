@@ -29,6 +29,7 @@ defmodule CritWeb.SettingsLive do
         user.preferences.discussion_notifications_enabled
       )
       |> assign(:notification_emails, user.preferences.notification_emails)
+      |> assign(:pending_notification_emails, user.preferences.pending_notification_emails)
       |> assign(:notification_email_error, nil)
       |> assign(:notifications_enabled, Crit.Settings.get().notifications_enabled)
       |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
@@ -173,24 +174,32 @@ defmodule CritWeb.SettingsLive do
   @impl true
   def handle_event("add_notification_email", %{"email" => email}, socket) do
     %{current_scope: scope} = socket.assigns
-    email = email |> String.trim() |> String.downcase()
-    current = socket.assigns.notification_emails
 
-    cond do
-      email == "" ->
+    case Crit.Notifications.ExtraAddresses.request(scope.user, email) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> assign_notification_emails(updated)
+         |> assign(:current_scope, Scope.put_user(scope, updated))
+         |> put_flash(
+           :info,
+           "Check that inbox. Digests start after they confirm."
+         )}
+
+      {:error, :blank} ->
         {:noreply, socket}
 
-      email == String.downcase(scope.user.email || "") or email in current ->
-        {:noreply, assign(socket, :notification_email_error, "That address is already included.")}
-
-      true ->
-        save_notification_emails(socket, current ++ [email])
+      {:error, reason} ->
+        {:noreply, assign(socket, :notification_email_error, notification_email_error(reason))}
     end
   end
 
   @impl true
   def handle_event("remove_notification_email", %{"email" => email}, socket) do
-    save_notification_emails(socket, List.delete(socket.assigns.notification_emails, email))
+    save_notification_emails(socket, %{
+      notification_emails: List.delete(socket.assigns.notification_emails, email),
+      pending_notification_emails: List.delete(socket.assigns.pending_notification_emails, email)
+    })
   end
 
   @impl true
@@ -256,15 +265,14 @@ defmodule CritWeb.SettingsLive do
     end
   end
 
-  defp save_notification_emails(socket, emails) do
+  defp save_notification_emails(socket, prefs) do
     %{current_scope: scope} = socket.assigns
 
-    case Accounts.update_preferences(scope.user, %{notification_emails: emails}) do
+    case Accounts.update_preferences(scope.user, prefs) do
       {:ok, updated_user} ->
         {:noreply,
          socket
-         |> assign(:notification_emails, updated_user.preferences.notification_emails)
-         |> assign(:notification_email_error, nil)
+         |> assign_notification_emails(updated_user)
          |> assign(:current_scope, Scope.put_user(scope, updated_user))}
 
       {:error, changeset} ->
@@ -272,10 +280,24 @@ defmodule CritWeb.SettingsLive do
     end
   end
 
-  defp notification_email_error(changeset) do
+  defp assign_notification_emails(socket, user) do
+    socket
+    |> assign(:notification_emails, user.preferences.notification_emails)
+    |> assign(:pending_notification_emails, user.preferences.pending_notification_emails)
+    |> assign(:notification_email_error, nil)
+  end
+
+  defp notification_email_error(:included), do: "That address is already included."
+  defp notification_email_error(:pending), do: "That address is already waiting for confirmation."
+
+  defp notification_email_error(:delivery_failed),
+    do: "Couldn't send the confirmation email. Try again in a moment."
+
+  defp notification_email_error(%Ecto.Changeset{} = changeset) do
     case changeset.changes[:preferences] do
       %Ecto.Changeset{errors: errors} ->
-        case Keyword.get(errors, :notification_emails) do
+        case Keyword.get(errors, :notification_emails) ||
+               Keyword.get(errors, :pending_notification_emails) do
           {msg, _opts} -> msg
           nil -> "Failed to update addresses."
         end
@@ -284,6 +306,8 @@ defmodule CritWeb.SettingsLive do
         "Failed to update addresses."
     end
   end
+
+  defp notification_email_error(_), do: "Failed to update addresses."
 
   defp delete_confirmation_text(user) do
     user.email || user.name || "delete my account"
