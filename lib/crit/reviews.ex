@@ -688,27 +688,30 @@ defmodule Crit.Reviews do
     comments =
       Repo.all(from c in Comment, where: c.review_id == ^review.id and is_nil(c.parent_id))
 
-    Enum.reduce_while(comments, :ok, fn comment, :ok ->
-      case carry_comment(comment, old_by_path, new_by_path) do
-        :ok -> {:cont, :ok}
-        {:error, _} = error -> {:halt, error}
-      end
-    end)
+    case Enum.reduce_while(comments, {:ok, %{}}, fn comment, {:ok, maps} ->
+           case carry_comment(comment, old_by_path, new_by_path, maps) do
+             {:ok, maps} -> {:cont, {:ok, maps}}
+             {:error, _} = error -> {:halt, error}
+           end
+         end) do
+      {:ok, _maps} -> :ok
+      {:error, _} = error -> error
+    end
   end
 
-  defp carry_comment(%Comment{scope: scope}, _old_by_path, _new_by_path)
+  defp carry_comment(%Comment{scope: scope}, _old_by_path, _new_by_path, maps)
        when scope in ["file", "review"],
-       do: :ok
+       do: {:ok, maps}
 
-  defp carry_comment(%Comment{dom_anchor: dom}, _old_by_path, _new_by_path)
+  defp carry_comment(%Comment{dom_anchor: dom}, _old_by_path, _new_by_path, maps)
        when not is_nil(dom),
-       do: :ok
+       do: {:ok, maps}
 
-  defp carry_comment(%Comment{} = comment, old_by_path, new_by_path) do
+  defp carry_comment(%Comment{} = comment, old_by_path, new_by_path, maps) do
     {old, new} = file_contents_for(comment.file_path, old_by_path, new_by_path)
 
     if is_nil(old) or is_nil(new) do
-      :ok
+      {:ok, maps}
     else
       anchor =
         present_anchor(comment.anchor) ||
@@ -716,20 +719,40 @@ defmodule Crit.Reviews do
             CommentCarryForward.extract_anchor(old, comment.start_line, comment.end_line)
           )
 
+      {line_map, maps} = cached_line_map(maps, old, new)
+
       {start_line, end_line, drifted} =
-        CommentCarryForward.place(old, new, comment.start_line, comment.end_line, anchor)
+        CommentCarryForward.place(
+          old,
+          new,
+          comment.start_line,
+          comment.end_line,
+          anchor,
+          line_map
+        )
 
       attrs = %{start_line: start_line, end_line: end_line, drifted: drifted, anchor: anchor}
 
       if attrs.start_line == comment.start_line and attrs.end_line == comment.end_line and
            attrs.drifted == comment.drifted and attrs.anchor == comment.anchor do
-        :ok
+        {:ok, maps}
       else
         case comment |> Ecto.Changeset.change(attrs) |> Repo.update() do
-          {:ok, _} -> :ok
+          {:ok, _} -> {:ok, maps}
           {:error, changeset} -> {:error, changeset}
         end
       end
+    end
+  end
+
+  defp cached_line_map(maps, old, new) do
+    case Map.fetch(maps, {old, new}) do
+      {:ok, line_map} ->
+        {line_map, maps}
+
+      :error ->
+        line_map = CommentCarryForward.line_map(old, new)
+        {line_map, Map.put(maps, {old, new}, line_map)}
     end
   end
 

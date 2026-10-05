@@ -68,4 +68,17 @@ defmodule Crit.CommentCarryForwardTest do
   test "a sent position is drifted when the anchor is no longer on that line" do
     assert CommentCarryForward.drifted_at?("intro\ngone\n", 2, 2, "keep this sentence intact")
   end
+
+  test "a comment with no end line stays put instead of crashing" do
+    assert CommentCarryForward.place("# Plan\n", "# Plan\n\nmore\n", 1, nil, "Plan") ==
+             {1, nil, false}
+
+    refute CommentCarryForward.drifted_at?("# Plan\n", 1, nil, "Plan")
+  end
+
+  test "uses a line map the caller already computed" do
+    new = "a\nb\nc\nd\n"
+
+    assert CommentCarryForward.place("a\n", new, 1, 1, nil, %{1 => 4}) == {4, 4, false}
+  end
 end

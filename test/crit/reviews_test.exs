@@ -2021,6 +2021,42 @@ defmodule Crit.ReviewsTest do
       refute kept.drifted
     end
 
+    test "follows every line comment on a file from one line map", %{
+      scope: scope,
+      review: review,
+      comment: comment
+    } do
+      {:ok, second} =
+        Reviews.create_comment(
+          scope,
+          review,
+          %{
+            "start_line" => 5,
+            "end_line" => 5,
+            "body" => "And this",
+            "scope" => "line"
+          },
+          file_path: "plan.md"
+        )
+
+      assert {:ok, :updated, _} =
+               Reviews.upsert_review(scope, review.token, review.delete_token, %{
+                 "files" => [
+                   %{
+                     "path" => "plan.md",
+                     "content" => "# Plan\n\nNew line A\nNew line B\nStep 1\n\nStep 2\n"
+                   }
+                 ]
+               })
+
+      first = Repo.get!(Crit.Comment, comment.id)
+      second = Repo.get!(Crit.Comment, second.id)
+      assert first.start_line == 5
+      assert second.start_line == 7
+      refute first.drifted
+      refute second.drifted
+    end
+
     test "keeps a file-level comment where it is", %{scope: scope, review: review} do
       {:ok, file_comment} =
         Reviews.create_comment(

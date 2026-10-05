@@ -25,9 +25,23 @@ defmodule Crit.CommentCarryForward do
     end
   end
 
-  def place(old_content, new_content, start_line, end_line, anchor) do
+  def line_map(old_content, new_content) do
+    (old_content || "")
+    |> LineDiff.compute(new_content || "")
+    |> LineDiff.map_old_to_new()
+  end
+
+  def place(old_content, new_content, start_line, end_line, anchor, line_map \\ nil)
+
+  def place(_old_content, _new_content, start_line, end_line, _anchor, _line_map)
+      when not is_integer(start_line) or not is_integer(end_line) or start_line < 1 or
+             end_line < start_line do
+    {start_line, end_line, false}
+  end
+
+  def place(old_content, new_content, start_line, end_line, anchor, line_map) do
     new_lines = LineDiff.split_lines(new_content || "")
-    line_map = old_content |> LineDiff.compute(new_content || "") |> LineDiff.map_old_to_new()
+    line_map = line_map || line_map(old_content, new_content)
     max_line = max(length(new_lines), 1)
     {lcs_start, lcs_end} = remap_lines(line_map, start_line, end_line, max_line)
 
@@ -42,8 +56,9 @@ defmodule Crit.CommentCarryForward do
   # recognizable there. Does not search the rest of the file.
   def drifted_at?(_content, _start_line, _end_line, anchor) when anchor in [nil, ""], do: false
 
-  def drifted_at?(_content, start_line, _end_line, _anchor) when not is_integer(start_line),
-    do: false
+  def drifted_at?(_content, start_line, end_line, _anchor)
+      when not is_integer(start_line) or not is_integer(end_line) or end_line < start_line,
+      do: false
 
   def drifted_at?(content, start_line, end_line, anchor) do
     not anchored_at?(LineDiff.split_lines(content || ""), start_line, end_line, anchor)
