@@ -28,6 +28,8 @@ defmodule CritWeb.SettingsLive do
         :discussion_notifications_enabled,
         user.preferences.discussion_notifications_enabled
       )
+      |> assign(:notification_emails, user.preferences.notification_emails)
+      |> assign(:notification_email_error, nil)
       |> assign(:notifications_enabled, Crit.Settings.get().notifications_enabled)
       |> assign(:marketing_opted_in, Accounts.marketing_opted_in?(user))
       |> assign(:selfhosted, Application.get_env(:crit, :selfhosted) == true)
@@ -169,6 +171,29 @@ defmodule CritWeb.SettingsLive do
   end
 
   @impl true
+  def handle_event("add_notification_email", %{"email" => email}, socket) do
+    %{current_scope: scope} = socket.assigns
+    email = email |> String.trim() |> String.downcase()
+    current = socket.assigns.notification_emails
+
+    cond do
+      email == "" ->
+        {:noreply, socket}
+
+      email == String.downcase(scope.user.email || "") or email in current ->
+        {:noreply, assign(socket, :notification_email_error, "That address is already included.")}
+
+      true ->
+        save_notification_emails(socket, current ++ [email])
+    end
+  end
+
+  @impl true
+  def handle_event("remove_notification_email", %{"email" => email}, socket) do
+    save_notification_emails(socket, List.delete(socket.assigns.notification_emails, email))
+  end
+
+  @impl true
   def handle_event("create_token", %{"name" => name}, socket) do
     user = socket.assigns.current_scope.user
 
@@ -228,6 +253,35 @@ defmodule CritWeb.SettingsLive do
       end
     else
       {:noreply, put_flash(socket, :error, "Confirmation text does not match.")}
+    end
+  end
+
+  defp save_notification_emails(socket, emails) do
+    %{current_scope: scope} = socket.assigns
+
+    case Accounts.update_preferences(scope.user, %{notification_emails: emails}) do
+      {:ok, updated_user} ->
+        {:noreply,
+         socket
+         |> assign(:notification_emails, updated_user.preferences.notification_emails)
+         |> assign(:notification_email_error, nil)
+         |> assign(:current_scope, Scope.put_user(scope, updated_user))}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :notification_email_error, notification_email_error(changeset))}
+    end
+  end
+
+  defp notification_email_error(changeset) do
+    case changeset.changes[:preferences] do
+      %Ecto.Changeset{errors: errors} ->
+        case Keyword.get(errors, :notification_emails) do
+          {msg, _opts} -> msg
+          nil -> "Failed to update addresses."
+        end
+
+      _ ->
+        "Failed to update addresses."
     end
   end
 
