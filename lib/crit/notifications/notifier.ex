@@ -22,11 +22,17 @@ defmodule Crit.Notifications.Notifier do
     preheader_text = preheader_text(actors, shown, filename)
 
     new()
-    |> to(batch.recipient.email)
+    |> to(recipient_addresses(batch.recipient))
     |> from(from_address(actors))
     |> subject(subject_line)
     |> text_body(text_body(headline_text, shown, more, review_url, settings_url))
     |> html_body(html_body(headline_text, preheader_text, shown, more, review_url, settings_url))
+  end
+
+  # The account address plus any extra addresses the user added in settings.
+  defp recipient_addresses(recipient) do
+    extras = recipient.preferences.notification_emails || []
+    Enum.uniq([recipient.email | extras])
   end
 
   defp from_address(actors) do
