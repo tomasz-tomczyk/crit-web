@@ -2,7 +2,7 @@
 # Vendor crit's injected preview-agent scripts into crit-web, byte-identical.
 #
 # The files copied here are the EXACT set + order that crit injects into
-# live/preview iframes (see `agentScriptFiles` in crit/server.go), plus
+# live/preview iframes (see `agentScriptFiles` in crit/internal/live/proxy.go), plus
 # agent-marker.css (served at /agent-marker.css locally). crit-web must serve
 # the same scripts so DOM anchoring stays compatible across both renderers.
 #
@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="${1:-$SCRIPT_DIR/../../crit/web}"
 DST="$SCRIPT_DIR/../priv/static/preview-agent"
 
-# Keep in sync with `agentScriptFiles` in crit/server.go (order matters:
+# Keep in sync with `agentScriptFiles` in crit/internal/live/proxy.go (order matters:
 # protocol first, helpers next, main agent entry point last) + agent-marker.css.
 FILES=(
   agent-protocol.js

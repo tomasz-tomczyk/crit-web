@@ -44,6 +44,19 @@ function pathCompare(a, b) {
   return a.length - b.length
 }
 
+// File order for the review list and file tree: folders before files at each
+// depth, then byte order per path segment, matching crit's fileSortComparator
+// in git mode and GitHub PR diffs. crit-web has no CLI argument order to keep.
+function fileSortComparator(a, b) {
+  const pa = a.path.split('/'), pb = b.path.split('/')
+  const min = Math.min(pa.length, pb.length)
+  for (let i = 0; i < min - 1; i++) {
+    if (pa[i] !== pb[i]) return pathCompare(pa[i], pb[i])
+  }
+  if (pa.length !== pb.length) return pb.length - pa.length
+  return pathCompare(pa[pa.length - 1], pb[pa.length - 1])
+}
+
 const IDENTITY_HUES = [200, 140, 30, 260, 350, 90, 175, 315, 55, 220, 0, 160]
 
 function identityHue(identity) {
@@ -2039,8 +2052,11 @@ function renderTreeNode(ctx, container, node, depth, pathPrefix) {
   const folderSVG = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"/></svg>'
   const fileSVG = '<svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.75 1.5a.25.25 0 0 0-.25.25v11.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75zm5.75.56v2.19c0 .138.112.25.25.25h2.19L9.5 2.06zM2 1.75C2 .784 2.784 0 3.75 0h5.086c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25V1.75z"/></svg>'
 
-  // Render subdirectories
-  const dirs = Object.keys(node.children).sort()
+  // Render subdirectories. Sort on the first segment like fileSortComparator,
+  // so a collapsed 'a/b' still precedes its sibling 'a.c' as in the list.
+  const dirs = Object.keys(node.children).sort(function(a, b) {
+    return pathCompare(a.split('/')[0], b.split('/')[0])
+  })
   for (const dirName of dirs) {
     const fullPath = pathPrefix ? pathPrefix + '/' + dirName : dirName
     const child = node.children[dirName]
@@ -5973,7 +5989,7 @@ export const DocumentRenderer = {
             status: f.status || 'modified',
             orphaned,
           }
-        }).sort((a, b) => pathCompare(a.path, b.path))
+        }).sort(fileSortComparator)
         restoreViewedState(ctx)
       } else if (files && files.length === 1) {
         const f = files[0]
