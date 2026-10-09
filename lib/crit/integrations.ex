@@ -166,6 +166,32 @@ defmodule Crit.Integrations do
       components: [:crit_command, :crit_cli_skill]
     },
     %{
+      id: "omo",
+      name: "OMO",
+      tagline: "Crit as an OMO skill",
+      logo: nil,
+      page_title: "Crit + OMO - review AI plans inline",
+      meta:
+        "Install crit's OMO integration. Drops skills into .omo/skills/ (project) or ~/.omo/agent/skills/ (global) so OMO can start a review loop with /skill:crit.",
+      intro:
+        "OMO reads skills from .omo/skills/ (project) and ~/.omo/agent/skills/ (global). Run `crit install omo` for project skills, or `cd ~ && crit install omo` for global ones. Invoke /skill:crit to start a review loop or /skill:crit-story to write a story and review it. Project-local skills need OMO's project trust.",
+      command: "crit install omo",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
+      id: "omp",
+      name: "omp (Oh My Pi)",
+      tagline: "Crit as an omp skill",
+      logo: nil,
+      page_title: "Crit + omp - review AI plans inline",
+      meta:
+        "Install crit's omp (Oh My Pi) integration. Drops skills into .omp/skills/ (project) or ~/.omp/agent/skills/ (global) so omp can start a review loop with /skill:crit.",
+      intro:
+        "omp reads skills from .omp/skills/ (project) and ~/.omp/agent/skills/ (global). Run `crit install omp` for project skills, or `cd ~ && crit install omp` for global ones, then restart omp so it picks them up. Invoke /skill:crit to start a review loop or /skill:crit-story to write a story and review it.",
+      command: "crit install omp",
+      components: [:crit_command, :crit_cli_skill]
+    },
+    %{
       id: "grok",
       name: "Grok",
       tagline: "Crit as a Grok skill",
