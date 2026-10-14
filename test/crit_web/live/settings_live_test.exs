@@ -439,6 +439,30 @@ defmodule CritWeb.SettingsLiveTest do
     end
   end
 
+  describe "own activity toggle" do
+    test "is hidden when notifications are disabled for the instance", %{conn: conn} do
+      {conn, _user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+
+      refute has_element?(view, "#notify-own-activity-toggle")
+    end
+
+    test "is off by default and updates the preference", %{conn: conn} do
+      enable_notifications!()
+      {conn, user} = login_user(conn)
+
+      {:ok, view, _html} = live(conn, ~p"/settings")
+      assert has_element?(view, "#notify-own-activity-toggle[aria-checked='false']")
+
+      view |> element("#notify-own-activity-toggle") |> render_click()
+
+      assert has_element?(view, "#notify-own-activity-toggle[aria-checked='true']")
+      {:ok, updated} = Crit.Accounts.get_user(user.id)
+      assert updated.preferences.notify_own_activity
+    end
+  end
+
   describe "extra notification addresses" do
     test "is hidden when notifications are disabled for the instance", %{conn: conn} do
       {conn, _user} = login_user(conn)
