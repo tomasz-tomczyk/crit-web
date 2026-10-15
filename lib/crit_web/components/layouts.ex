@@ -189,7 +189,8 @@ defmodule CritWeb.Layouts do
           <.site_nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
             Self-Hosting
           </.site_nav_link>
-          <.site_nav_link href="https://github.com/tomasz-tomczyk/crit">
+          <%!-- No room between md and lg; the footer links to GitHub too. --%>
+          <.site_nav_link href="https://github.com/tomasz-tomczyk/crit" class="max-lg:hidden">
             GitHub
           </.site_nav_link>
         </nav>
@@ -993,6 +994,7 @@ defmodule CritWeb.Layouts do
 
   attr :href, :string, required: true
   attr :active, :boolean, default: false
+  attr :class, :any, default: nil
   slot :inner_block, required: true
 
   defp site_nav_link(assigns) do
@@ -1001,8 +1003,9 @@ defmodule CritWeb.Layouts do
       href={@href}
       aria-current={@active && "page"}
       class={[
-        "py-2 text-[15px] font-medium leading-tight no-underline hover:text-(--crit-brand) transition-colors",
-        if(@active, do: "text-(--crit-brand)", else: "text-(--crit-fg-primary)")
+        "py-2 text-[15px] font-medium leading-tight whitespace-nowrap no-underline hover:text-(--crit-brand) transition-colors",
+        if(@active, do: "text-(--crit-brand)", else: "text-(--crit-fg-primary)"),
+        @class
       ]}
     >
       {render_slot(@inner_block)}
