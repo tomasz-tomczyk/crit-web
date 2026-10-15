@@ -4229,6 +4229,18 @@ body.sidebar-resizing * {
   margin: 0;
 }
 
+.article-body video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: var(--crit-bg-card);
+}
+
+.article-body p:has(> video) {
+  margin: 1.25em 0;
+}
+
 .article-body blockquote {
   border-left: 3px solid var(--crit-brand);
   margin: 1.25em 0;

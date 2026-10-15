@@ -4,6 +4,9 @@ defmodule Crit.Articles do
 
   Each file uses YAML frontmatter for metadata and a markdown body rendered
   with MDEx.
+
+  An image link to an `.mp4` renders as a video player; its title is the
+  poster: `![Demo](https://assets.crit.md/demo.mp4 "https://assets.crit.md/demo.jpg")`.
   """
 
   @doc "All articles, newest first."
@@ -81,6 +84,7 @@ defmodule Crit.Articles do
   defp postprocess_html(html) do
     html
     |> mermaid_blocks()
+    |> videos()
     |> lazy_images()
   end
 
@@ -97,6 +101,18 @@ defmodule Crit.Articles do
 
       ~s(<pre class="mermaid">#{decoded}</pre>)
     end)
+  end
+
+  defp videos(html) do
+    Regex.replace(
+      ~r/<img src="([^"]+\.mp4)" alt="([^"]*)"(?: title="([^"]*)")? \/>/,
+      html,
+      fn _, src, alt, poster ->
+        poster_attr = if poster == "", do: "", else: ~s( poster="#{poster}")
+
+        ~s(<video src="#{src}"#{poster_attr} aria-label="#{alt}" controls playsinline preload="metadata"></video>)
+      end
+    )
   end
 
   defp lazy_images(html) do

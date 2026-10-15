@@ -39,4 +39,14 @@ defmodule Crit.ArticlesTest do
     assert html =~ "assets.crit.md/articles/how-to-plan-document-and-review/01_installed.png"
     assert html =~ ~s(<pre class="mermaid">)
   end
+
+  test "renders an image link to an .mp4 as a video with its title as the poster" do
+    html = Phoenix.HTML.safe_to_string(Articles.get("review-agent-memory").body_html)
+    base = "https://assets.crit.md/articles/review-agent-memory"
+
+    assert html =~
+             ~s(<video src="#{base}/review-agent-memory.mp4" poster="#{base}/poster.jpg" aria-label="Reviewing Claude Code memory files in Crit" controls playsinline preload="metadata"></video>)
+
+    refute html =~ ~s(<img loading="lazy" decoding="async" src="#{base}/review-agent-memory.mp4")
+  end
 end
