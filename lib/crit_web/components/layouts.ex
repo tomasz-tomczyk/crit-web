@@ -186,10 +186,17 @@ defmodule CritWeb.Layouts do
           <.site_nav_link href={~p"/integrations"} active={@current_page == :integrations}>
             Integrations
           </.site_nav_link>
-          <.site_nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
+          <.site_nav_link href={~p"/articles"} active={@current_page == :articles}>
+            Articles
+          </.site_nav_link>
+          <%!-- Self-Hosting and GitHub don't fit between md and lg; the footer links to both. --%>
+          <.site_nav_link
+            href={~p"/self-hosting"}
+            active={@current_page == :self_hosting}
+            class="max-lg:hidden"
+          >
             Self-Hosting
           </.site_nav_link>
-          <%!-- No room between md and lg; the footer links to GitHub too. --%>
           <.site_nav_link href="https://github.com/tomasz-tomczyk/crit" class="max-lg:hidden">
             GitHub
           </.site_nav_link>
