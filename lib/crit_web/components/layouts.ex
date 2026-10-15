@@ -147,7 +147,6 @@ defmodule CritWeb.Layouts do
           <div class="relative group">
             <button
               type="button"
-              aria-haspopup="true"
               class={[
                 "inline-flex items-center gap-1.5 py-2 text-[15px] font-medium leading-tight hover:text-(--crit-brand) transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring) rounded-sm",
                 if(@current_page == :modes,
@@ -162,7 +161,7 @@ defmodule CritWeb.Layouts do
                 class="size-3.5 opacity-70 transition-transform group-hover:rotate-180 group-focus-within:rotate-180"
               />
             </button>
-            <div class="absolute -left-4 top-full pt-2.5 w-max opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity z-40">
+            <div class="absolute -left-4 top-full pt-2.5 w-max invisible opacity-0 pointer-events-none group-hover:visible group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-[opacity,visibility] z-40">
               <div class="flex flex-col bg-(--crit-bg-elevated) border border-(--crit-border-strong) rounded-xl shadow-[0_18px_40px_rgba(10,11,18,0.35)] p-2">
                 <a
                   :for={mode <- CritWeb.PageHTML.modes()}
@@ -309,7 +308,12 @@ defmodule CritWeb.Layouts do
           <button
             id="site-nav-toggle"
             type="button"
-            phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#site-nav")}
+            phx-click={
+              JS.toggle_attribute({"hidden", "hidden"}, to: "#site-nav")
+              |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+            }
+            aria-controls="site-nav"
+            aria-expanded="false"
             class="md:hidden p-1.5 rounded-md text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) cursor-pointer"
             aria-label="Toggle menu"
           >
@@ -322,7 +326,7 @@ defmodule CritWeb.Layouts do
       <div
         id="site-nav"
         hidden
-        class="md:hidden bg-(--crit-bg-card) border-y border-(--crit-border)"
+        class="md:hidden max-h-[calc(100dvh-4rem)] overflow-y-auto bg-(--crit-bg-card) border-y border-(--crit-border)"
       >
         <div class="flex flex-col gap-px px-3 pt-2 pb-3.5">
           <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">

@@ -23,6 +23,23 @@ defmodule CritWeb.PageControllerTest do
     assert html_response(conn, 200) =~ "Umami"
   end
 
+  for path <-
+        ~w(/features /getting-started /changelog) ++
+          Enum.map(
+            ~w(inline-comments split-unified-diff ai-review-loop vim-keybindings share-reviews syntax-highlighting mermaid-diagrams),
+            &"/features/#{&1}"
+          ) do
+    @path path
+
+    test "GET #{path} renders", %{conn: conn} do
+      assert conn |> get(@path) |> html_response(200)
+    end
+  end
+
+  test "GET /features/:slug returns 404 for an unknown feature", %{conn: conn} do
+    assert conn |> get("/features/does-not-exist") |> response(404)
+  end
+
   test "GET /self-hosting", %{conn: conn} do
     conn = get(conn, ~p"/self-hosting")
     assert html_response(conn, 200) =~ "Self-Hosting"

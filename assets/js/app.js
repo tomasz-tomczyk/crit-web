@@ -250,8 +250,10 @@ window.matchMedia?.("(prefers-color-scheme: light)").addEventListener("change", 
 // Home page demo videos: each [data-theme-video] plays the light or dark cut
 // (data-light / data-dark, a URL without extension; "-poster.png" and ".mp4"
 // are added), and the 4:5 portrait cut on mobile when it has data-*-mobile.
-// The videos ship without src so only the picked cut loads.
+// The videos ship without src so only the picked cut loads. Under reduced
+// motion an autoplaying video gets only its poster, so the mp4 never loads.
 const mobileVideo = window.matchMedia?.("(max-width: 767px)");
+const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 function syncThemeVideos() {
   const theme = document.documentElement.getAttribute("data-theme");
   const light = theme ? theme === "light" : window.matchMedia?.("(prefers-color-scheme: light)").matches;
@@ -259,10 +261,16 @@ function syncThemeVideos() {
   document.querySelectorAll("[data-theme-video]").forEach(video => {
     const base = (mobileVideo?.matches && video.dataset[key + "Mobile"]) || video.dataset[key];
     if (!base || video.dataset.base === base) return;
+    // Don't cut off a film the viewer is watching.
+    if (!video.autoplay && !video.paused) return;
     video.dataset.base = base;
     // data-version busts browser caches when a cut is re-uploaded under the same key.
     const v = video.dataset.version ? "?v=" + video.dataset.version : "";
     video.poster = base + "-poster.png" + v;
+    if (reduceMotion && (video.autoplay || video.dataset.posterOnly)) {
+      video.dataset.posterOnly = "true";
+      return;
+    }
     video.src = base + ".mp4" + v;
     if (video.autoplay) video.play().catch(() => {});
   });
@@ -517,7 +525,7 @@ if (!prefersReducedMotion) {
 }
 
 // Under reduced-motion, pause autoplaying videos so only the poster shows.
-// The hero keeps its `controls`, so users can still play it on demand.
+// (The home page [data-theme-video] cuts never get a src; see syncThemeVideos.)
 if (prefersReducedMotion) {
   document.querySelectorAll("video[autoplay]").forEach(video => {
     video.removeAttribute("autoplay")

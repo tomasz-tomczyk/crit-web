@@ -10,7 +10,10 @@
   <section class="relative h-svh min-h-[600px] max-md:h-auto max-md:min-h-0 max-md:pt-16 overflow-hidden bg-(--crit-bg-page)">
     <%!-- Starts below the fixed header (72px) so its solid bar doesn't cover
           the top of the video. --%>
-    <div class="absolute inset-x-0 bottom-0 top-[72px] overflow-hidden max-md:relative max-md:top-0 max-md:aspect-[4/5]" aria-hidden="true">
+    <div
+      class="absolute inset-x-0 bottom-0 top-[72px] overflow-hidden max-md:relative max-md:top-0 max-md:aspect-[4/5]"
+      aria-hidden="true"
+    >
       <%!-- Scaled to crop past the recording's menu bar, browser chrome and wallpaper. --%>
       <%!-- No src: syncThemeVideos in app.js picks the light/dark and mobile cut. --%>
       <video
@@ -27,8 +30,7 @@
         data-light="https://assets.crit.md/crit-demo-light"
         data-dark-mobile="https://assets.crit.md/crit-demo-mobile"
         data-light-mobile="https://assets.crit.md/crit-demo-mobile-light"
-      >
-      </video>
+      ></video>
       <div
         class="absolute inset-x-0 bottom-0 h-[12%] md:hidden"
         style="background: linear-gradient(to top, var(--crit-bg-page), transparent);"
