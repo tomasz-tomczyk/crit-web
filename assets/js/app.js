@@ -247,6 +247,31 @@ window.addEventListener("storage", e => e.key === "phx:theme" && setTheme(e.newV
 syncActivePalette();
 window.matchMedia?.("(prefers-color-scheme: light)").addEventListener("change", () => syncActivePalette());
 
+// Home page demo videos: each [data-theme-video] plays the light or dark cut
+// (data-light / data-dark, a URL without extension; "-poster.png" and ".mp4"
+// are added), and the 4:5 portrait cut on mobile when it has data-*-mobile.
+// The videos ship without src so only the picked cut loads.
+const mobileVideo = window.matchMedia?.("(max-width: 767px)");
+function syncThemeVideos() {
+  const theme = document.documentElement.getAttribute("data-theme");
+  const light = theme ? theme === "light" : window.matchMedia?.("(prefers-color-scheme: light)").matches;
+  const key = light ? "light" : "dark";
+  document.querySelectorAll("[data-theme-video]").forEach(video => {
+    const base = (mobileVideo?.matches && video.dataset[key + "Mobile"]) || video.dataset[key];
+    if (!base || video.dataset.base === base) return;
+    video.dataset.base = base;
+    // data-version busts browser caches when a cut is re-uploaded under the same key.
+    const v = video.dataset.version ? "?v=" + video.dataset.version : "";
+    video.poster = base + "-poster.png" + v;
+    video.src = base + ".mp4" + v;
+    if (video.autoplay) video.play().catch(() => {});
+  });
+}
+syncThemeVideos();
+window.matchMedia?.("(prefers-color-scheme: light)").addEventListener("change", syncThemeVideos);
+mobileVideo?.addEventListener("change", syncThemeVideos);
+new MutationObserver(syncThemeVideos).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
 // Site header identity popover: close on outside-click / Escape.
 // Marketing pages are dead views (controller-rendered), so phx-hook
 // won't reliably fire here — use document-level delegation instead.

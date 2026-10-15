@@ -1,68 +1,129 @@
-<Layouts.flash_group flash={@flash} />
-
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.site_header current_scope={@current_scope} />
-
-  <section class="max-w-7xl mx-auto pt-24 pb-16 px-10 w-full max-sm:px-4 max-sm:pt-14 max-sm:pb-10">
-    <div class="max-w-4xl mb-14 max-sm:mb-10">
-      <h1 class="text-7xl font-extrabold leading-none tracking-tight mb-7 max-lg:text-6xl max-sm:text-5xl">
-        Point at the line. <br />
-        <span class="whitespace-nowrap">
-          Tell the agent<span class="text-(--crit-brand)">.</span>
-          <span class="crit-blink-cursor">
-            ▍
-          </span>
-        </span>
-      </h1>
-      <p class="text-xl max-sm:text-base leading-relaxed text-(--crit-fg-secondary) max-w-4xl mb-10 text-pretty">
-        Your agent just touched 14 files. In the terminal you're scrolling through diffs hoping
-        nothing broke. Crit opens those changes in a browser &mdash; click line 47, type
-        "this drops the refresh token", and the agent fixes it. You see exactly what changed,
-        round by round.
-      </p>
-      <div class="flex gap-6 items-start max-lg:flex-col max-lg:gap-4">
-        <div class="max-w-md flex-1 min-w-0 max-lg:w-full">
-          <CritWeb.PageHTML.install_widget id="hero-install" />
-        </div>
-        <div class="flex flex-col gap-3 shrink-0 pt-10 max-lg:pt-0 max-sm:w-full max-sm:items-center">
-          <.github_star_link variant="hero" />
-          <div class="flex items-center gap-3 max-sm:justify-center">
-            <button
-              type="button"
-              data-video-open
-              data-video-src="https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0"
-              class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors cursor-pointer"
-            >
-              ▶ Watch 2-min video
-            </button>
-            <%= if @demo_token do %>
-              <span class="text-(--crit-fg-muted)" aria-hidden="true">·</span>
-              <a
-                href={~p"/r/#{@demo_token}"}
-                class="inline-flex items-center gap-2 text-sm font-semibold text-(--crit-fg-secondary) no-underline hover:text-(--crit-fg-primary) transition-colors"
-              >
-                See demo
-              </a>
-            <% end %>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="rounded-xl overflow-hidden shadow-lg">
+<Layouts.site_page
+  flash={@flash}
+  current_scope={@current_scope}
+  page_path={@conn.request_path}
+  header_overlay
+>
+  <%!-- ===== Hero: the demo film full screen, the mark and headline over it ===== --%>
+  <%!-- On mobile the hero stacks: the portrait cut of the film whole under the
+        header, then the headline. --%>
+  <section class="relative h-svh min-h-[600px] max-md:h-auto max-md:min-h-0 max-md:pt-16 overflow-hidden bg-(--crit-bg-page)">
+    <%!-- Starts below the fixed header (72px) so its solid bar doesn't cover
+          the top of the video. --%>
+    <div class="absolute inset-x-0 bottom-0 top-[72px] overflow-hidden max-md:relative max-md:top-0 max-md:aspect-[4/5]" aria-hidden="true">
+      <%!-- Scaled to crop past the recording's menu bar, browser chrome and wallpaper. --%>
+      <%!-- No src: syncThemeVideos in app.js picks the light/dark and mobile cut. --%>
       <video
+        data-theme-video
         autoplay
         loop
         muted
         playsinline
-        controls
         width="1920"
         height="1080"
-        class="w-full h-auto"
-        poster="https://assets.crit.md/crit-demo-poster.png"
-        src="https://assets.crit.md/crit-demo.mp4"
-      ></video>
+        class="absolute inset-0 size-full object-cover object-[30%_50%] scale-[1.2] origin-[15%_100%] max-md:object-contain max-md:scale-100"
+        data-version="20261015"
+        data-dark="https://assets.crit.md/crit-demo"
+        data-light="https://assets.crit.md/crit-demo-light"
+        data-dark-mobile="https://assets.crit.md/crit-demo-mobile"
+        data-light-mobile="https://assets.crit.md/crit-demo-mobile-light"
+      >
+      </video>
+      <div
+        class="absolute inset-x-0 bottom-0 h-[12%] md:hidden"
+        style="background: linear-gradient(to top, var(--crit-bg-page), transparent);"
+      >
+      </div>
     </div>
+    <%!-- Shade only where words sit: a floor under the headline. --%>
+    <div
+      class="absolute inset-0 max-md:hidden"
+      aria-hidden="true"
+      style="background: linear-gradient(to top, var(--crit-bg-page) 0%, var(--crit-bg-page) 26%, color-mix(in srgb, var(--crit-bg-page) 94%, transparent) 36%, color-mix(in srgb, var(--crit-bg-page) 82%, transparent) 42%, transparent 56%);"
+    >
+    </div>
+
+    <div class="absolute inset-x-0 bottom-22 max-md:relative max-md:bottom-auto max-md:pt-4 max-md:pb-12">
+      <Site.wrap class="flex items-end gap-14 max-lg:gap-10 max-md:flex-col max-md:items-stretch max-md:gap-6">
+        <p class="shrink-0 leading-none max-md:hidden">
+          <Layouts.wordmark class="w-[min(40vw,560px)] h-auto text-(--crit-fg-primary)" />
+        </p>
+        <div class="flex-1 max-w-[470px] max-md:max-w-none">
+          <h1 class="text-[46px] font-semibold leading-[1.04] tracking-[-0.025em] mb-4 max-lg:text-[38px] max-md:text-[32px] max-md:mb-3">
+            <span class="block whitespace-nowrap">Point at the line.</span>
+            <span class="block whitespace-nowrap">
+              Tell the agent<span class="text-(--crit-brand)">.</span><span
+                class="inline-block w-[.42em] h-[.82em] ml-[.12em] align-[-0.06em] bg-(--crit-brand) motion-safe:animate-[crit-blink_1.1s_step-start_infinite]"
+                aria-hidden="true"
+              ></span>
+            </span>
+          </h1>
+          <p class="text-[17px] leading-[1.45] text-(--crit-fg-secondary) max-w-[40ch] mb-6 text-pretty max-md:text-[15px]">
+            Review your coding agent's plans, diffs and running apps in the browser, round by round. Open source, local, and it works with any agent.
+          </p>
+          <div class="flex flex-wrap items-center gap-6 max-md:flex-col max-md:items-stretch max-md:gap-3">
+            <CritWeb.PageHTML.github_star_link />
+            <button
+              type="button"
+              class="copy-btn font-mono text-sm text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) whitespace-nowrap cursor-pointer py-2"
+              data-copy="brew install crit"
+              aria-label="Copy brew install crit"
+            >
+              <span class="text-(--crit-brand)">$</span>
+              brew install crit
+              <.icon name="hero-clipboard" class="size-4 ml-2 align-[-3px] icon-default" />
+              <.icon
+                name="hero-clipboard-document-check"
+                class="size-4 ml-2 align-[-3px] icon-copied hidden"
+              />
+            </button>
+          </div>
+        </div>
+      </Site.wrap>
+    </div>
+  </section>
+
+  <%!-- ===== The loop ===== --%>
+  <section id="loop" class="pt-36 pb-24 max-md:pt-24 max-md:pb-18">
+    <Site.wrap class="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-14 items-center max-md:grid-cols-1 max-md:gap-8">
+      <div>
+        <Site.eyebrow blue>The loop</Site.eyebrow>
+        <p class="text-[clamp(20px,1.8vw,24px)] leading-[1.4] tracking-[-0.01em] text-(--crit-fg-secondary) max-w-[30em] text-pretty mb-2">
+          Your agent just touched 14 files. In the terminal you're scrolling through diffs hoping
+          nothing broke. Crit opens those changes in a browser &mdash; click line 47, type
+          "this drops the refresh token", and the agent fixes it. You see exactly what changed,
+          round by round.
+        </p>
+        <Site.links>
+          <Site.link_arrow :if={@demo_token} href={~p"/r/#{@demo_token}"}>See demo</Site.link_arrow>
+          <button
+            type="button"
+            data-video-open
+            data-video-src="https://www.youtube.com/embed/LHwfdvePf5A?autoplay=1&rel=0"
+            class="inline-block py-2 font-semibold text-(--crit-brand) hover:text-(--crit-fg-primary) transition-colors cursor-pointer"
+          >
+            Watch 2-min video <span aria-hidden="true">&rarr;</span>
+          </button>
+          <Site.link_arrow href={~p"/getting-started"}>Get Started</Site.link_arrow>
+        </Site.links>
+      </div>
+      <Site.media class="aspect-video">
+        <video
+          controls
+          preload="none"
+          playsinline
+          muted
+          width="1920"
+          height="1080"
+          class="absolute inset-0 size-full object-contain bg-(--crit-bg-page)"
+          aria-label="Crit demo: reviewing an agent's plan, code diff and running app"
+          data-theme-video
+          data-version="20261015"
+          data-dark="https://assets.crit.md/crit-demo"
+          data-light="https://assets.crit.md/crit-demo-light"
+        ></video>
+      </Site.media>
+    </Site.wrap>
 
     <%!-- YouTube video modal --%>
     <div
@@ -71,15 +132,14 @@
       data-video-backdrop
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
     >
-      <div class="relative w-full max-w-[960px] mx-4" style="aspect-ratio: 16/9;">
+      <div class="relative w-full max-w-[960px] mx-4 aspect-video">
         <iframe
           id="video-iframe"
           src=""
           title="Crit demo"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
-          class="absolute inset-0 w-full h-full rounded-xl"
-          style="border: 0;"
+          class="absolute inset-0 size-full rounded-xl border-0"
         ></iframe>
         <button
           type="button"
@@ -93,310 +153,233 @@
     </div>
   </section>
 
-  <%!-- ===== Five Modes ===== --%>
-  <section id="modes" class="py-16 max-sm:py-10">
-    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
-      <div class="max-w-2xl mb-16 max-sm:mb-10">
-        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
-          Five review modes
-        </p>
-        <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
-          Agents don't just write code<span class="text-(--crit-brand)">.</span>
-        </h2>
-        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed mt-4">
-          They write plans, generate HTML pages, modify running apps, and ship multi-file diffs that need a narrative before the line comments. Each output needs a different review surface. Terminal diffs only really work for one of them.
-        </p>
-      </div>
+  <%!-- ===== Five modes ===== --%>
+  <Site.section id="modes">
+    <Site.section_head>
+      Agents don't just write code<Site.dot />
+      <:text>
+        They write plans, generate HTML pages, modify running apps, and ship multi-file diffs that need a narrative before the line comments. Each output needs a different review surface. Terminal diffs only really work for one of them.
+      </:text>
+    </Site.section_head>
 
-      <div class="flex flex-col gap-20">
-        <div
-          :for={{mode, idx} <- Enum.with_index(CritWeb.PageHTML.modes())}
-          class="grid grid-cols-5 gap-12 items-center max-md:grid-cols-1"
-        >
-          <div class={[
-            "col-span-2 max-md:col-span-1 max-md:order-none",
-            rem(idx, 2) == 1 && "order-2"
-          ]}>
-            <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-3">
-              {String.upcase(mode.cmd)}
-            </p>
-            <h3 class="text-2xl font-bold tracking-tight mb-3">{mode.label}</h3>
-            <p class="text-(--crit-fg-secondary) leading-relaxed mb-5">{mode.blurb}</p>
-            <div class="flex flex-wrap gap-2 mb-5">
-              <span
-                :for={bullet <- mode.bullets}
-                class="bg-(--crit-bg-elevated) border border-(--crit-border) rounded-full px-3 py-1 text-xs text-(--crit-fg-secondary)"
-              >
-                {bullet}
-              </span>
-            </div>
-            <a
-              href={"/modes/#{mode.slug}"}
-              class="text-sm font-semibold text-(--crit-brand) no-underline hover:underline"
-            >
-              {mode.nav_label} &rarr;
-            </a>
-          </div>
-          <div class={[
-            "col-span-3 max-md:col-span-1 max-md:order-none",
-            rem(idx, 2) == 1 && "order-1"
-          ]}>
-            <%= if mode[:video] do %>
-              <div class="rounded-xl overflow-hidden shadow-lg">
-                <video
-                  autoplay
-                  loop
-                  muted
-                  playsinline
-                  controls
-                  preload="none"
-                  width="1920"
-                  height="1080"
-                  class="w-full h-auto"
-                  poster={mode[:poster]}
-                  data-lazy-src={mode.video}
-                ></video>
-              </div>
-            <% else %>
-              <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{mode.slug}"}>
-                <%= if mode.screenshot do %>
-                  <img
-                    src={"/images/screenshots/#{mode.screenshot}-dark@1x.png"}
-                    srcset={"/images/screenshots/#{mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{mode.screenshot}-dark@2x.png 2x"}
-                    alt={"Crit #{mode.label} mode"}
-                    class="logo-dark w-full"
-                    loading="lazy"
-                    width="1200"
-                    height="675"
-                  />
-                  <img
-                    src={"/images/screenshots/#{mode.screenshot}-light@1x.png"}
-                    srcset={"/images/screenshots/#{mode.screenshot}-light@1x.png 1x, /images/screenshots/#{mode.screenshot}-light@2x.png 2x"}
-                    alt={"Crit #{mode.label} mode"}
-                    class="logo-light w-full"
-                    loading="lazy"
-                    width="1200"
-                    height="675"
-                  />
-                <% else %>
-                  <CritWeb.PageHTML.browser_chrome_placeholder label={mode.label} />
-                <% end %>
-              </CritWeb.PageHTML.browser_chrome>
-            <% end %>
-          </div>
+    <ol class="flex flex-col gap-24 max-md:gap-14">
+      <li
+        :for={{mode, idx} <- Enum.with_index(CritWeb.PageHTML.modes(), 1)}
+        class={[
+          "grid gap-14 items-center max-md:grid-cols-1 max-md:gap-6",
+          if(rem(idx, 2) == 0,
+            do: "grid-cols-[minmax(0,8fr)_minmax(0,4fr)]",
+            else: "grid-cols-[minmax(0,4fr)_minmax(0,8fr)]"
+          )
+        ]}
+      >
+        <div class={[rem(idx, 2) == 0 && "md:order-2", "max-md:order-2"]}>
+          <Site.eyebrow>{mode.cmd}</Site.eyebrow>
+          <h3 class="text-[clamp(28px,2.6vw,36px)] font-semibold leading-[1.08] tracking-[-0.02em] mb-4">
+            {mode.label}
+          </h3>
+          <p class="text-(--crit-fg-secondary) mb-6 max-w-[46ch]">{mode.blurb}</p>
+          <Site.chips items={mode.bullets} label="What it does" class="mb-6" />
+          <Site.link_arrow href={"/modes/#{mode.slug}"}>{mode.nav_label}</Site.link_arrow>
         </div>
-      </div>
-    </div>
-  </section>
+        <a
+          href={"/modes/#{mode.slug}"}
+          tabindex="-1"
+          aria-hidden="true"
+          class="block rounded-xl hover:ring-1 hover:ring-(--crit-brand) transition-shadow"
+        >
+          <CritWeb.PageHTML.mode_film mode={mode} crop />
+        </a>
+      </li>
+    </ol>
+  </Site.section>
 
   <%!-- ===== Integrations ===== --%>
-  <section id="integrations" class="py-16 max-sm:py-10">
-    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
-      <div class="max-w-2xl mb-12 max-sm:mb-8">
-        <h2 class="text-4xl font-extrabold tracking-tight mb-4 max-sm:text-3xl text-balance">
-          Every agent reads files. That's the whole protocol<span class="text-(--crit-brand)">.</span>
-        </h2>
-        <p class="text-lg text-(--crit-fg-secondary) leading-relaxed">
-          Crit writes a structured review file. Any agent that can read a file and run a command can use it. No API, no SDK, no vendor lock-in.
-        </p>
-      </div>
+  <Site.section id="integrations" panel>
+    <Site.section_head>
+      Every agent reads files. That's the whole protocol<Site.dot />
+      <:text>
+        Crit writes a structured review file. Any agent that can read a file and run a command can use it. No API, no SDK, no vendor lock-in.
+      </:text>
+    </Site.section_head>
 
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 mb-8">
+    <Site.eyebrow tag="h3">Connect your agent</Site.eyebrow>
+    <ul class="grid grid-cols-2 gap-x-10 border-t border-(--crit-border) max-lg:grid-cols-1">
+      <li :for={tool <- Crit.Integrations.tools()}>
         <a
-          :for={tool <- Crit.Integrations.tools()}
           href={"/integrations/#{tool.id}"}
-          class="flex items-center gap-3 px-4 py-3 bg-(--crit-bg-card) border border-(--crit-border) rounded-lg no-underline hover:border-(--crit-fg-muted) hover:bg-(--crit-bg-elevated) transition-all group"
+          class="group grid grid-cols-[32px_130px_minmax(0,1fr)_16px] gap-4 items-center py-3.5 border-b border-(--crit-border) no-underline text-inherit max-md:grid-cols-[28px_minmax(0,1fr)_16px] max-md:gap-x-4 max-md:gap-y-1"
         >
-          <img
-            src={"/images/integrations/#{tool.id}-dark.svg"}
-            alt=""
-            class="logo-dark size-7 object-contain shrink-0"
-            loading="lazy"
-          />
-          <img
-            src={"/images/integrations/#{tool.id}-light.svg"}
-            alt=""
-            class="logo-light size-7 object-contain shrink-0"
-            loading="lazy"
-          />
-          <span class="text-sm font-medium text-(--crit-fg-primary) flex-1">
+          <span class="max-md:row-span-2 max-md:self-start">
+            <img
+              src={"/images/integrations/#{tool.id}-dark.svg"}
+              alt=""
+              class="logo-dark size-7 object-contain"
+              loading="lazy"
+            />
+            <img
+              src={"/images/integrations/#{tool.id}-light.svg"}
+              alt=""
+              class="logo-light size-7 object-contain"
+              loading="lazy"
+            />
+          </span>
+          <span class="font-semibold group-hover:text-(--crit-brand) transition-colors">
             {tool.name}
           </span>
-          <svg
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            class="size-4 text-(--crit-fg-muted) group-hover:text-(--crit-fg-secondary) transition-colors shrink-0"
+          <span class="font-mono text-xs leading-normal text-(--crit-fg-muted) [overflow-wrap:anywhere] max-md:col-start-2 max-md:row-start-2">
+            {CritWeb.PageHTML.agent_install_cmd(tool.id)}
+          </span>
+          <span
+            class="text-(--crit-fg-muted) group-hover:text-(--crit-brand) transition-colors max-md:col-start-3 max-md:row-start-1"
             aria-hidden="true"
           >
-            <path
-              fill-rule="evenodd"
-              d="M5 10a.75.75 0 01.75-.75h6.638L10.23 7.29a.75.75 0 111.04-1.08l3.5 3.25a.75.75 0 010 1.08l-3.5 3.25a.75.75 0 11-1.04-1.08l2.158-1.96H5.75A.75.75 0 015 10z"
-              clip-rule="evenodd"
-            />
-          </svg>
+            &rarr;
+          </span>
         </a>
-      </div>
-
-      <div class="mt-10">
-        <h3 class="text-lg font-bold tracking-tight mb-4">Connect your agent</h3>
-        <CritWeb.PageHTML.agent_setup_widget />
-      </div>
-    </div>
-  </section>
-
-  <%!-- ===== Newsletter ===== --%>
-  <CritWeb.NewsletterSignup.homepage form={@newsletter_form} latest_issue={@latest_newsletter} />
-
-  <%!-- ===== Recent articles ===== --%>
-  <section id="articles" class="py-16 max-sm:py-10">
-    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
-      <div class="flex flex-wrap items-end justify-between gap-6 mb-12 max-sm:mb-8">
-        <div class="max-w-2xl">
-          <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
-            Guides & articles
-          </p>
-          <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
-            Ideas for tighter agent loops<span class="text-(--crit-brand)">.</span>
-          </h2>
-        </div>
-        <a
-          href={~p"/articles"}
-          class="text-sm font-semibold text-(--crit-brand) no-underline hover:underline shrink-0"
-        >
-          View all articles &rarr;
-        </a>
-      </div>
-
-      <div class="grid grid-cols-3 gap-8 max-lg:grid-cols-2 max-sm:grid-cols-1">
-        <CritWeb.PageHTML.article_card
-          :for={article <- @recent_articles}
-          article={article}
-          variant="compact"
-        />
-      </div>
-    </div>
-  </section>
-
-  <%!-- ===== Founder ===== --%>
-  <section id="built-by" class="py-16 max-sm:py-10">
-    <div class="max-w-3xl mx-auto px-10 max-sm:px-4 w-full">
-      <h2 class="text-3xl font-extrabold tracking-tight mb-8 max-sm:text-2xl">
-        I review <span class="text-(--crit-brand)">a lot</span>
-        of agent output<span class="text-(--crit-brand)">.</span>
-      </h2>
-      <div class="flex gap-8 items-start max-sm:flex-col max-sm:gap-5">
-        <img
-          src="/images/founder/photo@1x.webp"
-          srcset="/images/founder/photo@1x.webp 1x, /images/founder/photo@2x.webp 2x"
-          alt="Tomasz's photo"
-          class="size-32 shrink-0 rounded-full object-cover bg-(--crit-bg-card)"
-          loading="lazy"
-          width="128"
-          height="128"
-        />
-        <div class="flex-1 min-w-0">
-          <h3 class="text-base font-semibold tracking-tight mb-2">
-            Hey, I'm <span class="text-(--crit-brand)">Tomasz</span>!
-          </h3>
-          <p class="leading-relaxed mb-3 text-(--crit-fg-secondary)">
-            Staff engineer, 25 years of shipping code. When I started using AI agents full-time, the code generation was impressive &mdash; but I was spending more time re-reading terminal diffs than the agent spent writing the code. I kept missing things that a proper review surface would have caught in seconds.
-          </p>
-          <p class="leading-relaxed mb-3 text-(--crit-fg-secondary)">
-            So I built <strong>Crit</strong>. I use it on every feature I ship. It gets a new release every week based on feedback from engineers who live in this same loop.
-          </p>
-          <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 text-xs text-(--crit-fg-muted)">
-            <a
-              href="https://github.com/tomasz-tomczyk"
-              class="crit-link no-underline hover:underline"
-            >
-              GitHub
-            </a>
-            <a href="https://x.com/tomasztomczyk" class="crit-link no-underline hover:underline">
-              Twitter
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+      </li>
+    </ul>
+    <Site.links>
+      <Site.link_arrow href={~p"/integrations"}>Full setup docs</Site.link_arrow>
+      <Site.link_arrow href={~p"/integrations/build-your-own"}>Build your own</Site.link_arrow>
+    </Site.links>
+  </Site.section>
 
   <%!-- ===== Testimonials ===== --%>
-  <section id="testimonials" class="py-16 max-sm:py-10">
-    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
-      <div class="max-w-2xl mb-12 max-sm:mb-8">
-        <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-4">
-          What engineers say
-        </p>
-        <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
-          The reviews from engineers who live in this loop<span class="text-(--crit-brand)">.</span>
-        </h2>
-      </div>
+  <Site.section id="testimonials">
+    <Site.section_head eyebrow="What engineers say">
+      The reviews from engineers who live in this loop<Site.dot />
+    </Site.section_head>
 
-      <div class="grid grid-cols-2 gap-8 max-sm:grid-cols-1 max-sm:gap-6">
-        <div :for={testimonial <- @testimonials}>
-          <p class="text-lg font-semibold leading-snug text-(--crit-fg-primary) mb-4">
-            {testimonial.highlight}
+    <ul class="grid grid-cols-2 gap-6 max-md:grid-cols-1">
+      <li
+        :for={testimonial <- @testimonials}
+        class="flex flex-col gap-4 p-10 rounded-xl border border-(--crit-border) bg-(--crit-bg-card) max-md:p-6"
+      >
+        <p class="text-[22px] font-semibold leading-tight tracking-[-0.01em]">
+          {testimonial.highlight}
+        </p>
+        <div class="space-y-3">
+          <p
+            :for={paragraph <- testimonial.body}
+            class="text-base leading-relaxed text-(--crit-fg-secondary)"
+          >
+            {paragraph}
           </p>
-          <div class="space-y-2 mb-4">
-            <p
-              :for={paragraph <- testimonial.body}
-              class="leading-relaxed text-(--crit-fg-secondary)"
-            >
-              {paragraph}
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <img
-              src={testimonial.avatar}
-              alt={testimonial.author}
-              class="size-9 rounded-full bg-(--crit-bg-elevated) shrink-0"
-              loading="lazy"
-              width="36"
-              height="36"
-            />
-            <p class="font-mono text-xs text-(--crit-fg-muted) leading-snug min-w-0">
+        </div>
+        <div class="flex items-center gap-3 mt-auto pt-3">
+          <img
+            src={testimonial.avatar}
+            alt={testimonial.author}
+            class="size-11 rounded-full object-cover bg-(--crit-bg-elevated) shrink-0"
+            loading="lazy"
+            width="44"
+            height="44"
+          />
+          <div class="min-w-0">
+            <p class="text-sm font-semibold">
               <a
                 href={testimonial.link}
-                class="text-(--crit-fg-secondary) hover:text-(--crit-brand) transition-colors no-underline"
+                class="inline-block py-1 text-inherit no-underline hover:text-(--crit-brand)"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 {testimonial.author}
               </a>
-              <br />{testimonial.role}
             </p>
+            <p class="text-[13px] text-(--crit-fg-muted)">{testimonial.role}</p>
           </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </li>
+    </ul>
+  </Site.section>
 
-  <%!-- ===== FAQ ===== --%>
-  <section id="faq" class="py-16 max-sm:py-10">
-    <div class="max-w-7xl mx-auto px-10 max-sm:px-4 w-full">
-      <div class="max-w-2xl mb-12 max-sm:mb-8">
-        <h2 class="text-4xl font-extrabold tracking-tight max-sm:text-3xl text-balance">
-          Frequently asked questions
-        </h2>
-      </div>
-
-      <div class="grid grid-cols-2 gap-8 max-md:grid-cols-1 max-md:gap-6">
-        <div
-          :for={item <- @faq}
-          class="border border-(--crit-border) rounded-lg bg-(--crit-bg-card) p-6"
-        >
-          <h3 class="text-base font-bold tracking-tight mb-3 text-(--crit-fg-primary)">
-            {item.q}
-          </h3>
-          <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-            {item.a}
+  <%!-- ===== Founder ===== --%>
+  <Site.section
+    id="built-by"
+    panel
+    wrap_class="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-14 items-start max-md:grid-cols-1 max-md:gap-8"
+  >
+    <Site.title>I review a lot of agent output<Site.dot /></Site.title>
+    <div class="grid grid-cols-[200px_minmax(0,1fr)] gap-10 items-start max-md:grid-cols-1 max-md:gap-6">
+      <img
+        src="/images/founder/photo@1x.webp"
+        srcset="/images/founder/photo@1x.webp 1x, /images/founder/photo@2x.webp 2x"
+        alt="Tomasz Tomczyk"
+        class="size-[200px] rounded-xl object-cover bg-(--crit-bg-elevated) max-md:size-[120px]"
+        loading="lazy"
+        width="200"
+        height="200"
+      />
+      <div>
+        <h3 class="text-2xl font-semibold tracking-[-0.02em] mb-3">Hey, I'm Tomasz!</h3>
+        <div class="space-y-3 text-(--crit-fg-secondary) max-w-[62ch]">
+          <p>
+            Staff engineer, 25 years of shipping code. When I started using AI agents full-time, the code generation was impressive &mdash; but I was spending more time re-reading terminal diffs than the agent spent writing the code. I kept missing things that a proper review surface would have caught in seconds.
+          </p>
+          <p>
+            So I built Crit. I use it on every feature I ship. It gets a new release every week based on feedback from engineers who live in this same loop.
           </p>
         </div>
+        <p class="flex flex-wrap gap-x-6 mt-3 -mb-2">
+          <a
+            href="https://github.com/tomasz-tomczyk"
+            class="inline-block py-2 font-semibold text-(--crit-brand) no-underline hover:text-(--crit-fg-primary)"
+          >
+            GitHub
+          </a>
+          <a
+            href="https://x.com/tomasztomczyk"
+            class="inline-block py-2 font-semibold text-(--crit-brand) no-underline hover:text-(--crit-fg-primary)"
+          >
+            Twitter
+          </a>
+        </p>
       </div>
     </div>
-  </section>
+  </Site.section>
+
+  <%!-- ===== FAQ ===== --%>
+  <Site.section
+    id="faq"
+    wrap_class="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-14 items-start max-md:grid-cols-1 max-md:gap-8"
+  >
+    <Site.title>Frequently asked questions</Site.title>
+    <div class="border-t border-(--crit-border)">
+      <details
+        :for={{item, idx} <- Enum.with_index(@faq)}
+        open={idx == 0}
+        class="group border-b border-(--crit-border)"
+      >
+        <summary class="flex justify-between items-baseline gap-4 py-6 text-xl font-semibold leading-snug cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:text-(--crit-brand) after:content-['+'] after:font-mono after:font-normal after:text-(--crit-brand) group-open:after:content-['−'] max-md:text-lg">
+          {item.q}
+        </summary>
+        <p class="pb-6 text-(--crit-fg-secondary) max-w-[62ch]">{item.a}</p>
+      </details>
+    </div>
+  </Site.section>
 
   <CritWeb.PageHTML.install_section id="bottom-install" />
 
-  <Layouts.site_footer page_path={@conn.request_path} />
-</div>
+  <%!-- ===== Newsletter ===== --%>
+  <CritWeb.NewsletterSignup.homepage form={@newsletter_form} latest_issue={@latest_newsletter} />
+
+  <%!-- ===== Recent articles ===== --%>
+  <Site.section id="articles">
+    <div class="flex flex-wrap items-end justify-between gap-6 mb-14 max-md:mb-10">
+      <div class="max-w-[720px]">
+        <Site.eyebrow blue>Guides & articles</Site.eyebrow>
+        <Site.title>Ideas for tighter agent loops<Site.dot /></Site.title>
+      </div>
+      <Site.link_arrow href={~p"/articles"} class="shrink-0">View all articles</Site.link_arrow>
+    </div>
+
+    <div class="grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-md:grid-cols-1">
+      <CritWeb.PageHTML.article_card
+        :for={article <- @recent_articles}
+        article={article}
+        variant="compact"
+      />
+    </div>
+  </Site.section>
+</Layouts.site_page>

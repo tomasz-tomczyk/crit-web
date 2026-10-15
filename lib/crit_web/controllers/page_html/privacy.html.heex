@@ -1,174 +1,204 @@
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
-  <Layouts.site_header current_scope={@current_scope} />
-  <div class="max-w-[900px] mx-auto px-10 pb-15 max-sm:px-4 max-sm:pb-10">
-    <main class="mt-12">
-      <h1 class="text-4xl font-extrabold tracking-tight mb-2">Privacy Policy</h1>
-      <p class="text-sm text-(--crit-fg-muted) mb-10">Last updated: July 2026</p>
+<Layouts.site_page flash={@flash} current_scope={@current_scope} page_path={@conn.request_path}>
+  <Site.page_head eyebrow="Legal">
+    <:title>Privacy Policy</:title>
+    <:lede>Last updated: July 2026</:lede>
+  </Site.page_head>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Who operates this</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        Crit (crit.md) is operated by Tomasz Tomczyk, who is the data controller for personal
-        data processed through the hosted service. We are registered with the UK Information
-        Commissioner's Office. Registration reference: ZC149123. For privacy enquiries, email <a
-          href="mailto:privacy@crit.md"
-          class="crit-link"
-        >privacy@crit.md</a>.
-      </p>
+  <section class="pb-24 max-md:pb-18">
+    <Site.wrap>
+      <div class="max-w-[72ch]">
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Who operates this
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          Crit (crit.md) is operated by Tomasz Tomczyk, who is the data controller for personal
+          data processed through the hosted service. We are registered with the UK Information
+          Commissioner's Office. Registration reference: ZC149123. For privacy enquiries, email <a
+            href="mailto:privacy@crit.md"
+            class="crit-link"
+          >privacy@crit.md</a>.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Local use</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        When you use Crit locally (without sharing), no data leaves your machine.
-        Documents and comments are stored only in files on your computer.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Local use
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          When you use Crit locally (without sharing), no data leaves your machine.
+          Documents and comments are stored only in files on your computer.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">CLI update check</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        On startup, the Crit CLI contacts api.github.com to check for a new version.
-        This request includes your IP address and current Crit version as the User-Agent
-        header. GitHub's privacy policy governs how GitHub handles this data. You can
-        disable the update check by setting <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">CRIT_NO_UPDATE_CHECK=1</code>.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          CLI update check
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          On startup, the Crit CLI contacts api.github.com to check for a new version.
+          This request includes your IP address and current Crit version as the User-Agent
+          header. GitHub's privacy policy governs how GitHub handles this data. You can
+          disable the update check by setting <code class="text-xs bg-(--crit-bg-elevated) px-1 py-0.5 rounded">CRIT_NO_UPDATE_CHECK=1</code>.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Shared reviews</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        When you share a review, the following is stored on our servers:
-      </p>
-      <ul class="leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
-        <li class="mb-1">The document content (markdown text)</li>
-        <li class="mb-1">Any comments included at the time of sharing</li>
-        <li class="mb-1">The time the review was created</li>
-      </ul>
-      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
-        Comments added by anyone who visits the shared link are also stored on our servers,
-        subject to the same 30-day retention policy.
-      </p>
-      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
-        This data is accessible to anyone with the share link. The link is a secret URL that
-        serves as the primary access control. GitHub login is optional and not required to
-        view or comment on shared reviews.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Shared reviews
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          When you share a review, the following is stored on our servers:
+        </p>
+        <ul class="leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
+          <li class="mb-1">The document content (markdown text)</li>
+          <li class="mb-1">Any comments included at the time of sharing</li>
+          <li class="mb-1">The time the review was created</li>
+        </ul>
+        <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
+          Comments added by anyone who visits the shared link are also stored on our servers,
+          subject to the same 30-day retention policy.
+        </p>
+        <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
+          This data is accessible to anyone with the share link. The link is a secret URL that
+          serves as the primary access control. GitHub login is optional and not required to
+          view or comment on shared reviews.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">GitHub login</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        On crit.md, you can optionally sign in with your GitHub account. If you do, we store:
-      </p>
-      <ul class="leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
-        <li class="mb-1">Your GitHub username and display name</li>
-        <li class="mb-1">Your primary GitHub email address</li>
-        <li class="mb-1">Your GitHub avatar URL</li>
-        <li class="mb-1">Your GitHub user ID (used as a stable identifier)</li>
-      </ul>
-      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
-        This information is used solely to identify you across sessions and to display your name
-        on reviews and comments you create. We do not share it with third parties.
-        You can delete your account by emailing <a
-          href="mailto:privacy@crit.md"
-          class="crit-link"
-        >privacy@crit.md</a>.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          GitHub login
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          On crit.md, you can optionally sign in with your GitHub account. If you do, we store:
+        </p>
+        <ul class="leading-relaxed text-(--crit-fg-secondary) pl-5 mt-2">
+          <li class="mb-1">Your GitHub username and display name</li>
+          <li class="mb-1">Your primary GitHub email address</li>
+          <li class="mb-1">Your GitHub avatar URL</li>
+          <li class="mb-1">Your GitHub user ID (used as a stable identifier)</li>
+        </ul>
+        <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
+          This information is used solely to identify you across sessions and to display your name
+          on reviews and comments you create. We do not share it with third parties.
+          You can delete your account by emailing <a
+            href="mailto:privacy@crit.md"
+            class="crit-link"
+          >privacy@crit.md</a>.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Newsletter</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        If you subscribe to Crit updates, we store your email address and subscription status,
-        along with where you signed up and when you requested and confirmed your subscription. We use Postmark to
-        deliver confirmation emails and newsletters. You can unsubscribe using the link in
-        any newsletter. We retain opt-out records after account deletion so an earlier
-        subscription cannot restart those emails. To request deletion of your subscription data, email <a
-          href="mailto:privacy@crit.md"
-          class="crit-link"
-        >privacy@crit.md</a>.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Newsletter
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          If you subscribe to Crit updates, we store your email address and subscription status,
+          along with where you signed up and when you requested and confirmed your subscription. We use Postmark to
+          deliver confirmation emails and newsletters. You can unsubscribe using the link in
+          any newsletter. We retain opt-out records after account deletion so an earlier
+          subscription cannot restart those emails. To request deletion of your subscription data, email <a
+            href="mailto:privacy@crit.md"
+            class="crit-link"
+          >privacy@crit.md</a>.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Anonymous session</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        When you view a shared review, we set a session cookie containing a randomly generated
-        anonymous identifier. This lets you edit or delete comments you left in that session.
-        The identifier is not linked to any personal information and is not used for tracking.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Anonymous session
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          When you view a shared review, we set a session cookie containing a randomly generated
+          anonymous identifier. This lets you edit or delete comments you left in that session.
+          The identifier is not linked to any personal information and is not used for tracking.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Website analytics</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        On crit.md, we use <a href="https://umami.is/privacy" class="crit-link">Umami</a>
-        to measure aggregate traffic (page views, referrers, browser and device
-        types, and country). Umami does not use cookies, does not track you across
-        sites, and does not collect personally identifiable information. Analytics
-        data is not linked to your GitHub account, session cookie, or review content.
-        Self-hosted Crit Web deployments do not include this script.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Website analytics
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          On crit.md, we use <a href="https://umami.is/privacy" class="crit-link">Umami</a>
+          to measure aggregate traffic (page views, referrers, browser and device
+          types, and country). Umami does not use cookies, does not track you across
+          sites, and does not collect personally identifiable information. Analytics
+          data is not linked to your GitHub account, session cookie, or review content.
+          Self-hosted Crit Web deployments do not include this script.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Other third-party services</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        We do not use advertising trackers.
-      </p>
-      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
-        The homepage includes an embedded YouTube video. If you visit the homepage,
-        YouTube (Google) may set cookies and collect data according to <a
-          href="https://policies.google.com/privacy"
-          class="crit-link"
-        >Google's privacy policy</a>.
-      </p>
-      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
-        If you sign in with GitHub, your browser connects to GitHub's OAuth service.
-        GitHub's
-        <a
-          href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
-          class="crit-link"
-        >
-          privacy policy
-        </a>
-        governs that interaction.
-        Aside from Umami analytics, the YouTube embed, GitHub OAuth, and the error
-        monitoring described below, no other third parties receive data from this site.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Other third-party services
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          We do not use advertising trackers.
+        </p>
+        <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
+          The homepage includes an embedded YouTube video. If you visit the homepage,
+          YouTube (Google) may set cookies and collect data according to <a
+            href="https://policies.google.com/privacy"
+            class="crit-link"
+          >Google's privacy policy</a>.
+        </p>
+        <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
+          If you sign in with GitHub, your browser connects to GitHub's OAuth service.
+          GitHub's
+          <a
+            href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+            class="crit-link"
+          >
+            privacy policy
+          </a>
+          governs that interaction.
+          Aside from Umami analytics, the YouTube embed, GitHub OAuth, and the error
+          monitoring described below, no other third parties receive data from this site.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Error monitoring</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        The hosted deployment uses
-        <a href="https://sentry.io/privacy/" class="crit-link">Sentry</a>
-        to capture application errors and crashes. When an error occurs, your browser may
-        send Sentry: the error message and stack trace, the page URL, browser and OS
-        metadata, and an anonymized session ID. Shared review documents, comment text,
-        request bodies, and session cookies are not sent.
-      </p>
-      <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
-        Self-hosted deployments do not use Sentry unless the operator explicitly
-        configures their own DSN.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Error monitoring
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          The hosted deployment uses
+          <a href="https://sentry.io/privacy/" class="crit-link">Sentry</a>
+          to capture application errors and crashes. When an error occurs, your browser may
+          send Sentry: the error message and stack trace, the page URL, browser and OS
+          metadata, and an anonymized session ID. Shared review documents, comment text,
+          request bodies, and session cookies are not sent.
+        </p>
+        <p class="leading-relaxed text-(--crit-fg-secondary) mt-2">
+          Self-hosted deployments do not use Sentry unless the operator explicitly
+          configures their own DSN.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Server logs</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        Our server records standard HTTP access logs (IP address, timestamp, path, response code).
-        These are used solely for debugging and abuse prevention. IP addresses are also used
-        in memory for rate limiting. These are not persisted beyond what appears in access logs.
-        Server logs are retained for approximately 30 days and then deleted.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Server logs
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          Our server records standard HTTP access logs (IP address, timestamp, path, response code).
+          These are used solely for debugging and abuse prevention. IP addresses are also used
+          in memory for rate limiting. These are not persisted beyond what appears in access logs.
+          Server logs are retained for approximately 30 days and then deleted.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Infrastructure</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        This service runs on <a
-          href="https://fly.io/legal/privacy-policy/"
-          class="crit-link"
-        >Fly.io</a>. Fly.io may retain their own infrastructure-level logs.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Infrastructure
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          This service runs on <a
+            href="https://fly.io/legal/privacy-policy/"
+            class="crit-link"
+          >Fly.io</a>. Fly.io may retain their own infrastructure-level logs.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Data retention</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        Shared reviews are retained for 30 days from the date of last activity, then
-        deleted automatically. You can delete a shared review at any time using the
-        Unpublish button in Crit.
-      </p>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Data retention
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          Shared reviews are retained for 30 days from the date of last activity, then
+          deleted automatically. You can delete a shared review at any time using the
+          Unpublish button in Crit.
+        </p>
 
-      <h2 class="text-2xl font-extrabold tracking-tight mt-8 mb-2">Contact</h2>
-      <p class="leading-relaxed text-(--crit-fg-secondary)">
-        For privacy questions, open an issue on <a
-          href="https://github.com/tomasz-tomczyk/crit"
-          class="crit-link"
-        >GitHub</a>. For sensitive requests (such as data deletion), email <a
-          href="mailto:privacy@crit.md"
-          class="crit-link"
-        >privacy@crit.md</a>.
-      </p>
-    </main>
-  </div>
-  <Layouts.site_footer page_path={@conn.request_path} />
-</div>
+        <h2 class="text-[clamp(24px,2.4vw,30px)] font-semibold tracking-[-0.02em] mt-14 mb-3 first:mt-0">
+          Contact
+        </h2>
+        <p class="leading-relaxed text-(--crit-fg-secondary)">
+          For privacy questions, open an issue on <a
+            href="https://github.com/tomasz-tomczyk/crit"
+            class="crit-link"
+          >GitHub</a>. For sensitive requests (such as data deletion), email <a
+            href="mailto:privacy@crit.md"
+            class="crit-link"
+          >privacy@crit.md</a>.
+        </p>
+      </div>
+    </Site.wrap>
+  </section>
+</Layouts.site_page>

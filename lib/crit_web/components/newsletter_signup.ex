@@ -76,8 +76,12 @@ defmodule CritWeb.NewsletterSignup do
 
   def homepage(assigns) do
     ~H"""
-    <section id="newsletter" aria-labelledby="newsletter-title" class="py-8 max-sm:py-6">
-      <div class="max-w-7xl mx-auto w-full px-10 max-sm:px-4">
+    <section
+      id="newsletter"
+      aria-labelledby="newsletter-title"
+      class="py-24 max-md:py-18 border-t border-(--crit-border)"
+    >
+      <CritWeb.SiteComponents.wrap>
         <div class="rounded-xl border border-(--crit-border) bg-(--crit-bg-card) px-7 pt-7 pb-4 max-sm:px-5 max-sm:pt-5 max-sm:pb-3">
           <div class="flex items-start gap-10 max-md:flex-col max-md:gap-5">
             <div class="flex items-start gap-3 flex-1 min-w-0 pt-1">
@@ -133,7 +137,7 @@ defmodule CritWeb.NewsletterSignup do
             </a>
           </div>
         </div>
-      </div>
+      </CritWeb.SiteComponents.wrap>
     </section>
     """
   end

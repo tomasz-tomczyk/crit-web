@@ -1,73 +1,79 @@
-<Layouts.flash_group flash={@flash} />
+<Layouts.site_page
+  flash={@flash}
+  current_scope={@current_scope}
+  current_page={:integrations}
+  page_path={@conn.request_path}
+>
+  <Site.page_head eyebrow="Integrations">
+    <:title>Agent integrations for Crit<Site.dot /></:title>
+    <:lede>
+      Crit writes a structured review file. Any agent that can read a file and run a command can use it. Pick yours for the setup steps.
+    </:lede>
+  </Site.page_head>
 
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.site_header current_scope={@current_scope} current_page={:integrations} />
+  <section class="pb-24 max-md:pb-18">
+    <Site.wrap>
+      <Site.cards>
+        <li :for={tool <- Crit.Integrations.tools()} class="flex">
+          <Site.card href={~p"/integrations/#{tool.id}"} class="flex-1 py-8">
+            <div class="flex items-center gap-4">
+              <div class="shrink-0 size-12 flex items-center justify-center rounded-md bg-(--crit-bg-page) border border-(--crit-border) overflow-hidden">
+                <%= case tool.logo do %>
+                  <% nil -> %>
+                    <span class="font-mono font-bold text-(--crit-fg-secondary)">
+                      {String.first(tool.name)}
+                    </span>
+                  <% logo -> %>
+                    <img
+                      src={logo.dark}
+                      alt={"#{tool.name} logo"}
+                      class="logo-dark size-8 object-contain"
+                      loading="lazy"
+                    />
+                    <img
+                      src={logo.light}
+                      alt={"#{tool.name} logo"}
+                      class="logo-light size-8 object-contain"
+                      loading="lazy"
+                    />
+                <% end %>
+              </div>
+              <Site.card_title tag="h2" class="group-hover:text-(--crit-brand)">
+                {tool.name}
+              </Site.card_title>
+            </div>
+            <Site.card_text>{tool.tagline}</Site.card_text>
+            <code
+              :if={cmd = CritWeb.PageHTML.agent_install_cmd(tool.id)}
+              class="mt-auto font-mono text-xs leading-relaxed text-(--crit-fg-secondary) bg-(--crit-bg-page) border border-(--crit-border) rounded-md px-3 py-2 [overflow-wrap:anywhere]"
+            >
+              <span class="text-(--crit-brand) mr-[0.6ch]">$</span>{cmd}
+            </code>
+          </Site.card>
+        </li>
+        <li class="flex">
+          <Site.card
+            href={~p"/integrations/build-your-own"}
+            class="flex-1 py-8 border-dashed border-(--crit-border-strong)"
+          >
+            <Site.card_title tag="h2" class="group-hover:text-(--crit-brand)">
+              Build your own
+            </Site.card_title>
+            <Site.card_text>
+              Your agent isn't listed? The review file and two commands are the whole protocol.
+            </Site.card_text>
+            <span class="mt-auto pt-3 text-sm font-semibold text-(--crit-brand)">
+              Read the protocol <span aria-hidden="true">&rarr;</span>
+            </span>
+          </Site.card>
+        </li>
+      </Site.cards>
 
-  <!-- Breadcrumb -->
-  <div class="max-w-7xl mx-auto w-full px-10 mt-8 max-sm:px-4 max-sm:mt-5">
-    <a
-      href={~p"/"}
-      class="text-(--crit-fg-muted) no-underline hover:text-(--crit-fg-primary) transition-colors"
-    >
-      &larr; Back to Crit
-    </a>
-  </div>
-
-  <!-- Hero -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-4">
-    <h1 class="text-4xl font-extrabold leading-tight tracking-tight max-sm:text-3xl">
-      Agent integrations for Crit<span class="text-(--crit-brand)">.</span>
-    </h1>
+      <Site.links class="mt-10">
+        <Site.link_arrow href="https://github.com/tomasz-tomczyk/crit/tree/main/integrations">
+          View all integration files on GitHub
+        </Site.link_arrow>
+      </Site.links>
+    </Site.wrap>
   </section>
-
-  <!-- Cards -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-12 mb-16 max-sm:px-4 max-sm:mt-8">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      <.link
-        :for={tool <- Crit.Integrations.tools()}
-        navigate={~p"/integrations/#{tool.id}"}
-        class="group block p-6 border border-(--crit-border) rounded-lg bg-(--crit-bg-card) no-underline transition-colors hover:border-(--crit-brand) focus-visible:border-(--crit-brand)"
-      >
-        <div class="flex items-center gap-4 mb-3">
-          <div class="shrink-0 w-12 h-12 flex items-center justify-center rounded-md bg-(--crit-bg-page) border border-(--crit-border) overflow-hidden">
-            <%= case tool.logo do %>
-              <% nil -> %>
-                <span class="font-mono font-bold text-(--crit-fg-secondary)">
-                  {String.first(tool.name)}
-                </span>
-              <% logo -> %>
-                <img
-                  src={logo.dark}
-                  alt={"#{tool.name} logo"}
-                  class="logo-dark w-8 h-8 object-contain"
-                  loading="lazy"
-                />
-                <img
-                  src={logo.light}
-                  alt={"#{tool.name} logo"}
-                  class="logo-light w-8 h-8 object-contain"
-                  loading="lazy"
-                />
-            <% end %>
-          </div>
-          <h2 class="font-bold tracking-tight text-(--crit-fg-primary) group-hover:text-(--crit-brand) transition-colors">
-            {tool.name}
-          </h2>
-        </div>
-        <p class="text-(--crit-fg-secondary) leading-relaxed">
-          {tool.tagline}
-        </p>
-      </.link>
-    </div>
-
-    <div class="mt-12 text-center">
-      <a
-        href="https://github.com/tomasz-tomczyk/crit/tree/main/integrations"
-        class="crit-link"
-      >
-        View all integration files on GitHub &rarr;
-      </a>
-    </div>
-  </section>
-  <Layouts.site_footer page_path={@conn.request_path} />
-</div>
+</Layouts.site_page>

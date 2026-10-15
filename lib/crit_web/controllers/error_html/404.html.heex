@@ -1,12 +1,12 @@
 <Layouts.flash_group flash={assigns[:flash] || %{}} />
 
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
+<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans text-[17px] leading-[1.6] flex flex-col">
   <Layouts.site_header current_scope={assigns[:current_scope]} />
 
   <main class="flex-1 relative">
-    <div class="max-w-7xl mx-auto px-10 py-24 max-sm:px-4 max-sm:py-14 w-full grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-20 max-md:gap-12 items-center">
+    <div class="mx-auto w-full max-w-[1312px] px-14 max-lg:px-10 max-md:px-5 py-24 max-md:py-14 grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-20 max-md:gap-12 items-center">
       <div class="max-w-xl">
-        <h1 class="text-7xl font-extrabold leading-none tracking-tight mb-7 max-lg:text-6xl max-sm:text-5xl">
+        <h1 class="text-[clamp(44px,6vw,76px)] font-semibold leading-[1.02] tracking-[-0.025em] mb-7">
           This page was <span class="block text-(--crit-brand)">not found.</span>
         </h1>
         <p class="text-xl max-sm:text-base leading-relaxed text-(--crit-fg-secondary) mb-10">
@@ -17,20 +17,20 @@
         <div class="flex gap-3 flex-wrap mb-10 max-sm:grid max-sm:grid-cols-2">
           <a
             href={~p"/"}
-            class="inline-flex items-center justify-center px-7 py-3 bg-(--crit-brand-cta) text-(--crit-fg-on-brand) rounded-lg text-sm font-bold no-underline hover:bg-(--crit-brand-cta-hover) transition-all"
+            class={CritWeb.SiteComponents.btn_class("primary")}
           >
             Back to home
           </a>
           <a
             href={~p"/getting-started"}
-            class="inline-flex items-center justify-center px-7 py-3 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg text-sm font-semibold no-underline hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary) transition-all"
+            class={CritWeb.SiteComponents.btn_class("ghost")}
           >
             Get started
           </a>
         </div>
 
         <nav aria-label="Quick links" class="border-t border-(--crit-border) pt-6">
-          <div class="text-xs font-semibold uppercase tracking-widest text-(--crit-fg-muted) mb-2.5">
+          <div class="font-mono text-xs tracking-[0.12em] uppercase text-(--crit-fg-muted) mb-3">
             Or try one of these
           </div>
           <a

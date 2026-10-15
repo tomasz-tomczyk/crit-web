@@ -1,12 +1,11 @@
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
-  <Layouts.site_header current_scope={@current_scope} />
-  <main class="max-w-lg mx-auto px-6 py-20">
-    <h1 class="text-2xl font-bold">
+<Layouts.site_page flash={@flash} current_scope={@current_scope} page_path="/newsletter">
+  <Site.wrap class="max-w-[calc(36rem+7rem)] py-24 max-md:py-14">
+    <h1 class="text-[clamp(30px,3.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em] text-balance">
       {if @action == :confirm,
         do: "Confirm your subscription",
         else: "Unsubscribe from Crit updates"}
     </h1>
-    <p class="mt-3 text-(--crit-fg-secondary)">
+    <p class="mt-4 text-lg text-(--crit-fg-secondary)">
       {if @action == :confirm,
         do:
           "Occasional updates from Crit, straight to your inbox. Unsubscribe whenever you like.",
@@ -24,11 +23,10 @@
     >
       <button
         type="submit"
-        class="min-h-11 px-4 py-2 rounded-md border border-(--crit-border) bg-(--crit-bg-elevated) hover:border-(--crit-fg-muted) cursor-pointer"
+        class={[CritWeb.SiteComponents.btn_class("primary"), "cursor-pointer"]}
       >
         {if @action == :confirm, do: "Confirm subscription", else: "Unsubscribe"}
       </button>
     </.form>
-  </main>
-  <Layouts.site_footer page_path="/newsletter" />
-</div>
+  </Site.wrap>
+</Layouts.site_page>

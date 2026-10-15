@@ -141,8 +141,8 @@ defmodule CritWeb.PageController do
     "plans-docs" => %{
       label: "Plans & docs",
       screenshot: "plan",
-      video: "https://assets.crit.md/plan-mode.mp4",
-      poster: "https://assets.crit.md/plan-mode-poster.webp",
+      video: "https://assets.crit.md/plan-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/plan-mode-poster.webp?v=20261015",
       eyebrow: "Mode · plans & docs",
       title: "Review the plan before the agent writes the code.",
       lead:
@@ -212,8 +212,8 @@ defmodule CritWeb.PageController do
     "code" => %{
       label: "Code",
       screenshot: "diff",
-      video: "https://assets.crit.md/diff-mode.mp4",
-      poster: "https://assets.crit.md/diff-mode-poster.webp",
+      video: "https://assets.crit.md/diff-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/diff-mode-poster.webp?v=20261015",
       eyebrow: "Mode · code",
       title: "Review the diff before you merge.",
       lead:
@@ -283,10 +283,10 @@ defmodule CritWeb.PageController do
       label: "Story mode",
       screenshot: nil,
       # Served from Cloudflare R2 (assets.crit.md)
-      video: "https://assets.crit.md/story-mode.mp4",
-      poster: "https://assets.crit.md/story-mode-poster.webp",
+      video: "https://assets.crit.md/story-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/story-mode-poster.webp?v=20261015",
       eyebrow: "Mode · story",
-      title: "See the shape of the diff before you review the lines.",
+      title: "Let the agent walk you through the diff.",
       lead:
         "Organize the diff around themes that belong together — not chronological file order — so the important work surfaces first. Crit opens a chaptered narrative overview so you understand what happened before you dig into lines.",
       tags: [
@@ -366,10 +366,10 @@ defmodule CritWeb.PageController do
     "live" => %{
       label: "Live",
       screenshot: "live",
-      video: "https://assets.crit.md/live-mode.mp4",
-      poster: "https://assets.crit.md/live-mode-poster.webp",
+      video: "https://assets.crit.md/live-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/live-mode-poster.webp?v=20261015",
       eyebrow: "Mode · live",
-      title: "Review the running app, not a screenshot.",
+      title: "Leave comments on the app, not in the chat.",
       lead:
         "Crit reverse-proxies your dev server into an iframe. Click any DOM element to pin a comment to it. Your agent reads the feedback and iterates — the page reloads live.",
       tags: [
@@ -425,8 +425,8 @@ defmodule CritWeb.PageController do
     "preview" => %{
       label: "Preview",
       screenshot: "preview",
-      video: "https://assets.crit.md/preview-mode.mp4",
-      poster: "https://assets.crit.md/preview-mode-poster.webp",
+      video: "https://assets.crit.md/preview-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/preview-mode-poster.webp?v=20261015",
       eyebrow: "Mode · preview",
       title: "Review the HTML your agent generated.",
       lead:

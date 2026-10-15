@@ -1,126 +1,62 @@
-<Layouts.flash_group flash={@flash} />
-
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.site_header current_scope={@current_scope} />
-
-  <%!-- Hero --%>
-  <section class="max-w-7xl mx-auto w-full px-10 pt-20 pb-16 max-sm:px-4 max-sm:pt-12">
-    <p class="font-mono text-xs tracking-widest uppercase text-(--crit-brand) mb-4">
-      {@mode.eyebrow}
-    </p>
-    <h1 class="text-5xl font-extrabold leading-tight tracking-tight mb-5 max-lg:text-4xl max-sm:text-3xl text-balance">
-      {@mode.title}
-    </h1>
-    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-[640px] mb-8 max-sm:text-base text-balance">
-      {@mode.lead}
-    </p>
-    <div class="flex flex-wrap gap-2 mb-12">
-      <span
-        :for={tag <- @mode.tags}
-        class="inline-flex items-center gap-1.5 px-3 py-1 bg-(--crit-bg-elevated) border border-(--crit-border) rounded-full text-xs text-(--crit-fg-secondary)"
-      >
-        {tag}
-      </span>
+<Layouts.site_page
+  flash={@flash}
+  current_scope={@current_scope}
+  current_page={:modes}
+  page_path={@conn.request_path}
+>
+  <Site.page_head eyebrow={@mode.eyebrow} tag="section">
+    <:title><Site.dotted text={@mode.title} /></:title>
+    <:lede>{@mode.lead}</:lede>
+    <Site.chips items={@mode.tags} label={"What #{@mode.label} mode does"} class="mt-6" />
+    <div class="flex flex-wrap items-center gap-6 mt-10">
+      <CritWeb.PageHTML.github_star_link />
+      <Site.link_arrow href={~p"/getting-started"}>Get Started</Site.link_arrow>
     </div>
-    <%= if @mode[:video] do %>
-      <div class="rounded-xl overflow-hidden shadow-lg">
-        <video
-          autoplay
-          loop
-          muted
-          playsinline
-          controls
-          width="1920"
-          height="1080"
-          class="w-full h-auto"
-          poster={@mode[:poster]}
-          src={@mode.video}
-        ></video>
-      </div>
-    <% else %>
-      <CritWeb.PageHTML.browser_chrome url={"localhost:4923/#{@mode.label}"}>
-        <%= if @mode.screenshot do %>
-          <img
-            src={"/images/screenshots/#{@mode.screenshot}-dark@1x.png"}
-            srcset={"/images/screenshots/#{@mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{@mode.screenshot}-dark@2x.png 2x"}
-            alt={"Crit #{@mode.label} mode"}
-            class="logo-dark w-full"
-            loading="eager"
-            width="1200"
-            height="675"
-          />
-          <img
-            src={"/images/screenshots/#{@mode.screenshot}-light@1x.png"}
-            srcset={"/images/screenshots/#{@mode.screenshot}-light@1x.png 1x, /images/screenshots/#{@mode.screenshot}-light@2x.png 2x"}
-            alt={"Crit #{@mode.label} mode"}
-            class="logo-light w-full"
-            loading="eager"
-            width="1200"
-            height="675"
-          />
-        <% else %>
-          <CritWeb.PageHTML.browser_chrome_placeholder label={@mode.label} />
-        <% end %>
-      </CritWeb.PageHTML.browser_chrome>
-    <% end %>
-  </section>
-
-  <%!-- The loop steps --%>
-  <section class="max-w-7xl mx-auto w-full px-10 py-20 max-sm:px-4 max-sm:py-12">
-    <h2 class="text-3xl font-extrabold tracking-tight mb-12 max-sm:text-2xl">
-      How it works.
-    </h2>
-    <div class="grid grid-cols-4 gap-6 max-md:grid-cols-2 max-sm:grid-cols-1">
-      <div :for={{step, idx} <- Enum.with_index(@mode.steps)} class="flex flex-col gap-3">
-        <div class="font-mono text-xs tracking-widest uppercase text-(--crit-brand)">
-          Step {String.pad_leading(Integer.to_string(idx + 1), 2, "0")}
-        </div>
-        <h3 class="text-lg font-bold tracking-tight">{step.h}</h3>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">
-          {Phoenix.HTML.raw(step.p)}
-        </p>
-      </div>
+    <div class="mt-14 max-md:mt-10">
+      <CritWeb.PageHTML.mode_film mode={@mode} eager />
     </div>
-  </section>
+  </Site.page_head>
 
-  <%!-- Features --%>
-  <section class="max-w-7xl mx-auto w-full px-10 py-20 max-sm:px-4 max-sm:py-12">
-    <h2 class="text-3xl font-extrabold tracking-tight mb-12 max-sm:text-2xl">
-      What you get.
-    </h2>
-    <div class="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
-      <div
-        :for={feature <- @mode.features}
-        class="border border-(--crit-border) bg-(--crit-bg-card) rounded-lg p-6 flex flex-col gap-2"
-      >
-        <h3 class="text-base font-semibold tracking-tight">{feature.h}</h3>
-        <p class="text-sm text-(--crit-fg-secondary) leading-relaxed">{feature.p}</p>
-      </div>
-    </div>
-  </section>
+  <Site.section panel>
+    <Site.section_head>How it works<Site.dot /></Site.section_head>
+    <Site.steps>
+      <:step :for={step <- @mode.steps} title={step.h}>{Phoenix.HTML.raw(step.p)}</:step>
+    </Site.steps>
+  </Site.section>
+
+  <Site.section>
+    <Site.section_head>What you get<Site.dot /></Site.section_head>
+    <Site.cards>
+      <Site.card :for={feature <- @mode.features} tag="li">
+        <Site.card_title>{feature.h}</Site.card_title>
+        <Site.card_text>{feature.p}</Site.card_text>
+      </Site.card>
+    </Site.cards>
+  </Site.section>
 
   <%= if cost = @mode[:cost] do %>
-    <section class="max-w-7xl mx-auto w-full px-10 py-20 max-sm:px-4 max-sm:py-12">
-      <h2 class="text-3xl font-extrabold tracking-tight mb-4 max-sm:text-2xl">
-        {cost.title}
-      </h2>
-      <p class="text-base text-(--crit-fg-secondary) leading-relaxed max-w-[960px] mb-10">
-        {cost.lead}
-      </p>
-      <div class="overflow-x-auto border border-(--crit-border) rounded-lg">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-(--crit-bg-elevated) border-b border-(--crit-border)">
+    <Site.section panel>
+      <Site.section_head>
+        <Site.dotted text={cost.title} />
+        <:text>{cost.lead}</:text>
+      </Site.section_head>
+      <div class="overflow-x-auto rounded-xl border border-(--crit-border-strong)">
+        <table class="w-full border-collapse text-left text-sm">
+          <thead class="bg-(--crit-bg-elevated)">
             <tr>
-              <th class="px-4 py-3 font-semibold tracking-tight">Change size</th>
-              <th class="px-4 py-3 font-semibold tracking-tight">What that usually means</th>
-              <th class="px-4 py-3 font-semibold tracking-tight">Rough LLM spend</th>
+              <th class="px-4 py-3 font-mono text-xs font-normal tracking-[0.06em] uppercase text-(--crit-fg-muted)">
+                Change size
+              </th>
+              <th class="px-4 py-3 font-mono text-xs font-normal tracking-[0.06em] uppercase text-(--crit-fg-muted)">
+                What that usually means
+              </th>
+              <th class="px-4 py-3 font-mono text-xs font-normal tracking-[0.06em] uppercase text-(--crit-fg-muted)">
+                Rough LLM spend
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              :for={row <- cost.rows}
-              class="border-b border-(--crit-border) last:border-b-0"
-            >
+            <tr :for={row <- cost.rows} class="border-t border-(--crit-border)">
               <td class="px-4 py-3 font-medium align-top whitespace-nowrap">{row.size}</td>
               <td class="px-4 py-3 text-(--crit-fg-secondary) align-top">{row.detail}</td>
               <td class="px-4 py-3 text-(--crit-fg-secondary) align-top">{row.indication}</td>
@@ -128,12 +64,20 @@
           </tbody>
         </table>
       </div>
-      <p class="mt-6 text-sm text-(--crit-fg-muted) leading-relaxed max-w-[960px]">
+      <p class="mt-6 text-sm leading-relaxed text-(--crit-fg-muted) max-w-[960px]">
         {cost.footnote}
       </p>
-    </section>
+    </Site.section>
   <% end %>
 
   <CritWeb.PageHTML.install_section id="mode-install" />
-  <Layouts.site_footer page_path={@conn.request_path} />
-</div>
+
+  <Site.section>
+    <Site.eyebrow>Other review modes</Site.eyebrow>
+    <Site.subnav label="Review modes" current={@conn.request_path}>
+      <:item :for={mode <- CritWeb.PageHTML.modes()} href={"/modes/#{mode.slug}"}>
+        {mode.label}
+      </:item>
+    </Site.subnav>
+  </Site.section>
+</Layouts.site_page>

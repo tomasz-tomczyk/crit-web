@@ -97,16 +97,20 @@ defmodule CritWeb.Layouts do
   @doc """
   Shared site header with marketing navigation, used across all public pages.
 
-  Layout mirrors `dashboard_header/1`: a single chrome row with the logo on
-  the left and (on desktop) primary marketing nav as pills, a vertical
-  divider, then the identity popover (or "Sign in"), theme toggle, and a
-  mobile hamburger. Pass `current_page` to mark the active marketing tab.
+  One 72px row on the page column, solid and pinned to the top while the page
+  scrolls: the logo, the marketing nav as plain links (Modes opens a panel),
+  then the identity popover (or "Sign in"), the theme toggle and, below
+  768px, a menu button. Pass `current_page` to mark the active link.
   """
   attr :current_scope, :any, default: nil
 
   attr :current_page, :atom,
     default: nil,
-    doc: "one of :features, :articles, :changelog, :integrations"
+    doc: "one of :modes, :getting_started, :features, :articles, :integrations, :self_hosting"
+
+  attr :overlay, :boolean,
+    default: false,
+    doc: "fix the header over the page's first section (the home hero) instead of above it"
 
   def site_header(assigns) do
     current_user = assigns.current_scope && assigns.current_scope.user
@@ -123,121 +127,72 @@ defmodule CritWeb.Layouts do
       |> assign(:github_oauth?, github_oauth?())
 
     ~H"""
-    <header class="bg-(--crit-bg-card) border-b border-(--crit-border)">
-      <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 px-6 py-3.5 max-sm:px-4 max-sm:py-3">
+    <header class={[
+      "z-30 top-0 border-b border-(--crit-border) bg-(--crit-bg-page)",
+      if(@overlay, do: "fixed inset-x-0", else: "sticky")
+    ]}>
+      <div class="mx-auto w-full max-w-[1312px] h-[72px] flex items-center gap-10 px-14 max-lg:px-10 max-lg:gap-6 max-md:px-5 max-md:h-16">
         <a
           href={~p"/"}
-          class="text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
+          aria-label="Crit home"
+          class={[
+            "text-(--crit-fg-primary) no-underline inline-flex items-center -ml-1.5 px-1.5 py-1 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
+          ]}
         >
-          <svg class="h-5 w-auto" viewBox="50 -1600 3430 1650" aria-label="crit">
-            <g transform="scale(1,-1)">
-              <path
-                d="M628 -22Q459 -22 336.5 50.5Q214 123 147.5 252.5Q81 382 81 554Q81 727 147.5 857.0Q214 987 336.5 1059.5Q459 1132 628 1132Q827 1132 960.0 1032.5Q1093 933 1125 760L846 708Q827 795 772.5 845.5Q718 896 631 896Q511 896 449.0 801.5Q387 707 387 555Q387 405 449.0 309.5Q511 214 631 214Q718 214 774.0 266.5Q830 319 848 409L1127 358Q1095 181 962.0 79.5Q829 -22 628 -22Z"
-                fill="currentColor"
-              /><path
-                d="M128 0V1118H418V923H430Q461 1026 533.5 1079.5Q606 1133 700 1133Q751 1133 797 1123V855Q777 861 738.5 865.5Q700 870 667 870Q563 870 495.5 805.0Q428 740 428 636V0Z"
-                fill="currentColor"
-                transform="translate(1103,0)"
-              /><path
-                d="M128 0V1118H428V0ZM278 1264Q210 1264 162.0 1309.0Q114 1354 114 1418Q114 1482 162.0 1527.0Q210 1572 278 1572Q346 1572 394.5 1527.0Q443 1482 443 1418Q443 1354 394.5 1309.0Q346 1264 278 1264Z"
-                fill="currentColor"
-                transform="translate(1835,0)"
-              /><path
-                d="M683 1118V889H474V327Q474 223 576 223Q593 223 623.5 227.5Q654 232 671 236L714 11Q664 -4 614.5 -10.0Q565 -16 520 -16Q352 -16 263.0 65.5Q174 147 174 301V889H20V1118H174V1384H474V1118Z"
-                fill="currentColor"
-                transform="translate(2288,0)"
-              /><path
-                d="M342 -19Q269 -19 219.0 30.5Q169 80 169 153Q169 226 219.0 275.5Q269 325 342 325Q415 325 465.0 275.5Q515 226 515 153Q515 80 465.0 30.5Q415 -19 342 -19Z"
-                fill="#7aa2f7"
-                transform="translate(2936,0)"
-              />
-            </g>
-          </svg>
+          <.wordmark class="h-7 w-auto max-md:h-6" />
         </a>
 
-        <nav aria-label="Primary" class="flex items-center gap-0.5 max-sm:hidden">
+        <nav aria-label="Primary" class="flex items-center gap-7 max-lg:gap-5 max-md:hidden">
           <%!-- Modes dropdown --%>
           <div class="relative group">
             <button
               type="button"
-              class="inline-flex items-center gap-1 h-[30px] px-2 rounded-md text-sm font-medium tracking-tight text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring)"
+              aria-haspopup="true"
+              class={[
+                "inline-flex items-center gap-1.5 py-2 text-[15px] font-medium leading-tight hover:text-(--crit-brand) transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--crit-focus-ring) rounded-sm",
+                if(@current_page == :modes,
+                  do: "text-(--crit-brand)",
+                  else: "text-(--crit-fg-primary)"
+                )
+              ]}
             >
               Modes
-              <svg
-                class="size-3 opacity-60"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              <.icon
+                name="hero-chevron-down-micro"
+                class="size-3.5 opacity-70 transition-transform group-hover:rotate-180 group-focus-within:rotate-180"
+              />
             </button>
-            <div class="absolute left-0 top-full pt-1.5 min-w-[280px] opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity z-40">
-              <div class="bg-(--crit-bg-card) border border-(--crit-border-strong) rounded-lg shadow-lg p-1.5">
+            <div class="absolute -left-4 top-full pt-2.5 w-max opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity z-40">
+              <div class="flex flex-col bg-(--crit-bg-elevated) border border-(--crit-border-strong) rounded-xl shadow-[0_18px_40px_rgba(10,11,18,0.35)] p-2">
                 <a
-                  href="/modes/plans-docs"
-                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
+                  :for={mode <- CritWeb.PageHTML.modes()}
+                  href={"/modes/#{mode.slug}"}
+                  class="flex items-center justify-between gap-4 px-3 py-2.5 rounded-md text-[15px] font-medium no-underline text-(--crit-fg-primary) hover:bg-(--crit-brand-subtle) transition-colors"
                 >
-                  <span class="font-medium">Plans & docs</span>
-                  <span class="font-mono text-xs text-(--crit-fg-muted)">files</span>
-                </a>
-                <a
-                  href="/modes/code"
-                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
-                >
-                  <span class="font-medium">Code</span>
-                  <span class="font-mono text-xs text-(--crit-fg-muted)">branch / pr</span>
-                </a>
-                <a
-                  href="/modes/story"
-                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
-                >
-                  <span class="font-medium">Story mode</span>
-                  <span class="font-mono text-xs text-(--crit-fg-muted)">branch / pr / range</span>
-                </a>
-                <a
-                  href="/modes/live"
-                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
-                >
-                  <span class="font-medium">Live</span>
-                  <span class="font-mono text-xs text-(--crit-fg-muted)">running app</span>
-                </a>
-                <a
-                  href="/modes/preview"
-                  class="flex items-center justify-between gap-4 px-3 py-2 rounded-md text-sm no-underline text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
-                >
-                  <span class="font-medium">Preview</span>
-                  <span class="font-mono text-xs text-(--crit-fg-muted)">static html</span>
+                  <span class="whitespace-nowrap">{mode.label}</span>
+                  <span class="font-mono text-xs font-normal text-(--crit-fg-muted) whitespace-nowrap">
+                    {mode.cmd}
+                  </span>
                 </a>
               </div>
             </div>
           </div>
 
-          <.nav_link href={~p"/getting-started"} active={@current_page == :getting_started}>
+          <.site_nav_link href={~p"/getting-started"} active={@current_page == :getting_started}>
             Get Started
-          </.nav_link>
-          <.nav_link href={~p"/features"} active={@current_page == :features}>
+          </.site_nav_link>
+          <.site_nav_link href={~p"/features"} active={@current_page == :features}>
             Features
-          </.nav_link>
-          <.nav_link href={~p"/articles"} active={@current_page == :articles}>
-            Articles
-          </.nav_link>
-          <.nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
+          </.site_nav_link>
+          <.site_nav_link href={~p"/integrations"} active={@current_page == :integrations}>
+            Integrations
+          </.site_nav_link>
+          <.site_nav_link href={~p"/self-hosting"} active={@current_page == :self_hosting}>
             Self-Hosting
-          </.nav_link>
-          <a
-            href="https://github.com/tomasz-tomczyk/crit"
-            class="inline-flex items-center gap-1.5 h-[30px] px-2 rounded-md text-sm font-medium tracking-tight no-underline text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) transition-colors"
-          >
-            <svg viewBox="0 0 16 16" class="size-3.5 fill-current" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            <span class="max-lg:hidden">GitHub</span>
-          </a>
+          </.site_nav_link>
+          <.site_nav_link href="https://github.com/tomasz-tomczyk/crit">
+            GitHub
+          </.site_nav_link>
         </nav>
 
         <div class="flex-1" />
@@ -251,7 +206,7 @@ defmodule CritWeb.Layouts do
               <.nav_link navigate={~p"/admin/users"}>Admin</.nav_link>
             </div>
 
-            <div class="relative max-sm:hidden">
+            <div class="relative max-md:hidden">
               <button
                 id="site-identity-toggle"
                 type="button"
@@ -355,7 +310,7 @@ defmodule CritWeb.Layouts do
             id="site-nav-toggle"
             type="button"
             phx-click={JS.toggle_attribute({"hidden", "hidden"}, to: "#site-nav")}
-            class="sm:hidden p-1.5 rounded-md text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) cursor-pointer"
+            class="md:hidden p-1.5 rounded-md text-(--crit-fg-secondary) hover:text-(--crit-fg-primary) hover:bg-(--crit-row-hover) cursor-pointer"
             aria-label="Toggle menu"
           >
             <.icon name="hero-bars-3" class="size-5" />
@@ -367,7 +322,7 @@ defmodule CritWeb.Layouts do
       <div
         id="site-nav"
         hidden
-        class="sm:hidden bg-(--crit-bg-card) border-t border-(--crit-border)"
+        class="md:hidden bg-(--crit-bg-card) border-y border-(--crit-border)"
       >
         <div class="flex flex-col gap-px px-3 pt-2 pb-3.5">
           <div class="text-xs uppercase tracking-wider text-(--crit-fg-muted) font-semibold px-2 pt-2 pb-1">
@@ -387,6 +342,9 @@ defmodule CritWeb.Layouts do
           </.nav_mobile_link>
           <.nav_mobile_link href={~p"/features"} active={@current_page == :features}>
             Features
+          </.nav_mobile_link>
+          <.nav_mobile_link href={~p"/integrations"} active={@current_page == :integrations}>
+            Integrations
           </.nav_mobile_link>
           <.nav_mobile_link href={~p"/articles"} active={@current_page == :articles}>
             Articles
@@ -443,6 +401,41 @@ defmodule CritWeb.Layouts do
         </div>
       </div>
     </header>
+    """
+  end
+
+  @doc """
+  The frame of every public page: skip link, `site_header/1`, a `<main>` for
+  the page's sections and `site_footer/1`. Page bodies are built from
+  `CritWeb.SiteComponents` (aliased as `Site`).
+  """
+  attr :flash, :map, required: true
+  attr :current_scope, :any, default: nil
+  attr :current_page, :atom, default: nil
+  attr :page_path, :string, default: nil
+  attr :header_overlay, :boolean, default: false
+  slot :inner_block, required: true
+
+  def site_page(assigns) do
+    ~H"""
+    <.flash_group flash={@flash} />
+    <div class="relative min-h-screen flex flex-col bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans text-[17px] leading-[1.6] antialiased max-md:text-base">
+      <a
+        href="#main"
+        class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md focus:bg-(--crit-brand) focus:text-(--crit-bg-page) focus:font-semibold"
+      >
+        Skip to content
+      </a>
+      <.site_header
+        current_scope={@current_scope}
+        current_page={@current_page}
+        overlay={@header_overlay}
+      />
+      <main id="main" class="flex-1">
+        {render_slot(@inner_block)}
+      </main>
+      <.site_footer page_path={@page_path} />
+    </div>
     """
   end
 
@@ -994,6 +987,55 @@ defmodule CritWeb.Layouts do
     """
   end
 
+  attr :href, :string, required: true
+  attr :active, :boolean, default: false
+  slot :inner_block, required: true
+
+  defp site_nav_link(assigns) do
+    ~H"""
+    <a
+      href={@href}
+      aria-current={@active && "page"}
+      class={[
+        "py-2 text-[15px] font-medium leading-tight no-underline hover:text-(--crit-brand) transition-colors",
+        if(@active, do: "text-(--crit-brand)", else: "text-(--crit-fg-primary)")
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </a>
+    """
+  end
+
+  @doc """
+  The crit wordmark. The letters take `currentColor`; the full stop is the
+  brand blue.
+  """
+  attr :class, :any, default: nil
+  attr :rest, :global
+
+  def wordmark(assigns) do
+    ~H"""
+    <svg class={@class} viewBox="50 -1600 3430 1650" aria-hidden="true" focusable="false" {@rest}>
+      <g transform="scale(1,-1)" fill="currentColor">
+        <path d="M628 -22Q459 -22 336.5 50.5Q214 123 147.5 252.5Q81 382 81 554Q81 727 147.5 857.0Q214 987 336.5 1059.5Q459 1132 628 1132Q827 1132 960.0 1032.5Q1093 933 1125 760L846 708Q827 795 772.5 845.5Q718 896 631 896Q511 896 449.0 801.5Q387 707 387 555Q387 405 449.0 309.5Q511 214 631 214Q718 214 774.0 266.5Q830 319 848 409L1127 358Q1095 181 962.0 79.5Q829 -22 628 -22Z" /><path
+          d="M128 0V1118H418V923H430Q461 1026 533.5 1079.5Q606 1133 700 1133Q751 1133 797 1123V855Q777 861 738.5 865.5Q700 870 667 870Q563 870 495.5 805.0Q428 740 428 636V0Z"
+          transform="translate(1103,0)"
+        /><path
+          d="M128 0V1118H428V0ZM278 1264Q210 1264 162.0 1309.0Q114 1354 114 1418Q114 1482 162.0 1527.0Q210 1572 278 1572Q346 1572 394.5 1527.0Q443 1482 443 1418Q443 1354 394.5 1309.0Q346 1264 278 1264Z"
+          transform="translate(1835,0)"
+        /><path
+          d="M683 1118V889H474V327Q474 223 576 223Q593 223 623.5 227.5Q654 232 671 236L714 11Q664 -4 614.5 -10.0Q565 -16 520 -16Q352 -16 263.0 65.5Q174 147 174 301V889H20V1118H174V1384H474V1118Z"
+          transform="translate(2288,0)"
+        /><path
+          d="M342 -19Q269 -19 219.0 30.5Q169 80 169 153Q169 226 219.0 275.5Q269 325 342 325Q415 325 465.0 275.5Q515 226 515 153Q515 80 465.0 30.5Q415 -19 342 -19Z"
+          fill="var(--crit-logo-dot)"
+          transform="translate(2936,0)"
+        />
+      </g>
+    </svg>
+    """
+  end
+
   attr :href, :string, default: nil
   attr :navigate, :string, default: nil
   attr :active, :boolean, default: false
@@ -1157,19 +1199,23 @@ defmodule CritWeb.Layouts do
       end)
 
     ~H"""
-    <footer class="border-t border-(--crit-border) py-14 mt-14 max-sm:py-8 max-sm:mt-8">
-      <div class="max-w-7xl mx-auto px-8 max-sm:px-4">
-        <div class="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-8 max-md:grid-cols-2 max-sm:grid-cols-1">
+    <footer class={[
+      "border-t border-(--crit-border) pt-24 pb-10 max-md:pt-18",
+      @marketing_base && "mt-14 max-sm:mt-8"
+    ]}>
+      <div class="mx-auto w-full max-w-[1312px] px-14 max-lg:px-10 max-md:px-5">
+        <div class="grid grid-cols-[4fr_2fr_2fr_2fr] gap-10 max-lg:grid-cols-3 max-md:grid-cols-2">
           <%!-- Brand --%>
-          <div>
-            <span class="text-lg font-extrabold tracking-tight">
-              crit<span class="text-(--crit-brand)">.</span>
-            </span>
-            <p class="text-sm text-(--crit-fg-secondary) leading-relaxed mt-3">
+          <div class="max-lg:col-span-full">
+            <.wordmark class="w-[110px] h-auto mb-4 text-(--crit-fg-primary)" />
+            <p class="text-sm leading-relaxed text-(--crit-fg-muted) max-w-[32ch]">
               A local-first review tool for the loop between you and your coding agent.
             </p>
-            <div :if={Crit.Config.hosted?() and is_nil(@marketing_base)} class="mt-8">
-              <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
+            <div
+              :if={Crit.Config.hosted?() and is_nil(@marketing_base)}
+              class="mt-8 max-w-sm"
+            >
+              <h2 class="font-mono text-xs tracking-[0.1em] uppercase text-(--crit-fg-muted) mb-3">
                 Newsletter
               </h2>
               <CritWeb.NewsletterSignup.signup
@@ -1182,181 +1228,129 @@ defmodule CritWeb.Layouts do
             </div>
           </div>
 
-          <%!-- Modes --%>
-          <div>
-            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
-              Modes
-            </h2>
-            <div class="flex flex-col gap-2">
-              <a
-                href={marketing_url(@marketing_base, "/modes/plans-docs")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Review plans & docs
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/modes/code")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Review code diffs
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/modes/story")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Review diffs as a story
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/modes/live")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Review running apps
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/modes/preview")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Review HTML artifacts
-              </a>
-            </div>
-          </div>
+          <.footer_col title="Modes">
+            <:link href={marketing_url(@marketing_base, "/modes/plans-docs")}>
+              Review plans & docs
+            </:link>
+            <:link href={marketing_url(@marketing_base, "/modes/code")}>Review code diffs</:link>
+            <:link href={marketing_url(@marketing_base, "/modes/story")}>
+              Review diffs as a story
+            </:link>
+            <:link href={marketing_url(@marketing_base, "/modes/live")}>Review running apps</:link>
+            <:link href={marketing_url(@marketing_base, "/modes/preview")}>
+              Review HTML artifacts
+            </:link>
+          </.footer_col>
 
-          <%!-- Project --%>
-          <div>
-            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
-              Project
-            </h2>
-            <div class="flex flex-col gap-2">
-              <a
-                href="https://github.com/tomasz-tomczyk/crit"
-                target="_blank"
-                rel="noopener"
-                class="inline-flex items-center gap-1.5 text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                <svg viewBox="0 0 16 16" class="size-3.5 fill-current shrink-0" aria-hidden="true">
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                </svg>
-                crit (local CLI)
-              </a>
-              <a
-                href="https://github.com/tomasz-tomczyk/crit-web"
-                target="_blank"
-                rel="noopener"
-                class="inline-flex items-center gap-1.5 text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                <svg viewBox="0 0 16 16" class="size-3.5 fill-current shrink-0" aria-hidden="true">
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                </svg>
-                crit-web (optional server)
-              </a>
-              <a
-                href="https://github.com/tomasz-tomczyk/crit/releases"
-                target="_blank"
-                rel="noopener"
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Releases
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/changelog")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Changelog
-              </a>
-              <a
-                :if={Crit.Config.hosted?() or @marketing_base != nil}
-                href={marketing_url(@marketing_base, "/newsletter")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Newsletter
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/articles")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Articles
-              </a>
-            </div>
-          </div>
+          <.footer_col title="Site">
+            <:link href={marketing_url(@marketing_base, "/getting-started")}>Get Started</:link>
+            <:link href={marketing_url(@marketing_base, "/features")}>Features</:link>
+            <:link href={marketing_url(@marketing_base, "/integrations")}>Integrations</:link>
+            <:link href={marketing_url(@marketing_base, "/articles")}>Articles</:link>
+            <:link
+              :if={Crit.Config.hosted?() or @marketing_base != nil}
+              href={marketing_url(@marketing_base, "/newsletter")}
+            >
+              Newsletter
+            </:link>
+            <:link href={marketing_url(@marketing_base, "/changelog")}>Changelog</:link>
+          </.footer_col>
 
-          <%!-- Share (marketing pages) / Resources (app pages) --%>
-          <div :if={is_nil(@marketing_base)}>
-            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
-              Share
-            </h2>
-            <div class="flex flex-col gap-2">
-              <a
-                href={~p"/auth/login"}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Sign in
-              </a>
-              <a
-                href={~p"/self-hosting"}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Self-host
-              </a>
-            </div>
-          </div>
-          <div :if={@marketing_base != nil}>
-            <h2 class="font-mono text-xs tracking-[0.2em] uppercase text-(--crit-fg-muted) mb-3">
-              Resources
-            </h2>
-            <div class="flex flex-col gap-2">
-              <a
-                href={marketing_url(@marketing_base, "/getting-started")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Get started
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/self-hosting")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Self-host
-              </a>
-              <a
-                href={marketing_url(@marketing_base, "/features")}
-                class="text-sm text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
-              >
-                Features
-              </a>
-            </div>
-          </div>
+          <.footer_col title="Project" class="max-md:col-span-full">
+            <:link href="https://github.com/tomasz-tomczyk/crit" github>crit (local CLI)</:link>
+            <:link href="https://github.com/tomasz-tomczyk/crit-web" github>
+              crit-web (optional server)
+            </:link>
+            <:link href="https://github.com/tomasz-tomczyk/crit/releases">Releases</:link>
+            <:link :if={is_nil(@marketing_base)} href={~p"/auth/login"}>Sign in</:link>
+            <:link href={marketing_url(@marketing_base, "/self-hosting")}>Self-host</:link>
+          </.footer_col>
         </div>
 
         <%!-- Colophon --%>
-        <div class="border-t border-(--crit-border) mt-10 pt-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-(--crit-fg-muted)">
-          <span>
+        <div class="flex flex-wrap justify-between gap-3 mt-14 pt-6 border-t border-(--crit-border) text-sm text-(--crit-fg-muted)">
+          <p>
             Created by
             <a
               href="https://github.com/tomasz-tomczyk"
               target="_blank"
               rel="noopener"
-              class="text-(--crit-fg-primary) hover:text-(--crit-brand) no-underline"
+              class="inline-block py-2.5 text-(--crit-fg-secondary) hover:text-(--crit-brand) no-underline"
             >
               Tomasz Tomczyk
             </a>
-          </span>
-          <span class="flex items-center gap-1.5">
+          </p>
+          <p>
             <a
               href={marketing_url(@marketing_base, "/terms")}
-              class="hover:text-(--crit-fg-primary) no-underline"
+              class="inline-block py-2.5 text-(--crit-fg-secondary) hover:text-(--crit-brand) no-underline"
             >
               Terms
             </a>
             <span aria-hidden="true">·</span>
             <a
               href={marketing_url(@marketing_base, "/privacy")}
-              class="hover:text-(--crit-fg-primary) no-underline"
+              class="inline-block py-2.5 text-(--crit-fg-secondary) hover:text-(--crit-brand) no-underline"
             >
               Privacy
             </a>
-          </span>
+          </p>
         </div>
       </div>
     </footer>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :class, :any, default: nil
+
+  slot :link, required: true do
+    attr :href, :string, required: true
+    attr :github, :boolean, doc: "show the GitHub mark before the label"
+  end
+
+  defp footer_col(assigns) do
+    ~H"""
+    <div class={@class}>
+      <h2 class="font-mono text-xs tracking-[0.1em] uppercase text-(--crit-fg-muted) mb-4">
+        {@title}
+      </h2>
+      <ul>
+        <li :for={link <- @link}>
+          <a
+            href={link.href}
+            class={[
+              if(link[:github], do: "inline-flex items-center gap-1.5", else: "inline-block"),
+              "py-2.5 text-sm leading-snug text-(--crit-fg-secondary) hover:text-(--crit-brand) no-underline"
+            ]}
+          >
+            <.github_mark :if={link[:github]} class="size-3.5 shrink-0" />
+            {render_slot(link)}
+          </a>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  attr :class, :any, default: "size-4"
+
+  defp github_mark(assigns) do
+    ~H"""
+    <svg viewBox="0 0 16 16" class={["fill-current", @class]} aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+    """
+  end
+
+  @doc "The five-point star used on Star on GitHub buttons."
+  attr :class, :any, default: "size-4"
+
+  def star_icon(assigns) do
+    ~H"""
+    <svg class={["fill-current shrink-0", @class]} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" />
+    </svg>
     """
   end
 

@@ -1,46 +1,35 @@
-<Layouts.flash_group flash={@flash} />
+<Layouts.site_page
+  flash={@flash}
+  current_scope={@current_scope}
+  current_page={:integrations}
+  page_path={@conn.request_path}
+>
+  <Site.page_head eyebrow="Integration">
+    <:title>
+      <span class="flex items-center gap-5 max-md:gap-3">
+        <span
+          :if={@tool.logo}
+          class="shrink-0 inline-flex size-14 max-md:size-11 items-center justify-center rounded-xl bg-(--crit-bg-card) border border-(--crit-border) overflow-hidden"
+        >
+          <img src={@tool.logo.dark} alt="" class="logo-dark size-9 max-md:size-7 object-contain" />
+          <img
+            src={@tool.logo.light}
+            alt=""
+            class="logo-light size-9 max-md:size-7 object-contain"
+          />
+        </span>
+        <span>Crit + {@tool.name}<Site.dot /></span>
+      </span>
+    </:title>
+    <:lede>{@tool.intro}</:lede>
+  </Site.page_head>
 
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.site_header current_scope={@current_scope} current_page={:integrations} />
-
-  <!-- Breadcrumb -->
-  <div class="max-w-7xl mx-auto w-full px-10 mt-8 max-sm:px-4 max-sm:mt-5">
-    <a
-      href={~p"/integrations"}
-      class="text-(--crit-fg-muted) no-underline hover:text-(--crit-fg-primary) transition-colors"
-    >
-      &larr; All integrations
-    </a>
-  </div>
-
-  <!-- Hero -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-6 max-sm:px-4">
-    <h1 class="flex items-center gap-4 text-4xl font-extrabold leading-tight tracking-tight mb-4 max-sm:text-3xl max-sm:gap-3">
-      <%= case @tool.logo do %>
-        <% nil -> %>
-        <% logo -> %>
-          <span class="shrink-0 inline-flex w-12 h-12 max-sm:w-10 max-sm:h-10 items-center justify-center rounded-md bg-(--crit-bg-card) border border-(--crit-border) overflow-hidden">
-            <img
-              src={logo.dark}
-              alt=""
-              class="logo-dark w-8 h-8 max-sm:w-6 max-sm:h-6 object-contain"
-            />
-            <img
-              src={logo.light}
-              alt=""
-              class="logo-light w-8 h-8 max-sm:w-6 max-sm:h-6 object-contain"
-            />
-          </span>
-      <% end %>
-      <span>Crit + {@tool.name}<span class="text-(--crit-brand)">.</span></span>
-    </h1>
-    <p class="text-xl text-(--crit-fg-secondary) leading-relaxed max-w-3xl">
-      {@tool.intro}
-    </p>
-  </section>
-
-  <!-- Install -->
-  <section class="max-w-7xl mx-auto w-full px-10 mt-12 max-sm:px-4 max-sm:mt-8">
+  <Site.section
+    id="install"
+    panel
+    wrap_class="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-14 items-start max-md:grid-cols-1 max-md:gap-8"
+  >
+    <Site.title>Install<Site.dot /></Site.title>
     <div>
       <%= case Map.get(@tool, :marketplace) do %>
         <% marketplace when is_map(marketplace) -> %>
@@ -132,45 +121,57 @@
               </p>
           <% end %>
       <% end %>
+    </div>
+  </Site.section>
 
-      <!-- Components -->
-      <div class="pt-8 border-t border-(--crit-border) space-y-10">
-        <div :for={component_id <- @tool.components}>
-          <% c = Crit.Integrations.fetch_component!(component_id) %>
-          <h2 class="text-lg font-bold tracking-tight text-(--crit-fg-primary) mb-3">
-            {c.label}
-          </h2>
-          <p class="text-(--crit-fg-secondary) leading-relaxed mb-4">{c.summary}</p>
+  <Site.section
+    :if={@tool.components != []}
+    wrap_class="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-14 items-start max-md:grid-cols-1 max-md:gap-8"
+  >
+    <Site.title>What it adds<Site.dot /></Site.title>
+    <div>
+      <div
+        :for={component_id <- @tool.components}
+        class="py-8 border-b border-(--crit-border) first:pt-0 last:border-b-0"
+      >
+        <% c = Crit.Integrations.fetch_component!(component_id) %>
+        <h2 class="text-2xl font-semibold tracking-[-0.02em] text-(--crit-fg-primary) mb-3">
+          {c.label}
+        </h2>
+        <p class="text-(--crit-fg-secondary) leading-relaxed mb-4">{c.summary}</p>
 
-          <div class="space-y-5">
-            <div :for={uc <- c.use_cases}>
-              <%= case uc.title do %>
-                <% nil -> %>
-                <% title -> %>
-                  <h3 class="font-semibold text-(--crit-fg-primary) mb-1">{title}</h3>
-              <% end %>
-              <%= case uc.desc do %>
-                <% nil -> %>
-                <% desc -> %>
-                  <p class="text-(--crit-fg-secondary) leading-relaxed mb-2">{desc}</p>
-              <% end %>
-              <p class="text-(--crit-fg-muted) mb-1">{uc.example_label}</p>
-              <pre class="m-0 px-4 py-3 font-mono leading-6 text-(--crit-fg-secondary) bg-(--crit-code-bg) border border-(--crit-border) rounded overflow-x-auto whitespace-pre-wrap">{uc.example}</pre>
-            </div>
+        <div class="space-y-5">
+          <div :for={uc <- c.use_cases}>
+            <%= case uc.title do %>
+              <% nil -> %>
+              <% title -> %>
+                <h3 class="font-semibold text-(--crit-fg-primary) mb-1">{title}</h3>
+            <% end %>
+            <%= case uc.desc do %>
+              <% nil -> %>
+              <% desc -> %>
+                <p class="text-(--crit-fg-secondary) leading-relaxed mb-2">{desc}</p>
+            <% end %>
+            <p class="text-(--crit-fg-muted) mb-1">{uc.example_label}</p>
+            <pre class="m-0 px-4 py-3 font-mono leading-6 text-(--crit-fg-secondary) bg-(--crit-code-bg) border border-(--crit-border) rounded overflow-x-auto whitespace-pre-wrap">{uc.example}</pre>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </Site.section>
 
-  <!-- GitHub link -->
-  <div class="max-w-7xl mx-auto w-full px-10 my-16 text-center max-sm:px-4">
-    <a
-      href={"https://github.com/tomasz-tomczyk/crit/tree/main/integrations/#{@tool.id}"}
-      class="crit-link"
-    >
-      View {@tool.name} integration files on GitHub &rarr;
-    </a>
-  </div>
-  <Layouts.site_footer page_path={@conn.request_path} />
-</div>
+  <Site.section>
+    <Site.eyebrow>Other agents</Site.eyebrow>
+    <Site.subnav label="Other agents" current={@conn.request_path}>
+      <:item :for={tool <- Crit.Integrations.tools()} href={"/integrations/#{tool.id}"}>
+        {tool.name}
+      </:item>
+    </Site.subnav>
+    <Site.links class="mt-8">
+      <Site.link_arrow href={"https://github.com/tomasz-tomczyk/crit/tree/main/integrations/#{@tool.id}"}>
+        View {@tool.name} integration files on GitHub
+      </Site.link_arrow>
+      <Site.link_arrow href={~p"/integrations/build-your-own"}>Build your own</Site.link_arrow>
+    </Site.links>
+  </Site.section>
+</Layouts.site_page>

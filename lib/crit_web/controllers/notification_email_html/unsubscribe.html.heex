@@ -1,18 +1,24 @@
-<div class="min-h-screen flex flex-col bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans antialiased">
-  <Layouts.site_header current_scope={@current_scope} />
-  <main class="flex-1 max-w-lg mx-auto px-6 py-20 w-full">
+<Layouts.site_page
+  flash={@flash}
+  current_scope={@current_scope}
+  page_path="/settings/notification-emails/unsubscribe"
+>
+  <Site.wrap class="max-w-[calc(36rem+7rem)] py-24 max-md:py-14">
     <%= case @state do %>
       <% :done -> %>
-        <h1 class="text-2xl font-bold">Stopped</h1>
-        <p class="mt-3 text-(--crit-fg-secondary)">
+        <h1 class="text-[clamp(30px,3.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em] text-balance">
+          Stopped
+        </h1>
+        <p class="mt-4 text-lg text-(--crit-fg-secondary)">
           {@email} will no longer receive discussion notifications.
         </p>
       <% :invalid -> %>
-        <h1 class="text-2xl font-bold">Link not valid</h1>
-        <p class="mt-3 text-(--crit-fg-secondary)">
+        <h1 class="text-[clamp(30px,3.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em] text-balance">
+          Link not valid
+        </h1>
+        <p class="mt-4 text-lg text-(--crit-fg-secondary)">
           This unsubscribe link is not valid.
         </p>
     <% end %>
-  </main>
-  <Layouts.site_footer page_path="/settings/notification-emails/unsubscribe" />
-</div>
+  </Site.wrap>
+</Layouts.site_page>

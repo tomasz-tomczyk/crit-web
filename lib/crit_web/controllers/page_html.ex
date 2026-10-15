@@ -15,8 +15,8 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review plans & docs",
       cmd: "files / markdown",
       screenshot: "plan",
-      video: "https://assets.crit.md/plan-mode.mp4",
-      poster: "https://assets.crit.md/plan-mode-poster.webp",
+      video: "https://assets.crit.md/plan-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/plan-mode-poster.webp?v=20261015",
       blurb:
         "Your agent drafted a 300-line plan. In the terminal it's a wall of markdown. Crit renders it in the browser — comment on the section that's wrong, not the whole document.",
       bullets: ["Markdown render", "Per-line comments", "Diff every round"]
@@ -27,8 +27,8 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review code diffs",
       cmd: "branch / pr changes",
       screenshot: "diff",
-      video: "https://assets.crit.md/diff-mode.mp4",
-      poster: "https://assets.crit.md/diff-mode-poster.webp",
+      video: "https://assets.crit.md/diff-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/diff-mode-poster.webp?v=20261015",
       blurb:
         "Your agent touched 14 files across your branch. Crit auto-detects the changes, shows syntax-highlighted diffs, and lets you comment on any line — like a PR review, but instant and local.",
       bullets: ["Syntax highlighting", "Stacked PRs", "Git, jj, sapling"]
@@ -40,8 +40,8 @@ defmodule CritWeb.PageHTML do
       cmd: "branch / pr / mr / range",
       screenshot: nil,
       # Served from Cloudflare R2 (assets.crit.md)
-      video: "https://assets.crit.md/story-mode.mp4",
-      poster: "https://assets.crit.md/story-mode-poster.webp",
+      video: "https://assets.crit.md/story-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/story-mode-poster.webp?v=20261015",
       blurb:
         "Organize the diff around themes that belong together — not chronological file order — so the important work surfaces first and you understand the shape of the change before you dig into lines.",
       bullets: ["Thematic chapters", "Important changes first"]
@@ -52,8 +52,8 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review running apps",
       cmd: "running app / dev server",
       screenshot: "live",
-      video: "https://assets.crit.md/live-mode.mp4",
-      poster: "https://assets.crit.md/live-mode-poster.webp",
+      video: "https://assets.crit.md/live-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/live-mode-poster.webp?v=20261015",
       blurb:
         "Your agent built a frontend and it's running on localhost. Crit proxies the page into a review surface — click the button that's misaligned, pin a comment to it.",
       bullets: ["Comment on DOM", "Automatic reload", "Interactive browser"]
@@ -64,8 +64,8 @@ defmodule CritWeb.PageHTML do
       nav_label: "Review HTML artifacts",
       cmd: "static html artifact",
       screenshot: "preview",
-      video: "https://assets.crit.md/preview-mode.mp4",
-      poster: "https://assets.crit.md/preview-mode-poster.webp",
+      video: "https://assets.crit.md/preview-mode.mp4?v=20261015",
+      poster: "https://assets.crit.md/preview-mode-poster.webp?v=20261015",
       blurb:
         "Your agent generated a landing page as a static HTML file. Crit renders it in an iframe so you can click elements and comment.",
       bullets: [
@@ -264,22 +264,29 @@ defmodule CritWeb.PageHTML do
 
   attr :id, :string, default: "install-section"
 
+  @doc """
+  The "5-second install" block: the pitch and actions on the left, the
+  tabbed `install_widget/1` on the right.
+  """
   def install_section(assigns) do
     ~H"""
-    <section id="install" class="py-16 max-sm:py-10">
-      <div class="max-w-[880px] mx-auto px-10 max-sm:px-4 w-full">
-        <div class="text-center mb-10 max-sm:mb-8">
-          <h2 class="text-5xl font-extrabold tracking-tight mb-4 max-sm:text-4xl">
-            5-second install<span class="text-(--crit-brand)">.</span>
-          </h2>
-          <p class="text-lg text-(--crit-fg-secondary) max-sm:text-base">
+    <Site.section id="install">
+      <div class="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-14 items-center max-md:grid-cols-1 max-md:gap-8">
+        <div>
+          <Site.title display>5-second install<Site.dot /></Site.title>
+          <p class="mt-4 text-[17px] leading-snug text-(--crit-fg-secondary) max-w-[40ch]">
             Single binary. No account, no config, no dependencies.
           </p>
+          <div class="flex flex-wrap items-center gap-6 mt-10 max-md:mt-6">
+            <.github_star_link />
+            <Site.link_arrow href={~p"/getting-started"}>Get Started</Site.link_arrow>
+          </div>
         </div>
-
-        <.install_widget id={@id} />
+        <div>
+          <.install_widget id={@id} />
+        </div>
       </div>
-    </section>
+    </Site.section>
     """
   end
 
@@ -605,8 +612,12 @@ defmodule CritWeb.PageHTML do
     """
   end
 
-  attr :variant, :string, default: "hero", values: ~w(hero cta)
+  attr :class, :any, default: nil
 
+  @doc """
+  Star on GitHub button, with the star count when it is known. Outlined at
+  rest; turns gold on hover.
+  """
   def github_star_link(assigns) do
     star_count = Crit.GithubStars.count()
     formatted = if star_count, do: Crit.GithubStars.format_count(star_count)
@@ -620,11 +631,8 @@ defmodule CritWeb.PageHTML do
     <a
       href="https://github.com/tomasz-tomczyk/crit"
       class={[
-        "inline-flex items-center justify-center gap-2 text-sm font-semibold no-underline transition-all",
-        @variant == "hero" &&
-          "group/star px-5 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-lg hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) max-sm:w-full",
-        @variant == "cta" &&
-          "px-6 py-2.5 border border-(--crit-border) text-(--crit-fg-secondary) rounded-md hover:border-(--crit-fg-muted) hover:text-(--crit-fg-primary)"
+        "group/star inline-flex items-center justify-center gap-2.5 px-6 py-[15px] rounded-md font-semibold leading-none no-underline border border-(--crit-border-strong) text-(--crit-fg-primary) hover:bg-(--crit-yellow-subtle) hover:border-(--crit-yellow) hover:text-(--crit-yellow) transition-all max-md:w-full",
+        @class
       ]}
       aria-label={
         if @star_count,
@@ -632,30 +640,93 @@ defmodule CritWeb.PageHTML do
           else: "Star Crit on GitHub"
       }
     >
-      <svg
-        viewBox="0 0 16 16"
-        class={[
-          "fill-current",
-          @variant == "hero" &&
-            "size-4 opacity-60 group-hover/star:opacity-100 group-hover/star:text-(--crit-yellow) group-hover/star:scale-110 transition-all duration-200",
-          @variant == "cta" && "size-3.5 opacity-70"
-        ]}
-        aria-hidden="true"
-      >
-        <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
-      </svg>
+      <Layouts.star_icon class="size-4 opacity-60 group-hover/star:opacity-100 group-hover/star:scale-110 transition-all duration-200" />
       <span>Star on GitHub</span>
       <span
         :if={@formatted_count}
-        class={[
-          "tabular-nums font-medium",
-          @variant == "hero" && "text-(--crit-fg-muted) group-hover/star:text-(--crit-yellow)",
-          @variant == "cta" && "text-(--crit-fg-muted)"
-        ]}
+        class="tabular-nums font-medium text-(--crit-fg-muted) group-hover/star:text-(--crit-yellow)"
       >
         {@formatted_count}
       </span>
     </a>
     """
+  end
+
+  attr :mode, :map, required: true
+  attr :eager, :boolean, default: false
+
+  attr :crop, :boolean,
+    default: false,
+    doc: "scale past the recording's desktop wallpaper and drop the controls (home rows)"
+
+  @doc """
+  A mode's film in a 16:9 frame, or its screenshot when it has no film. Unless
+  `eager`, films load when scrolled near (`data-lazy-src`).
+  """
+  def mode_film(assigns) do
+    ~H"""
+    <Site.media class="aspect-video">
+      <%= cond do %>
+        <% @mode[:video] && @eager -> %>
+          <video
+            autoplay
+            loop
+            muted
+            playsinline
+            controls
+            width="1920"
+            height="1080"
+            class="block size-full object-cover"
+            poster={@mode[:poster]}
+            src={@mode.video}
+          ></video>
+        <% @mode[:video] -> %>
+          <video
+            autoplay
+            loop
+            muted
+            playsinline
+            controls={!@crop}
+            preload="none"
+            width="1920"
+            height="1080"
+            class={["block size-full object-cover", @crop && "scale-[1.13]"]}
+            poster={@mode[:poster]}
+            data-lazy-src={@mode.video}
+          ></video>
+        <% @mode.screenshot -> %>
+          <img
+            src={"/images/screenshots/#{@mode.screenshot}-dark@1x.png"}
+            srcset={"/images/screenshots/#{@mode.screenshot}-dark@1x.png 1x, /images/screenshots/#{@mode.screenshot}-dark@2x.png 2x"}
+            alt={"Crit #{@mode.label} mode"}
+            class="logo-dark size-full object-cover"
+            loading={if @eager, do: "eager", else: "lazy"}
+            width="1200"
+            height="675"
+          />
+          <img
+            src={"/images/screenshots/#{@mode.screenshot}-light@1x.png"}
+            srcset={"/images/screenshots/#{@mode.screenshot}-light@1x.png 1x, /images/screenshots/#{@mode.screenshot}-light@2x.png 2x"}
+            alt={"Crit #{@mode.label} mode"}
+            class="logo-light size-full object-cover"
+            loading={if @eager, do: "eager", else: "lazy"}
+            width="1200"
+            height="675"
+          />
+        <% true -> %>
+          <.browser_chrome_placeholder label={@mode.label} />
+      <% end %>
+    </Site.media>
+    """
+  end
+
+  @doc "The command shown next to an agent on the home page list."
+  def agent_install_cmd(tool_id) do
+    id = if tool_id == "github-copilot", do: "copilot", else: tool_id
+
+    case Enum.find(@agent_installs, &(&1.id == id)) do
+      nil -> nil
+      agent -> agent.lines |> Enum.filter(&(&1.type == :cmd)) |> List.last() |> Map.get(:text)
+    end
   end
 end

@@ -1,31 +1,25 @@
-<Layouts.flash_group flash={@flash} />
+<Layouts.site_page
+  flash={@flash}
+  current_scope={@current_scope}
+  current_page={:articles}
+  page_path={@conn.request_path}
+>
+  <Site.page_head eyebrow="Writing">
+    <:title>Articles<Site.dot /></:title>
+    <:lede>
+      Notes on reviewing agent output, tightening feedback loops, and shipping with more control.
+    </:lede>
+  </Site.page_head>
 
-<div class="min-h-screen bg-(--crit-bg-page) text-(--crit-fg-primary) font-sans flex flex-col">
-  <Layouts.site_header current_scope={@current_scope} current_page={:articles} />
-
-  <section class="max-w-7xl mx-auto w-full px-10 mt-16 max-sm:px-4 max-sm:mt-10">
-    <header class="mb-14 max-sm:mb-10">
-      <p class="font-mono text-xs tracking-widest uppercase text-(--crit-fg-muted) mb-3">
-        Writing
-      </p>
-      <h1 class="text-5xl font-extrabold tracking-tight max-sm:text-4xl text-balance">
-        Articles<span class="text-(--crit-brand)">.</span>
-      </h1>
-      <p class="text-xl text-(--crit-fg-secondary) mt-4 leading-relaxed">
-        Notes on reviewing agent output, tightening feedback loops, and shipping with more control.
-      </p>
-    </header>
-
-    <%= if @featured do %>
-      <article class="mb-16 max-sm:mb-12">
+  <section class="pb-24 max-md:pb-18">
+    <Site.wrap>
+      <article :if={@featured} class="mb-16 max-md:mb-12">
         <.article_card article={@featured} variant="featured" />
       </article>
-    <% end %>
 
-    <div class="grid grid-cols-3 gap-8 max-lg:grid-cols-2 max-sm:grid-cols-1">
-      <.article_card :for={article <- @rest} article={article} variant="default" />
-    </div>
+      <div class="grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-md:grid-cols-1">
+        <.article_card :for={article <- @rest} article={article} variant="default" />
+      </div>
+    </Site.wrap>
   </section>
-
-  <Layouts.site_footer page_path={@conn.request_path} />
-</div>
+</Layouts.site_page>

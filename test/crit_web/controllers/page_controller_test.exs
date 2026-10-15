@@ -122,15 +122,15 @@ defmodule CritWeb.PageControllerTest do
       test "renders the #{slug} mode page", %{conn: conn} do
         conn = get(conn, "/modes/#{@slug}")
         html = html_response(conn, 200)
-        assert html =~ "How it works."
-        assert html =~ "What you get."
+        assert html =~ "How it works"
+        assert html =~ "What you get"
       end
     end
 
     test "story mode page includes token cost indication", %{conn: conn} do
       conn = get(conn, "/modes/story")
       html = html_response(conn, 200)
-      assert html =~ "Token cost."
+      assert html =~ "Token cost"
       assert html =~ "Rough LLM spend"
       assert html =~ "does not scale linearly"
       assert html =~ "$1–$1.40"

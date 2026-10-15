@@ -97,6 +97,7 @@ defmodule CritWeb do
       # Common modules used in templates
       alias Phoenix.LiveView.JS
       alias CritWeb.Layouts
+      alias CritWeb.SiteComponents, as: Site
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
