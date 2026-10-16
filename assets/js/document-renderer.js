@@ -12,6 +12,8 @@ import {
   createReplyInput as sharedCreateReplyInput,
   renderCommentCard,
   attachSidebarResizeHandle,
+  captureReplyFocus,
+  restoreReplyFocus,
 } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
 import { actionForEvent, getBinding } from "./shortcut-registry"
@@ -4393,6 +4395,7 @@ function commentCardAdapter(ctx, filePath) {
     canDelete: (c) => canDeleteComment(c, ctx),
     displayName: ctx.displayName,
     collapseOverrides: commentCollapseOverrides,
+    activeReplyForms: ctx.activeReplyForms,
     onResolve: (c, resolved) => pushCommentMutation(ctx, 'resolve_comment', { id: c.id, resolved }),
     onDelete: (c) => pushCommentMutation(ctx, 'delete_comment', { id: c.id }),
     onAddReply: (commentId, body) => pushCommentMutation(ctx, 'add_reply', { comment_id: commentId, body }),
@@ -4978,6 +4981,19 @@ function updateTreeBadge(ctx, filePath) {
     badge.textContent = unresolvedCount
   } else if (badge) {
     badge.remove()
+  }
+}
+
+// Run a re-render that can rebuild comment cards (a code file's Pierre
+// annotations, a replaced comment block, a full render) without losing the
+// reply being typed: drafts live in ctx.activeReplyForms, and focus and caret
+// go back to the rebuilt textarea (crit: comments-changed, #1051).
+function preservingReplyFocus(fn) {
+  const saved = captureReplyFocus()
+  try {
+    fn()
+  } finally {
+    restoreReplyFocus(saved)
   }
 }
 
@@ -5635,6 +5651,9 @@ export const DocumentRenderer = {
     ctx.selectionStart = null
     ctx.selectionEnd = null
     ctx.activeForms = []
+    // Open reply drafts by comment id ({ text, expanded }), so a re-render that
+    // rebuilds a comment card keeps what the reviewer was typing.
+    ctx.activeReplyForms = new Map()
     ctx.dragState = null
     // Vim-style visual line mode (entered with Shift+V).
     // null or { anchorBlockIndex, anchorStartLine, anchorEndLine, filePath }
@@ -6012,7 +6031,7 @@ export const DocumentRenderer = {
       scrollToHashHeading()
     })
 
-    ctx.handleEvent("display_name_updated", (data) => {
+    ctx.handleEvent("display_name_updated", (data) => preservingReplyFocus(() => {
       ctx.displayName = data.display_name
       const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
       fetch("/set-name", {
@@ -6021,11 +6040,11 @@ export const DocumentRenderer = {
         body: JSON.stringify({name: data.display_name})
       }).catch(() => {})
       render(ctx)
-    })
+    }))
 
     // ===== Delta comment sync handlers =====
 
-    ctx.handleEvent("comment_added", ({ comment }) => {
+    ctx.handleEvent("comment_added", ({ comment }) => preservingReplyFocus(() => {
       ctx.comments.push(comment)
       if (ctx.multiFile) {
         const f = ctx.files.find(fl => fl.path === comment.file_path)
@@ -6035,9 +6054,9 @@ export const DocumentRenderer = {
       updateCommentCount(ctx)
       updateTreeBadge(ctx, comment.file_path)
       rerenderPanel(ctx)
-    })
+    }))
 
-    ctx.handleEvent("comment_updated", ({ id, body, updated_at }) => {
+    ctx.handleEvent("comment_updated", ({ id, body, updated_at }) => preservingReplyFocus(() => {
       const comment = ctx.comments.find(c => c.id === id)
       if (!comment) return
       comment.body = body
@@ -6048,12 +6067,13 @@ export const DocumentRenderer = {
         if (bodyEl) renderMarkdown(bodyEl, body, commentMarkdownEnv(comment, ctx))
       }
       rerenderPanel(ctx)
-    })
+    }))
 
-    ctx.handleEvent("comment_deleted", ({ id }) => {
+    ctx.handleEvent("comment_deleted", ({ id }) => preservingReplyFocus(() => {
       const comment = ctx.comments.find(c => c.id === id)
       if (!comment) return
       ctx.comments = ctx.comments.filter(c => c.id !== id)
+      ctx.activeReplyForms.delete(id)
       if (ctx.multiFile) {
         const f = ctx.files.find(fl => fl.path === comment.file_path)
         if (f) f.comments = f.comments.filter(c => c.id !== id)
@@ -6062,9 +6082,9 @@ export const DocumentRenderer = {
       updateCommentCount(ctx)
       updateTreeBadge(ctx, comment.file_path)
       rerenderPanel(ctx)
-    })
+    }))
 
-    ctx.handleEvent("comment_resolved", ({ id, resolved }) => {
+    ctx.handleEvent("comment_resolved", ({ id, resolved }) => preservingReplyFocus(() => {
       const comment = ctx.comments.find(c => c.id === id)
       if (!comment) return
       comment.resolved = resolved
@@ -6086,9 +6106,9 @@ export const DocumentRenderer = {
       updateCommentCount(ctx)
       updateTreeBadge(ctx, comment.file_path)
       rerenderPanel(ctx)
-    })
+    }))
 
-    ctx.handleEvent("reply_added", ({ parent_id, reply }) => {
+    ctx.handleEvent("reply_added", ({ parent_id, reply }) => preservingReplyFocus(() => {
       const comment = ctx.comments.find(c => c.id === parent_id)
       if (!comment) return
       if (!comment.replies) comment.replies = []
@@ -6108,9 +6128,9 @@ export const DocumentRenderer = {
         }
       }
       rerenderPanel(ctx)
-    })
+    }))
 
-    ctx.handleEvent("reply_updated", ({ parent_id, id, body }) => {
+    ctx.handleEvent("reply_updated", ({ parent_id, id, body }) => preservingReplyFocus(() => {
       const comment = ctx.comments.find(c => c.id === parent_id)
       if (!comment) return
       const reply = comment.replies && comment.replies.find(r => r.id === id)
@@ -6125,18 +6145,18 @@ export const DocumentRenderer = {
         }
       }
       rerenderPanel(ctx)
-    })
+    }))
 
-    ctx.handleEvent("reply_deleted", ({ parent_id, id }) => {
+    ctx.handleEvent("reply_deleted", ({ parent_id, id }) => preservingReplyFocus(() => {
       const comment = ctx.comments.find(c => c.id === parent_id)
       if (!comment) return
       comment.replies = (comment.replies || []).filter(r => r.id !== id)
       const replyEl = ctx.el.querySelector(`.comment-reply[data-reply-id="${id}"]`)
       if (replyEl) replyEl.remove()
       rerenderPanel(ctx)
-    })
+    }))
 
-    ctx.handleEvent("display_name_changed", ({ identity, name }) => {
+    ctx.handleEvent("display_name_changed", ({ identity, name }) => preservingReplyFocus(() => {
       for (const c of ctx.comments) {
         if (c.author_identity === identity) c.author_display_name = name
         for (const r of (c.replies || [])) {
@@ -6146,11 +6166,15 @@ export const DocumentRenderer = {
       // Display name changes are rare — full re-render is acceptable
       render(ctx)
       rerenderPanel(ctx)
-    })
+    }))
 
     // Full sync escape hatch (reconnect, noop_refresh)
-    ctx.handleEvent("comments_full_sync", ({ comments }) => {
+    ctx.handleEvent("comments_full_sync", ({ comments }) => preservingReplyFocus(() => {
       ctx.comments = comments
+      const ids = new Set(comments.map(c => c.id))
+      for (const id of ctx.activeReplyForms.keys()) {
+        if (!ids.has(id)) ctx.activeReplyForms.delete(id)
+      }
       if (ctx.multiFile) {
         for (const f of ctx.files) {
           f.comments = comments.filter(c => c.file_path === f.path)
@@ -6158,7 +6182,7 @@ export const DocumentRenderer = {
       }
       render(ctx)
       rerenderPanel(ctx)
-    })
+    }))
 
     ctx.handleEvent("round_diff_updated", async ({ enabled, snapshots }) => {
       const seq = ctx._roundDiffSeq = (ctx._roundDiffSeq || 0) + 1

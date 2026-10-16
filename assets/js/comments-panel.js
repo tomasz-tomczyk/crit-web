@@ -293,8 +293,12 @@ export function renderReplyList(comment, adapter) {
 }
 
 // ---- Reply composer (expand-on-focus input -> textarea) ---------------------
+// adapter.activeReplyForms (optional Map commentId -> { text, expanded }) keeps
+// a draft across re-renders (crit: activeReplyForms). A rebuilt composer for
+// the same comment restores its text and expanded state from it.
 
 export function createReplyInput(commentId, adapter) {
+  const drafts = adapter.activeReplyForms || null
   const form = document.createElement('div')
   form.className = 'reply-form'
 
@@ -331,12 +335,21 @@ export function createReplyInput(commentId, adapter) {
 
   function expand() {
     if (form.classList.contains('expanded')) return
+    // Set before closing other forms: that can re-render this card, and the
+    // rebuilt composer restores from this.
+    if (drafts) drafts.set(commentId, { text: input.value, expanded: true })
     if (adapter.beforeReplyExpand) adapter.beforeReplyExpand()
+    if (!form.isConnected) {
+      // Replaced by that re-render; hand off to the fresh composer.
+      focusReplyTextarea(commentId)
+      return
+    }
     form.classList.add('expanded')
     textarea.value = input.value
     input.replaceWith(textarea)
     form.appendChild(buttons)
     textarea.focus()
+    if (drafts) drafts.set(commentId, { text: textarea.value, expanded: true })
     // The taller textarea can push the actions off screen, and focusing it
     // does not bring them along.
     buttons.scrollIntoView({ block: 'nearest' })
@@ -345,6 +358,7 @@ export function createReplyInput(commentId, adapter) {
   function collapse() {
     textarea.value = ''
     input.value = ''
+    if (drafts) drafts.delete(commentId)
     if (!form.classList.contains('expanded')) return
     form.classList.remove('expanded')
     textarea.replaceWith(input)
@@ -353,10 +367,22 @@ export function createReplyInput(commentId, adapter) {
   input.addEventListener('focus', expand)
   cancelBtn.addEventListener('click', collapse)
 
+  if (drafts) {
+    textarea.addEventListener('input', function() {
+      drafts.set(commentId, { text: textarea.value, expanded: true })
+    })
+    input.addEventListener('input', function() {
+      drafts.set(commentId, { text: input.value, expanded: false })
+    })
+  }
+
   // Collapse on blur if empty (with delay to allow button clicks).
   const schedule = adapter.scheduleTimeout || ((fn, ms) => setTimeout(fn, ms))
   textarea.addEventListener('blur', function() {
     schedule(function() {
+      // A re-render detaches this composer and blurs it; its replacement owns
+      // the draft now.
+      if (!form.isConnected) return
       if (form.classList.contains('expanded') && !textarea.value.trim() && !form.contains(document.activeElement)) {
         collapse()
       }
@@ -368,15 +394,27 @@ export function createReplyInput(commentId, adapter) {
     const body = field.value.trim()
     if (!body) { field.focus(); return }
     submitBtn.disabled = true
+    // Drop the draft now: the reply_added event can re-render this card before
+    // the mutation resolves, and the rebuilt composer must start empty.
+    const savedDraft = drafts && drafts.get(commentId)
+    if (drafts) drafts.delete(commentId)
+    function restoreDraft() {
+      if (drafts && savedDraft && !drafts.has(commentId)) drafts.set(commentId, savedDraft)
+    }
     Promise.resolve(adapter.onAddReply(commentId, body)).then(result => {
       if (result?.ok === false) {
+        restoreDraft()
         submitBtn.disabled = false
         activeField().focus()
         return
       }
-      collapse()
       submitBtn.disabled = false
+      // A re-render already replaced this form; collapsing it would delete a
+      // draft the rebuilt composer may now hold.
+      if (!form.isConnected) return
+      collapse()
     }).catch(() => {
+      restoreDraft()
       submitBtn.disabled = false
       activeField().focus()
     })
@@ -397,7 +435,62 @@ export function createReplyInput(commentId, adapter) {
     }
   })
 
+  const saved = drafts && drafts.get(commentId)
+  if (saved && (saved.text || saved.expanded)) {
+    if (saved.expanded) {
+      form.classList.add('expanded')
+      textarea.value = saved.text || ''
+      input.replaceWith(textarea)
+      form.appendChild(buttons)
+    } else {
+      input.value = saved.text || ''
+    }
+  }
+
   return form
+}
+
+function replyTextareaFor(commentId) {
+  return document.querySelector('.comment-card[data-comment-id="' + CSS.escape(String(commentId)) + '"] .reply-textarea')
+}
+
+function focusReplyTextarea(commentId, selectionStart, selectionEnd) {
+  const ta = replyTextareaFor(commentId)
+  if (!ta) return false
+  if (document.activeElement !== ta) ta.focus({ preventScroll: true })
+  const end = ta.value.length
+  ta.selectionStart = selectionStart == null ? end : Math.min(selectionStart, end)
+  ta.selectionEnd = selectionEnd == null ? end : Math.min(selectionEnd, end)
+  return true
+}
+
+// The reply being typed, if any: { commentId, selectionStart, selectionEnd }.
+// Pair with restoreReplyFocus around a re-render that can rebuild comment
+// cards. The draft text itself survives through adapter.activeReplyForms.
+export function captureReplyFocus() {
+  const el = document.activeElement
+  if (!el || !el.classList || !el.classList.contains('reply-textarea')) return null
+  const card = el.closest('.comment-card')
+  if (!card || !card.dataset.commentId) return null
+  return { commentId: card.dataset.commentId, selectionStart: el.selectionStart, selectionEnd: el.selectionEnd }
+}
+
+// Put focus and caret back on the rebuilt reply textarea. Without it, keys
+// typed after the re-render land on the page and fire single-key shortcuts.
+// Retries on the next frame: a code-file annotation can be rebuilt (or briefly
+// detached) after the synchronous update.
+export function restoreReplyFocus(saved) {
+  if (!saved) return
+  const apply = () => {
+    const ta = replyTextareaFor(saved.commentId)
+    if (!ta || document.activeElement === ta) return
+    // Only take focus back from nowhere; never from something the user chose.
+    const current = document.activeElement
+    if (current && current !== document.body) return
+    focusReplyTextarea(saved.commentId, saved.selectionStart, saved.selectionEnd)
+  }
+  apply()
+  requestAnimationFrame(apply)
 }
 
 // ---- Comment card (side-panel) ----------------------------------------------
