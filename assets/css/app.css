@@ -2119,6 +2119,53 @@ html[data-theme="light"] .crit-toggle-btn--active {
 .crit-split-dropdown-title { display: block; font-size: 13px; font-weight: 600; }
 .crit-split-dropdown-desc { display: block; font-size: 12px; color: var(--crit-editor-fg-secondary); margin-top: 2px; }
 
+/* ===== Selection toolbar (vendor/crit/crit-selection-toolbar.js) ===== */
+.crit-selection-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* Same layer as crit: above menus and the prompt overlay, under settings (400). */
+  z-index: 310;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  background: var(--crit-bg-card);
+  border: 1px solid var(--crit-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  user-select: none;
+}
+.crit-selection-toolbar[hidden] { display: none; }
+.crit-selection-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 6px 0 8px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--crit-fg-primary);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.crit-selection-toolbar-btn:hover { background: var(--crit-editor-bg-hover); }
+.crit-selection-toolbar-btn:focus-visible { outline: none; box-shadow: var(--crit-focus); }
+.crit-selection-toolbar-icon { display: inline-flex; color: var(--crit-fg-secondary); }
+.crit-selection-toolbar-icon svg { width: 14px; height: 14px; }
+.crit-selection-toolbar-shortcut { display: inline-flex; gap: 2px; }
+.crit-selection-toolbar-shortcut[hidden] { display: none; }
+.crit-selection-toolbar-shortcut kbd {
+  padding: 0 5px;
+  font-family: var(--crit-font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--crit-fg-secondary);
+  background: var(--crit-bg-elevated);
+  border: 1px solid var(--crit-border);
+  border-radius: var(--crit-r-sm);
+}
+
 /* ===== Collapse/Expand ===== */
 .comment-collapse-btn {
   background: none;

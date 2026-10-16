@@ -29,7 +29,10 @@ import {
 } from "./pierre-runtime"
 import { annotationsForCodeFile, createCodeFileView, isOutdatedLineComment, lineCount } from "./code-file-view"
 import pierreDOM from "../vendor/crit/crit-pierre-dom.js"
+import selectionToolbar from "../vendor/crit/crit-selection-toolbar.js"
 import { themeChoice } from "./review-settings"
+
+const COMMENT_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>'
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -375,6 +378,18 @@ function findFormForEdit(ctx, commentId) {
 }
 
 // ===== Text Selection → Line Range Mapping =====
+
+// Bottom of the chrome stuck to the top of the viewport (page header and a
+// stuck file header), which the selection toolbar must not cover.
+function selectionToolbarTopBoundary() {
+  const header = document.querySelector('.crit-header')
+  let bottom = header ? header.getBoundingClientRect().bottom : 0
+  document.querySelectorAll('.file-header').forEach((el) => {
+    const rect = el.getBoundingClientRect()
+    if (rect.height > 0 && rect.top <= bottom + 1 && rect.bottom > bottom) bottom = rect.bottom
+  })
+  return bottom
+}
 
 function getLineRangeFromSelection(selection) {
   if (!selection || selection.isCollapsed || !selection.toString().trim()) return null
@@ -5946,6 +5961,7 @@ export const DocumentRenderer = {
       const next = can_comment !== false
       const changed = ctx.canComment !== next
       ctx.canComment = next
+      if (!next && ctx._selectionToolbar) ctx._selectionToolbar.hide()
       if (changed && ctx.md) {
         ctx.activeForms = ctx.activeForms.filter((f) => f.editingId)
         // Code views keep their Pierre options across renders: the gutter "+"
@@ -6179,50 +6195,60 @@ export const DocumentRenderer = {
 
     // ===== Select-to-Comment helper =====
     // Selection alone never opens the form — copying text stays unhindered.
-    // The user presses `c` after selecting to comment on the selection.
-    // Returns true if a form was opened from an active selection.
-    const tryOpenFormFromSelection = () => {
-      const selection = window.getSelection()
+    // The user presses `c` after selecting, or clicks Comment on the selection
+    // toolbar, to comment on the selection.
+
+    // Resolves a selection into the form `c` would open, without touching the
+    // selection: { form, range } with openForm's arguments and a live Range
+    // over the selected text, or null when the selection is not commentable.
+    const resolveSelectionComment = (selection) => {
       // A selection inside a code file lives in Pierre's shadow root; only its
       // composed range knows the lines (crit-pierre-dom.js).
       const code = pierreDOM.pierreSelectionForComment(selection)
       if (code) {
-        selection.removeAllRanges()
-        openForm(ctx, {
-          filePath: code.filePath,
-          afterBlockIndex: null,
-          startLine: code.startLine,
-          endLine: code.endLine,
-          editingId: null,
-          quote: code.quote,
-          quoteOffset: code.quoteOffset,
-        })
-        return true
+        return {
+          range: code.range,
+          form: {
+            filePath: code.filePath,
+            afterBlockIndex: null,
+            startLine: code.startLine,
+            endLine: code.endLine,
+            editingId: null,
+            quote: code.quote,
+            quoteOffset: code.quoteOffset,
+          },
+        }
       }
       const range = getLineRangeFromSelection(selection)
-      if (!range) return false
+      if (!range) return null
 
       let quote = null
       let quoteOffset = null
       try {
         let selectedText = selection.toString().trim()
         if (selectedText) {
+          // Blocks overlapping the line range, ordered by the first selected
+          // line they hold, then document order. One pass over the blocks:
+          // this runs on every mouse selection (selection toolbar).
+          const blocks = []
+          ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el, index) {
+            if (el.dataset.filePath !== range.filePath) return
+            const s = parseInt(el.dataset.startLine), endLn = parseInt(el.dataset.endLine)
+            if (s <= range.endLine && endLn >= range.startLine) {
+              blocks.push({ el: el, first: Math.max(s, range.startLine), index: index })
+            }
+          })
+          blocks.sort((a, b) => a.first - b.first || a.index - b.index)
           let fullText = ''
           const contentEls = []
-          for (let ln = range.startLine; ln <= range.endLine; ln++) {
-            ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el) {
-              if (el.dataset.filePath !== range.filePath) return
-              const s = parseInt(el.dataset.startLine), endLn = parseInt(el.dataset.endLine)
-              if (s <= ln && endLn >= ln) {
-                el.querySelectorAll('.line-content').forEach(function(content) {
-                  if (contentEls.indexOf(content) === -1) {
-                    fullText += (fullText ? '\n' : '') + content.textContent.trim()
-                    contentEls.push(content)
-                  }
-                })
+          blocks.forEach(function(block) {
+            block.el.querySelectorAll('.line-content').forEach(function(content) {
+              if (contentEls.indexOf(content) === -1) {
+                fullText += (fullText ? '\n' : '') + content.textContent.trim()
+                contentEls.push(content)
               }
             })
-          }
+          })
           const normalizedSelected = selectedText.replace(/\s+/g, ' ')
           const normalizedFull = fullText.trim().replace(/\s+/g, ' ')
           if (normalizedSelected !== normalizedFull && selectedText.length <= 300) {
@@ -6262,19 +6288,54 @@ export const DocumentRenderer = {
         }
       } catch (_) { /* quote is a nice-to-have, don't break form opening */ }
 
+      return {
+        range: selection.getRangeAt(0),
+        form: {
+          filePath: range.filePath,
+          afterBlockIndex: range.afterBlockIndex,
+          startLine: range.startLine,
+          endLine: range.endLine,
+          editingId: null,
+          quote: quote,
+          quoteOffset: quoteOffset,
+        },
+      }
+    }
+
+    // Returns true if a form was opened from an active selection.
+    const tryOpenFormFromSelection = () => {
+      const selection = window.getSelection()
+      const resolved = resolveSelectionComment(selection)
+      if (!resolved) return false
       selection.removeAllRanges()
-      openForm(ctx, {
-        filePath: range.filePath,
-        afterBlockIndex: range.afterBlockIndex,
-        startLine: range.startLine,
-        endLine: range.endLine,
-        editingId: null,
-        quote: quote,
-        quoteOffset: quoteOffset,
-      })
+      openForm(ctx, resolved.form)
       return true
     }
     ctx._tryOpenFormFromSelection = tryOpenFormFromSelection
+
+    // ===== Selection toolbar =====
+    // A Comment button above a mouse selection that `c` could comment on. It
+    // opens nothing by itself, so selecting to copy or to read stays as it was.
+    // It lives in <body>, outside ctx.el, which every render empties.
+    ctx._selectionToolbar = selectionToolbar.create({
+      label: 'Comment',
+      ariaLabel: 'Comment on selection',
+      icon: COMMENT_ICON,
+      shortcut: () => getBinding('comment'),
+      topBoundary: selectionToolbarTopBoundary,
+      shadowRoots: () => Array.from(document.querySelectorAll('diffs-container')).map((host) => host.shadowRoot).filter(Boolean),
+      enabled: () => ctx.canComment !== false,
+      resolve: (selection) => {
+        const resolved = resolveSelectionComment(selection)
+        return resolved && { range: resolved.range, data: resolved.form }
+      },
+      onComment: (form) => {
+        // The form resolved when the bar appeared: Pierre may have replaced
+        // the selected nodes since, but the lines and the quote still hold.
+        window.getSelection()?.removeAllRanges()
+        openForm(ctx, form)
+      },
+    })
 
     ctx._keydownHandler = (e) => {
       const tag = e.target.tagName
@@ -6510,6 +6571,7 @@ export const DocumentRenderer = {
     if (this._keydownHandler) {
       document.removeEventListener("keydown", this._keydownHandler)
     }
+    if (this._selectionToolbar) this._selectionToolbar.destroy()
     if (this._resizeHandler) {
       window.removeEventListener("resize", this._resizeHandler)
     }
