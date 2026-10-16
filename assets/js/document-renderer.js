@@ -29,6 +29,12 @@ import {
 } from "./pierre-runtime"
 import { annotationsForCodeFile, createCodeFileView, isOutdatedLineComment, lineCount } from "./code-file-view"
 import pierreDOM from "../vendor/crit/crit-pierre-dom.js"
+// Pluggable renderers, in crit's load order: the registry needs the glob
+// matcher, and the mermaid renderer registers itself with the registry.
+import "../vendor/crit/crit-glob-match.js"
+import renderers from "../vendor/crit/crit-renderers.js"
+import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
+import "../vendor/crit/crit-renderer-mermaid.js"
 import { themeChoice } from "./review-settings"
 
 // ---- Helpers ----------------------------------------------------------------
@@ -741,13 +747,13 @@ function codeRows(ctx, filePath, rows) {
 function navRows(ctx) {
   const rows = []
   if (!ctx.multiFile) {
-    if (isCodeFile(ctx.singleFilePath)) codeRows(ctx, ctx.singleFilePath, rows)
+    if (isCodeFile(ctx.singleFilePath) && !showsRenderedFile(ctx, ctx.singleFilePath)) codeRows(ctx, ctx.singleFilePath, rows)
     else documentRows(ctx.el, ctx.singleFilePath, rows)
     return rows
   }
   for (const file of ctx.files) {
     if (file.collapsed) continue
-    if (file.fileType === 'code' && !file.orphaned) {
+    if (file.fileType === 'code' && !file.orphaned && !showsRenderedFile(ctx, file.path)) {
       codeRows(ctx, file.path, rows)
     } else {
       const section = document.getElementById('file-section-' + CSS.escape(file.path))
@@ -1102,384 +1108,172 @@ function isCodeFile(filePath) {
   return !/\.(?:md|markdown|mdown)$/i.test(filePath)
 }
 
-// ---- Mermaid ----------------------------------------------------------------
+// ---- Pluggable renderers ----------------------------------------------------
 
-let mermaidReady = false
-let mermaidCounter = 0
+// crit's renderer registry, built-in mermaid renderer and fullscreen diagram
+// overlay are vendored verbatim (scripts/sync-pierre.sh, crit
+// docs/renderers.md). ```mermaid fences render as diagrams in documents and
+// comments; .mermaid / .mmd files open on a Diagram / Source toggle.
 
-// Mermaid fullscreen overlay (GitHub-style pan/zoom). Expand on each rendered
-// diagram opens #mermaidOverlay with a detached SVG clone. Pan via drag, zoom
-// via wheel / pinch / buttons. Pure CSS transform — no new dependencies.
-// LiveView: install listeners once per mount; teardownMermaidOverlay() on
-// destroy clears listeners, body overflow, and focus state.
-const mermaidOverlayState = {
-  open: false,
-  trigger: null,
-  scale: 1,
-  x: 0,
-  y: 0,
-  installed: false,
-}
-const MERMAID_ZOOM_MIN = 0.1
-const MERMAID_ZOOM_MAX = 8
-let mermaidOverlayAbort = null
+// The vendored mermaid renderer injects a mermaid.min.js <script> when
+// window.mermaid is missing. crit-web bundles mermaid as a lazy chunk, so it
+// sets window.mermaid first. Reviews without a diagram never load it.
+let mermaidLoading = null
 
-function mermaidOverlayNodes() {
-  return {
-    overlay: document.getElementById("mermaidOverlay"),
-    viewport: document.getElementById("mermaidOverlayViewport"),
-    canvas: document.getElementById("mermaidOverlayCanvas"),
-    label: document.getElementById("mermaidZoomLabel"),
-    closeBtn: document.getElementById("mermaidOverlayClose"),
-    zoomIn: document.getElementById("mermaidZoomIn"),
-    zoomOut: document.getElementById("mermaidZoomOut"),
-    zoomReset: document.getElementById("mermaidZoomReset"),
-  }
-}
-
-function mermaidOverlayApply() {
-  const nodes = mermaidOverlayNodes()
-  if (!nodes.canvas) return
-  nodes.canvas.style.transform =
-    "translate(" + mermaidOverlayState.x + "px, " + mermaidOverlayState.y +
-    "px) scale(" + mermaidOverlayState.scale + ")"
-  if (nodes.label) nodes.label.textContent = Math.round(mermaidOverlayState.scale * 100) + "%"
-}
-
-function mermaidOverlayZoomAt(factor, clientX, clientY) {
-  const nodes = mermaidOverlayNodes()
-  if (!nodes.viewport) return
-  const rect = nodes.viewport.getBoundingClientRect()
-  const px = clientX - rect.left
-  const py = clientY - rect.top
-  const next = Math.min(
-    MERMAID_ZOOM_MAX,
-    Math.max(MERMAID_ZOOM_MIN, mermaidOverlayState.scale * factor),
-  )
-  if (next === mermaidOverlayState.scale) return
-  const ratio = next / mermaidOverlayState.scale
-  mermaidOverlayState.x = px - (px - mermaidOverlayState.x) * ratio
-  mermaidOverlayState.y = py - (py - mermaidOverlayState.y) * ratio
-  mermaidOverlayState.scale = next
-  mermaidOverlayApply()
-}
-
-function mermaidOverlayZoomCenter(factor) {
-  const nodes = mermaidOverlayNodes()
-  if (!nodes.viewport) return
-  const rect = nodes.viewport.getBoundingClientRect()
-  mermaidOverlayZoomAt(factor, rect.left + rect.width / 2, rect.top + rect.height / 2)
-}
-
-function mermaidOverlayFit() {
-  const nodes = mermaidOverlayNodes()
-  if (!nodes.viewport || !nodes.canvas) return
-  const svg = nodes.canvas.querySelector("svg")
-  mermaidOverlayState.scale = 1
-  mermaidOverlayState.x = 0
-  mermaidOverlayState.y = 0
-  if (svg) {
-    let w = 0
-    let h = 0
-    const vb = svg.getAttribute("viewBox")
-    if (vb) {
-      const parts = vb.trim().split(/[\s,]+/)
-      w = parseFloat(parts[2])
-      h = parseFloat(parts[3])
-    }
-    if (!(w > 0) || !(h > 0)) {
-      const r = svg.getBoundingClientRect()
-      w = r.width
-      h = r.height
-    }
-    if (w > 0 && h > 0) {
-      const vw = nodes.viewport.clientWidth - 48
-      const vh = nodes.viewport.clientHeight - 48
-      if (vw > 0 && vh > 0) {
-        mermaidOverlayState.scale = Math.min(vw / w, vh / h, 2)
-        mermaidOverlayState.x = (nodes.viewport.clientWidth - w * mermaidOverlayState.scale) / 2
-        mermaidOverlayState.y = (nodes.viewport.clientHeight - h * mermaidOverlayState.scale) / 2
-      }
-    }
-  }
-  mermaidOverlayApply()
-}
-
-function openMermaidOverlay(sourceSvg, trigger) {
-  const nodes = mermaidOverlayNodes()
-  if (!nodes.overlay || !sourceSvg || !nodes.canvas) return
-  nodes.canvas.innerHTML = ""
-  const clone = sourceSvg.cloneNode(true)
-  // Mermaid emits width="100%" + a max-width cap. Inside the overlay the
-  // canvas sizes to content (width: max-content), which makes a percentage
-  // width resolve circularly and the diagram collapse. Pin the clone to its
-  // natural size so fit/center math holds.
-  let natW = 0
-  let natH = 0
-  const vb = clone.getAttribute("viewBox")
-  if (vb) {
-    const parts = vb.trim().split(/[\s,]+/)
-    natW = parseFloat(parts[2])
-    natH = parseFloat(parts[3])
-  }
-  if (!(natW > 0) || !(natH > 0)) {
-    const srcRect = sourceSvg.getBoundingClientRect()
-    natW = srcRect.width
-    natH = srcRect.height
-  }
-  if (natW > 0 && natH > 0) {
-    clone.setAttribute("width", String(natW))
-    clone.setAttribute("height", String(natH))
-    if (clone.style) clone.style.removeProperty("max-width")
-  }
-  nodes.canvas.appendChild(clone)
-  mermaidOverlayState.open = true
-  mermaidOverlayState.trigger = trigger || null
-  installMermaidOverlay()
-  nodes.overlay.classList.add("active")
-  document.body.style.overflow = "hidden"
-  mermaidOverlayFit()
-  if (nodes.closeBtn && nodes.closeBtn.focus) nodes.closeBtn.focus()
-}
-
-function closeMermaidOverlay() {
-  const nodes = mermaidOverlayNodes()
-  if (!mermaidOverlayState.open) return
-  mermaidOverlayState.open = false
-  if (nodes.overlay) nodes.overlay.classList.remove("active")
-  if (nodes.canvas) nodes.canvas.innerHTML = ""
-  document.body.style.overflow = ""
-  const trigger = mermaidOverlayState.trigger
-  mermaidOverlayState.trigger = null
-  if (trigger && document.contains(trigger) && trigger.focus) trigger.focus()
-}
-
-function mermaidOverlayTrapTab(e) {
-  if (e.key !== "Tab") return
-  const nodes = mermaidOverlayNodes()
-  if (!nodes.overlay) return
-  const focusables = nodes.overlay.querySelectorAll("button:not([disabled])")
-  if (!focusables || focusables.length === 0) return
-  const first = focusables[0]
-  const last = focusables[focusables.length - 1]
-  if (e.shiftKey && document.activeElement === first) {
-    e.preventDefault()
-    last.focus()
-  } else if (!e.shiftKey && document.activeElement === last) {
-    e.preventDefault()
-    first.focus()
-  }
-}
-
-function installMermaidOverlay() {
-  if (mermaidOverlayState.installed) return
-  const nodes = mermaidOverlayNodes()
-  if (!nodes.overlay || !nodes.viewport) return
-  mermaidOverlayState.installed = true
-  mermaidOverlayAbort = new AbortController()
-  const { signal } = mermaidOverlayAbort
-
-  const activePointers = new Map()
-  let panAnchor = null
-  let pinchStart = 0
-  let pinchScale = 1
-
-  function capturePinchBaseline() {
-    const pts = Array.from(activePointers.values())
-    if (pts.length < 2) return
-    pinchStart = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
-    pinchScale = mermaidOverlayState.scale
-  }
-
-  if (nodes.zoomIn) {
-    nodes.zoomIn.addEventListener("click", () => mermaidOverlayZoomCenter(1.25), { signal })
-  }
-  if (nodes.zoomOut) {
-    nodes.zoomOut.addEventListener("click", () => mermaidOverlayZoomCenter(1 / 1.25), { signal })
-  }
-  if (nodes.zoomReset) {
-    nodes.zoomReset.addEventListener("click", () => mermaidOverlayFit(), { signal })
-  }
-  if (nodes.closeBtn) {
-    nodes.closeBtn.addEventListener("click", () => closeMermaidOverlay(), { signal })
-  }
-  nodes.overlay.addEventListener("click", (e) => {
-    if (e.target === nodes.overlay) closeMermaidOverlay()
-  }, { signal })
-  nodes.overlay.addEventListener("keydown", mermaidOverlayTrapTab, { signal })
-  // Note: no defaultPrevented check — the app-wide keymap unconditionally
-  // preventDefaults Escape, so honoring it would break Esc-to-close.
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return
-    if (mermaidOverlayState.open) {
-      e.preventDefault()
-      closeMermaidOverlay()
-    }
-  }, { signal })
-  // Theme change leaves the clone with stale colors — close rather than show a
-  // wrong-theme diagram (parity with crit applyTheme).
-  window.addEventListener("phx:set-theme", () => closeMermaidOverlay(), { signal })
-
-  nodes.viewport.addEventListener("wheel", (e) => {
-    if (!mermaidOverlayState.open) return
-    e.preventDefault()
-    mermaidOverlayZoomAt(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX, e.clientY)
-  }, { passive: false, signal })
-
-  nodes.viewport.addEventListener("pointerdown", (e) => {
-    if (!mermaidOverlayState.open) return
-    try { nodes.viewport.setPointerCapture(e.pointerId) } catch { /* noop */ }
-    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    if (activePointers.size === 1) {
-      panAnchor = { x: e.clientX - mermaidOverlayState.x, y: e.clientY - mermaidOverlayState.y }
-      nodes.viewport.classList.add("panning")
-    } else {
-      panAnchor = null
-      capturePinchBaseline()
-    }
-  }, { signal })
-  nodes.viewport.addEventListener("pointermove", (e) => {
-    if (!activePointers.has(e.pointerId)) return
-    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    if (activePointers.size === 2) {
-      const pts = Array.from(activePointers.values())
-      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
-      if (pinchStart > 0 && dist > 0) {
-        const midX = (pts[0].x + pts[1].x) / 2
-        const midY = (pts[0].y + pts[1].y) / 2
-        const rel = (pinchScale * dist / pinchStart) / mermaidOverlayState.scale
-        mermaidOverlayZoomAt(rel, midX, midY)
-      }
-      return
-    }
-    if (panAnchor) {
-      mermaidOverlayState.x = e.clientX - panAnchor.x
-      mermaidOverlayState.y = e.clientY - panAnchor.y
-      mermaidOverlayApply()
-    }
-  }, { signal })
-  function endMermaidPointer(e) {
-    activePointers.delete(e.pointerId)
-    if (activePointers.size === 1) {
-      const remaining = Array.from(activePointers.values())[0]
-      panAnchor = { x: remaining.x - mermaidOverlayState.x, y: remaining.y - mermaidOverlayState.y }
-    } else if (activePointers.size >= 2) {
-      capturePinchBaseline()
-    } else {
-      panAnchor = null
-      nodes.viewport.classList.remove("panning")
-    }
-  }
-  nodes.viewport.addEventListener("pointerup", endMermaidPointer, { signal })
-  nodes.viewport.addEventListener("pointercancel", endMermaidPointer, { signal })
-}
-
-function teardownMermaidOverlay() {
-  closeMermaidOverlay()
-  if (mermaidOverlayAbort) {
-    mermaidOverlayAbort.abort()
-    mermaidOverlayAbort = null
-  }
-  mermaidOverlayState.installed = false
-  mermaidOverlayState.trigger = null
-  mermaidOverlayState.scale = 1
-  mermaidOverlayState.x = 0
-  mermaidOverlayState.y = 0
-  document.body.style.overflow = ""
-}
-
-// Expand affordance on each rendered diagram. Idempotent — safe after every
-// renderMermaidBlocks() call. Button lives on .mermaid-block (not inside the
-// rendered svg wrapper) so re-renders never wipe it; clicks stopPropagation so
-// comment gestures are unaffected. crit-web uses .mermaid-rendered (not .mermaid).
-function decorateMermaidBlocks(container) {
-  installMermaidOverlay()
-  const root = container || document
-  const blocks = root.querySelectorAll(".line-content.mermaid-block")
-  blocks.forEach((block) => {
-    if (block.querySelector(".mermaid-expand")) return
-    const btn = document.createElement("button")
-    btn.type = "button"
-    btn.className = "mermaid-expand"
-    btn.setAttribute("aria-label", "Open diagram fullscreen")
-    btn.setAttribute("title", "Open fullscreen")
-    btn.textContent = "⛶ Expand"
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation()
-      const svg = block.querySelector(".mermaid-rendered svg, .mermaid svg, svg")
-      if (!svg) return
-      openMermaidOverlay(svg, btn)
+function loadMermaid() {
+  if (window.mermaid) return Promise.resolve(window.mermaid)
+  if (!mermaidLoading) {
+    mermaidLoading = import("mermaid").then(({ default: mermaid }) => {
+      window.mermaid = mermaid
+      return mermaid
+    }, err => {
+      mermaidLoading = null
+      throw err
     })
-    block.appendChild(btn)
+  }
+  return mermaidLoading
+}
+
+// Render every fence/file target that is not rendered in the current theme
+// and palette (new targets, or all of them after a theme change). Either way
+// the detached fullscreen clone is stale, so close it (crit:
+// renderPluggableBlocks).
+async function renderPluggableBlocks() {
+  if (!renderers.needsRender(document)) return
+  diagramOverlay.close()
+  try {
+    await loadMermaid()
+  } catch (err) {
+    // The chunk failed to load (e.g. a stale hash after a deploy). Without
+    // window.mermaid the vendored renderer would request crit's
+    // mermaid.min.js, which crit-web does not serve. A stub that rejects with
+    // the real cause puts it in crit's error box; it is removed once these
+    // renders settle, so the next render retries the import.
+    const cause = err && err.message ? err.message : String(err)
+    const stub = {
+      initialize() {},
+      render() { return Promise.reject(new Error("Could not load mermaid (" + cause + "). Reload the page to retry.")) },
+    }
+    window.mermaid = stub
+    await renderers.renderAll(document)
+    if (window.mermaid === stub) delete window.mermaid
+    return
+  }
+  renderers.renderAll(document)
+}
+
+// Targets appear wherever markdown is inserted: documents, comment cards,
+// the comments panel, the review conversation. One observer renders them
+// when an inserted element is or holds one (a render target, or a bare fence
+// that renderAll wraps), like watchCodeBlocks. Theme changes re-render
+// through their own handlers. Returns a disconnect function.
+const RENDER_TARGET_SELECTOR = '.crit-render, pre > code[class*="language-"]'
+
+function addsRenderTarget(records) {
+  for (const record of records) {
+    for (const node of record.addedNodes) {
+      if (node.nodeType !== 1) continue
+      if (node.matches(RENDER_TARGET_SELECTOR) || node.querySelector(RENDER_TARGET_SELECTOR)) return true
+    }
+  }
+  return false
+}
+
+function watchRenderTargets(root) {
+  let queued = false
+  const observer = new MutationObserver(records => {
+    if (queued || !addsRenderTarget(records)) return
+    queued = true
+    queueMicrotask(() => {
+      queued = false
+      renderPluggableBlocks()
+    })
+  })
+  observer.observe(root, { childList: true, subtree: true })
+  renderPluggableBlocks()
+  return () => observer.disconnect()
+}
+
+// A click on a diagram part that its renderer maps to source lines opens a
+// comment on those lines (crit: installRenderAnchorComments).
+function onRenderAnchor(ctx, e) {
+  const d = e.detail || {}
+  const lineBlock = e.target.closest(".line-block[data-block-index]")
+  if (!lineBlock || ctx.canComment === false) return
+  const filePath = lineBlock.dataset.filePath || null
+  if ((d.path || null) !== filePath) return
+  openForm(ctx, {
+    filePath,
+    afterBlockIndex: parseInt(lineBlock.dataset.blockIndex, 10),
+    startLine: d.startLine,
+    endLine: d.endLine,
+    editingId: null,
+    quote: d.quote || null,
+    quoteOffset: null,
   })
 }
 
-function getMermaidTheme() {
-  const dataTheme = document.documentElement.getAttribute("data-theme")
-  if (dataTheme === "light") return "default"
-  if (dataTheme === "dark") return "dark"
-  // System theme: check prefers-color-scheme
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "default" : "dark"
+// The file renderer claiming this code file (*.mmd -> mermaid), or null.
+function fileRendererFor(filePath) {
+  return isCodeFile(filePath) ? renderers.forFile(filePath) : null
 }
 
-// Diagrams follow the reader's theme palette (--crit-palette-*, set by
-// CritWeb.ThemePalette on review pages). Same mapping as crit.
-function mermaidOptions() {
-  if (!document.documentElement.hasAttribute("data-crit-palette")) return { startOnLoad: false, theme: getMermaidTheme() }
-  const css = getComputedStyle(document.documentElement)
-  const role = name => css.getPropertyValue("--crit-palette-" + name).trim()
-  return { startOnLoad: false, theme: "base", themeVariables: {
-    darkMode: getMermaidTheme() === "dark", background: role("bg"),
-    primaryColor: role("surface"), primaryTextColor: role("fg"), primaryBorderColor: role("border"),
-    secondaryColor: role("elevated"), tertiaryColor: role("bg"), lineColor: role("muted"),
-    textColor: role("fg"), mainBkg: role("surface"), nodeBorder: role("border"),
-    edgeLabelBackground: role("bg"), fontFamily: css.getPropertyValue("--crit-font-body").trim(),
-  } }
+// Does the file show its renderer's view? Files open on it, like crit's
+// files mode; the toggle's Source button switches to the code view.
+function showsRenderedFile(ctx, filePath) {
+  return !!fileRendererFor(filePath) && !(ctx.sourceViewPaths && ctx.sourceViewPaths.has(filePath))
 }
 
-async function initMermaid() {
-  if (mermaidReady) return
-  const { default: mermaid } = await import("mermaid")
-  mermaid.initialize(mermaidOptions())
-  window.__critMermaid = mermaid
-  mermaidReady = true
+// The rendered view: one block spanning the whole file, so comments on any
+// line sit below the rendering and the gutter comments on every line
+// (crit: renderedFileBlocks).
+function renderedFileBlocks(filePath, content) {
+  const renderer = fileRendererFor(filePath)
+  const lines = renderers.lineCount(content || "")
+  if (!renderer || !lines) return []
+  return [{
+    startLine: 1, endLine: lines, isEmpty: false, cssClass: "render-block",
+    html: renderers.targetHTML(renderer.name, "file", content, { startLine: 1, endLine: lines }),
+  }]
 }
 
-// Theme or palette changed: rendered diagrams keep the old colours, so
-// re-initialize and re-render them (a render rebuilds them as pending).
-function rethemeMermaid(ctx) {
-  closeMermaidOverlay()
-  const mermaid = window.__critMermaid
-  if (!mermaid || !ctx.el.querySelector(".mermaid-rendered")) return
-  mermaid.initialize(mermaidOptions())
-  render(ctx)
-}
-
-async function renderMermaidBlocks(container) {
-  // Document rebuild invalidates the detached overlay clone — close it.
-  closeMermaidOverlay()
-  await initMermaid()
-  const mermaid = window.__critMermaid
-  if (!mermaid) {
-    decorateMermaidBlocks(container)
-    return
+// "<label> / Source" toggle for a file a renderer claims. Source is the
+// file's code view.
+function renderFileViewToggle(ctx, filePath) {
+  const rendered = showsRenderedFile(ctx, filePath)
+  const toggle = document.createElement("div")
+  toggle.className = "crit-diff-mode-toggle file-header-toggle"
+  toggle.setAttribute("role", "group")
+  toggle.setAttribute("aria-label", "View for " + filePath)
+  const modes = [["rendered", fileRendererFor(filePath).label], ["source", "Source"]]
+  for (const [mode, label] of modes) {
+    const on = (mode === "rendered") === rendered
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.className = "crit-toggle-btn" + (on ? " crit-toggle-btn--active" : "")
+    btn.dataset.mode = mode
+    btn.setAttribute("aria-pressed", String(on))
+    btn.textContent = label
+    toggle.appendChild(btn)
   }
-  const els = container.querySelectorAll(".mermaid-pending")
-  for (const el of els) {
-    const source = el.dataset.mermaidSrc
-    if (!source) continue
-    const renderId = "mermaid-svg-" + mermaidCounter++
-    try {
-      const { svg } = await mermaid.render(renderId, source)
-      el.innerHTML = svg
-      el.classList.remove("mermaid-pending")
-      el.classList.add("mermaid-rendered")
-    } catch (_) {
-      el.innerHTML = "<pre><code>" + escapeHtml(source) + "</code></pre>"
-      el.classList.remove("mermaid-pending")
-    }
-  }
-  decorateMermaidBlocks(container)
+  toggle.addEventListener("click", e => {
+    const btn = e.target.closest(".crit-toggle-btn")
+    if (!btn) return
+    // Inside the file header <summary>: don't collapse the file.
+    e.preventDefault()
+    e.stopPropagation()
+    if ((btn.dataset.mode === "rendered") === showsRenderedFile(ctx, filePath)) return
+    if (!ctx.sourceViewPaths) ctx.sourceViewPaths = new Set()
+    if (btn.dataset.mode === "source") ctx.sourceViewPaths.add(filePath)
+    else ctx.sourceViewPaths.delete(filePath)
+    // Line forms belong to the view they were opened in.
+    ctx.activeForms = ctx.activeForms.filter(f =>
+      f.scope === "file" || f.scope === "review" || !sameFile(ctx, f.filePath, filePath))
+    ctx.selectionStart = null
+    ctx.selectionEnd = null
+    render(ctx)
+  })
+  return toggle
 }
 
 // ---- Markdown parsing & line-block building ---------------------------------
@@ -1502,13 +1296,13 @@ function rewriteFrontmatterAsYamlFence(content) {
 }
 
 // Fenced code blocks of markdown documents, for codeHighlight.prime. Same
-// parse as buildLineBlocks (frontmatter becomes a yaml fence); mermaid is
-// rendered as a diagram, not highlighted.
+// parse as buildLineBlocks (frontmatter becomes a yaml fence); fences a
+// renderer claims (mermaid) render as diagrams, not highlighted.
 function fencesIn(md, content) {
   return md.parse(rewriteFrontmatterAsYamlFence(content || ""), {})
     .filter(t => t.type === "fence")
     .map(t => ({ code: t.content, lang: t.info.trim().split(/\s+/)[0] }))
-    .filter(f => f.lang && f.lang !== "mermaid")
+    .filter(f => f.lang && !renderers.forFence(f.lang))
 }
 
 // Tokenize every fence of the given documents in Pierre's workers, so the
@@ -1537,7 +1331,6 @@ async function rebuildDocuments(ctx) {
   } else if (documents.length) {
     ctx.lineBlocks = buildLineBlocks(ctx.md, ctx.rawContent)
   }
-  if (window.__critMermaid) window.__critMermaid.initialize(mermaidOptions())
   render(ctx)
 }
 
@@ -1732,14 +1525,21 @@ function buildLineBlocks(md, rawContent) {
       const lang = token.info ? token.info.trim().split(/\s+/)[0] : ""
       const code = token.content
 
-      // Mermaid: render as single block
-      if (lang === "mermaid") {
+      // Fences a renderer claims (mermaid, any case): one block, not split
+      // per line. The source lines sit between the fence markers.
+      const fenceRenderer = renderers.forFence(lang)
+      if (fenceRenderer) {
+        const contentLines = renderers.lineCount(code)
         blocks.push({
           startLine: blockStart + 1,
           endLine: blockEnd,
-          html: '<div class="mermaid-pending" data-mermaid-src="' + escapeHtml(code.trim()) + '"></div>',
+          html: renderers.targetHTML(fenceRenderer.name, "fence", code, {
+            lang,
+            startLine: contentLines ? blockStart + 2 : 0,
+            endLine: blockStart + 1 + contentLines,
+          }),
           isEmpty: false,
-          cssClass: "mermaid-block",
+          cssClass: "render-block",
         })
         i++
         coveredUpTo = blockEnd
@@ -2351,8 +2151,6 @@ function renderMultiFile(ctx) {
   renderFileTree(ctx)
   // Update mobile file picker
   renderMobileFilePicker(ctx)
-  // Render mermaid
-  renderMermaidBlocks(container)
   // Hide TOC only in multi-file mode (file tree replaces it)
   if (ctx.files.length > 1) {
     const tocToggle = document.getElementById('crit-toc-toggle')
@@ -2970,7 +2768,7 @@ function renderFileSection(ctx, file) {
 
   // Scroll correction on collapse
   header.addEventListener('click', function(e) {
-    if (e.target.closest('.file-header-viewed') || e.target.closest('.file-comment-btn')) {
+    if (e.target.closest('.file-header-viewed') || e.target.closest('.file-comment-btn') || e.target.closest('.file-header-toggle')) {
       e.preventDefault()
       return
     }
@@ -3021,6 +2819,9 @@ function renderFileSection(ctx, file) {
       }).catch(function() { /* clipboard not available */ })
     })
   })(file.path)
+
+  // Diagram / Source toggle for a file a renderer claims (*.mmd).
+  if (!file.orphaned && fileRendererFor(file.path)) header.appendChild(renderFileViewToggle(ctx, file.path))
 
   // File comment button — not for orphaned files (no point adding comments to removed files).
   // Also gated on canComment: when policy disallows new comments, don't create the
@@ -3084,7 +2885,8 @@ function renderFileSection(ctx, file) {
 
   // File body — render using renderBlock per block, or diff view if round diff is active
   const body = document.createElement('div')
-  body.className = 'file-body' + (file.fileType === 'code' ? ' crit-code-body' : '')
+  const renderedFile = !file.orphaned && showsRenderedFile(ctx, file.path)
+  body.className = 'file-body' + (file.fileType === 'code' && !renderedFile ? ' crit-code-body' : '')
 
   if (file.orphaned) {
     // Orphaned files show a placeholder instead of content
@@ -3092,6 +2894,9 @@ function renderFileSection(ctx, file) {
     placeholder.className = 'diff-deleted-placeholder orphaned-placeholder'
     placeholder.textContent = 'This file is no longer part of the review.'
     body.appendChild(placeholder)
+  } else if (renderedFile) {
+    appendDocumentBlocks(ctx, body, renderedFileBlocks(file.path, file.content),
+      buildCommentsMap(file.comments), buildCommentedLineSet(file.comments, ctx), file.path)
   } else if (file.fileType === 'code') {
     renderCodeBody(ctx, file.path, file.content, body)
   } else {
@@ -3584,7 +3389,6 @@ function renderDocument(ctx) {
       container.appendChild(diffEl)
       attachGutterMouseHandler(container, ctx)
       attachGutterTouchHandler(container, ctx)
-      renderMermaidBlocks(container)
       replaceBrokenImages(container)
       updateCommentCount(ctx)
       return
@@ -3592,10 +3396,26 @@ function renderDocument(ctx) {
   }
   container.classList.remove('round-diff-split')
 
-  // Single code file: Pierre File, no line blocks.
+  // Single code file: Pierre File, no line blocks. A file a renderer claims
+  // gets the Diagram / Source toggle above it (there is no file header).
   if (isCodeFile(ctx.singleFilePath)) {
     const outdated = ctx.comments.filter(c => isOutdatedLineComment(c, lineCount(ctx.rawContent)) && !(c.resolved && isHideResolved(ctx)))
     if (outdated.length > 0) container.appendChild(buildOutdatedComments(ctx, outdated))
+    if (fileRendererFor(ctx.singleFilePath)) {
+      const bar = document.createElement('div')
+      bar.className = 'crit-file-view-bar'
+      bar.appendChild(renderFileViewToggle(ctx, ctx.singleFilePath))
+      container.appendChild(bar)
+    }
+    if (showsRenderedFile(ctx, ctx.singleFilePath)) {
+      appendDocumentBlocks(ctx, container, renderedFileBlocks(ctx.singleFilePath, ctx.rawContent),
+        buildCommentsMap(ctx.comments), buildCommentedLineSet(ctx.comments, ctx), ctx.singleFilePath)
+      attachGutterMouseHandler(container, ctx)
+      attachGutterTouchHandler(container, ctx)
+      highlightQuotesInSection(container, { path: ctx.singleFilePath, comments: ctx.comments }, ctx.activeForms)
+      updateCommentCount(ctx)
+      return
+    }
     const body = document.createElement('div')
     body.className = 'file-body crit-code-body'
     container.appendChild(body)
@@ -3620,7 +3440,6 @@ function renderDocument(ctx) {
   attachGutterMouseHandler(container, ctx)
   attachGutterTouchHandler(container, ctx)
 
-  renderMermaidBlocks(container)
   replaceBrokenImages(container)
   highlightQuotesInSection(container, { path: ctx.singleFilePath, comments: ctx.comments }, ctx.activeForms)
   updateCommentCount(ctx)
@@ -5682,6 +5501,11 @@ export const DocumentRenderer = {
     // re-render when display settings, the theme or the theme type change.
     configureCodeHighlight()
     ctx._stopWatchingCode = watchCodeBlocks(document.body)
+    // Diagrams (```mermaid fences, .mmd files) render as they are inserted;
+    // a click on a diagram node comments on the line that defines it.
+    ctx._stopWatchingRenders = watchRenderTargets(document.body)
+    ctx._renderAnchorHandler = e => onRenderAnchor(ctx, e)
+    ctx.el.addEventListener('crit:render-anchor', ctx._renderAnchorHandler)
     ctx._stopRendererUpdates = onRendererChange(kind => {
       refreshCodeViewOptions(ctx)
       // New token colours: fences baked into line blocks are rebuilt.
@@ -5689,7 +5513,7 @@ export const DocumentRenderer = {
     })
     ctx._themeHandler = () => {
       refreshCodeViewOptions(ctx)
-      rethemeMermaid(ctx)
+      renderPluggableBlocks()
     }
     window.addEventListener('phx:set-theme', ctx._themeHandler)
     ctx._storageThemeHandler = event => {
@@ -5697,7 +5521,7 @@ export const DocumentRenderer = {
     }
     window.addEventListener('storage', ctx._storageThemeHandler)
     // "System" follows the OS: diagrams take the other palette half.
-    ctx._systemThemeHandler = () => { if (themeChoice() === 'system') rethemeMermaid(ctx) }
+    ctx._systemThemeHandler = () => { if (themeChoice() === 'system') renderPluggableBlocks() }
     ctx._systemThemeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null
     if (ctx._systemThemeQuery) ctx._systemThemeQuery.addEventListener('change', ctx._systemThemeHandler)
 
@@ -6487,6 +6311,8 @@ export const DocumentRenderer = {
     this._destroyed = true
     document.body.classList.remove("dragging")
     if (this._stopWatchingCode) this._stopWatchingCode()
+    if (this._stopWatchingRenders) this._stopWatchingRenders()
+    if (this._renderAnchorHandler) this.el.removeEventListener('crit:render-anchor', this._renderAnchorHandler)
     if (this._stopRendererUpdates) this._stopRendererUpdates()
     if (this._themeHandler) {
       window.removeEventListener('phx:set-theme', this._themeHandler)
@@ -6503,7 +6329,7 @@ export const DocumentRenderer = {
     this.selectionStart = null
     this.selectionEnd = null
     document.body.classList.remove('visual-mode')
-    teardownMermaidOverlay()
+    diagramOverlay.close()
     if (this._scrollHandler) {
       window.removeEventListener("scroll", this._scrollHandler)
     }

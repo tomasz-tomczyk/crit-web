@@ -189,7 +189,7 @@ See `../CLAUDE.md` for the full parity contract between crit local and crit-web.
 crit renders code with `@pierre/diffs` (Shiki grammars and themes in a worker pool) and themes its whole review UI from the selected Shiki theme. crit-web uses crit's build, byte for byte:
 
 - `priv/static/pierre/*.js.gz` — the bundle, worker, grammar/theme chunks and `palettes.js` (UI palette per theme). Served at `/pierre/<name>.js` by `CritWeb.Plugs.Precompressed` (gzip as-is, ETag; chunks cached for a year).
-- `assets/vendor/crit/` — crit's `crit-code-highlight.js`, `crit-pierre-adapter.js`, `crit-pierre-dom.js`, `crit-pierre-runtime.js`, `crit-theme-boost.js` and `crit-palette.css`, bundled by esbuild.
+- `assets/vendor/crit/` — crit's `crit-code-highlight.js`, `crit-pierre-adapter.js`, `crit-pierre-dom.js`, `crit-pierre-runtime.js`, `crit-theme-boost.js` and `crit-palette.css`, plus the pluggable renderers (`crit-glob-match.js`, `crit-renderers.js`, `crit-renderer-mermaid.js`, `crit-diagram-overlay.js`: mermaid fences and `.mmd` / `.mermaid` files), bundled by esbuild. crit-web sets `window.mermaid` from its own `mermaid` npm chunk before rendering, so the renderer never loads crit's `mermaid.min.js`.
 
 Never edit these by hand or `npm install @pierre/diffs` here. When crit changes them, run `scripts/sync-pierre.sh` and commit; `test/crit_web/pierre_sync_test.exs` fails on drift (and only checks presence when `../crit` is absent, e.g. CI).
 

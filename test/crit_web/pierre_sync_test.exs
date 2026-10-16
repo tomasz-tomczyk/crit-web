@@ -6,7 +6,8 @@ defmodule CritWeb.PierreSyncTest do
   crit's renderer modules, copied verbatim by `scripts/sync-pierre.sh`:
 
     * `priv/static/pierre/` — the Pierre + Shiki bundle and theme palettes
-    * `assets/vendor/crit/` — modules bundled into the review page
+    * `assets/vendor/crit/` — modules bundled into the review page, including
+      the pluggable renderers (registry, mermaid, diagram overlay)
 
   When the sibling crit checkout is present (local dev), each vendored file
   must match its crit source by content hash and the Pierre directory must hold
@@ -21,7 +22,11 @@ defmodule CritWeb.PierreSyncTest do
     "crit-pierre-dom.js",
     "crit-pierre-runtime.js",
     "crit-theme-boost.js",
-    "crit-palette.css"
+    "crit-palette.css",
+    "crit-glob-match.js",
+    "crit-renderers.js",
+    "crit-renderer-mermaid.js",
+    "crit-diagram-overlay.js"
   ]
   @pierre_entries ["pierre-diffs.js.gz", "pierre-worker.js.gz", "palettes.js.gz"]
 

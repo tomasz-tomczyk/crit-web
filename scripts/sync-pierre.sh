@@ -5,6 +5,8 @@
 # review UI from the selected Shiki theme. crit-web uses the same build and the
 # same modules so both review pages highlight and theme code identically. The
 # build is never re-run here: grammar set, themes and palettes come from crit.
+# The pluggable renderers (registry, built-in mermaid, fullscreen diagram
+# overlay) are vendored the same way (crit docs/renderers.md).
 #
 # Copies:
 #   crit/web/pierre/*.js.gz      -> priv/static/pierre/   (served gzip, see
@@ -32,6 +34,10 @@ BUNDLED=(
   crit-pierre-runtime.js
   crit-theme-boost.js
   crit-palette.css
+  crit-glob-match.js
+  crit-renderers.js
+  crit-renderer-mermaid.js
+  crit-diagram-overlay.js
 )
 
 if [[ ! -d "$SRC/pierre" ]]; then
