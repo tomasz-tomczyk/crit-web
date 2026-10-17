@@ -55,8 +55,10 @@ function renderTree(paths) {
   const fileList = paths.map(p => ({ path: p, status: 'modified', comments: [] }))
   const container = fakeElement()
   const listOrder = new Function('document', 'fileList', 'container', `
-    const ctx = { treeFolderState: {} }
+    const ctx = { treeFolderState: {}, comments: [], subThreads: [] }
     function escapeHtml(s) { return s }
+    ${extractFunction('allComments')}
+    ${extractFunction('openThreadCount')}
     ${extractFunction('pathCompare')}
     ${extractFunction('fileSortComparator')}
     ${extractFunction('buildFileTree')}

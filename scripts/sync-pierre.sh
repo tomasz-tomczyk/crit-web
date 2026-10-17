@@ -32,6 +32,7 @@ BUNDLED=(
   crit-pierre-adapter.js
   crit-pierre-dom.js
   crit-pierre-runtime.js
+  crit-subthreads.js
   crit-theme-boost.js
   crit-palette.css
   crit-glob-match.js

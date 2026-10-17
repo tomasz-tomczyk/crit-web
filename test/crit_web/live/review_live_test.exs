@@ -636,6 +636,7 @@ defmodule CritWeb.ReviewLiveTest do
           :resolved,
           :resolved_round,
           :external_id,
+          :anchor_comment_id,
           :anchor,
           :drifted,
           :created_at,

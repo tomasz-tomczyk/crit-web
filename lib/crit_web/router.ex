@@ -311,6 +311,7 @@ defmodule CritWeb.Router do
 
       post "/reviews/:token/seed-comment", ApiController, :seed_comment
       post "/reviews/:token/seed-reply/:comment_id", ApiController, :seed_reply
+      post "/reviews/:token/seed-sub-thread/:anchor_id", ApiController, :seed_sub_thread
       post "/reviews/:token/seed-resolve/:comment_id", ApiController, :seed_resolve
       post "/test/seed-user", ApiController, :seed_user
       post "/test/seed-org", ApiController, :seed_org

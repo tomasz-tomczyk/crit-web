@@ -99,6 +99,72 @@ defmodule Crit.NotificationsTest do
              List.duplicate(reply.id, 3)
   end
 
+  test "a sub-thread notifies the author of the message it comments on" do
+    owner = user_fixture(%{name: "Owner"})
+    root_author = user_fixture(%{name: "Root"})
+    replier = user_fixture(%{name: "Replier"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, root} =
+      Reviews.create_comment(Scope.for_user(root_author), review, valid_comment_attrs())
+
+    {:ok, reply} =
+      Reviews.create_reply(Scope.for_user(replier), root.id, %{"body" => "answer"}, review.id)
+
+    Repo.delete_all(NotificationBatch)
+    Repo.delete_all(Oban.Job)
+
+    assert {:ok, sub_thread} =
+             Reviews.create_sub_thread(
+               Scope.for_user(actor),
+               reply.id,
+               %{"body" => "why?", "quote" => "answer"},
+               review.id
+             )
+
+    recipient_ids = Repo.all(from b in NotificationBatch, select: b.recipient_user_id)
+    assert MapSet.new(recipient_ids) == MapSet.new([owner.id, replier.id])
+
+    assert Repo.all(from i in NotificationItem, select: i.comment_id) ==
+             List.duplicate(sub_thread.id, 2)
+  end
+
+  test "a reply in a sub-thread also reaches the author of the message it comments on" do
+    owner = user_fixture(%{name: "Owner"})
+    anchored_author = user_fixture(%{name: "Anchored"})
+    sub_thread_author = user_fixture(%{name: "Asker"})
+    actor = user_fixture(%{name: "Actor"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, root} =
+      Reviews.create_comment(Scope.for_user(anchored_author), review, valid_comment_attrs())
+
+    {:ok, sub_thread} =
+      Reviews.create_sub_thread(
+        Scope.for_user(sub_thread_author),
+        root.id,
+        %{"body" => "why?", "quote" => "Test"},
+        review.id
+      )
+
+    Repo.delete_all(NotificationBatch)
+    Repo.delete_all(Oban.Job)
+
+    assert {:ok, _reply} =
+             Reviews.create_reply(
+               Scope.for_user(actor),
+               sub_thread.id,
+               %{"body" => "because"},
+               review.id
+             )
+
+    recipient_ids = Repo.all(from b in NotificationBatch, select: b.recipient_user_id)
+
+    assert MapSet.new(recipient_ids) ==
+             MapSet.new([owner.id, anchored_author.id, sub_thread_author.id])
+  end
+
   test "disabled user preference skips enqueue" do
     owner = user_fixture(%{name: "Owner"})
     actor = user_fixture(%{name: "Actor"})

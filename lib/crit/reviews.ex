@@ -324,6 +324,8 @@ defmodule Crit.Reviews do
 
   Opts:
     * `:cli_args` — CLI arguments associated with the share action
+    * `:sub_threads` — sub-threads anchored on the comments and replies of the
+      payload by `parent_external_id` (see `upsert_review/4`)
   """
   def create_review(
         %Scope{} = scope,
@@ -342,6 +344,7 @@ defmodule Crit.Reviews do
 
     user_id = Scope.user_id(scope)
     cli_args = Keyword.get(opts, :cli_args) || []
+    sub_threads_attrs = Keyword.get(opts, :sub_threads) || []
     review_type = Keyword.get(opts, :review_type) || "files"
     org_slug = Keyword.get(opts, :org)
     explicit_visibility = Keyword.get(opts, :visibility)
@@ -387,6 +390,7 @@ defmodule Crit.Reviews do
           files_attrs,
           comments_attrs,
           review_comments_attrs,
+          sub_threads_attrs,
           user_id,
           total_bytes,
           total_lines
@@ -492,6 +496,7 @@ defmodule Crit.Reviews do
          files_attrs,
          comments_attrs,
          review_comments_attrs,
+         sub_threads_attrs,
          user_id,
          total_bytes,
          total_lines
@@ -508,21 +513,23 @@ defmodule Crit.Reviews do
       end
     end)
     |> Ecto.Multi.run(:comments, fn _repo, %{review: review} ->
-      case insert_imported_comments(review, comments_attrs, user_id) do
-        :ok -> {:ok, :ok}
-        error -> error
-      end
+      insert_imported_comments(review, comments_attrs, user_id)
     end)
     |> Ecto.Multi.run(:review_comments, fn _repo, %{review: review} ->
-      case insert_imported_comments(review, review_comments_attrs, user_id) do
-        :ok -> {:ok, :ok}
-        error -> error
-      end
+      insert_imported_comments(review, review_comments_attrs, user_id)
+    end)
+    |> Ecto.Multi.run(:sub_threads, fn _repo, %{review: review} = changes ->
+      entries = payload_sub_thread_entries(sub_threads_attrs, user_id, %{}, %{})
+      anchors = Map.merge(changes.comments, changes.review_comments)
+      insert_sub_threads(review, entries, anchors)
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{review: review}} ->
-        comment_count = length(comments_attrs) + length(review_comments_attrs)
+      {:ok, %{review: review, sub_threads: sub_thread_count}} ->
+        # Sub-threads count once inserted: an entry whose anchor never shows
+        # up is dropped.
+        comment_count =
+          length(comments_attrs) + length(review_comments_attrs) + sub_thread_count
 
         Statistics.increment_review(
           length(files_attrs),
@@ -550,6 +557,10 @@ defmodule Crit.Reviews do
   also changes file content, line comments are carried onto the new text
   (see `Crit.CommentCarryForward`). An explicit `comments` list, including
   `[]`, replaces stored comments and is saved at the line numbers it sends.
+
+  With a `comments` list, `sub_threads` (each anchored by `parent_external_id`
+  on a message of the payload), including `[]`, replaces the stored
+  sub-threads; a missing key (a client that predates them) keeps them.
 
   Returns {:ok, :updated, review}, {:ok, :no_changes, review}, or {:error, reason}.
   """
@@ -671,11 +682,17 @@ defmodule Crit.Reviews do
   # line comments onto the new file. A present list, including [], replaces.
   defp apply_comment_payload(review, payload, files, user_id) do
     if is_list(payload["comments"]) do
-      replace_comments(review, payload["comments"], user_id, files)
+      replace_comments(review, payload["comments"], payload_sub_threads(payload), user_id, files)
     else
       carry_stored_comments(review, files)
     end
   end
+
+  # A client that predates sub-threads sends no such key: keep them.
+  defp payload_sub_threads(%{"sub_threads" => sub_threads}) when is_list(sub_threads),
+    do: sub_threads
+
+  defp payload_sub_threads(_payload), do: :keep
 
   defp carry_stored_comments(review, new_files) do
     old_by_path =
@@ -685,8 +702,12 @@ defmodule Crit.Reviews do
 
     new_by_path = Map.new(new_files, fn file -> {file["path"], file["content"] || ""} end)
 
+    # Sub-threads have no lines to carry: they stay on their anchor.
     comments =
-      Repo.all(from c in Comment, where: c.review_id == ^review.id and is_nil(c.parent_id))
+      Repo.all(
+        from c in Comment,
+          where: c.review_id == ^review.id and is_nil(c.parent_id) and is_nil(c.anchor_comment_id)
+      )
 
     case Enum.reduce_while(comments, {:ok, %{}}, fn comment, {:ok, maps} ->
            case carry_comment(comment, old_by_path, new_by_path, maps) do
@@ -859,7 +880,10 @@ defmodule Crit.Reviews do
   # so we can preserve their server-verified `user_id` on roundtrip. Without
   # this carry-forward, every re-share would strip attribution from comments
   # authored by other users.
-  defp replace_comments(review, new_comments, current_user_id, new_files) do
+  #
+  # Then the sub-threads (the payload's, or `:keep` for the stored ones), on
+  # the new rows.
+  defp replace_comments(review, new_comments, sub_threads, current_user_id, new_files) do
     files_by_path = Map.new(new_files, fn file -> {file["path"], file["content"] || ""} end)
 
     existing_by_external_id =
@@ -879,9 +903,24 @@ defmodule Crit.Reviews do
       |> Repo.all()
       |> Map.new(fn c -> {c.external_id, c} end)
 
+    sub_thread_entries =
+      case sub_threads do
+        :keep ->
+          stored_sub_thread_entries(review)
+
+        list ->
+          payload_sub_thread_entries(
+            list,
+            current_user_id,
+            existing_by_external_id,
+            existing_replies_by_external_id
+          )
+      end
+
     Repo.delete_all(from c in Comment, where: c.review_id == ^review.id)
 
-    Enum.reduce_while(new_comments, :ok, fn attrs, :ok ->
+    new_comments
+    |> Enum.reduce_while({:ok, %{}, []}, fn attrs, {:ok, anchors, threads} ->
       scope = attrs["scope"] || infer_scope(attrs)
       replies_attrs = attrs["replies"] || []
       external_id = attrs["external_id"]
@@ -923,14 +962,32 @@ defmodule Crit.Reviews do
                  current_user_id,
                  existing_replies_by_external_id
                ) do
-            :ok -> {:cont, :ok}
-            {:error, _} = error -> {:halt, error}
+            {:ok, reply_anchors, replies} ->
+              anchors = anchors |> put_anchor(comment, comment) |> Map.merge(reply_anchors)
+              {:cont, {:ok, anchors, [{comment, replies} | threads]}}
+
+            {:error, _} = error ->
+              {:halt, error}
           end
 
         {:error, changeset} ->
           {:halt, {:error, changeset}}
       end
     end)
+    |> case do
+      {:ok, anchors, threads} ->
+        fingerprints =
+          threads
+          |> Enum.reverse()
+          |> fingerprint_keys()
+          |> Map.new(fn {key, row, thread} -> {key, anchor_info(row, thread)} end)
+
+        anchors = Map.merge(fingerprints, anchors)
+        with {:ok, _count} <- insert_sub_threads(review, sub_thread_entries, anchors), do: :ok
+
+      error ->
+        error
+    end
   end
 
   # Decide (user_id, author_identity, author_display_name) for a comment
@@ -1013,7 +1070,8 @@ defmodule Crit.Reviews do
   #   * Authenticated → write current_user_id, clear author_identity.
   #   * Anonymous → write "imported" sentinel into author_identity, NULL user_id.
   defp insert_imported_comments(review, comments_attrs, current_user_id) do
-    Enum.reduce_while(comments_attrs, :ok, fn attrs, :ok ->
+    comments_attrs
+    |> Enum.reduce_while({:ok, %{}}, fn attrs, {:ok, anchors} ->
       replies_attrs = attrs["replies"] || []
       scope = attrs["scope"] || infer_scope(attrs)
 
@@ -1035,8 +1093,11 @@ defmodule Crit.Reviews do
       |> case do
         {:ok, comment} ->
           case insert_replies(comment, replies_attrs, current_user_id) do
-            :ok -> {:cont, :ok}
-            error -> {:halt, error}
+            {:ok, reply_anchors, _replies} ->
+              {:cont, {:ok, anchors |> put_anchor(comment, comment) |> Map.merge(reply_anchors)}}
+
+            error ->
+              {:halt, error}
           end
 
         {:error, changeset} ->
@@ -1059,10 +1120,11 @@ defmodule Crit.Reviews do
   defp insert_replies(comment, replies_attrs, current_user_id),
     do: insert_replies(comment, replies_attrs, current_user_id, %{})
 
-  defp insert_replies(_comment, [], _current_user_id, _existing_by_external_id), do: :ok
-
+  # Returns the anchors of the inserted replies (see `put_anchor/3`) and the
+  # replies, in order.
   defp insert_replies(comment, replies_attrs, current_user_id, existing_by_external_id) do
-    Enum.reduce_while(replies_attrs, :ok, fn attrs, :ok ->
+    replies_attrs
+    |> Enum.reduce_while({:ok, %{}, []}, fn attrs, {:ok, anchors, rows} ->
       external_id = attrs["external_id"]
       existing = external_id && Map.get(existing_by_external_id, external_id)
 
@@ -1079,7 +1141,250 @@ defmodule Crit.Reviews do
       |> Ecto.Changeset.put_change(:external_id, external_id)
       |> Repo.insert()
       |> case do
-        {:ok, _} -> {:cont, :ok}
+        {:ok, reply} -> {:cont, {:ok, put_anchor(anchors, reply, comment), rows ++ [reply]}}
+        {:error, changeset} -> {:halt, {:error, changeset}}
+      end
+    end)
+  end
+
+  # Sub-thread imports. A sub-thread anchors on a message by a key: its
+  # external_id, or for a stored anchor without one, `{:row, id}` (a kept
+  # sub-thread or its reply) or a content fingerprint (`fingerprint_keys/1`).
+  # `anchors` maps the key of each message inserted so far to its new row id
+  # and its thread's scope and file, which a sub-thread anchored on it takes.
+  defp put_anchor(anchors, %Comment{} = row, %Comment{} = thread),
+    do: put_anchor(anchors, row.external_id, row, thread)
+
+  defp put_anchor(anchors, key, %Comment{} = row, %Comment{} = thread)
+       when (is_binary(key) and key != "") or is_tuple(key) do
+    Map.put(anchors, key, anchor_info(row, thread))
+  end
+
+  defp put_anchor(anchors, _key, _row, _thread), do: anchors
+
+  defp anchor_info(row, thread),
+    do: %{id: row.id, scope: thread.scope, file_path: thread.file_path}
+
+  # A client that predates sub-threads re-shares a web comment without saying
+  # which stored row it was, so a kept sub-thread finds its anchor again by
+  # content: a thread by scope, file and body (not lines, which a re-share may
+  # move), a reply by its thread's key and body. Same-content messages are
+  # told apart by their order, the same on both sides: threads by line, then
+  # as stored or sent. `threads` is `[{thread, replies}]` in that order.
+  # Returns `[{key, row, thread}]` for every thread and reply.
+  defp fingerprint_keys(threads) do
+    threads
+    |> Enum.with_index()
+    |> Enum.sort_by(fn {{thread, _replies}, index} -> {thread.start_line || 0, index} end)
+    |> Enum.flat_map_reduce(%{}, fn {{thread, replies}, _index}, seen ->
+      {thread_key, seen} =
+        ordinal_key({:fingerprint, thread.scope, thread.file_path, thread.body}, seen)
+
+      {reply_keys, seen} =
+        Enum.map_reduce(replies, seen, fn reply, seen ->
+          {key, seen} = ordinal_key({:fingerprint, thread_key, reply.body}, seen)
+          {{key, reply, thread}, seen}
+        end)
+
+      {[{thread_key, thread, thread} | reply_keys], seen}
+    end)
+    |> elem(0)
+  end
+
+  # `base` numbered by how many messages took it before.
+  defp ordinal_key(base, seen) do
+    n = Map.get(seen, base, 0)
+    {{base, n}, Map.put(seen, base, n + 1)}
+  end
+
+  # The payload's `sub_threads`, attributed like the comments
+  # (`resolve_attribution/3`).
+  defp payload_sub_thread_entries(
+         sub_threads,
+         current_user_id,
+         existing_by_external_id,
+         existing_replies_by_external_id
+       ) do
+    for attrs <- sub_threads do
+      key = present_key(attrs["external_id"])
+      existing = key && Map.get(existing_by_external_id, key)
+
+      %{
+        key: key,
+        parent_key: present_key(attrs["parent_external_id"]),
+        attrs: %{
+          "body" => attrs["body"],
+          "quote" => attrs["quote"],
+          "quote_offset" => attrs["quote_offset"],
+          "review_round" => attrs["review_round"] || 1,
+          "resolved" => attrs["resolved"] == true,
+          "resolved_round" => attrs["resolved_round"],
+          "external_id" => key
+        },
+        author: resolve_attribution(existing, attrs, current_user_id),
+        inserted_at: nil,
+        replies:
+          for reply <- attrs["replies"] || [] do
+            reply_key = present_key(reply["external_id"])
+            existing_reply = reply_key && Map.get(existing_replies_by_external_id, reply_key)
+
+            %{
+              key: reply_key,
+              external_id: reply_key,
+              body: reply["body"],
+              author: resolve_attribution(existing_reply, reply, current_user_id),
+              inserted_at: nil
+            }
+          end
+      }
+    end
+  end
+
+  # The stored sub-threads, which a re-share without `sub_threads` puts back
+  # on the new rows: each on its anchor's external_id, or else on the anchor
+  # row itself when it is a kept sub-thread or one of its replies, or else on
+  # the anchor's fingerprint. One whose anchor the re-share drops goes with it.
+  defp stored_sub_thread_entries(review) do
+    rows =
+      Repo.all(
+        from c in Comment, where: c.review_id == ^review.id, order_by: [asc: c.inserted_at]
+      )
+
+    by_id = Map.new(rows, &{&1.id, &1})
+    replies_by_parent = rows |> Enum.filter(& &1.parent_id) |> Enum.group_by(& &1.parent_id)
+
+    fingerprints =
+      for(
+        row <- rows,
+        is_nil(row.parent_id) and is_nil(row.anchor_comment_id),
+        do: {row, Map.get(replies_by_parent, row.id, [])}
+      )
+      |> fingerprint_keys()
+      |> Map.new(fn {key, row, _thread} -> {row.id, key} end)
+
+    for row <- rows, row.anchor_comment_id do
+      %{
+        key: stored_key(row.id, row.external_id),
+        parent_key:
+          stored_anchor_key(Map.fetch!(by_id, row.anchor_comment_id), by_id, fingerprints),
+        attrs: %{
+          "body" => row.body,
+          "quote" => row.quote,
+          "quote_offset" => row.quote_offset,
+          "review_round" => row.review_round,
+          "resolved" => row.resolved,
+          "resolved_round" => row.resolved_round,
+          "external_id" => row.external_id
+        },
+        author: {row.user_id, row.author_identity, row.author_display_name},
+        inserted_at: row.inserted_at,
+        replies:
+          replies_by_parent
+          |> Map.get(row.id, [])
+          |> Enum.map(fn reply ->
+            %{
+              key: stored_key(reply.id, reply.external_id),
+              external_id: reply.external_id,
+              body: reply.body,
+              author: {reply.user_id, reply.author_identity, reply.author_display_name},
+              inserted_at: reply.inserted_at
+            }
+          end)
+      }
+    end
+  end
+
+  defp stored_anchor_key(%Comment{} = anchor, by_id, fingerprints) do
+    thread = if anchor.parent_id, do: Map.fetch!(by_id, anchor.parent_id), else: anchor
+
+    cond do
+      present_key(anchor.external_id) -> anchor.external_id
+      thread.anchor_comment_id -> {:row, anchor.id}
+      true -> Map.get(fingerprints, anchor.id)
+    end
+  end
+
+  defp stored_key(id, external_id), do: present_key(external_id) || {:row, id}
+
+  defp present_key(key) when is_binary(key) and key != "", do: key
+  defp present_key(_key), do: nil
+
+  # Second pass of an import: a sub-thread goes in once its anchor has a row,
+  # at any depth; one whose anchor never gets a row is dropped. Returns
+  # `{:ok, count}`, the number of sub-threads inserted.
+  defp insert_sub_threads(review, entries, anchors) do
+    pending = entries |> Enum.group_by(& &1.parent_key) |> Map.delete(nil)
+    insert_anchored(Map.keys(anchors), pending, anchors, review, 0)
+  end
+
+  defp insert_anchored([], _pending, _anchors, _review, count), do: {:ok, count}
+
+  defp insert_anchored([key | queue], pending, anchors, review, count) do
+    {entries, pending} = Map.pop(pending, key, [])
+    anchor = Map.fetch!(anchors, key)
+
+    entries
+    |> Enum.reduce_while({:ok, queue, anchors, count}, fn entry, {:ok, queue, anchors, count} ->
+      case insert_sub_thread_entry(entry, anchor, review) do
+        {:ok, added} ->
+          {:cont, {:ok, queue ++ Map.keys(added), Map.merge(anchors, added), count + 1}}
+
+        {:error, _} = error ->
+          {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, queue, anchors, count} -> insert_anchored(queue, pending, anchors, review, count)
+      {:error, _} = error -> error
+    end
+  end
+
+  # A kept sub-thread and its replies keep their dates, which order them.
+  defp insert_sub_thread_entry(entry, anchor, review) do
+    {user_id, identity, display_name} = entry.author
+
+    %Comment{}
+    |> Ecto.Changeset.change(%{
+      review_id: review.id,
+      anchor_comment_id: anchor.id,
+      scope: anchor.scope,
+      file_path: anchor.file_path,
+      user_id: user_id,
+      author_identity: identity,
+      author_display_name: display_name,
+      inserted_at: entry.inserted_at
+    })
+    |> Comment.sub_thread_changeset(entry.attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, sub_thread} ->
+        with {:ok, reply_anchors} <- insert_entry_replies(sub_thread, entry.replies) do
+          {:ok, %{} |> put_anchor(entry.key, sub_thread, sub_thread) |> Map.merge(reply_anchors)}
+        end
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp insert_entry_replies(sub_thread, replies) do
+    Enum.reduce_while(replies, {:ok, %{}}, fn reply, {:ok, anchors} ->
+      {user_id, identity, display_name} = reply.author
+
+      %Comment{}
+      |> Ecto.Changeset.change(%{
+        parent_id: sub_thread.id,
+        review_id: sub_thread.review_id,
+        user_id: user_id,
+        author_identity: identity,
+        author_display_name: display_name,
+        external_id: reply.external_id,
+        inserted_at: reply.inserted_at
+      })
+      |> Comment.reply_changeset(%{"body" => reply.body})
+      |> Repo.insert()
+      |> case do
+        {:ok, row} -> {:cont, {:ok, put_anchor(anchors, reply.key, row, sub_thread)}}
         {:error, changeset} -> {:halt, {:error, changeset}}
       end
     end)
@@ -1700,6 +2005,60 @@ defmodule Crit.Reviews do
     end
   end
 
+  @doc """
+  Create a sub-thread within the given scope: a root comment without lines on
+  a passage (`"quote"`, `"quote_offset"` in `attrs`, with `"body"`) of the
+  message `anchor_id` (comment, sub-thread or reply) of the review
+  `review_id`. It takes its anchor's thread scope and file, resolves on its
+  own and is deleted with its anchor. Same attribution and comment-policy
+  rules as `create_comment/4`; `{:error, :not_found}` when the anchor is not a
+  message of that review.
+  """
+  def create_sub_thread(%Scope{} = scope, anchor_id, attrs, review_id) do
+    with {:ok, uuid} <- Ecto.UUID.cast(anchor_id),
+         %Comment{} = anchor <- Repo.get_by(Comment, id: uuid, review_id: review_id),
+         review = Repo.get!(Review, review_id),
+         :ok <- check_comment_policy(scope, review) do
+      do_create_sub_thread(scope, review, anchor, attrs)
+    else
+      {:error, _} = error -> error
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp do_create_sub_thread(%Scope{} = scope, %Review{} = review, %Comment{} = anchor, attrs) do
+    user_id = Scope.user_id(scope)
+    # A reply's thread is its parent; a comment or sub-thread is its own.
+    thread = if anchor.parent_id, do: Repo.get!(Comment, anchor.parent_id), else: anchor
+
+    changeset =
+      %Comment{}
+      |> Ecto.Changeset.change(%{
+        review_id: review.id,
+        anchor_comment_id: anchor.id,
+        scope: thread.scope,
+        file_path: thread.file_path,
+        review_round: review.review_round,
+        user_id: user_id,
+        author_identity: if(user_id, do: nil, else: scope.identity),
+        author_display_name: scope.display_name
+      })
+      |> Comment.sub_thread_changeset(Map.take(attrs, ["body", "quote", "quote_offset"]))
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:comment, changeset)
+    |> Ecto.Multi.run(:statistics, &Statistics.increment_comment/2)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{comment: comment}} ->
+        Notifications.record_activity(scope, review, comment)
+        {:ok, comment}
+
+      {:error, :comment, changeset, _changes} ->
+        {:error, changeset}
+    end
+  end
+
   @doc "Update a reply's body if the caller's scope owns it. See `update_comment/3` for ownership rules."
   def update_reply(%Scope{} = scope, reply_id, body) do
     case Repo.get(Comment, reply_id) do
@@ -1771,6 +2130,7 @@ defmodule Crit.Reviews do
       resolved: c.resolved,
       resolved_round: c.resolved_round,
       external_id: c.external_id,
+      anchor_comment_id: c.anchor_comment_id,
       created_at: DateTime.to_iso8601(c.inserted_at),
       updated_at: DateTime.to_iso8601(c.updated_at),
       replies: Enum.map(replies, &serialize_reply/1)
@@ -1785,8 +2145,34 @@ defmodule Crit.Reviews do
       author_identity: r.author_identity,
       author_display_name: resolve_display_name(r),
       user_id: r.user_id,
+      external_id: r.external_id,
       created_at: DateTime.to_iso8601(r.inserted_at)
     }
+  end
+
+  @doc """
+  Serialize a review's root comments for the share API (`crit fetch`): the
+  threads, each message (comment or reply) carrying the sub-threads anchored
+  on it under `sub_threads`, at any depth. Sub-threads stay out of the
+  top-level list, which a client that predates them reads as line comments.
+  """
+  def serialize_threads(comments) do
+    {sub_threads, threads} = Enum.split_with(comments, & &1.anchor_comment_id)
+    by_anchor = Enum.group_by(sub_threads, & &1.anchor_comment_id)
+    Enum.map(threads, &serialize_thread(&1, by_anchor))
+  end
+
+  defp serialize_thread(%Comment{} = c, by_anchor) do
+    c
+    |> serialize_comment()
+    |> Map.update!(:replies, fn replies ->
+      Enum.map(replies, &Map.put(&1, :sub_threads, serialize_sub_threads(&1.id, by_anchor)))
+    end)
+    |> Map.put(:sub_threads, serialize_sub_threads(c.id, by_anchor))
+  end
+
+  defp serialize_sub_threads(message_id, by_anchor) do
+    by_anchor |> Map.get(message_id, []) |> Enum.map(&serialize_thread(&1, by_anchor))
   end
 
   defp resolve_display_name(%Comment{user_id: nil} = c), do: c.author_display_name

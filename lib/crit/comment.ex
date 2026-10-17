@@ -21,6 +21,8 @@ defmodule Crit.Comment do
     field :dom_anchor, :map
     belongs_to :review, Crit.Review
     belongs_to :parent, Crit.Comment
+    # Set on a sub-thread: a root without lines on a passage of this message.
+    belongs_to :anchor_comment, Crit.Comment
     belongs_to :user, Crit.User
     has_many :replies, Crit.Comment, foreign_key: :parent_id, preload_order: [asc: :inserted_at]
 
@@ -98,6 +100,27 @@ defmodule Crit.Comment do
     |> cast(attrs, [:body])
     |> validate_required([:body])
     |> validate_body_length()
+  end
+
+  @doc """
+  Changeset for creating a sub-thread (no lines). The caller sets
+  `review_id`, `anchor_comment_id` and the anchor's thread `scope` and
+  `file_path`.
+  """
+  def sub_thread_changeset(comment, attrs) do
+    comment
+    |> cast(attrs, [
+      :body,
+      :quote,
+      :quote_offset,
+      :review_round,
+      :resolved,
+      :resolved_round,
+      :external_id
+    ])
+    |> validate_required([:body])
+    |> validate_body_length()
+    |> validate_length(:author_display_name, max: 40)
   end
 
   @doc "Changeset for creating a reply (comment with parent_id)."

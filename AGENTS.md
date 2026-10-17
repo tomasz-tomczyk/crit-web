@@ -12,7 +12,7 @@ crit-web/
 │   │   ├── repo.ex                  # Ecto repo
 │   │   ├── schema.ex                # Base schema module
 │   │   ├── review.ex                # Review schema (token, delete_token, last_activity_at, review_round, cli_args)
-│   │   ├── comment.ex               # Comment schema (review_id, parent_id, start_line, end_line, body, scope, resolved, author_identity, author_display_name, file_path, quote, external_id)
+│   │   ├── comment.ex               # Comment schema (review_id, parent_id, anchor_comment_id, start_line, end_line, body, scope, resolved, author_identity, author_display_name, file_path, quote, external_id)
 │   │   ├── review_round_snapshot.ex # Per-round snapshot of review files
 │   │   ├── reviews.ex               # Context: create/get/delete reviews with comments (10 MB total limit)
 │   │   ├── reviews/inactive_cleanup_worker.ex # Oban cron job: deletes reviews inactive for 30 days
@@ -72,12 +72,12 @@ crit-web/
 ## Key architecture
 
 1. **Review page rendering** — the LiveView loads review data, then `document-renderer.js` (a Phoenix hook) renders it client-side: markdown with markdown-it + mermaid, code files with crit's `@pierre/diffs` build (Shiki in a worker pool), fenced code with Shiki too. Mirrors `crit` local's rendering. The Pierre bundle and crit's renderer modules are vendored verbatim (see the Pierre section below).
-2. **API for CLI uploads** — `POST /api/reviews` accepts review files + comments + metadata from the CLI's Share button. `PUT /api/reviews/:token` upserts updates. A missing `comments` key keeps stored comments and, when file content changed, carries line comments onto the new text (anchor plus a drifted flag when that text is gone). An explicit list, including `[]`, replaces them. `review_round` in the body is ignored; the server bumps it when content changes. Returns `{url, delete_token}`.
+2. **API for CLI uploads** — `POST /api/reviews` accepts review files + comments + metadata from the CLI's Share button. `PUT /api/reviews/:token` upserts updates. A missing `comments` key keeps stored comments and, when file content changed, carries line comments onto the new text (anchor plus a drifted flag when that text is gone). An explicit list, including `[]`, replaces them. Sub-threads travel under `sub_threads` (POST and PUT), anchored by `parent_external_id` on a comment, reply or sub-thread of the payload; a `comments` list without `sub_threads` (older CLI) keeps the stored ones. `GET /api/reviews/:token/comments` nests them under their messages (`sub_threads`), never at the top level, which older CLIs read as root comments. `review_round` in the body is ignored; the server bumps it when content changes. Returns `{url, delete_token}`.
 3. **Delete via token** — reviews are deleted by passing the `delete_token` (not auth). The CLI stores this in the review file.
 4. **Rate limiting** — Hammer-based via `CritWeb.Plugs.RateLimit`, applied across browser + API pipelines.
 5. **Auth + identity** — Phoenix 1.8 scope pattern: `Crit.Accounts.Scope` carries either an authenticated `user` (OAuth or selfhost password) or an anonymous `identity` (session-bound visitor ID), plus a `display_name`. `CritWeb.UserAuth` plug + `on_mount` hooks set `conn.assigns.current_scope` / `socket.assigns.current_scope`. `user` and `identity` are mutually exclusive — see `lib/crit_web/CLAUDE.md` for the full scope contract.
 6. **CLI auth** — OAuth device flow (`/api/device/*`, `/auth/cli/*`) issues bearer tokens (`UserApiToken`) used by the CLI. `Plugs.RequireBearerAuth` gates `/api/auth/*`.
-7. **Comment threading** — comments support nested replies (`parent_id` self-referential FK) and `resolved` boolean. Comments have `scope` (`"line"` / `"file"` / `"review"`) and an optional `file_path` / `quote`. The review LiveView handles reply CRUD and resolve/unresolve.
+7. **Comment threading** — comments support nested replies (`parent_id` self-referential FK) and `resolved` boolean. Comments have `scope` (`"line"` / `"file"` / `"review"`) and an optional `file_path` / `quote`. A sub-thread is a root comment with `anchor_comment_id` (FK, cascade) on the comment, reply or sub-thread whose passage (`quote`, `quote_offset`) it comments on; it has no lines, takes its anchor's thread scope and file, resolves on its own and is deleted with its anchor (`Reviews.create_sub_thread/4`). The review LiveView handles reply CRUD and resolve/unresolve.
 8. **Limits**: HTTPS only, `noindex` meta on review/auth pages, **10 MB** total review payload (`@max_total_size` in `reviews.ex`), 50 KB per comment body (`51_200`), 40-char display name, 500-char file path, 64 CLI args x 256 bytes. Reviews expire after 30 days of inactivity (`last_activity_at`). Rate-limit write endpoints per IP.
 9. **Stack**: Elixir 1.19.5 / OTP 28.1 / PostgreSQL 17 / Phoenix 1.8.5 / LiveView 1.1. Tailwind v4 (via `@import "tailwindcss" source(none);` in `app.css` — no `tailwind.config.js`). Bandit HTTP server.
 
@@ -158,7 +158,7 @@ CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, El
 - `DELETE /token` — revoke current bearer token
 - `GET /api/reviews` (own `/api` scope, not under `/api/auth`) — list the caller's reviews, or an org's with `?org=<slug>`; cursor-paginated via `limit` (≤500) + `after`
 
-**Test/dev seeding (`/api/...`, compiled out of prod):** `seed-comment`, `seed-reply`, `seed-user`.
+**Test/dev seeding (`/api/...`, compiled out of prod):** `seed-comment`, `seed-reply`, `seed-sub-thread`, `seed-user`.
 </important>
 
 <important if="you are modifying CSS in app.css or working on a page's styling">
@@ -189,7 +189,7 @@ See `../CLAUDE.md` for the full parity contract between crit local and crit-web.
 crit renders code with `@pierre/diffs` (Shiki grammars and themes in a worker pool) and themes its whole review UI from the selected Shiki theme. crit-web uses crit's build, byte for byte:
 
 - `priv/static/pierre/*.js.gz` — the bundle, worker, grammar/theme chunks and `palettes.js` (UI palette per theme). Served at `/pierre/<name>.js` by `CritWeb.Plugs.Precompressed` (gzip as-is, ETag; chunks cached for a year).
-- `assets/vendor/crit/` — crit's `crit-code-highlight.js`, `crit-pierre-adapter.js`, `crit-pierre-dom.js`, `crit-pierre-runtime.js`, `crit-theme-boost.js` and `crit-palette.css`, plus the pluggable renderers (`crit-glob-match.js`, `crit-renderers.js`, `crit-renderer-mermaid.js`, `crit-diagram-overlay.js`: mermaid fences and `.mmd` / `.mermaid` files), bundled by esbuild. crit-web sets `window.mermaid` from its own `mermaid` npm chunk before rendering, so the renderer never loads crit's `mermaid.min.js`.
+- `assets/vendor/crit/` — crit's `crit-code-highlight.js`, `crit-pierre-adapter.js`, `crit-pierre-dom.js`, `crit-pierre-runtime.js`, `crit-subthreads.js`, `crit-theme-boost.js` and `crit-palette.css`, plus the pluggable renderers (`crit-glob-match.js`, `crit-renderers.js`, `crit-renderer-mermaid.js`, `crit-diagram-overlay.js`: mermaid fences and `.mmd` / `.mermaid` files), bundled by esbuild. crit-web sets `window.mermaid` from its own `mermaid` npm chunk before rendering, so the renderer never loads crit's `mermaid.min.js`.
 
 Never edit these by hand or `npm install @pierre/diffs` here. When crit changes them, run `scripts/sync-pierre.sh` and commit; `test/crit_web/pierre_sync_test.exs` fails on drift (and only checks presence when `../crit` is absent, e.g. CI).
 
@@ -210,6 +210,7 @@ File type follows crit: `.md` / `.markdown` / `.mdown` render as documents, ever
 - Only `app.js` and `app.css` bundles are supported — import vendor deps, don't reference external scripts in layouts.
 - **Never** write inline `<script>` tags in templates. Use colocated hooks (`:type={Phoenix.LiveView.ColocatedHook}`, name starts with `.`) or external hooks in `assets/js/`.
 - **Never** attach listeners via `document.getElementById("x").addEventListener(...)` in `app.js` for elements rendered inside LiveView templates — they break across client-side patches (`<.link navigate={...}>`) because the new DOM node isn't the one you bound to. Use `JS` commands, a hook, or document-level event delegation.
+- **Sub-threads** behave as in crit (crit's `docs/frontend-js.md`, Sub-threads). `setComments` in `document-renderer.js` splits the flat comment lists with crit's vendored `crit-subthreads.js`: `ctx.comments` / `file.comments` keep the threads placed on lines, files or the review conversation, `ctx.subThreads` the rest, indexed by message id; counts, badges, panel filters and hide-resolved add them back. Cards nest them under their body and under each reply (`.subthreads`, same indent at every depth), built by the surface's own card factory (`inline`, `review`, `panel`), so lookups and CSS meaning "this card's own part" use child combinators (`:scope > .reply-form`, `.outdated-comment > .comment-card`). A deleted message takes its sub-threads with it (FK cascade); the server broadcasts its id only, and each tab removes the descendants from its own index.
 </important>
 
 <important if="you are making HTTP requests from Elixir code">

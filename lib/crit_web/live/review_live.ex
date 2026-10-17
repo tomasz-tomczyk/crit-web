@@ -308,6 +308,29 @@ defmodule CritWeb.ReviewLive do
     end
   end
 
+  # A comment on a passage (`quote`, `quote_offset`) of the message
+  # `anchor_id`, which reaches the other viewers as any comment does.
+  @impl true
+  def handle_event("add_sub_thread", %{"anchor_id" => anchor_id} = params, socket) do
+    %{review: review, current_scope: scope} = socket.assigns
+
+    case Reviews.create_sub_thread(scope, anchor_id, params, review.id) do
+      {:ok, comment} ->
+        payload = %{comment: Reviews.serialize_comment(comment)}
+        socket = push_event(socket, "comment_added", payload)
+        broadcast_from_review(socket, {:comment_added, payload})
+        {:reply, %{ok: true}, socket}
+
+      {:error, :not_found} ->
+        message = "The commented message no longer exists."
+        {:reply, %{ok: false, error: message, reason: "not_found"}, socket}
+
+      {:error, _} ->
+        message = "Failed to save comment."
+        {:reply, %{ok: false, error: message}, put_flash(socket, :error, message)}
+    end
+  end
+
   @impl true
   def handle_event("edit_comment", %{"id" => id, "body" => body}, socket) do
     %{current_scope: scope} = socket.assigns
