@@ -68,6 +68,7 @@ defmodule CritWeb.PageController do
         "Use j/k to move between lines and blocks, n/N to jump between changes. The same motions you already know from vim.",
         "Press c to open the comment form on the current line. Type your feedback, then Ctrl+Enter to submit. Press Escape to cancel.",
         "Use e to edit an existing comment, d to delete it. Press f to finish the review and copy the prompt. Press t to toggle the table of contents.",
+        "Press Cmd+F (Ctrl+F off macOS) to find text across every file in the diff, including rows outside the viewport. Enter and Shift+Enter step through matches.",
         "Press ? at any time to see the full shortcut reference."
       ],
       why_this_matters: [
@@ -125,6 +126,7 @@ defmodule CritWeb.PageController do
         "Fenced blocks tagged with ```mermaid are automatically rendered as SVG diagrams in the browser. No extra tooling or plugins required.",
         "Supports flowcharts, sequence diagrams, class diagrams, state diagrams, Gantt charts, ER diagrams, and other mermaid diagram types.",
         "Diagrams scale to fit the available width without overflowing the layout.",
+        "Standalone .mermaid and .mmd files open as rendered diagrams with a Diagram/Source toggle. Click a node, edge label or actor to comment on the line that defines it.",
         "You can still comment on mermaid blocks. Select the block's line range and leave feedback about the diagram's structure or content."
       ],
       why_this_matters: [
