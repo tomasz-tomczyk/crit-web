@@ -174,6 +174,11 @@ test.describe("Review Page — Rendered Tables", () => {
     expect(await table.evaluate(element => getComputedStyle(element).tableLayout)).toBe("auto");
     expect(await table.locator("thead th.line-content").first()
       .evaluate(element => getComputedStyle(element).overflowWrap)).toBe("break-word");
+    // Cells carry the row's `table-row` class; Tailwind's display utility must not win (#457).
+    const cellDisplays = await table.locator(".line-content")
+      .evaluateAll(cells => cells.map(cell => getComputedStyle(cell).display));
+    expect(cellDisplays.length).toBeGreaterThan(0);
+    expect(new Set(cellDisplays)).toEqual(new Set(["table-cell"]));
     expect(await table.locator("..").evaluate(element => getComputedStyle(element).borderTopWidth)).toBe("0px");
   });
 
