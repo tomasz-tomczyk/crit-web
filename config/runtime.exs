@@ -34,6 +34,16 @@ if System.get_env("SELFHOSTED") in ~w(true 1) do
   config :crit, :selfhosted, true
 end
 
+# Behind Fly's proxy, take the visitor's IP from Fly-Client-IP. See
+# CritWeb.Plugs.FlyClientIp.
+config :crit, :trust_fly_client_ip, System.get_env("FLY_APP_NAME") not in [nil, ""]
+
+# Cloudflare Turnstile on the hosted newsletter signup. Off unless both keys
+# are set; see Crit.Turnstile.
+config :crit, Crit.Turnstile,
+  site_key: System.get_env("TURNSTILE_SITE_KEY"),
+  secret_key: System.get_env("TURNSTILE_SECRET_KEY")
+
 # The hosted site's background fetchers (GitHub star count + release
 # changelog) poll api.github.com during application boot. CI and offline
 # environments must be able to switch them off so startup never blocks on an

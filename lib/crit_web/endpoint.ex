@@ -22,6 +22,7 @@ defmodule CritWeb.Endpoint do
     websocket: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]],
     longpoll: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]]
 
+  plug CritWeb.Plugs.FlyClientIp
   plug CritWeb.Plugs.CanonicalHost
   plug CritWeb.Plugs.HostGate
 

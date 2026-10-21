@@ -70,8 +70,13 @@ defmodule CritWeb.Plugs.SecurityHeaders do
           " https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev https://api-gateway-eu.umami.dev",
         else: ""
 
+    turnstile =
+      if Crit.Turnstile.enabled?(),
+        do: " https://challenges.cloudflare.com",
+        else: ""
+
     "default-src 'self'; " <>
-      "script-src 'self'#{umami_script} " <>
+      "script-src 'self'#{umami_script}#{turnstile} " <>
       "'sha256-wm8xHXfA9tIFK/7McvhnPMGVuF/ErxqxEM1Clij75ec=' " <>
       "'sha256-5M5rMNBzgt7ZyJO3HUsytrd8A0xED8wq015qtyeaFrw='; " <>
       "style-src 'self' 'unsafe-inline'; " <>
@@ -79,7 +84,7 @@ defmodule CritWeb.Plugs.SecurityHeaders do
       "font-src 'self'; " <>
       "media-src 'self' https://assets.crit.md; " <>
       "connect-src 'self'#{sentry_origin}#{umami_connect}; " <>
-      "frame-src #{frame_src()}; " <>
+      "frame-src #{frame_src()}#{turnstile}; " <>
       "object-src 'none'"
   end
 

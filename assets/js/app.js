@@ -536,3 +536,41 @@ if (prefersReducedMotion) {
 if (/^\/articles\/[^/]+$/.test(window.location.pathname)) {
   import("./article-mermaid").then(({ initArticleMermaid }) => initArticleMermaid())
 }
+
+// Newsletter forms: load Cloudflare Turnstile on first interaction so plain
+// page views never fetch it. "interaction-only" keeps the widget hidden unless
+// Cloudflare wants the visitor to click a checkbox.
+const turnstileForms = document.querySelectorAll("form[data-turnstile-sitekey]")
+let turnstileScript
+const loadTurnstile = () => turnstileScript ??= new Promise((resolve, reject) => {
+  const script = document.createElement("script")
+  script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+  script.async = true
+  script.onload = () => resolve(window.turnstile)
+  script.onerror = reject
+  document.head.appendChild(script)
+})
+
+turnstileForms.forEach(form => {
+  let ready
+  const start = () => ready ??= loadTurnstile().then(turnstile => new Promise((resolve, reject) => {
+    turnstile.render(form.querySelector("[data-turnstile-slot]"), {
+      sitekey: form.dataset.turnstileSitekey,
+      appearance: "interaction-only",
+      action: "newsletter",
+      callback: resolve,
+      "error-callback": reject,
+    })
+  }))
+
+  const warmUp = () => start().catch(() => {})
+  form.addEventListener("focusin", warmUp, {once: true})
+  form.addEventListener("pointerdown", warmUp, {once: true})
+  form.addEventListener("submit", event => {
+    if (form.querySelector("[name='cf-turnstile-response']")?.value) return
+    event.preventDefault()
+    // Post once the token is in. form.submit() skips this handler, so it
+    // can't loop; if Turnstile failed, the server answers with a retry message.
+    warmUp().then(() => form.submit())
+  })
+})

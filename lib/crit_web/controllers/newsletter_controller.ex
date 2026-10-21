@@ -20,17 +20,37 @@ defmodule CritWeb.NewsletterController do
     render_index(conn, Newsletters.change_subscription())
   end
 
+  @check_inbox "Check your inbox to confirm your subscription. If you're already subscribed, you're all set."
+
   def subscribe(conn, params) do
     attrs = Map.get(params, "newsletter", %{})
     attrs = if is_map(attrs), do: attrs, else: %{}
 
+    cond do
+      # Bots fill every field; people never see this one. Answer as if it
+      # worked so the bot learns nothing.
+      honeypot_filled?(attrs) ->
+        render_index(conn, Newsletters.change_subscription(), @check_inbox)
+
+      Crit.Turnstile.verify(params["cf-turnstile-response"]) != :ok ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render_index(
+          Newsletters.change_subscription(attrs),
+          "We couldn't check that you're human. Please try again."
+        )
+
+      true ->
+        request_subscription(conn, attrs)
+    end
+  end
+
+  defp honeypot_filled?(attrs), do: attrs["homepage"] not in [nil, ""]
+
+  defp request_subscription(conn, attrs) do
     case Newsletters.request_subscription(attrs) do
       {:ok, :check_inbox} ->
-        render_index(
-          conn,
-          Newsletters.change_subscription(),
-          "Check your inbox to confirm your subscription. If you're already subscribed, you're all set."
-        )
+        render_index(conn, Newsletters.change_subscription(), @check_inbox)
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn |> put_status(:unprocessable_entity) |> render_index(changeset)

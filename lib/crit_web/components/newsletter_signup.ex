@@ -25,9 +25,19 @@ defmodule CritWeb.NewsletterSignup do
         for={@form}
         id={@id}
         action={~p"/newsletter/subscribe"}
-        class={["flex items-start gap-2", !@compact && "max-sm:flex-col"]}
+        data-turnstile-sitekey={Crit.Turnstile.site_key()}
+        class={["relative flex flex-wrap items-start gap-2", !@compact && "max-sm:flex-col"]}
       >
         <input type="hidden" name={@form[:source].name} value={@source} />
+        <div aria-hidden="true" class="absolute -left-[9999px] size-px overflow-hidden">
+          <input
+            type="text"
+            name={@form[:homepage].name}
+            id={"#{@id}-homepage"}
+            tabindex="-1"
+            autocomplete="off"
+          />
+        </div>
         <input :if={@source_path} type="hidden" name={@form[:source_path].name} value={@source_path} />
         <div class="flex-1 w-full min-w-0">
           <.input
@@ -61,6 +71,11 @@ defmodule CritWeb.NewsletterSignup do
             !@compact && "max-sm:w-full"
           ]}
         >Subscribe</button>
+        <%!-- Turnstile renders here on first interaction (app.js). With
+             appearance "interaction-only" it stays empty unless Cloudflare
+             asks the visitor to click a checkbox. --%>
+        <div :if={Crit.Turnstile.site_key()} data-turnstile-slot class="basis-full empty:hidden">
+        </div>
       </.form>
       <p :if={@show_note && !@compact} class="mt-2 text-xs text-(--crit-fg-secondary) leading-relaxed">
         No account needed.
