@@ -13,6 +13,8 @@ const CONTENT = [
   "",
   "<details><summary>More</summary>hidden</details>",
   "",
+  '<div class="overlay" style="position:fixed;inset:0">cover</div>',
+  "",
 ].join("\n");
 
 test.describe("Document HTML sanitizing", () => {
@@ -31,7 +33,7 @@ test.describe("Document HTML sanitizing", () => {
     await deleteReview(request, deleteToken);
   });
 
-  test("strips handlers, scripts and javascript: URLs and keeps plain HTML", async ({ page }) => {
+  test("strips handlers, scripts, javascript: URLs and positioning styles and keeps plain HTML", async ({ page }) => {
     await loadReview(page, token);
     const doc = page.locator("#document-renderer");
 
@@ -44,6 +46,7 @@ test.describe("Document HTML sanitizing", () => {
     await expect(doc.locator("script")).toHaveCount(0);
     await expect(doc.locator("a", { hasText: "bad" })).not.toHaveAttribute("href");
     await expect(doc.locator("details summary")).toHaveText("More");
+    await expect(doc.getByText("cover", { exact: true })).not.toHaveAttribute("style");
     expect(await page.evaluate(() => (window as { __xss?: number }).__xss)).toBeUndefined();
   });
 });

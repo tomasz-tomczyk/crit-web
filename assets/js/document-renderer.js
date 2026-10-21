@@ -1,7 +1,7 @@
 import markdownit from "markdown-it"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 import { sanitizeCommentHtml } from "./comment-html"
-import { installDocumentSanitizer } from "./document-html"
+import { installDocumentSanitizer, sanitizeRenderedHtml } from "./document-html"
 import {
   commentMd,
   escapeHtml,
@@ -2375,7 +2375,9 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
   if (block.isEmpty) contentClasses += ' empty-line'
   if (block.cssClass) contentClasses += ' ' + block.cssClass
   contentEl.className = contentClasses
-  let html = block.wordDiffHtml || block.html
+  // Word-diff spans are spliced into already-sanitized HTML as a string, so
+  // clean the result again before it reaches the page.
+  let html = block.wordDiffHtml ? sanitizeRenderedHtml(block.wordDiffHtml) : block.html
   html = processTaskLists(html)
   html = rewriteImageSrcs(html, file.path, ctx.reviewToken)
   contentEl.innerHTML = html
