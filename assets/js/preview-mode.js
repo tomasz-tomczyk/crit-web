@@ -57,6 +57,12 @@ const A2C = {
 // sandboxed preview iframe. Keep this outside the vendored Crit protocol.
 const WEB_A2C_SHORTCUT_KEY = "crit-web-shortcut-key"
 
+// Sub-threads (anchor_comment_id) hang under a message, not on a page
+// element: preview has nowhere to pin them (as in crit's live mode).
+function pinnableComments(comments) {
+  return (comments || []).filter((c) => !c.anchor_comment_id)
+}
+
 // Viewport presets — mirrors crit live-mode.js VIEWPORTS.
 const VIEWPORTS = [
   { key: "mobile", label: "Mobile", w: 390, h: 844 },
@@ -231,7 +237,7 @@ export const PreviewMode = {
     this.handleEvent("reply_updated", (p) => this.patchReply(p.parent_id, p.id, { body: p.body }))
     this.handleEvent("reply_deleted", ({ parent_id, id }) => this.removeReply(parent_id, id))
     this.handleEvent("comments_full_sync", ({ comments }) => {
-      this.comments = comments || []
+      this.comments = pinnableComments(comments)
       this.afterCommentsChanged()
     })
     this.handleEvent("policy_changed", ({ can_comment }) => {
@@ -661,7 +667,7 @@ export const PreviewMode = {
   // ---- init + iframe src ---------------------------------------------------
 
   handleInit(payload) {
-    this.comments = payload.comments || []
+    this.comments = pinnableComments(payload.comments)
     this.files = payload.files || []
     this.displayName = payload.display_name || ""
     this.isAdmin = !!payload.is_admin
@@ -894,6 +900,7 @@ export const PreviewMode = {
   // ---- Comment list mutations (LiveView delta handlers) --------------------
 
   upsertComment(comment) {
+    if (comment.anchor_comment_id) return
     const idx = this.comments.findIndex((c) => String(c.id) === String(comment.id))
     if (idx >= 0) this.comments[idx] = comment
     else this.comments.push(comment)

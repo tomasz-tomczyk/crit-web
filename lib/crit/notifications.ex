@@ -63,7 +63,10 @@ defmodule Crit.Notifications do
     end
   end
 
-  @doc "Returns eligible users for one newly-created comment or reply."
+  @doc """
+  Returns eligible users for one newly-created comment or reply. A sub-thread,
+  and each reply in it, also reaches the author of the message it comments on.
+  """
   def recipients(%Scope{} = scope, %Review{} = review, %Comment{} = comment) do
     actor_id = Scope.user_id(scope)
 
@@ -77,9 +80,9 @@ defmodule Crit.Notifications do
               select: c.user_id
           )
 
-        [review.user_id | participant_ids]
+        [review.user_id | participant_ids] ++ anchor_author_ids(comment.parent_id)
       else
-        [review.user_id]
+        [review.user_id | anchor_author_ids(comment.id)]
       end
 
     query =
@@ -99,6 +102,17 @@ defmodule Crit.Notifications do
       end
 
     Repo.all(from u in query, distinct: u.id)
+  end
+
+  # The author of the message the thread `thread_id` comments on, if any.
+  defp anchor_author_ids(thread_id) do
+    Repo.all(
+      from t in Comment,
+        join: a in Comment,
+        on: a.id == t.anchor_comment_id,
+        where: t.id == ^thread_id and not is_nil(a.user_id),
+        select: a.user_id
+    )
   end
 
   defp queue_item(recipient, review, comment, setting, retries \\ 1) do

@@ -1079,6 +1079,7 @@ defmodule Crit.ReviewsTest do
           :author_identity,
           :author_display_name,
           :user_id,
+          :external_id,
           :created_at
         ])
 

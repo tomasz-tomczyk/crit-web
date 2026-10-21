@@ -287,6 +287,9 @@ export function renderReplyList(comment, adapter) {
     renderMarkdown(replyBody, reply.body)
     replyEl.appendChild(replyBody)
 
+    const subThreads = adapter.renderReplySubThreads ? adapter.renderReplySubThreads(reply) : null
+    if (subThreads) replyEl.appendChild(subThreads)
+
     repliesContainer.appendChild(replyEl)
   })
   return repliesContainer
@@ -451,7 +454,8 @@ export function createReplyInput(commentId, adapter) {
 }
 
 function replyTextareaFor(commentId) {
-  return document.querySelector('.comment-card[data-comment-id="' + CSS.escape(String(commentId)) + '"] .reply-textarea')
+  // The card's own reply box, not one of a sub-thread card nested in it.
+  return document.querySelector('.comment-card[data-comment-id="' + CSS.escape(String(commentId)) + '"] > .reply-form .reply-textarea')
 }
 
 function focusReplyTextarea(commentId, selectionStart, selectionEnd) {
@@ -506,6 +510,12 @@ export function restoreReplyFocus(saved) {
 //   onAddReply / onDeleteReply / onEditReply       reply mutations (forwarded to composer/list)
 //   onCardClick(comment, event)                    files: scroll-to-source | preview: flash pin
 //   wrapperClass / cardClass                       optional extra classes
+// Optional, files mode only (sub-threads, see document-renderer.js):
+//   cardCollapse(comment) -> { collapsed, state, openBelow }, rememberCollapse(card, collapsed)
+//                                                  collapse per card state, instead of collapseOverrides
+//   quote(comment) -> string|null                  a sub-thread's passage, on top
+//   renderSubThreads(comment), renderReplySubThreads(reply) -> el|null
+//                                                  sub-threads under the body, under each reply
 
 export function renderCommentCard(comment, adapter) {
   const isResolved = !!comment.resolved
@@ -519,10 +529,18 @@ export function renderCommentCard(comment, adapter) {
 
   // Collapse state — resolved cards default collapsed; open cards default open.
   const overrides = adapter.collapseOverrides || {}
-  const isCollapsed = isResolved
-    ? (overrides[comment.id] !== undefined ? overrides[comment.id] : true)
-    : (overrides[comment.id] === true)
+  const collapse = adapter.cardCollapse ? adapter.cardCollapse(comment) : null
+  const isCollapsed = collapse
+    ? collapse.collapsed
+    : isResolved
+      ? (overrides[comment.id] !== undefined ? overrides[comment.id] : true)
+      : (overrides[comment.id] === true)
   if (isCollapsed) card.classList.add('collapsed')
+  if (collapse) {
+    card.dataset.collapseState = collapse.state
+    // A resolved thread with an open sub-thread under it stays shown.
+    if (collapse.openBelow) wrapper.classList.add('has-open-subthreads')
+  }
 
   const header = document.createElement('div')
   header.className = 'comment-header'
@@ -537,8 +555,10 @@ export function renderCommentCard(comment, adapter) {
   collapseBtn.addEventListener('click', function(e) {
     e.stopPropagation()
     card.classList.toggle('collapsed')
-    overrides[comment.id] = card.classList.contains('collapsed')
-    collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
+    const collapsed = card.classList.contains('collapsed')
+    if (collapse) adapter.rememberCollapse(card, collapsed)
+    else overrides[comment.id] = collapsed
+    collapseBtn.title = collapsed ? 'Expand comment' : 'Collapse comment'
   })
   headerLeft.appendChild(collapseBtn)
 
@@ -617,10 +637,21 @@ export function renderCommentCard(comment, adapter) {
 
   card.appendChild(header)
 
+  const quote = adapter.quote ? adapter.quote(comment) : null
+  if (quote) {
+    const quoteEl = document.createElement('div')
+    quoteEl.className = 'subthread-quote'
+    quoteEl.textContent = quote
+    card.appendChild(quoteEl)
+  }
+
   bodyEl = document.createElement('div')
   bodyEl.className = 'comment-body'
   renderMarkdown(bodyEl, comment.body, adapter.markdownEnv ? adapter.markdownEnv(comment) : {})
   card.appendChild(bodyEl)
+
+  const subThreads = adapter.renderSubThreads ? adapter.renderSubThreads(comment) : null
+  if (subThreads) card.appendChild(subThreads)
 
   if (comment.replies && comment.replies.length > 0) {
     card.appendChild(renderReplyList(comment, adapter))
@@ -636,6 +667,8 @@ export function renderCommentCard(comment, adapter) {
     wrapper.style.cursor = 'pointer'
     wrapper.addEventListener('click', function(e) {
       if (e.target.closest('button, a, input, textarea')) return
+      // A click inside a nested sub-thread card belongs to that card only.
+      if (e.target.closest('.comment-block') !== wrapper) return
       adapter.onCardClick(comment, e)
     })
   }

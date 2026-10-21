@@ -39,6 +39,7 @@ import renderers from "../vendor/crit/crit-renderers.js"
 import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
 import "../vendor/crit/crit-renderer-mermaid.js"
 import { themeChoice } from "./review-settings"
+import subthreads from "../vendor/crit/crit-subthreads.js"
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -106,9 +107,10 @@ function scrollToCommentRef(id) {
   if (!card) return
   const section = card.closest('details')
   if (section && !section.open) section.open = true
+  expandCardsAround(card)
   if (card.classList.contains('collapsed')) {
     card.classList.remove('collapsed')
-    commentCollapseOverrides[id] = false
+    rememberCollapse(card, false)
   }
   card.scrollIntoView({ behavior: 'smooth', block: 'center' })
   card.classList.remove('comment-ref-flash')
@@ -479,8 +481,17 @@ function saveOpenFormContent(ctx) {
 
 // ---- Draft autosave ---------------------------------------------------------
 
-let commentCollapseOverrides = {}
+// The chevron's choice per card: comment id → { collapsed, state }. It holds
+// while the card stays in the state it was made in (threadCollapse); inline
+// cards and their comments-panel copies share it.
+const commentCollapseOverrides = {}
 let draftTimers = {}
+
+// Record a collapse made on a rendered card, in the state it was rendered in.
+function rememberCollapse(card, collapsed) {
+  const id = card.dataset.commentId
+  if (id) commentCollapseOverrides[id] = { collapsed, state: card.dataset.collapseState || '' }
+}
 
 function getDraftKey(reviewToken, formObj) {
   const prefix = formObj.filePath ? formObj.filePath + ':' : ''
@@ -789,7 +800,8 @@ function rememberKeyboardFocusTarget(ctx, target) {
 }
 
 function rememberKeyboardFocusFromForm(ctx, formObj) {
-  if (!formObj || !formObj.filePath || formObj.scope === 'file') return
+  // File-level and sub-thread forms have no line to come back to.
+  if (!formObj || !formObj.filePath || formObj.scope === 'file' || formObj.parentId) return
   const target = { filePath: formObj.filePath }
   if (formObj.afterBlockIndex !== null && formObj.afterBlockIndex !== undefined) {
     target.blockIndex = String(formObj.afterBlockIndex)
@@ -1911,7 +1923,7 @@ function renderTreeNode(ctx, container, node, depth, pathPrefix) {
     if (f.viewed) {
       innerHtml += '<span class="tree-viewed-check" title="Viewed">&#10003;</span>'
     }
-    const unresolvedCount = f.comments.filter(c => !c.resolved).length
+    const unresolvedCount = openThreadCount(ctx, f.path)
     if (unresolvedCount > 0) {
       innerHtml += '<span class="tree-comment-badge">' + unresolvedCount + '</span>'
     }
@@ -2096,6 +2108,7 @@ function render(ctx) {
   syncCodeRanges(ctx)
   restoreKeyboardFocus(ctx)
   buildChangeGroups(ctx)
+  scheduleMessageQuoteHighlights(ctx)
 }
 
 // ---- Multi-file rendering ---------------------------------------------------
@@ -2565,7 +2578,7 @@ function codeFileAnnotations(ctx, view) {
     comments: commentsForPath(ctx, view.path),
     forms: formsForPath(ctx, view.path),
     lineTotal: view.lineTotal,
-    hideResolved: isHideResolved(ctx),
+    hidden: c => hiddenResolved(ctx, c),
   })
 }
 
@@ -2638,6 +2651,8 @@ function codeViewFor(ctx, filePath, content) {
         if (!host) return
         if (phase === 'unmount') pierreDecorations.unmount(host)
         else pierreDecorations.mount(host, filePath, codeQuotes(ctx, filePath))
+        // A remounted card brings its sub-threads' passages back on screen.
+        if (phase !== 'unmount' && host.querySelector('.subthreads')) scheduleMessageQuoteHighlights(ctx)
       },
     },
   })
@@ -2698,13 +2713,12 @@ function pruneCodeViews(ctx) {
 // decoration option, so this is CSS in its shadow roots keyed on the host's
 // data-crit-path (crit: pierreCommentRangeCSS).
 function syncCodeRanges(ctx) {
-  const hideResolved = isHideResolved(ctx)
   const commented = []
   const forming = []
   for (const view of (ctx._codeViews ? ctx._codeViews.values() : [])) {
     const file = { path: view.path }
     const commentRanges = commentsForPath(ctx, view.path)
-      .filter(c => c.scope !== 'file' && c.scope !== 'review' && c.start_line && c.end_line && !(hideResolved && c.resolved))
+      .filter(c => c.scope !== 'file' && c.scope !== 'review' && c.start_line && c.end_line && !hiddenResolved(ctx, c))
       .map(c => ({ start: c.start_line, end: c.end_line }))
     const formRanges = formsForPath(ctx, view.path)
       .filter(f => !f.editingId && f.scope !== 'file' && f.scope !== 'review' && f.startLine)
@@ -2865,15 +2879,13 @@ function renderFileSection(ctx, file) {
   const displayComments = isOrphaned ? file.comments : fileComments
   // Code-file comments on lines the file no longer has
   const outdatedComments = (!isOrphaned && file.fileType === 'code')
-    ? file.comments.filter(c => isOutdatedLineComment(c, lineCount(file.content)) && !(c.resolved && isHideResolved(ctx)))
+    ? file.comments.filter(c => isOutdatedLineComment(c, lineCount(file.content)) && !hiddenResolved(ctx, c))
     : []
   if (displayComments.length > 0 || outdatedComments.length > 0 || (!isOrphaned && ctx.activeForms.some(f => f.scope === 'file' && f.filePath === file.path))) {
     const fileCommentsContainer = document.createElement('div')
     fileCommentsContainer.className = 'file-comments'
     for (const c of displayComments) {
-      const card = renderPanelCard(ctx, c, file.path)
-      card.style.cursor = ''
-      fileCommentsContainer.appendChild(card)
+      fileCommentsContainer.appendChild(fileLevelCard(ctx, c, file.path))
     }
     // Render file comment form if active (not for orphaned files)
     if (!isOrphaned) {
@@ -3137,11 +3149,10 @@ function buildCommentsMap(comments) {
 
 function buildCommentedLineSet(comments, ctx) {
   const set = new Set()
-  const hideResolved = ctx ? isHideResolved(ctx) : readHideResolved()
   for (const c of comments) {
     if (c.scope === 'file' || c.scope === 'review') continue
     if (!c.start_line || !c.end_line) continue
-    if (hideResolved && c.resolved) continue
+    if (ctx ? hiddenResolved(ctx, c) : (readHideResolved() && c.resolved)) continue
     for (let ln = c.start_line; ln <= c.end_line; ln++) set.add(ln)
   }
   return set
@@ -3151,11 +3162,10 @@ function refreshCommentHighlights(ctx) {
   if (!ctx || !ctx.el || !ctx.comments) return
   // Build per-file commented line sets so we can include/exclude file paths.
   const byPath = new Map()
-  const hideResolved = isHideResolved(ctx)
   for (const c of ctx.comments) {
     if (c.scope === 'file' || c.scope === 'review') continue
     if (!c.start_line || !c.end_line) continue
-    if (hideResolved && c.resolved) continue
+    if (hiddenResolved(ctx, c)) continue
     const fp = c.file_path || null
     let set = byPath.get(fp)
     if (!set) { set = new Set(); byPath.set(fp, set) }
@@ -3404,7 +3414,7 @@ function renderDocument(ctx) {
   // Single code file: Pierre File, no line blocks. A file a renderer claims
   // gets the Diagram / Source toggle above it (there is no file header).
   if (isCodeFile(ctx.singleFilePath)) {
-    const outdated = ctx.comments.filter(c => isOutdatedLineComment(c, lineCount(ctx.rawContent)) && !(c.resolved && isHideResolved(ctx)))
+    const outdated = ctx.comments.filter(c => isOutdatedLineComment(c, lineCount(ctx.rawContent)) && !hiddenResolved(ctx, c))
     if (outdated.length > 0) container.appendChild(buildOutdatedComments(ctx, outdated))
     if (fileRendererFor(ctx.singleFilePath)) {
       const bar = document.createElement('div')
@@ -3468,8 +3478,10 @@ function updateCommentCount(ctx) {
   const el = document.getElementById('comment-count')
   if (!el) return
   const numEl = document.getElementById('commentCountNumber')
-  const unresolvedCount = ctx.comments.filter(c => !c.resolved).length
-  const resolvedCount = ctx.comments.filter(c => c.resolved).length
+  // Sub-threads count like comments: an open one is open work.
+  const comments = allComments(ctx)
+  const unresolvedCount = comments.filter(c => !c.resolved).length
+  const resolvedCount = comments.filter(c => c.resolved).length
   const total = unresolvedCount + resolvedCount
   if (total === 0) {
     el.title = 'Toggle comments panel'
@@ -3790,8 +3802,10 @@ function createCommentElement(comment, ctx) {
   card.className = "comment-card"
   card.dataset.commentId = comment.id
 
-  // Apply saved collapse state (unresolved defaults to expanded)
-  if (commentCollapseOverrides[comment.id] === true) card.classList.add('collapsed')
+  // Apply the collapse state (unresolved defaults to expanded)
+  const collapse = threadCollapse(ctx, comment)
+  card.dataset.collapseState = collapse.state
+  if (collapse.collapsed) card.classList.add('collapsed')
 
   const header = document.createElement("div")
   header.className = "comment-header"
@@ -3813,7 +3827,7 @@ function createCommentElement(comment, ctx) {
   collapseBtn.addEventListener('click', function(e) {
     e.stopPropagation()
     card.classList.toggle('collapsed')
-    commentCollapseOverrides[comment.id] = card.classList.contains('collapsed')
+    rememberCollapse(card, card.classList.contains('collapsed'))
     collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
   })
 
@@ -3842,7 +3856,8 @@ function createCommentElement(comment, ctx) {
     roundBadge.textContent = "R" + comment.review_round
     headerLeft.appendChild(roundBadge)
   }
-  headerLeft.appendChild(lineRef)
+  // A sub-thread is anchored to a passage, not to lines.
+  if (!comment.parent_id) headerLeft.appendChild(lineRef)
   headerLeft.appendChild(time)
 
   const driftedContext = attachDriftedContext(wrapper, headerLeft, comment)
@@ -3872,7 +3887,7 @@ function createCommentElement(comment, ctx) {
     editBtn.title = "Edit"
     editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>'
     editBtn.addEventListener("click", () => {
-      const editFormObj = { afterBlockIndex: null, startLine: comment.start_line, endLine: comment.end_line, editingId: comment.id, filePath: comment.file_path || null }
+      const editFormObj = { afterBlockIndex: null, startLine: comment.start_line, endLine: comment.end_line, editingId: comment.id, filePath: comment.file_path || null, parentId: comment.parent_id }
       addForm(ctx, editFormObj)
       render(ctx)
     })
@@ -3886,6 +3901,7 @@ function createCommentElement(comment, ctx) {
     deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
     deleteBtn.addEventListener("click", () => {
       if (deleteBtn.disabled) return
+      if (!confirmCascadeDelete(ctx, comment, 'comment')) return
       deleteBtn.disabled = true
       pushCommentMutation(ctx, "delete_comment", { id: comment.id }, {
         onError: () => { deleteBtn.disabled = false },
@@ -3901,10 +3917,13 @@ function createCommentElement(comment, ctx) {
   renderMarkdown(body, comment.body, commentMarkdownEnv(comment, ctx))
 
   card.appendChild(header)
+  appendSubThreadQuote(card, comment)
   if (driftedContext) card.appendChild(driftedContext)
   card.appendChild(body)
 
-  // Render replies (threading)
+  // Sub-threads on passages of the body, then the replies (each with its own)
+  const bodySubThreads = renderSubThreadList(ctx, comment.id, 'inline')
+  if (bodySubThreads) card.appendChild(bodySubThreads)
   if (comment.replies && comment.replies.length > 0) {
     card.appendChild(renderReplyList(comment, ctx))
   }
@@ -4024,7 +4043,8 @@ function createInlineEditor(comment, formObj, ctx) {
   const lineRef = comment.start_line === comment.end_line
     ? `Line ${comment.start_line}`
     : `Lines ${comment.start_line}–${comment.end_line}`
-  header.textContent = `Editing comment on ${lineRef}`
+  // A sub-thread is anchored to a passage, not to lines.
+  header.textContent = comment.parent_id ? 'Editing comment' : `Editing comment on ${lineRef}`
 
   const textarea = document.createElement("textarea")
   textarea.placeholder = "Leave a review comment… (Ctrl+Enter to submit, Escape to cancel)"
@@ -4071,7 +4091,9 @@ function createInlineEditor(comment, formObj, ctx) {
   form.appendChild(textarea)
   form.appendChild(actions)
 
-  // Keep replies visible below the edit form, inside the form's card
+  // Keep sub-threads and replies visible below the edit form, inside the form's card
+  const bodySubThreads = renderSubThreadList(ctx, comment.id, 'inline')
+  if (bodySubThreads) form.appendChild(bodySubThreads)
   if (comment.replies && comment.replies.length > 0) {
     form.appendChild(renderReplyList(comment, ctx))
   }
@@ -4202,6 +4224,481 @@ function insertSuggestion(textarea, formObj, ctx) {
   textarea.focus()
 }
 
+// ===== Sub-threads =====
+// A sub-thread comments on a passage of another message (a comment or a
+// reply) and nests under it (crit's crit-subthreads.js). setComments splits
+// them off the flat comment lists: ctx.comments and file.comments keep the
+// threads placed on lines, files or the review conversation, ctx.subThreads
+// the rest, indexed by message id. Cards rebuild their sub-threads, composers
+// included (ctx.activeSubThreadForms), on every render.
+
+// crit's helpers name a sub-thread's message parent_id.
+function withThreadParent(comment) {
+  if (comment.anchor_comment_id) comment.parent_id = comment.anchor_comment_id
+  return comment
+}
+
+function setComments(ctx, list) {
+  const parts = subthreads.partitionComments(list.map(withThreadParent))
+  ctx.comments = parts.roots
+  ctx.subThreads = parts.subThreads
+  ctx.subThreadIndex = subthreads.indexByParent(parts.subThreads)
+  if (ctx.multiFile) {
+    for (const f of ctx.files) f.comments = ctx.comments.filter(c => c.file_path === f.path)
+  }
+  pruneSubThreadForms(ctx)
+}
+
+// Every comment of the review: root threads, then sub-threads.
+function allComments(ctx) {
+  return ctx.comments.concat(ctx.subThreads)
+}
+
+function findComment(ctx, id) {
+  return allComments(ctx).find(c => c.id === id) || null
+}
+
+// The root thread a comment, sub-thread or reply belongs to.
+function threadRootId(ctx, id) {
+  return subthreads.rootIdOf(id, allComments(ctx))
+}
+
+function hasOpenSubThreads(ctx, comment) {
+  return subthreads.hasOpenDescendant(comment, ctx.subThreadIndex)
+}
+
+// What hide-resolved hides: a resolved thread with nothing open under it.
+function hiddenResolved(ctx, comment) {
+  return isHideResolved(ctx) && !!comment.resolved && !hasOpenSubThreads(ctx, comment)
+}
+
+// Open comments of a file or of the review conversation, sub-threads included.
+function openThreadCount(ctx, filePath) {
+  return allComments(ctx).filter(c => !c.resolved && c.file_path === filePath).length
+}
+
+function openReviewThreadCount(ctx) {
+  return allComments(ctx).filter(c => !c.resolved && c.scope === 'review').length
+}
+
+// A card collapses when resolved, unless an open sub-thread sits under it. A
+// chevron choice holds only while the card keeps the state it was made in
+// (crit: buildCommentCard).
+function threadCollapse(ctx, comment) {
+  const openBelow = !!comment.resolved && hasOpenSubThreads(ctx, comment)
+  const state = (comment.resolved ? 'resolved' : 'open') + (openBelow ? '+open-below' : '')
+  const override = commentCollapseOverrides[comment.id]
+  if (override && override.state !== state) delete commentCollapseOverrides[comment.id]
+  const collapsed = override && override.state === state ? override.collapsed : !!comment.resolved && !openBelow
+  return { state, collapsed, openBelow }
+}
+
+// The passage a sub-thread comments on, at the top of its card.
+function appendSubThreadQuote(card, comment) {
+  if (!comment.parent_id || !comment.quote) return
+  const quote = document.createElement('div')
+  quote.className = 'subthread-quote'
+  quote.textContent = comment.quote
+  card.appendChild(quote)
+}
+
+// Drop deleted comments, with the edit forms and composers they held.
+function removeComments(ctx, ids) {
+  const gone = new Set(ids)
+  ctx.comments = ctx.comments.filter(c => !gone.has(c.id))
+  ctx.subThreads = ctx.subThreads.filter(c => !gone.has(c.id))
+  ctx.subThreadIndex = subthreads.indexByParent(ctx.subThreads)
+  if (ctx.multiFile) {
+    for (const f of ctx.files) f.comments = f.comments.filter(c => !gone.has(c.id))
+  }
+  ctx.activeForms = ctx.activeForms.filter(f => !f.editingId || !gone.has(f.editingId))
+  pruneSubThreadForms(ctx)
+}
+
+// A composer whose message left the review (deleted here, in another tab or
+// by a re-share) has nowhere to render: drop it.
+function pruneSubThreadForms(ctx) {
+  const ids = subthreads.messageIds(allComments(ctx))
+  for (const id of Array.from(ctx.activeSubThreadForms.keys())) {
+    if (!ids.has(id)) ctx.activeSubThreadForms.delete(id)
+  }
+}
+
+// The ids of the sub-threads a deleted comment or reply takes with it.
+function cascadeIds(ctx, message) {
+  return subthreads.descendants(message, ctx.subThreadIndex).map(sub => sub.id)
+}
+
+// Deleting a message deletes its sub-threads (the server cascades): ask first
+// when there is any, saying how many (same wording as crit).
+function confirmCascadeDelete(ctx, message, noun) {
+  const count = cascadeIds(ctx, message).length
+  return !count || window.confirm('Delete this ' + noun + '? Its ' + count + ' sub-thread' + (count === 1 ? '' : 's') + ' will be deleted too.')
+}
+
+// Rebuild a root thread's card where the document shows it, after a change
+// inside the thread. Review-level threads live in the review conversation,
+// which rerenderPanel rebuilds. Anything else falls back to a full render.
+function refreshThread(ctx, rootId) {
+  const root = ctx.comments.find(c => c.id === rootId)
+  if (!root || root.scope === 'review') return
+  const codeView = root.scope !== 'file' && codeViewForComment(ctx, root)
+  if (codeView && !isOutdatedLineComment(root, codeView.lineTotal)) {
+    refreshCodeFile(ctx, codeView.path)
+    scheduleMessageQuoteHighlights(ctx)
+    return
+  }
+  const block = ctx.el.querySelector(`.comment-block:has(> .comment-card[data-comment-id="${root.id}"])`)
+  if (!block || block.classList.contains('outdated-comment')) {
+    render(ctx)
+    return
+  }
+  block.replaceWith(block.classList.contains('panel-comment-block')
+    ? fileLevelCard(ctx, root, root.file_path || null)
+    : createCommentElement(root, ctx))
+  applyHideResolved(ctx)
+  scheduleMessageQuoteHighlights(ctx)
+}
+
+function refreshThreadOf(ctx, messageId) {
+  const rootId = threadRootId(ctx, messageId)
+  if (rootId) refreshThread(ctx, rootId)
+}
+
+// The sub-threads (and the open composer) under one message, or null, built
+// by the card factory of `surface`: 'inline' (documents, code files,
+// file-level threads), 'review' (review conversation) or 'panel' (comments
+// panel, a read-only mirror: no composer).
+function renderSubThreadList(ctx, messageId, surface) {
+  const subs = ctx.subThreadIndex.get(messageId) || []
+  const composer = surface !== 'panel' ? ctx.activeSubThreadForms.get(messageId) : null
+  if (subs.length === 0 && !composer) return null
+  const container = document.createElement('div')
+  container.className = 'subthreads'
+  container.dataset.parentId = messageId
+  for (const sub of subs) container.appendChild(createSubThreadElement(ctx, sub, surface))
+  if (composer) container.appendChild(createSubThreadComposer(ctx, composer))
+  scheduleMessageQuoteHighlights(ctx)
+  return container
+}
+
+function createSubThreadElement(ctx, sub, surface) {
+  if (surface === 'panel') return renderPanelCard(ctx, sub, sub.file_path || null)
+  if (surface === 'review') {
+    const editor = ctx.activeForms.find(f => f.scope === 'review' && f.editingId === sub.id)
+    return editor ? renderCommentFormUI(ctx, editor) : createReviewConversationCard(ctx, sub)
+  }
+  return createCommentElement(sub, ctx)
+}
+
+// A nested card is hidden while a card around it is collapsed: open those
+// cards, so a jump to it (or to a composer in it) lands on something shown.
+function expandCardsAround(el) {
+  let outer = el.parentElement && el.parentElement.closest('.comment-card.collapsed')
+  while (outer) {
+    outer.classList.remove('collapsed')
+    rememberCollapse(outer, false)
+    const btn = outer.querySelector('.comment-collapse-btn')
+    if (btn) btn.title = 'Collapse comment'
+    outer = outer.parentElement && outer.parentElement.closest('.comment-card.collapsed')
+  }
+}
+
+// ----- Keep a clicked card in place -----
+// A chevron or a resolve changes a card's height below its header, and a
+// resolve rebuilds its whole root thread (refreshThread): the browser's scroll
+// anchoring, picking a node inside the rebuilt thread, shifted the page. From
+// the click, scroll anchoring is off until the change has settled (the card
+// rebuilt after a resolve, then a few frames), the reader scrolls, types or
+// clicks again, or 2 s have passed (crit: holdCardInView). The comments
+// panel keeps its own scroll position (renderCommentsPanel).
+const CARD_HOLD_MAX_MS = 2000
+const CARD_HOLD_SETTLED_FRAMES = 4
+const CARD_HOLD_RELEASE_EVENTS = ['wheel', 'touchmove', 'keydown', 'pointerdown']
+
+function holdCardInView(ctx, card, untilRebuilt) {
+  releaseHeldCard(ctx)
+  if (!card.dataset.commentId || (ctx._commentsPanel && ctx._commentsPanel.contains(card))) return
+  const root = document.documentElement
+  const hold = { previous: root.style.overflowAnchor, release: () => releaseHeldCard(ctx) }
+  ctx._heldCard = hold
+  root.style.overflowAnchor = 'none'
+  CARD_HOLD_RELEASE_EVENTS.forEach(type => {
+    window.addEventListener(type, hold.release, { capture: true, passive: true })
+  })
+  const until = performance.now() + CARD_HOLD_MAX_MS
+  let settledFrames = 0
+  const frame = () => {
+    if (ctx._heldCard !== hold) return
+    // A resolve re-renders the card once the server answers: wait for the
+    // new card before counting frames.
+    if (!untilRebuilt || !card.isConnected) settledFrames++
+    if (settledFrames >= CARD_HOLD_SETTLED_FRAMES || performance.now() > until) releaseHeldCard(ctx)
+    else requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+}
+
+function releaseHeldCard(ctx) {
+  const hold = ctx._heldCard
+  if (!hold) return
+  ctx._heldCard = null
+  document.documentElement.style.overflowAnchor = hold.previous
+  CARD_HOLD_RELEASE_EVENTS.forEach(type => {
+    window.removeEventListener(type, hold.release, { capture: true })
+  })
+}
+
+// ----- Sub-thread composer -----
+
+function subThreadComposerForm(parentId) {
+  return document.querySelector('.comment-form[data-form-key="subthread:' + parentId + '"]')
+}
+
+function confirmDiscardText(text) {
+  return !(text || '').trim() || window.confirm('Discard comment?')
+}
+
+// Open the composer of a sub-thread on a passage of a message, given a
+// resolved selection { parentId, quote, quoteOffset }. False when the viewer
+// may not comment or no thread of the review holds the message.
+function openSubThreadForm(ctx, target) {
+  if (ctx.canComment === false) return false
+  const rootId = threadRootId(ctx, target.parentId)
+  const root = rootId ? ctx.comments.find(c => c.id === rootId) : null
+  if (!root) return false
+  // Composers left empty elsewhere close, like empty line forms do.
+  for (const [parentId, form] of Array.from(ctx.activeSubThreadForms)) {
+    if (parentId !== target.parentId && !(form.draftBody || '').trim()) ctx.activeSubThreadForms.delete(parentId)
+  }
+  closeEmptyForms(ctx, null)
+  const existing = ctx.activeSubThreadForms.get(target.parentId)
+  if (existing) {
+    // Another passage of the same message: keep what was typed.
+    existing.quote = target.quote
+    existing.quoteOffset = target.quoteOffset
+    existing.focused = true
+  } else {
+    ctx.activeSubThreadForms.set(target.parentId, {
+      parentId: target.parentId,
+      review: root.scope === 'review',
+      quote: target.quote,
+      quoteOffset: target.quoteOffset,
+      draftBody: '',
+      focused: true,
+      caret: null,
+      submitting: false,
+    })
+  }
+  closeEmptyReviewForm(ctx)
+  render(ctx)
+  revealSubThreadComposer(ctx, target.parentId)
+  return true
+}
+
+function closeSubThreadForm(ctx, parentId) {
+  if (!ctx.activeSubThreadForms.delete(parentId)) return
+  render(ctx)
+}
+
+// Bring a new composer into view: open its file section and the cards around
+// it, then focus it. Code files mount their threads a frame or two later.
+function revealSubThreadComposer(ctx, parentId, attempt = 0) {
+  requestAnimationFrame(() => {
+    if (ctx._destroyed || !ctx.activeSubThreadForms.has(parentId)) return
+    const form = subThreadComposerForm(parentId)
+    const textarea = form && form.querySelector('textarea')
+    if (!textarea) {
+      if (attempt < 10) revealSubThreadComposer(ctx, parentId, attempt + 1)
+      return
+    }
+    const section = textarea.closest('details')
+    if (section && !section.open) section.open = true
+    expandCardsAround(textarea)
+    textarea.scrollIntoView({ block: 'nearest' })
+    textarea.focus({ preventScroll: true })
+  })
+}
+
+function setSubThreadSubmitting(form, submitting) {
+  form.submitting = submitting
+  const el = subThreadComposerForm(form.parentId)
+  if (!el) return
+  el.setAttribute('aria-busy', String(submitting))
+  el.querySelectorAll('button').forEach(button => { button.disabled = submitting })
+}
+
+// Create the sub-thread; it comes back as a comment_added, like any comment.
+// When the commented message no longer exists (deleted meanwhile), the
+// composer has nothing left to hang under: it closes, the server's message
+// shows, and the comments are synced again. On any other failure the
+// composer stays open with its text.
+function submitSubThread(ctx, form, body) {
+  if (!body.trim() || form.submitting) return
+  setSubThreadSubmitting(form, true)
+  const payload = { anchor_id: form.parentId, body: body.trim(), quote: form.quote }
+  if (form.quoteOffset != null) payload.quote_offset = form.quoteOffset
+  const closeComposer = () => {
+    if (ctx.activeSubThreadForms.get(form.parentId) === form) ctx.activeSubThreadForms.delete(form.parentId)
+    // The answer can come once the reader is typing a reply elsewhere.
+    preservingReplyFocus(() => render(ctx))
+  }
+  pushMutation(ctx, 'add_sub_thread', payload).then(result => {
+    if (result.ok) {
+      closeComposer()
+      return
+    }
+    const reply = result.reply || {}
+    showToast(reply.error || mutationErrorMessage(), 5000)
+    if (reply.reason === 'not_found') {
+      closeComposer()
+      ctx.pushEvent('noop_refresh', {})
+    } else {
+      setSubThreadSubmitting(form, false)
+    }
+  })
+}
+
+// The composer under a message: the quoted passage, then a comment form.
+// Its text, caret and focus live in `form`, so a rebuilt card restores them.
+function createSubThreadComposer(ctx, form) {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'comment-form-wrapper subthread-composer'
+
+  const formEl = document.createElement('div')
+  formEl.className = 'comment-form'
+  formEl.dataset.formKey = 'subthread:' + form.parentId
+
+  const header = document.createElement('div')
+  header.className = 'comment-form-header'
+  header.textContent = 'Comment on passage'
+
+  const quote = document.createElement('div')
+  quote.className = 'subthread-quote'
+  quote.textContent = form.quote
+
+  const textarea = document.createElement('textarea')
+  textarea.dataset.formKey = formEl.dataset.formKey
+  textarea.placeholder = 'Comment on this passage… (Ctrl+Enter to submit, Escape to cancel)'
+  textarea.setAttribute('aria-label', 'Comment on the quoted passage')
+  textarea.value = form.draftBody || ''
+  const rememberCaret = () => { form.caret = [textarea.selectionStart, textarea.selectionEnd] }
+  textarea.addEventListener('input', () => {
+    form.draftBody = textarea.value
+    rememberCaret()
+  })
+  textarea.addEventListener('keyup', rememberCaret)
+  textarea.addEventListener('mouseup', rememberCaret)
+  textarea.addEventListener('focus', () => { form.focused = true })
+  // Focus moving elsewhere clears the flag; a re-render (Chrome blurs a field
+  // while removing it) or leaving the window does not: the rebuilt composer
+  // takes focus back.
+  textarea.addEventListener('blur', () => {
+    queueMicrotask(() => {
+      if (textarea.isConnected && document.activeElement !== textarea) form.focused = false
+    })
+  })
+  textarea.addEventListener('keydown', (e) => {
+    e.stopPropagation()
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault()
+      submitSubThread(ctx, form, textarea.value)
+    } else if (e.key === 'Escape') {
+      // Escape is ambiguous (could be a fat-finger): confirm a typed text.
+      e.preventDefault()
+      if (confirmDiscardText(form.draftBody)) closeSubThreadForm(ctx, form.parentId)
+    }
+  })
+
+  const actions = document.createElement('div')
+  actions.className = 'comment-form-actions'
+  const cancelBtn = document.createElement('button')
+  cancelBtn.className = 'btn btn-sm'
+  cancelBtn.textContent = 'Cancel'
+  // An explicit, labeled discard: no question asked.
+  cancelBtn.addEventListener('click', () => closeSubThreadForm(ctx, form.parentId))
+  const submitBtn = document.createElement('button')
+  submitBtn.className = 'btn btn-sm btn-primary'
+  submitBtn.textContent = 'Comment'
+  submitBtn.addEventListener('click', () => submitSubThread(ctx, form, textarea.value))
+  actions.appendChild(cancelBtn)
+  actions.appendChild(submitBtn)
+
+  formEl.appendChild(header)
+  formEl.appendChild(quote)
+  formEl.appendChild(textarea)
+  formEl.appendChild(actions)
+  wrapper.appendChild(formEl)
+  if (form.submitting) {
+    formEl.setAttribute('aria-busy', 'true')
+    formEl.querySelectorAll('button').forEach(button => { button.disabled = true })
+  }
+
+  if (form.focused) {
+    requestAnimationFrame(() => {
+      if (!textarea.isConnected || ctx.activeSubThreadForms.get(form.parentId) !== form) return
+      const active = document.activeElement
+      if (active && active !== textarea && active.matches && active.matches('textarea, input, select, [contenteditable="true"]')) return
+      textarea.focus({ preventScroll: true })
+      const end = textarea.value.length
+      const caret = form.caret || [end, end]
+      textarea.setSelectionRange(Math.min(caret[0], end), Math.min(caret[1], end))
+    })
+  }
+  return wrapper
+}
+
+// ----- Passage highlights -----
+// Each open sub-thread's passage (and the open composer's) is highlighted in
+// its message's body with the CSS Custom Highlight API (crit-quote belongs to
+// Pierre's shadow roots), recomputed after renders, once per frame.
+const MESSAGE_QUOTE_HIGHLIGHT = 'crit-message-quote'
+
+function messageQuoteHighlightsSupported() {
+  return typeof CSS !== 'undefined' && !!CSS.highlights && typeof Highlight !== 'undefined'
+}
+
+function scheduleMessageQuoteHighlights(ctx) {
+  if (ctx._destroyed || ctx._messageQuoteFrame || !messageQuoteHighlightsSupported()) return
+  ctx._messageQuoteFrame = requestAnimationFrame(() => {
+    ctx._messageQuoteFrame = 0
+    if (!ctx._destroyed) syncMessageQuoteHighlights(ctx)
+  })
+}
+
+function syncMessageQuoteHighlights(ctx) {
+  const ranges = []
+  let pendingCode = false
+  document.querySelectorAll('.subthreads[data-parent-id]').forEach(container => {
+    // The message's own body: a sibling of the container, in the card or the
+    // reply that holds it.
+    const owner = container.parentElement
+    const body = owner && Array.from(owner.children).find(child => child.matches(subthreads.MESSAGE_BODY_SELECTOR))
+    if (!body) return
+    const parentId = container.dataset.parentId
+    const passages = (ctx.subThreadIndex.get(parentId) || [])
+      .filter(sub => !sub.resolved && sub.quote)
+      .map(sub => ({ quote: sub.quote, offset: sub.quote_offset }))
+    const form = ctx.activeSubThreadForms.get(parentId)
+    if (form) passages.push({ quote: form.quote, offset: form.quoteOffset })
+    passages.forEach(passage => {
+      const range = subthreads.quoteRange(body, passage.quote, passage.offset)
+      if (range) ranges.push(range)
+    })
+    // Fenced code is highlighted after mount, which replaces its text.
+    if (passages.length && body.querySelector('code[data-crit-code="pending"]')) pendingCode = true
+  })
+  if (ranges.length) CSS.highlights.set(MESSAGE_QUOTE_HIGHLIGHT, new Highlight(...ranges))
+  else CSS.highlights.delete(MESSAGE_QUOTE_HIGHLIGHT)
+  // Recompute once that fenced code has been highlighted.
+  if (pendingCode && !ctx._messageQuoteCodeObserver) {
+    ctx._messageQuoteCodeObserver = new MutationObserver(records => {
+      if (records.some(r => r.target.closest(subthreads.MESSAGE_BODY_SELECTOR))) scheduleMessageQuoteHighlights(ctx)
+    })
+    ctx._messageQuoteCodeObserver.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['data-crit-code'] })
+  }
+}
+
 // ---- Threading: replies & resolved ------------------------------------------
 
 // ---- Comment card / replies / composer --------------------------------------
@@ -4210,18 +4707,30 @@ function insertSuggestion(textarea, formObj, ctx) {
 // shared module's mode-agnostic contract; every existing call site keeps its
 // (comment, ctx) / (commentId, ctx) / (ctx, comment, filePath) signature.
 
-function commentCardAdapter(ctx, filePath) {
+// `surface` (see renderSubThreadList) builds the sub-threads nested under
+// the card's body and under each reply.
+function commentCardAdapter(ctx, filePath, surface) {
   return {
     isOwn: (c) => isOwnComment(c, ctx),
     canResolve: (c) => isOwnComment(c, ctx) || isReviewOwner(ctx),
     canDelete: (c) => canDeleteComment(c, ctx),
     displayName: ctx.displayName,
-    collapseOverrides: commentCollapseOverrides,
+    cardCollapse: (c) => threadCollapse(ctx, c),
+    rememberCollapse: rememberCollapse,
     activeReplyForms: ctx.activeReplyForms,
+    quote: (c) => (c.parent_id && c.quote) || null,
+    renderSubThreads: (c) => renderSubThreadList(ctx, c.id, surface),
+    renderReplySubThreads: (reply) => renderSubThreadList(ctx, reply.id, surface),
     onResolve: (c, resolved) => pushCommentMutation(ctx, 'resolve_comment', { id: c.id, resolved }),
-    onDelete: (c) => pushCommentMutation(ctx, 'delete_comment', { id: c.id }),
+    onDelete: (c) => {
+      if (!confirmCascadeDelete(ctx, c, 'comment')) return { ok: false }
+      return pushCommentMutation(ctx, 'delete_comment', { id: c.id })
+    },
     onAddReply: (commentId, body) => pushCommentMutation(ctx, 'add_reply', { comment_id: commentId, body }),
-    onDeleteReply: (id) => pushCommentMutation(ctx, 'delete_reply', { id }),
+    onDeleteReply: (id) => {
+      if (!confirmCascadeDelete(ctx, { id }, 'reply')) return { ok: false }
+      return pushCommentMutation(ctx, 'delete_reply', { id })
+    },
     onEditReply: (commentId, reply) => editReply(commentId, reply, ctx),
     beforeReplyExpand: () => { closeEmptyReviewForm(ctx); closeEmptyForms(ctx, null) },
     scheduleTimeout: (fn, ms) => trackedSetTimeout(ctx, fn, ms),
@@ -4255,14 +4764,15 @@ function commentCardAdapter(ctx, filePath) {
           const section = document.getElementById('file-section-' + CSS.escape(filePath))
           if (section && !section.open) section.open = true
         }
-        if (c.start_line) scrollToInlineComment(c, ctx)
+        // A sub-thread has no line: its inline card is under its message.
+        if (c.start_line || c.parent_id) scrollToInlineComment(c, ctx)
       }
     },
   }
 }
 
 function renderReplyList(comment, ctx) {
-  return sharedRenderReplyList(comment, commentCardAdapter(ctx, null))
+  return sharedRenderReplyList(comment, commentCardAdapter(ctx, null, 'inline'))
 }
 
 function createReplyInput(commentId, ctx) {
@@ -4278,7 +4788,7 @@ function editReply(commentId, reply, ctx) {
 
   // Hide the "Write a reply..." form while editing
   const card = replyEl.closest('.comment-card')
-  const replyForm = card && card.querySelector('.reply-form')
+  const replyForm = card && card.querySelector(':scope > .reply-form')
   if (replyForm) replyForm.style.display = 'none'
 
   const textarea = document.createElement('textarea')
@@ -4299,7 +4809,8 @@ function editReply(commentId, reply, ctx) {
   btnRow.className = 'reply-edit-actions'
   btnRow.appendChild(saveBtn)
   btnRow.appendChild(cancelBtn)
-  replyEl.appendChild(btnRow)
+  // Right under the textarea, above the reply's sub-threads.
+  textarea.after(btnRow)
 
   cancelBtn.addEventListener('click', () => {
     // Cancel button is an explicit, labeled discard — no confirm.
@@ -4336,10 +4847,14 @@ function createResolvedElement(comment, ctx) {
   wrapper.className = 'comment-block'
 
   const card = document.createElement('div')
-  // Apply saved collapse state (resolved defaults to collapsed)
-  const isCollapsed = commentCollapseOverrides[comment.id] !== undefined ? commentCollapseOverrides[comment.id] : true
+  // Apply the collapse state (resolved defaults to collapsed, unless an open
+  // sub-thread sits under it: then it also stays shown with hide-resolved)
+  const collapse = threadCollapse(ctx, comment)
+  const isCollapsed = collapse.collapsed
+  if (collapse.openBelow) wrapper.classList.add('has-open-subthreads')
   card.className = 'comment-card resolved-card' + (isCollapsed ? ' collapsed' : '')
   card.dataset.commentId = comment.id
+  card.dataset.collapseState = collapse.state
 
   const header = document.createElement('div')
   header.className = 'comment-header'
@@ -4351,7 +4866,7 @@ function createResolvedElement(comment, ctx) {
   collapseBtn.addEventListener('click', function(e) {
     e.stopPropagation()
     card.classList.toggle('collapsed')
-    commentCollapseOverrides[comment.id] = card.classList.contains('collapsed')
+    rememberCollapse(card, card.classList.contains('collapsed'))
     collapseBtn.title = card.classList.contains('collapsed') ? 'Expand comment' : 'Collapse comment'
   })
 
@@ -4382,7 +4897,7 @@ function createResolvedElement(comment, ctx) {
     roundBadge.textContent = 'R' + comment.review_round
     headerLeft.appendChild(roundBadge)
   }
-  headerLeft.appendChild(lineRef)
+  if (!comment.parent_id) headerLeft.appendChild(lineRef)
   headerLeft.appendChild(time)
 
   const driftedContext = attachDriftedContext(wrapper, headerLeft, comment)
@@ -4416,6 +4931,7 @@ function createResolvedElement(comment, ctx) {
     deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
     deleteBtn.addEventListener('click', function() {
       if (deleteBtn.disabled) return
+      if (!confirmCascadeDelete(ctx, comment, 'comment')) return
       deleteBtn.disabled = true
       pushCommentMutation(ctx, "delete_comment", { id: comment.id }, {
         onError: () => { deleteBtn.disabled = false },
@@ -4432,10 +4948,13 @@ function createResolvedElement(comment, ctx) {
   renderMarkdown(body, comment.body, commentMarkdownEnv(comment, ctx))
 
   card.appendChild(header)
+  appendSubThreadQuote(card, comment)
   if (driftedContext) card.appendChild(driftedContext)
   card.appendChild(body)
 
-  // Render replies
+  // Sub-threads on passages of the body, then the replies (each with its own)
+  const bodySubThreads = renderSubThreadList(ctx, comment.id, 'inline')
+  if (bodySubThreads) card.appendChild(bodySubThreads)
   if (comment.replies && comment.replies.length > 0) {
     card.appendChild(renderReplyList(comment, ctx))
   }
@@ -4569,10 +5088,15 @@ function openReviewCommentForm(ctx) {
   renderReviewConversation(ctx)
   scrollToReviewConversation(ctx)
   requestAnimationFrame(() => {
-    const section = document.getElementById('reviewConversation')
-    const ta = section && section.querySelector('.comment-form textarea')
+    // The section may hold sub-thread composers too.
+    const ta = reviewFormTextarea(fk)
     if (ta) ta.focus()
   })
+}
+
+function reviewFormTextarea(formKey) {
+  const section = document.getElementById('reviewConversation')
+  return section && section.querySelector('.comment-form[data-form-key="' + CSS.escape(formKey) + '"] textarea')
 }
 
 function openReviewCommentEditForm(ctx, comment) {
@@ -4595,9 +5119,11 @@ function openReviewCommentEditForm(ctx, comment) {
   renderReviewConversation(ctx)
   scrollToReviewConversation(ctx)
   requestAnimationFrame(() => {
-    const section = document.getElementById('reviewConversation')
-    const ta = section && section.querySelector('.comment-form textarea')
-    if (ta) ta.focus()
+    const ta = reviewFormTextarea(fk)
+    if (ta) {
+      expandCardsAround(ta)
+      ta.focus()
+    }
   })
 }
 
@@ -4606,8 +5132,7 @@ function openReviewCommentEditForm(ctx, comment) {
 function closeEmptyReviewForm(ctx) {
   const reviewForm = ctx.activeForms.find(f => f.scope === 'review' && !f.editingId)
   if (!reviewForm) return
-  const section = document.getElementById('reviewConversation')
-  const ta = section && section.querySelector('.comment-form textarea')
+  const ta = reviewFormTextarea(reviewForm.formKey)
   if (ta && ta.value.trim()) return
   removeForm(ctx, reviewForm.formKey)
   renderReviewConversation(ctx)
@@ -4689,9 +5214,7 @@ function insertInlineComment(ctx, comment) {
           if (header) header.after(container)
           else section.prepend(container)
         }
-        const card = renderPanelCard(ctx, comment, comment.file_path)
-        card.style.cursor = ''
-        container.appendChild(card)
+        container.appendChild(fileLevelCard(ctx, comment, comment.file_path))
       }
     }
     return
@@ -4792,7 +5315,7 @@ function updateTreeBadge(ctx, filePath) {
   if (!treeFile) return
   const f = ctx.files.find(fl => fl.path === filePath)
   if (!f) return
-  const unresolvedCount = f.comments.filter(c => !c.resolved).length
+  const unresolvedCount = openThreadCount(ctx, filePath)
   let badge = treeFile.querySelector('.tree-comment-badge')
   if (unresolvedCount > 0) {
     if (!badge) {
@@ -4843,11 +5366,13 @@ function renderCommentsPanel(ctx) {
   body.innerHTML = ''
 
   const activeFilter = ctx._commentsActiveFilter || 'all'
+  scheduleMessageQuoteHighlights(ctx)
 
-  // Compute counts for badge and pill
-  const totalCount = ctx.comments.length
-  const openCount = ctx.comments.filter(c => !c.resolved).length
-  const resolvedCount = ctx.comments.filter(c => c.resolved).length
+  // Compute counts for badge and pill (sub-threads included)
+  const comments = allComments(ctx)
+  const totalCount = comments.length
+  const openCount = comments.filter(c => !c.resolved).length
+  const resolvedCount = comments.filter(c => c.resolved).length
 
   // Update count badge
   const badge = panel.querySelector('#commentsPanelCountBadge')
@@ -4865,12 +5390,13 @@ function renderCommentsPanel(ctx) {
   })
 
 
-  // Filter function based on active pill
-  const visibleFilter = c => {
+  // Filter function based on active pill: a thread shows when it or a
+  // sub-thread under it (shown nested in it) matches
+  const visibleFilter = thread => [thread].concat(subthreads.descendants(thread, ctx.subThreadIndex)).some(c => {
     if (activeFilter === 'open') return !c.resolved
     if (activeFilter === 'resolved') return c.resolved
     return true
-  }
+  })
 
   // Review-level (general) comments are composed/edited from the inline
   // Review Conversation section at the top of the document; the panel only
@@ -5029,20 +5555,31 @@ function toggleExpandAllComments(ctx) {
       card.classList.remove('collapsed')
     }
     // Sync override state
-    const id = card.dataset.commentId
-    if (id) commentCollapseOverrides[id] = anyExpanded
+    rememberCollapse(card, anyExpanded)
   })
 
   updateExpandAllLabel(ctx)
 }
 
-function renderPanelCard(ctx, comment, filePath) {
-  return renderCommentCard(comment, commentCardAdapter(ctx, filePath))
+// `surface` builds its sub-threads: 'panel' by default, or the document
+// surface the card shows on (file-level threads, review conversation).
+function renderPanelCard(ctx, comment, filePath, surface = 'panel') {
+  return renderCommentCard(comment, commentCardAdapter(ctx, filePath, surface))
+}
+
+// A file-level thread (or a thread of a file no longer in the review) shown
+// above the file body, its sub-threads as inline cards.
+function fileLevelCard(ctx, comment, filePath) {
+  const card = renderPanelCard(ctx, comment, filePath, 'inline')
+  card.style.cursor = ''
+  return card
 }
 
 function scrollToInlineComment(comment, ctx) {
   const card = ctx.el.querySelector(`.comment-card[data-comment-id="${comment.id}"]`)
   if (!card) return
+  // A sub-thread card is hidden while a card around it is collapsed.
+  expandCardsAround(card)
   const header = document.querySelector('.crit-header')
   const offset = header ? header.offsetHeight + 16 : 68
   window.scrollTo({
@@ -5100,7 +5637,9 @@ function renderReviewConversation(ctx) {
     return
   }
 
-  const collapsed = isReviewConversationCollapsed() && !reviewForm
+  // An open form (comment, edit, sub-thread composer) keeps it expanded.
+  const collapsed = isReviewConversationCollapsed() && !reviewForm &&
+    ![...ctx.activeSubThreadForms.values()].some(f => f.review)
   section.classList.toggle('collapsed', collapsed)
 
   // Header
@@ -5130,7 +5669,8 @@ function renderReviewConversation(ctx) {
   labelText.textContent = 'Review conversation'
   header.appendChild(labelText)
 
-  const unresolvedCount = reviewComments.filter(c => !c.resolved).length
+  // Open threads, sub-threads included (the file-tree badge convention).
+  const unresolvedCount = openReviewThreadCount(ctx)
   if (unresolvedCount > 0) {
     const count = document.createElement('span')
     count.className = 'count'
@@ -5138,6 +5678,7 @@ function renderReviewConversation(ctx) {
     header.appendChild(count)
   }
   section.appendChild(header)
+  scheduleMessageQuoteHighlights(ctx)
 
   if (collapsed) return
 
@@ -5177,10 +5718,10 @@ function renderReviewConversation(ctx) {
 // already builds resolve/edit/delete actions for own review comments) but
 // rewires the edit button to open the inline editor instead of a panel form.
 function createReviewConversationCard(ctx, comment) {
-  const wrapper = renderPanelCard(ctx, comment, null)
+  const wrapper = renderPanelCard(ctx, comment, null, 'review')
   // Drop the panel-comment-block class so width rules don't fight the inline section.
   wrapper.classList.remove('panel-comment-block')
-  // The actual card lives inside the wrapper; we need it to append replies + reply input.
+  // The actual card lives inside the wrapper; we need it to append the reply input.
   const card = wrapper.querySelector('.comment-card') || wrapper
   card.style.cursor = ''
   // Append Edit button for owners (panel-card builds resolve+delete only for review scope).
@@ -5198,12 +5739,10 @@ function createReviewConversationCard(ctx, comment) {
       actions.appendChild(editBtn)
     }
   }
-  // Render existing replies + a reply input — review-level threads support replies
-  // exactly like line-anchored ones (parity with crit local).
+  // A reply input under the replies, which renderPanelCard already lists (they
+  // showed twice) — review-level threads support replies exactly like
+  // line-anchored ones (parity with crit local).
   // Reply input gated on comment policy (a reply is a new comment).
-  if (comment.replies && comment.replies.length > 0) {
-    card.appendChild(renderReplyList(comment, ctx))
-  }
   if (ctx.canComment !== false) {
     card.appendChild(createReplyInput(comment.id, ctx))
   }
@@ -5217,8 +5756,7 @@ function buildReviewConversationTreeRow(ctx) {
   let inner =
     '<span class="tree-conversation-icon">' + ICON_REVIEW_CONVERSATION + '</span>' +
     '<span class="tree-conversation-name">Review conversation</span>'
-  const reviewComments = ctx.comments.filter(c => c.scope === 'review')
-  const unresolved = reviewComments.filter(c => !c.resolved).length
+  const unresolved = openReviewThreadCount(ctx)
   if (unresolved > 0) {
     inner += '<span class="tree-conversation-badge">' + unresolved + '</span>'
   }
@@ -5254,6 +5792,7 @@ function scrollToReviewComment(ctx, commentId) {
     scrollToReviewConversation(ctx)
     return
   }
+  expandCardsAround(card)
   card.scrollIntoView({ behavior: 'smooth', block: 'center' })
   card.classList.remove('comment-flash')
   void card.offsetWidth
@@ -5375,7 +5914,10 @@ function getInlineCommentCards(ctx) {
 
 function navigateToComment(ctx, direction) {
   const allCards = getInlineCommentCards(ctx)
-  const isEligible = card => !isHideResolved(ctx) || !card.classList.contains('resolved-card')
+  // Hide-resolved hides a resolved card, unless an open sub-thread under it
+  // keeps it shown.
+  const isEligible = card => !isHideResolved(ctx) || !card.classList.contains('resolved-card') ||
+    card.parentElement.classList.contains('has-open-subthreads')
   const cards = allCards.filter(isEligible)
   if (cards.length === 0) return
 
@@ -5406,6 +5948,8 @@ function navigateToComment(ctx, direction) {
   }
 
   ctx._navCommentId = target.dataset.commentId
+  // A sub-thread card is hidden while a card around it is collapsed.
+  expandCardsAround(target)
 
   const rect = target.getBoundingClientRect()
   const fileSection = target.closest('.file-section')
@@ -5453,14 +5997,11 @@ function filesSettingsAdapter(ctx) {
 }
 
 // ---- Hide resolved (apply) --------------------------------------------------
+// A body class read by a CSS rule (app.css, as in crit), so every card a
+// delta rebuilds afterwards follows it.
 function applyHideResolved(ctx) {
   const hide = ctx ? isHideResolved(ctx) : readHideResolved()
-  document.querySelectorAll('.comment-block:not(.panel-comment-block)').forEach(function(block) {
-    const card = block.querySelector('.resolved-card')
-    if (card) {
-      block.style.display = hide ? 'none' : ''
-    }
-  })
+  document.body.classList.toggle('hide-resolved', hide)
 }
 
 // ---- Phoenix LiveView hook --------------------------------------------------
@@ -5469,6 +6010,12 @@ export const DocumentRenderer = {
   mounted() {
     const ctx = this
     ctx.comments = []
+    ctx.subThreads = []
+    ctx.subThreadIndex = new Map()
+    // Open sub-thread composers ({ parentId, review, quote, quoteOffset,
+    // draftBody, focused, caret, submitting }), by message id, brought back by
+    // every rebuilt card.
+    ctx.activeSubThreadForms = new Map()
     ctx.lineBlocks = []
     ctx.selectionStart = null
     ctx.selectionEnd = null
@@ -5796,6 +6343,7 @@ export const DocumentRenderer = {
       ctx.canComment = next
       if (changed && ctx.md) {
         ctx.activeForms = ctx.activeForms.filter((f) => f.editingId)
+        ctx.activeSubThreadForms.clear()
         // Code views keep their Pierre options across renders: the gutter "+"
         // and tap-to-comment follow the new policy.
         refreshCodeViewOptions(ctx)
@@ -5811,7 +6359,7 @@ export const DocumentRenderer = {
       // Publish the snapshot before yielding: LiveView can deliver comment
       // deltas and policy changes while the renderer is still loading.
       ctx.displayName = display_name || null
-      ctx.comments = comments
+      setComments(ctx, comments)
       ctx.canComment = can_comment !== false
       ctx.isAdmin = is_admin === true
       await loadPierre()
@@ -5874,6 +6422,16 @@ export const DocumentRenderer = {
     // ===== Delta comment sync handlers =====
 
     ctx.handleEvent("comment_added", ({ comment }) => preservingReplyFocus(() => {
+      if (withThreadParent(comment).parent_id) {
+        // A sub-thread nests in its thread's card, rebuilt in place.
+        ctx.subThreads.push(comment)
+        ctx.subThreadIndex = subthreads.indexByParent(ctx.subThreads)
+        refreshThreadOf(ctx, comment.id)
+        updateCommentCount(ctx)
+        updateTreeBadge(ctx, comment.file_path)
+        rerenderPanel(ctx)
+        return
+      }
       ctx.comments.push(comment)
       if (ctx.multiFile) {
         const f = ctx.files.find(fl => fl.path === comment.file_path)
@@ -5886,7 +6444,7 @@ export const DocumentRenderer = {
     }))
 
     ctx.handleEvent("comment_updated", ({ id, body, updated_at }) => preservingReplyFocus(() => {
-      const comment = ctx.comments.find(c => c.id === id)
+      const comment = findComment(ctx, id)
       if (!comment) return
       comment.body = body
       comment.updated_at = updated_at
@@ -5896,41 +6454,34 @@ export const DocumentRenderer = {
         if (bodyEl) renderMarkdown(bodyEl, body, commentMarkdownEnv(comment, ctx))
       }
       rerenderPanel(ctx)
+      // Its sub-threads' passages are looked up in the new text.
+      scheduleMessageQuoteHighlights(ctx)
     }))
 
+    // The server deleted the sub-threads under the comment too (foreign keys)
+    // and broadcasts its id only: each tab finds them in its own index.
     ctx.handleEvent("comment_deleted", ({ id }) => preservingReplyFocus(() => {
-      const comment = ctx.comments.find(c => c.id === id)
+      const comment = findComment(ctx, id)
       if (!comment) return
-      ctx.comments = ctx.comments.filter(c => c.id !== id)
+      const rootId = comment.parent_id ? threadRootId(ctx, id) : null
+      removeComments(ctx, [id].concat(cascadeIds(ctx, comment)))
       ctx.activeReplyForms.delete(id)
-      if (ctx.multiFile) {
-        const f = ctx.files.find(fl => fl.path === comment.file_path)
-        if (f) f.comments = f.comments.filter(c => c.id !== id)
-      }
-      removeInlineComment(ctx, comment)
+      if (!comment.parent_id) removeInlineComment(ctx, comment)
+      else if (rootId) refreshThread(ctx, rootId)
       updateCommentCount(ctx)
       updateTreeBadge(ctx, comment.file_path)
       rerenderPanel(ctx)
     }))
 
     ctx.handleEvent("comment_resolved", ({ id, resolved }) => preservingReplyFocus(() => {
-      const comment = ctx.comments.find(c => c.id === id)
+      const comment = findComment(ctx, id)
       if (!comment) return
       comment.resolved = resolved
-      // Re-render just this comment inline (resolved/unresolved have different
-      // renderers). In a code file the thread is a Pierre annotation, rebuilt
-      // with the file's annotations (hide-resolved drops it there).
-      const codeView = comment.scope !== 'file' && codeViewForComment(ctx, comment)
-      if (codeView) {
-        if (isOutdatedLineComment(comment, codeView.lineTotal)) render(ctx)
-        else refreshCodeFile(ctx, codeView.path)
-      } else {
-        const block = ctx.el.querySelector(`.comment-block:has(> .comment-card[data-comment-id="${id}"])`)
-        if (block) {
-          const newEl = createCommentElement(comment, ctx)
-          block.replaceWith(newEl)
-        }
-      }
+      // Re-render the whole thread inline (resolved/unresolved have different
+      // renderers, and a sub-thread changes how the cards around it collapse).
+      // In a code file the thread is a Pierre annotation, rebuilt with the
+      // file's annotations (hide-resolved drops it there).
+      refreshThreadOf(ctx, id)
       applyHideResolved(ctx)
       updateCommentCount(ctx)
       updateTreeBadge(ctx, comment.file_path)
@@ -5938,17 +6489,18 @@ export const DocumentRenderer = {
     }))
 
     ctx.handleEvent("reply_added", ({ parent_id, reply }) => preservingReplyFocus(() => {
-      const comment = ctx.comments.find(c => c.id === parent_id)
+      const comment = findComment(ctx, parent_id)
       if (!comment) return
       if (!comment.replies) comment.replies = []
       comment.replies.push(reply)
       const card = ctx.el.querySelector(`.comment-card[data-comment-id="${parent_id}"]`)
       if (card) {
-        let repliesContainer = card.querySelector('.comment-replies')
+        // The card's own replies, not those of a sub-thread nested in it.
+        let repliesContainer = card.querySelector(':scope > .comment-replies')
         if (repliesContainer) {
           repliesContainer.replaceWith(renderReplyList(comment, ctx))
         } else {
-          const replyInput = card.querySelector('.reply-form')
+          const replyInput = card.querySelector(':scope > .reply-form')
           if (replyInput) {
             card.insertBefore(renderReplyList(comment, ctx), replyInput)
           } else {
@@ -5960,7 +6512,7 @@ export const DocumentRenderer = {
     }))
 
     ctx.handleEvent("reply_updated", ({ parent_id, id, body }) => preservingReplyFocus(() => {
-      const comment = ctx.comments.find(c => c.id === parent_id)
+      const comment = findComment(ctx, parent_id)
       if (!comment) return
       const reply = comment.replies && comment.replies.find(r => r.id === id)
       if (!reply) return
@@ -5974,19 +6526,30 @@ export const DocumentRenderer = {
         }
       }
       rerenderPanel(ctx)
+      scheduleMessageQuoteHighlights(ctx)
     }))
 
+    // Like comment_deleted: the sub-threads under the reply went with it.
     ctx.handleEvent("reply_deleted", ({ parent_id, id }) => preservingReplyFocus(() => {
-      const comment = ctx.comments.find(c => c.id === parent_id)
+      const comment = findComment(ctx, parent_id)
       if (!comment) return
       comment.replies = (comment.replies || []).filter(r => r.id !== id)
+      const gone = cascadeIds(ctx, { id })
+      removeComments(ctx, gone)
       const replyEl = ctx.el.querySelector(`.comment-reply[data-reply-id="${id}"]`)
       if (replyEl) replyEl.remove()
+      if (gone.length) {
+        // Cards around it may no longer have an open sub-thread under them.
+        refreshThreadOf(ctx, parent_id)
+        updateCommentCount(ctx)
+        updateTreeBadge(ctx, comment.file_path)
+      }
       rerenderPanel(ctx)
+      scheduleMessageQuoteHighlights(ctx)
     }))
 
     ctx.handleEvent("display_name_changed", ({ identity, name }) => preservingReplyFocus(() => {
-      for (const c of ctx.comments) {
+      for (const c of allComments(ctx)) {
         if (c.author_identity === identity) c.author_display_name = name
         for (const r of (c.replies || [])) {
           if (r.author_identity === identity) r.author_display_name = name
@@ -5999,15 +6562,10 @@ export const DocumentRenderer = {
 
     // Full sync escape hatch (reconnect, noop_refresh)
     ctx.handleEvent("comments_full_sync", ({ comments }) => preservingReplyFocus(() => {
-      ctx.comments = comments
+      setComments(ctx, comments)
       const ids = new Set(comments.map(c => c.id))
       for (const id of ctx.activeReplyForms.keys()) {
         if (!ids.has(id)) ctx.activeReplyForms.delete(id)
-      }
-      if (ctx.multiFile) {
-        for (const f of ctx.files) {
-          f.comments = comments.filter(c => c.file_path === f.path)
-        }
       }
       render(ctx)
       rerenderPanel(ctx)
@@ -6036,6 +6594,13 @@ export const DocumentRenderer = {
     // Returns true if a form was opened from an active selection.
     const tryOpenFormFromSelection = () => {
       const selection = window.getSelection()
+      // A passage of one comment or reply body: a sub-thread under that
+      // message. Any other selection keeps commenting on the document.
+      const message = subthreads.resolveMessageSelection(selection)
+      if (message && openSubThreadForm(ctx, message)) {
+        selection.removeAllRanges()
+        return true
+      }
       // A selection inside a code file lives in Pierre's shadow root; only its
       // composed range knows the lines (crit-pierre-dom.js).
       const code = pierreDOM.pierreSelectionForComment(selection)
@@ -6300,7 +6865,7 @@ export const DocumentRenderer = {
         case 'delete_comment': {
           e.preventDefault()
           const comment = ownCommentOnFocusedRow()
-          if (comment) pushCommentMutation(ctx, 'delete_comment', { id: comment.id })
+          if (comment && confirmCascadeDelete(ctx, comment, 'comment')) pushCommentMutation(ctx, 'delete_comment', { id: comment.id })
           break
         }
         case 'toggle_toc': {
@@ -6314,6 +6879,9 @@ export const DocumentRenderer = {
           if (ctx.activeForms.length > 0) {
             const top = ctx.activeForms[ctx.activeForms.length - 1]
             if (confirmDiscardIfDirty(top)) cancelComment(top, ctx)
+          } else if (ctx.activeSubThreadForms.size > 0) {
+            const last = Array.from(ctx.activeSubThreadForms.values()).pop()
+            if (confirmDiscardText(last.draftBody)) closeSubThreadForm(ctx, last.parentId)
           } else if (ctx.visualMode) {
             exitVisualMode(ctx, true)
           } else if (ctx.focusedBlockIndex >= 0) {
@@ -6324,6 +6892,15 @@ export const DocumentRenderer = {
       }
     }
     document.addEventListener('keydown', ctx._keydownHandler)
+
+    // Capture phase: hold the page before a chevron's or a resolve button's
+    // own handler changes the card (holdCardInView).
+    ctx._holdClickHandler = (e) => {
+      const button = e.target.closest && e.target.closest('.comment-collapse-btn, .comment-actions .resolve-btn')
+      const card = button && button.closest('.comment-card')
+      if (card) holdCardInView(ctx, card, button.classList.contains('resolve-btn'))
+    }
+    document.addEventListener('click', ctx._holdClickHandler, true)
   },
 
   disconnected() {
@@ -6338,6 +6915,7 @@ export const DocumentRenderer = {
 
   destroyed() {
     this._destroyed = true
+    if (this._messageQuoteCodeObserver) this._messageQuoteCodeObserver.disconnect()
     document.body.classList.remove("dragging")
     if (this._stopWatchingCode) this._stopWatchingCode()
     if (this._stopWatchingRenders) this._stopWatchingRenders()
@@ -6365,6 +6943,11 @@ export const DocumentRenderer = {
     if (this._keydownHandler) {
       document.removeEventListener("keydown", this._keydownHandler)
     }
+    if (this._holdClickHandler) {
+      document.removeEventListener('click', this._holdClickHandler, true)
+    }
+    releaseHeldCard(this)
+    document.body.classList.remove('hide-resolved')
     if (this._resizeHandler) {
       window.removeEventListener("resize", this._resizeHandler)
     }

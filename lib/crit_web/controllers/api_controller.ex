@@ -14,6 +14,7 @@ defmodule CritWeb.ApiController do
     cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
+    sub_threads = params["sub_threads"] || []
     org_slug = params["org"]
     visibility = parse_visibility(params["visibility"])
     comment_policy = params["comment_policy"]
@@ -22,7 +23,7 @@ defmodule CritWeb.ApiController do
     max_comments = Settings.get().max_comments_per_review
 
     cond do
-      length(comments) + length(review_comments) > max_comments ->
+      length(comments) + length(review_comments) + length(sub_threads) > max_comments ->
         conn |> put_status(422) |> json(%{error: "Too many comments (max #{max_comments})"})
 
       length(files) > 200 ->
@@ -31,6 +32,7 @@ defmodule CritWeb.ApiController do
       true ->
         case Reviews.create_review(scope, files, review_round, comments, review_comments,
                cli_args: cli_args,
+               sub_threads: sub_threads,
                org: org_slug,
                visibility: visibility,
                comment_policy: comment_policy,
@@ -78,6 +80,7 @@ defmodule CritWeb.ApiController do
     cli_args = params["cli_args"]
     comments = params["comments"] || []
     review_comments = params["review_comments"] || []
+    sub_threads = params["sub_threads"] || []
     org_slug = params["org"]
     visibility = parse_visibility(params["visibility"])
     comment_policy = params["comment_policy"]
@@ -90,7 +93,7 @@ defmodule CritWeb.ApiController do
     max_comments = Settings.get().max_comments_per_review
 
     cond do
-      length(comments) + length(review_comments) > max_comments ->
+      length(comments) + length(review_comments) + length(sub_threads) > max_comments ->
         conn
         |> put_status(422)
         |> json(%{error: "Too many comments (max #{max_comments})"})
@@ -103,6 +106,7 @@ defmodule CritWeb.ApiController do
                comments_with_file,
                review_comments,
                cli_args: cli_args,
+               sub_threads: sub_threads,
                org: org_slug,
                visibility: visibility,
                comment_policy: comment_policy,
@@ -175,10 +179,11 @@ defmodule CritWeb.ApiController do
     end
   end
 
+  # Sub-threads nested under their messages (`Reviews.serialize_threads/1`).
   def comments_list(conn, %{"token" => token}) do
     with %{} = review <- Reviews.get_by_token(token),
          :ok <- Reviews.check_org_access(review, api_scope(conn)) do
-      json(conn, Enum.map(visible_comments(review), &Reviews.serialize_comment/1))
+      json(conn, Reviews.serialize_threads(visible_comments(review)))
     else
       _ -> not_found(conn)
     end
@@ -248,7 +253,7 @@ defmodule CritWeb.ApiController do
     # every comment". `review_round` is accepted and ignored; the server
     # owns the round counter.
     delete_token = params["delete_token"]
-    payload = Map.take(params, ["files", "comments", "review_round", "cli_args"])
+    payload = Map.take(params, ["files", "comments", "sub_threads", "review_round", "cli_args"])
     scope = api_scope(conn)
 
     with {:ok, existing_review} <- get_upsert_review(token, delete_token),
@@ -265,6 +270,11 @@ defmodule CritWeb.ApiController do
 
         {:error, :unauthorized} ->
           conn |> put_status(401) |> json(%{error: "unauthorized"})
+
+        # A message of the payload failed validation: nothing was written.
+        {:error, %Ecto.Changeset{} = changeset} ->
+          errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+          conn |> put_status(422) |> json(%{error: "Validation failed", details: errors})
       end
     else
       {:error, :not_found} ->
@@ -501,6 +511,20 @@ defmodule CritWeb.ApiController do
             )
 
           json(conn, Reviews.serialize_reply(reply))
+      end
+    end
+
+    # A sub-thread on the message `anchor_id`, as a web reviewer would write it.
+    def seed_sub_thread(conn, %{"token" => token, "anchor_id" => anchor_id} = params) do
+      case Reviews.get_by_token(token) do
+        nil ->
+          not_found(conn)
+
+        review ->
+          scope = Scope.for_visitor("integration-test", params["author"] || "WebReviewer")
+          attrs = Map.put(params, "body", params["body"] || "web reviewer sub-thread")
+          {:ok, sub_thread} = Reviews.create_sub_thread(scope, anchor_id, attrs, review.id)
+          json(conn, Reviews.serialize_comment(sub_thread))
       end
     end
 

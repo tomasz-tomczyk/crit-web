@@ -47,6 +47,80 @@ defmodule Crit.OutputTest do
     end
   end
 
+  describe "generate_review_md/2 with sub-threads" do
+    defp sub_thread_fixtures do
+      reply = %Comment{id: "rp", body: "Done.", author_display_name: "Bob", resolved: false}
+
+      root = %Comment{
+        id: "root",
+        start_line: 2,
+        end_line: 2,
+        body: "Fix this",
+        author_display_name: "Ann",
+        replies: [reply]
+      }
+
+      on_root = %Comment{
+        id: "s1",
+        anchor_comment_id: "root",
+        body: "Which part?",
+        quote: "Fix\n   this",
+        author_display_name: "Cid",
+        replies: []
+      }
+
+      on_reply = %Comment{
+        id: "s2",
+        anchor_comment_id: "rp",
+        body: "How?",
+        quote: "Done",
+        replies: [%Comment{body: "Like so.", author_display_name: "Bob"}]
+      }
+
+      {root, on_root, on_reply}
+    end
+
+    test "nests each sub-thread under its message instead of placing it on a line" do
+      {root, on_root, on_reply} = sub_thread_fixtures()
+
+      result = Output.generate_review_md("line1\nline2\nline3", [root, on_root, on_reply])
+
+      assert result ==
+               """
+               line1
+               line2
+
+               > **[REVIEW COMMENT — Line 2 — Ann]**: Fix this
+               > \n\
+               > > **[SUB-THREAD on "Fix this" — Cid]**: Which part?
+               > \n\
+               > **Reply (Bob)**: Done.
+               > \n\
+               > > **[SUB-THREAD on "Done"]**: How?
+               > > \n\
+               > > **Reply (Bob)**: Like so.
+               line3\
+               """
+    end
+
+    test "keeps a resolved thread while a sub-thread under it is open" do
+      {root, on_root, on_reply} = sub_thread_fixtures()
+      resolved_root = %{root | resolved: true}
+
+      result = Output.generate_review_md("a\nb", [resolved_root, on_root, on_reply])
+      assert result =~ "[REVIEW COMMENT — Line 2 — Ann (resolved)]"
+
+      result =
+        Output.generate_review_md("a\nb", [
+          resolved_root,
+          %{on_root | resolved: true},
+          %{on_reply | resolved: true}
+        ])
+
+      assert result == "a\nb"
+    end
+  end
+
   describe "format_comment/1" do
     test "includes author display name in header" do
       comment = %Comment{

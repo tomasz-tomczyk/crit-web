@@ -58,12 +58,12 @@ test('annotations: threads on their end line, open forms after theirs', () => {
     { formKey: 'edit:c1', editingId: 'c1', endLine: 2 },
     { formKey: 'f2', scope: 'file' },
   ]
-  assert.deepEqual(view.annotationsForCodeFile({ comments, forms, lineTotal: 3, hideResolved: false }), [
+  assert.deepEqual(view.annotationsForCodeFile({ comments, forms, lineTotal: 3, hidden: () => false }), [
     { lineNumber: 2, metadata: { kind: 'thread', id: 'c1', editingForm: forms[1] } },
     { lineNumber: 3, metadata: { kind: 'thread', id: 'c3' } },
     { lineNumber: 3, metadata: { kind: 'form', id: 'f1' } },
   ])
-  const hidden = view.annotationsForCodeFile({ comments, forms: [], lineTotal: 3, hideResolved: true })
+  const hidden = view.annotationsForCodeFile({ comments, forms: [], lineTotal: 3, hidden: c => !!c.resolved })
   assert.deepEqual(hidden.map(a => a.metadata.id), ['c1'])
 })
 

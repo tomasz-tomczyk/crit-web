@@ -33,11 +33,12 @@ export function lineCount(content) {
 // view). Threads anchor on their end line, open forms after their end line.
 // Comments past the end of the file cannot anchor; the caller shows them as
 // outdated. Edit forms render inside their thread card, not as annotations.
-export function annotationsForCodeFile({ comments, forms, lineTotal, hideResolved }) {
+// `hidden(comment)` tells which threads hide-resolved hides.
+export function annotationsForCodeFile({ comments, forms, lineTotal, hidden }) {
   const out = []
   for (const c of comments) {
     if (c.scope === 'file' || c.scope === 'review') continue
-    if (hideResolved && c.resolved) continue
+    if (hidden && hidden(c)) continue
     if (!c.end_line || c.end_line > lineTotal) continue
     const metadata = { kind: 'thread', id: c.id }
     const editingForm = forms.find(f => f.editingId === c.id)
