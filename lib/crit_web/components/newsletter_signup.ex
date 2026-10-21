@@ -72,10 +72,9 @@ defmodule CritWeb.NewsletterSignup do
           ]}
         >Subscribe</button>
         <%!-- Turnstile renders here on first interaction (app.js). With
-             appearance "interaction-only" it stays empty unless Cloudflare
-             asks the visitor to click a checkbox. --%>
-        <div :if={Crit.Turnstile.site_key()} data-turnstile-slot class="basis-full empty:hidden">
-        </div>
+             appearance "interaction-only" it has no height unless Cloudflare
+             asks the visitor to click a checkbox. -mt-2 cancels the row gap. --%>
+        <div :if={Crit.Turnstile.site_key()} data-turnstile-slot class="basis-full -mt-2"></div>
       </.form>
       <p :if={@show_note && !@compact} class="mt-2 text-xs text-(--crit-fg-secondary) leading-relaxed">
         No account needed.

@@ -5,8 +5,9 @@ defmodule CritWeb.Plugs.FlyClientIp do
   rate-limit bucket. Fly puts the visitor's address in `Fly-Client-IP`
   (overwriting any value the client sent); copy it into `remote_ip`.
 
-  Only trusted when `FLY_APP_NAME` is set (Fly sets it on every machine).
-  Anywhere else a client could send the header to pick its own IP.
+  Only trusted on hosted crit.md: `FLY_APP_NAME` set (Fly sets it on every
+  machine) and not `SELFHOSTED`. Anywhere else a client could send the header
+  to pick its own IP.
   """
 
   import Plug.Conn

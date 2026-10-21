@@ -542,6 +542,7 @@ if (/^\/articles\/[^/]+$/.test(window.location.pathname)) {
 // Cloudflare wants the visitor to click a checkbox.
 const turnstileForms = document.querySelectorAll("form[data-turnstile-sitekey]")
 let turnstileScript
+const turnstileWidgets = []
 const loadTurnstile = () => turnstileScript ??= new Promise((resolve, reject) => {
   const script = document.createElement("script")
   script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
@@ -554,23 +555,35 @@ const loadTurnstile = () => turnstileScript ??= new Promise((resolve, reject) =>
 turnstileForms.forEach(form => {
   let ready
   const start = () => ready ??= loadTurnstile().then(turnstile => new Promise((resolve, reject) => {
-    turnstile.render(form.querySelector("[data-turnstile-slot]"), {
+    turnstileWidgets.push(turnstile.render(form.querySelector("[data-turnstile-slot]"), {
       sitekey: form.dataset.turnstileSitekey,
       appearance: "interaction-only",
       action: "newsletter",
       callback: resolve,
       "error-callback": reject,
-    })
+    }))
   }))
 
   const warmUp = () => start().catch(() => {})
   form.addEventListener("focusin", warmUp, {once: true})
   form.addEventListener("pointerdown", warmUp, {once: true})
+  let posting = false
   form.addEventListener("submit", event => {
     if (form.querySelector("[name='cf-turnstile-response']")?.value) return
     event.preventDefault()
+    if (posting) return
+    posting = true
     // Post once the token is in. form.submit() skips this handler, so it
     // can't loop; if Turnstile failed, the server answers with a retry message.
     warmUp().then(() => form.submit())
   })
+  window.addEventListener("pageshow", event => {
+    if (event.persisted) posting = false
+  })
+})
+
+// Back after subscribing can restore the page with a token Cloudflare already
+// used. Fetch fresh ones.
+window.addEventListener("pageshow", event => {
+  if (event.persisted) turnstileWidgets.forEach(id => window.turnstile?.reset(id))
 })

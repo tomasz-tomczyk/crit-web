@@ -38,7 +38,8 @@ defmodule Crit.Turnstile do
       [
         url: @verify_url,
         form: [secret: config()[:secret_key], response: token],
-        retry: false
+        retry: false,
+        receive_timeout: 5_000
       ] ++ Keyword.get(config(), :req_options, [])
 
     case Req.post(options) do
