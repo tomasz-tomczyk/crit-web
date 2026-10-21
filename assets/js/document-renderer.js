@@ -1,6 +1,7 @@
 import markdownit from "markdown-it"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 import { sanitizeCommentHtml } from "./comment-html"
+import { installDocumentSanitizer, sanitizeRenderedHtml } from "./document-html"
 import {
   commentMd,
   escapeHtml,
@@ -2374,7 +2375,9 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
   if (block.isEmpty) contentClasses += ' empty-line'
   if (block.cssClass) contentClasses += ' ' + block.cssClass
   contentEl.className = contentClasses
-  let html = block.wordDiffHtml || block.html
+  // Word-diff spans are spliced into already-sanitized HTML as a string, so
+  // clean the result again before it reaches the page.
+  let html = block.wordDiffHtml ? sanitizeRenderedHtml(block.wordDiffHtml) : block.html
   html = processTaskLists(html)
   html = rewriteImageSrcs(html, file.path, ctx.reviewToken)
   contentEl.innerHTML = html
@@ -5560,6 +5563,8 @@ export const DocumentRenderer = {
     // Disable (c)/(r)/(tm) → ©/®/™ replacements so enumerated options render
     // literally. Keep typographer (smart quotes) and disable only replacements.
     md.disable('replacements')
+    // Raw HTML in a shared document is untrusted: strip scripts and handlers.
+    installDocumentSanitizer(md)
 
     // Task list support
     const defaultListItemOpen = md.renderer.rules.list_item_open ||
