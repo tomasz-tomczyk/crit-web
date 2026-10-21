@@ -1,6 +1,7 @@
 import markdownit from "markdown-it"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 import { sanitizeCommentHtml } from "./comment-html"
+import { installDocumentSanitizer } from "./document-html"
 import {
   commentMd,
   escapeHtml,
@@ -5560,6 +5561,8 @@ export const DocumentRenderer = {
     // Disable (c)/(r)/(tm) → ©/®/™ replacements so enumerated options render
     // literally. Keep typographer (smart quotes) and disable only replacements.
     md.disable('replacements')
+    // Raw HTML in a shared document is untrusted: strip scripts and handlers.
+    installDocumentSanitizer(md)
 
     // Task list support
     const defaultListItemOpen = md.renderer.rules.list_item_open ||
