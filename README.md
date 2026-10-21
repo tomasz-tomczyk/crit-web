@@ -24,7 +24,7 @@ Reviews auto-expire after 30 days of inactivity.
 
 ## Newsletter
 
-On crit.md, visitors can subscribe from the homepage, footer, or [newsletter archive](https://crit.md/newsletter) without creating an account. Public signups require email confirmation; signed-in dashboard and settings toggles apply immediately. Consent events record the signup source and page, confirmation, and unsubscribe history. Confirmation emails use the configured `SMTP_FROM` address.
+On crit.md, visitors can subscribe from the homepage, footer, or [newsletter archive](https://crit.md/newsletter) without creating an account. Public signups require email confirmation; signed-in dashboard and settings toggles apply immediately. Consent events record the signup source and page, confirmation, and unsubscribe history. Confirmation emails use the configured `SMTP_FROM` address. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` to check signups with Cloudflare Turnstile; the widget stays hidden unless Cloudflare wants the visitor to click a checkbox.
 
 ## Self-Hosting
 

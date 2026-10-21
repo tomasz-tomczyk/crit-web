@@ -151,6 +151,92 @@ defmodule CritWeb.NewsletterControllerTest do
     assert get_resp_header(limited, "retry-after") != []
   end
 
+  test "a filled honeypot looks like success but sends nothing", %{conn: conn} do
+    Application.put_env(:crit, :selfhosted, false)
+
+    assert conn
+           |> post(~p"/newsletter/subscribe",
+             newsletter: %{email: "victim@example.com", homepage: "http://spam.example"}
+           )
+           |> html_response(200) =~ "Check your inbox"
+
+    refute_receive {:email, _}
+
+    assert Crit.Repo.get_by(Crit.Accounts.MarketingConsentEvent, email: "victim@example.com") ==
+             nil
+  end
+
+  describe "with Turnstile enabled" do
+    setup do
+      original = Application.get_env(:crit, Crit.Turnstile)
+
+      Application.put_env(:crit, Crit.Turnstile,
+        site_key: "site-key",
+        secret_key: "secret",
+        req_options: [plug: {Req.Test, Crit.Turnstile}]
+      )
+
+      on_exit(fn -> Application.put_env(:crit, Crit.Turnstile, original || []) end)
+      Application.put_env(:crit, :selfhosted, false)
+      :ok
+    end
+
+    test "forms carry the site key and the CSP allows Cloudflare", %{conn: conn} do
+      conn = get(conn, ~p"/newsletter")
+      html = html_response(conn, 200)
+      assert html =~ ~s(data-turnstile-sitekey="site-key")
+      assert html =~ "data-turnstile-slot"
+      [csp] = get_resp_header(conn, "content-security-policy")
+      assert csp =~ ~r/script-src [^;]*https:\/\/challenges\.cloudflare\.com/
+      assert csp =~ ~r/frame-src [^;]*https:\/\/challenges\.cloudflare\.com/
+    end
+
+    test "a signup without a token sends nothing", %{conn: conn} do
+      assert conn
+             |> post(~p"/newsletter/subscribe", newsletter: %{email: "victim@example.com"})
+             |> html_response(422) =~ "couldn&#39;t check that you&#39;re human"
+
+      refute_receive {:email, _}
+    end
+
+    test "a rejected token sends nothing", %{conn: conn} do
+      Req.Test.stub(
+        Crit.Turnstile,
+        &Req.Test.json(&1, %{"success" => false, "error-codes" => []})
+      )
+
+      assert conn
+             |> post(~p"/newsletter/subscribe", %{
+               "newsletter" => %{"email" => "victim@example.com"},
+               "cf-turnstile-response" => "bad"
+             })
+             |> html_response(422)
+
+      refute_receive {:email, _}
+    end
+
+    test "a valid token sends the confirmation email", %{conn: conn} do
+      Req.Test.stub(Crit.Turnstile, &Req.Test.json(&1, %{"success" => true}))
+
+      assert conn
+             |> post(~p"/newsletter/subscribe", %{
+               "newsletter" => %{"email" => "reader@example.com"},
+               "cf-turnstile-response" => "good"
+             })
+             |> html_response(200) =~ "Check your inbox"
+
+      assert_receive {:email, _}
+    end
+  end
+
+  test "Turnstile stays off without keys", %{conn: conn} do
+    Application.put_env(:crit, :selfhosted, false)
+    conn = get(conn, ~p"/newsletter")
+    refute html_response(conn, 200) =~ "data-turnstile"
+    [csp] = get_resp_header(conn, "content-security-policy")
+    refute csp =~ "challenges.cloudflare.com"
+  end
+
   test "delivery failure leaves signup retryable", %{conn: conn} do
     Application.put_env(:crit, :selfhosted, false)
     original = Application.get_env(:crit, Crit.Mailer)
