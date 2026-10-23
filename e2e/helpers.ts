@@ -18,6 +18,7 @@ export async function createReview(
       body: string;
       file?: string;
       author_identity?: string;
+      quote?: string;
     }>;
     reviewRound?: number;
   } = {}

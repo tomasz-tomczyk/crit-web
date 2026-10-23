@@ -122,6 +122,62 @@ test.describe("Diagram renderers — .mmd files", () => {
   });
 });
 
+test.describe("Diagram renderers — quoted comments", () => {
+  const SEQ = "seq.mmd";
+  // Sequence diagram labels are SVG <text>, not HTML in a foreignObject.
+  const SEQUENCE = ["sequenceDiagram", "  Client->>Server: Send request", "  Server-->>Client: Reply", ""].join("\n");
+  let token: string;
+  let deleteToken: string;
+
+  test.beforeEach(async ({ request }) => {
+    const review = await createReview(request, {
+      files: [
+        { path: MMD, content: FLOW },
+        { path: SEQ, content: SEQUENCE },
+      ],
+      comments: [
+        { file: MMD, start_line: 1, end_line: 4, body: "Name this step", quote: "Handle request" },
+        { file: MMD, start_line: 1, end_line: 4, body: "Say why", quote: "no" },
+        { file: SEQ, start_line: 1, end_line: 3, body: "Which request?", quote: "Send request" },
+      ],
+    });
+    token = review.token;
+    deleteToken = review.deleteToken;
+  });
+
+  test.afterEach(async ({ request }) => {
+    await deleteReview(request, deleteToken);
+  });
+
+  test("a quote of diagram text is highlighted in the drawn diagram, not the source", async ({ page }) => {
+    await loadReview(page, token);
+    const file = section(page, MMD);
+    const output = file.locator(".crit-render-output");
+    await expect(output.locator("mark.quote-highlight", { hasText: "Handle request" })).toBeVisible({ timeout: 10_000 });
+    await expect(file.locator(".crit-render-source .quote-highlight")).toHaveCount(0);
+    // "no" is also in the diagram's CSS; the highlight lands on the edge label.
+    await expect(output.locator("mark.quote-highlight", { hasText: /^no$/ })).toBeVisible();
+    await expect(output.locator("style .quote-highlight")).toHaveCount(0);
+
+    // Back from Source, the diagram comes from the render cache: no doubled marks.
+    const toggle = file.locator(".file-header-toggle");
+    await toggle.locator('[data-mode="source"]').click();
+    await expect(file.locator(".crit-render")).toHaveCount(0);
+    await toggle.locator('[data-mode="rendered"]').click();
+    await expect(output.locator("mark.quote-highlight", { hasText: "Handle request" })).toBeVisible();
+    await expect(output.locator(".quote-highlight")).toHaveCount(2);
+  });
+
+  test("a quote of an SVG text label keeps the label drawn", async ({ page }) => {
+    await loadReview(page, token);
+    const mark = section(page, SEQ).locator(".crit-render-output svg text tspan.quote-highlight", { hasText: "Send request" });
+    await expect(mark).toHaveCount(1, { timeout: 10_000 });
+    // An HTML <mark> in SVG <text> is not drawn: the label would have no width.
+    const width = await mark.evaluate(el => (el as SVGTextContentElement).getComputedTextLength());
+    expect(width).toBeGreaterThan(0);
+  });
+});
+
 test.describe("Diagram renderers — single file", () => {
   test("a single .mermaid file renders with the toggle above it", async ({ page, request }) => {
     const { token, deleteToken } = await createReview(request, { files: [{ path: "flow.mermaid", content: FLOW }] });

@@ -2929,7 +2929,9 @@ function renderFileSection(ctx, file) {
 
 // ===== Quote Highlighting in Document/Diff Body =====
 
-function highlightQuotesInSection(sectionEl, file, activeForms) {
+// onlyContent limits the pass to one .line-content (a block re-rendered
+// after the first pass, e.g. a diagram drawn later).
+function highlightQuotesInSection(sectionEl, file, activeForms, onlyContent) {
   var quotedComments = file.comments.filter(function(c) { return c.quote && !c.resolved })
 
   // Include quotes from open comment forms (shown before the comment is saved)
@@ -3016,6 +3018,10 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
       }
     }
 
+    if (onlyContent) {
+      if (contentEls.indexOf(onlyContent) === -1) return
+      contentEls = [onlyContent]
+    }
     if (contentEls.length === 0) return
 
     // Preserve a whitespace boundary between cells/line blocks while retaining
@@ -3028,6 +3034,10 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
       var node
       while ((node = walker.nextNode())) {
         if (node.textContent.length === 0) continue
+        // A rendered block's hidden source is not what the reader sees.
+        if (node.parentElement.closest('.crit-render-source[hidden], .crit-render-expand')) continue
+        // Nor is a drawn diagram's <style>, <title> or <desc>.
+        if (!isVisibleSvgText(node)) continue
         var start = fullText.length
         fullText += node.textContent
         nodeRanges.push({ node: node, start: start, end: fullText.length })
@@ -3098,9 +3108,7 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
 
       if (startInNode === 0 && endInNode === node.textContent.length) {
         // Wrap entire text node
-        var mark = document.createElement('mark')
-        mark.className = 'quote-highlight'
-        mark.dataset.commentId = comment.id
+        var mark = quoteMark(node, comment.id)
         node.parentNode.replaceChild(mark, node)
         mark.appendChild(node)
       } else {
@@ -3110,15 +3118,52 @@ function highlightQuotesInSection(sectionEl, file, activeForms) {
         var after = node.textContent.slice(endInNode)
         var frag = document.createDocumentFragment()
         if (before) frag.appendChild(document.createTextNode(before))
-        var mark = document.createElement('mark')
-        mark.className = 'quote-highlight'
-        mark.dataset.commentId = comment.id
+        var mark = quoteMark(node, comment.id)
         mark.textContent = middle
         frag.appendChild(mark)
         if (after) frag.appendChild(document.createTextNode(after))
         node.parentNode.replaceChild(frag, node)
       }
     }
+  })
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+
+// Text directly in an SVG element is visible only in <text>, <tspan> and
+// <textPath>; a diagram's <style>, <title> and <desc> hold text too.
+function isVisibleSvgText(node) {
+  const parent = node.parentElement
+  return parent.namespaceURI !== SVG_NS || /^(text|tspan|textPath)$/.test(parent.localName)
+}
+
+// The element that wraps a quoted part of textNode. SVG <text> does not draw
+// an HTML <mark>, so a diagram label gets an SVG <tspan>.
+function quoteMark(textNode, commentId) {
+  const inSvg = textNode.parentElement.namespaceURI === SVG_NS
+  const mark = inSvg ? document.createElementNS(SVG_NS, 'tspan') : document.createElement('mark')
+  mark.setAttribute('class', 'quote-highlight')
+  mark.dataset.commentId = commentId
+  return mark
+}
+
+// A diagram is drawn after the document's first highlight pass, which could
+// only see its hidden source: highlight quotes again in the drawn output.
+// Deferred so the renderer has cached its clean output first: it caches
+// right after the event (crit: installRenderedQuoteHighlights).
+function onRenderedQuotes(ctx, e) {
+  const target = e.target
+  requestAnimationFrame(() => {
+    const content = target.isConnected && target.closest('.line-content')
+    const block = content && content.closest('.line-block[data-file-path]')
+    if (!block) return
+    const file = ctx.multiFile
+      ? ctx.files.find(f => f.path === block.dataset.filePath)
+      : { path: ctx.singleFilePath, comments: ctx.comments }
+    if (!file) return
+    content.querySelectorAll('.quote-highlight').forEach(mark => mark.replaceWith(...mark.childNodes))
+    content.normalize()
+    highlightQuotesInSection(block.closest('.file-section') || ctx.el, file, ctx.activeForms, content)
   })
 }
 
@@ -5528,6 +5573,8 @@ export const DocumentRenderer = {
     ctx._stopWatchingRenders = watchRenderTargets(document.body)
     ctx._renderAnchorHandler = e => onRenderAnchor(ctx, e)
     ctx.el.addEventListener('crit:render-anchor', ctx._renderAnchorHandler)
+    ctx._renderedQuotesHandler = e => onRenderedQuotes(ctx, e)
+    ctx.el.addEventListener('crit:rendered', ctx._renderedQuotesHandler)
     ctx._stopRendererUpdates = onRendererChange(kind => {
       refreshCodeViewOptions(ctx)
       // New token colours: fences baked into line blocks are rebuilt.
@@ -6342,6 +6389,7 @@ export const DocumentRenderer = {
     if (this._stopWatchingCode) this._stopWatchingCode()
     if (this._stopWatchingRenders) this._stopWatchingRenders()
     if (this._renderAnchorHandler) this.el.removeEventListener('crit:render-anchor', this._renderAnchorHandler)
+    if (this._renderedQuotesHandler) this.el.removeEventListener('crit:rendered', this._renderedQuotesHandler)
     if (this._stopRendererUpdates) this._stopRendererUpdates()
     if (this._themeHandler) {
       window.removeEventListener('phx:set-theme', this._themeHandler)
