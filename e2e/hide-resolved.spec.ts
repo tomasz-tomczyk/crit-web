@@ -121,6 +121,42 @@ test.describe("Hide Resolved", () => {
     await expect(resolvedBlock).toBeVisible();
   });
 
+  test("a comment ref skips a hidden resolved card and uses the open panel's copy", async ({ page }) => {
+    await loadReview(page, token);
+    await addAndResolveComment(page, "Ref target");
+    const id = await page
+      .locator(".comment-block:not(.panel-comment-block) .comment-card")
+      .filter({ hasText: "Ref target" })
+      .getAttribute("data-comment-id");
+    expect(id).toBeTruthy();
+
+    await page.keyboard.press("h");
+    await expect(page.locator(".comment-block:not(.panel-comment-block) .resolved-card")).toBeHidden();
+
+    // Click a ref chip for the card and report which copies flashed. Refs
+    // hold crit's c_... ids, which never equal a crit-web card id, so the
+    // chip is added here with the card's id. The click handler runs
+    // synchronously, so the flash class is read before its animation ends.
+    const clickRef = () => page.evaluate(refId => {
+      const chip = document.createElement("span");
+      chip.className = "comment-ref";
+      chip.dataset.refId = refId;
+      document.body.appendChild(chip);
+      chip.click();
+      chip.remove();
+      return Array.from(document.querySelectorAll(".comment-ref-flash"))
+        .map(card => (card.closest("#commentsPanel") ? "panel" : "inline"));
+    }, id as string);
+
+    // Panel closed, inline card hidden: nothing to scroll to.
+    expect(await clickRef()).toEqual([]);
+
+    // Panel open: its copy flashes.
+    await page.keyboard.press("Shift+C");
+    await expect(page.locator(`#commentsPanel .comment-card[data-comment-id="${id}"]`)).toBeVisible();
+    expect(await clickRef()).toEqual(["panel"]);
+  });
+
   test("comment arrows skip hidden resolved comments in both directions", async ({
     page,
     request,

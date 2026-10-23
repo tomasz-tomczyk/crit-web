@@ -101,22 +101,50 @@ function slugifyHeading(text) {
 }
 
 // Scroll/expand/flash a comment card located anywhere in the document, given just its id.
+// The comments panel keeps its own copy of each card, even while closed, so
+// the card in the document (or review conversation) comes first. When that
+// copy is hidden (hide resolved), fall back to the panel copy if the panel is
+// open; otherwise there is nothing visible to scroll to.
 function scrollToCommentRef(id) {
-  const card = document.querySelector(`.comment-card[data-comment-id="${CSS.escape(id)}"]`)
+  const cards = Array.from(document.querySelectorAll(`.comment-card[data-comment-id="${CSS.escape(id)}"]`))
+  const inline = cards.find(c => !c.closest('#commentsPanel'))
+  let card = inline && !isHiddenByStyle(inline) ? inline : null
+  if (!card) card = cards.find(c => c.closest('#commentsPanel.comments-panel-open')) || null
   if (!card) return
-  const section = card.closest('details')
-  if (section && !section.open) section.open = true
+  // Open every closed <details> around the card (file section, and any
+  // <details> in the document itself).
+  for (let node = card.parentElement; node; node = node.parentElement) {
+    if (node.tagName === 'DETAILS' && !node.open) node.open = true
+  }
   if (card.classList.contains('collapsed')) {
     card.classList.remove('collapsed')
     commentCollapseOverrides[id] = false
   }
   card.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  card.classList.remove('comment-ref-flash')
-  void card.offsetWidth
-  card.classList.add('comment-ref-flash')
-  card.addEventListener('animationend', function() {
-    card.classList.remove('comment-ref-flash')
+  restartFlash(card, 'comment-ref-flash')
+}
+
+// Play a one-shot highlight animation on `el`. Removing the class and
+// forcing a reflow restarts the animation when it is already running
+// (crit: restartFlash).
+function restartFlash(el, className) {
+  el.classList.remove(className)
+  void el.offsetWidth
+  el.classList.add(className)
+  el.addEventListener('animationend', function() {
+    el.classList.remove(className)
   }, { once: true })
+}
+
+// Is el inside an element hidden with display: none (hide resolved, the
+// hidden review conversation)? A closed <details> doesn't count: opening it
+// shows the card.
+function isHiddenByStyle(el) {
+  for (let node = el; node && node !== document.body; node = node.parentElement) {
+    if (node.hidden) return true
+    if (node.tagName !== 'DETAILS' && getComputedStyle(node).display === 'none') return true
+  }
+  return false
 }
 
 document.addEventListener('click', (e) => {
@@ -750,13 +778,13 @@ function codeRows(ctx, filePath, rows) {
 function navRows(ctx) {
   const rows = []
   if (!ctx.multiFile) {
-    if (isCodeFile(ctx.singleFilePath) && !showsRenderedFile(ctx, ctx.singleFilePath)) codeRows(ctx, ctx.singleFilePath, rows)
+    if (showsCodeView(ctx, ctx.singleFilePath)) codeRows(ctx, ctx.singleFilePath, rows)
     else documentRows(ctx.el, ctx.singleFilePath, rows)
     return rows
   }
   for (const file of ctx.files) {
     if (file.collapsed) continue
-    if (file.fileType === 'code' && !file.orphaned && !showsRenderedFile(ctx, file.path)) {
+    if (!file.orphaned && showsCodeView(ctx, file.path)) {
       codeRows(ctx, file.path, rows)
     } else {
       const section = document.getElementById('file-section-' + CSS.escape(file.path))
@@ -793,7 +821,7 @@ function rememberKeyboardFocusFromForm(ctx, formObj) {
   const target = { filePath: formObj.filePath }
   if (formObj.afterBlockIndex !== null && formObj.afterBlockIndex !== undefined) {
     target.blockIndex = String(formObj.afterBlockIndex)
-  } else if (isCodeFile(formObj.filePath)) {
+  } else if (showsCodeView(ctx, formObj.filePath)) {
     target.code = true
   }
   // A code form sits after its end line; j/k continue from there.
@@ -884,6 +912,7 @@ function focusBlock(ctx, index, rows = navRows(ctx)) {
   // Track which file has focus in multi-file mode
   if (ctx.multiFile && row.filePath) ctx.focusedFilePath = row.filePath
   rememberKeyboardFocusTarget(ctx, targetFromRow(row))
+  ctx._mouseMovedSinceFocus = false
   showRowFocus(ctx, row, true)
 }
 
@@ -1221,10 +1250,36 @@ function fileRendererFor(filePath) {
   return isCodeFile(filePath) ? renderers.forFile(filePath) : null
 }
 
+// Did the reviewer pick Source on the file's view toggle?
+function showsSourceView(ctx, filePath) {
+  return !!(ctx.sourceViewPaths && ctx.sourceViewPaths.has(filePath))
+}
+
 // Does the file show its renderer's view? Files open on it, like crit's
 // files mode; the toggle's Source button switches to the code view.
 function showsRenderedFile(ctx, filePath) {
-  return !!fileRendererFor(filePath) && !(ctx.sourceViewPaths && ctx.sourceViewPaths.has(filePath))
+  return !!fileRendererFor(filePath) && !showsSourceView(ctx, filePath)
+}
+
+// Markdown shown as source: the whole file in the code view (crit #1106).
+// The round diff shows the document, so the toggle is hidden while it is on.
+function showsMarkdownSource(ctx, filePath) {
+  return !!filePath && !isCodeFile(filePath) && !ctx.showRoundDiff && showsSourceView(ctx, filePath)
+}
+
+// Is the file drawn by the code view (a code file, or Source picked)?
+function showsCodeView(ctx, filePath) {
+  if (isCodeFile(filePath)) return !showsRenderedFile(ctx, filePath)
+  return showsMarkdownSource(ctx, filePath)
+}
+
+// Does the file get a view toggle: "<renderer label> / Source" for a file a
+// renderer claims (*.mmd), "Document / Source" for markdown. crit shows the
+// markdown one in files mode only; a shared review has no git mode, so every
+// markdown file gets it.
+function hasFileViewToggle(ctx, filePath) {
+  if (fileRendererFor(filePath)) return true
+  return !isCodeFile(filePath) && !ctx.showRoundDiff
 }
 
 // The rendered view: one block spanning the whole file, so comments on any
@@ -1240,15 +1295,16 @@ function renderedFileBlocks(filePath, content) {
   }]
 }
 
-// "<label> / Source" toggle for a file a renderer claims. Source is the
-// file's code view.
+// "<label> / Source" toggle for a file a renderer claims, "Document /
+// Source" for markdown. Source is the file's code view.
 function renderFileViewToggle(ctx, filePath) {
-  const rendered = showsRenderedFile(ctx, filePath)
+  const renderer = fileRendererFor(filePath)
+  const rendered = !showsSourceView(ctx, filePath)
   const toggle = document.createElement("div")
   toggle.className = "crit-diff-mode-toggle file-header-toggle"
   toggle.setAttribute("role", "group")
   toggle.setAttribute("aria-label", "View for " + filePath)
-  const modes = [["rendered", fileRendererFor(filePath).label], ["source", "Source"]]
+  const modes = [["rendered", renderer ? renderer.label : "Document"], ["source", "Source"]]
   for (const [mode, label] of modes) {
     const on = (mode === "rendered") === rendered
     const btn = document.createElement("button")
@@ -1265,7 +1321,7 @@ function renderFileViewToggle(ctx, filePath) {
     // Inside the file header <summary>: don't collapse the file.
     e.preventDefault()
     e.stopPropagation()
-    if ((btn.dataset.mode === "rendered") === showsRenderedFile(ctx, filePath)) return
+    if ((btn.dataset.mode === "rendered") === !showsSourceView(ctx, filePath)) return
     if (!ctx.sourceViewPaths) ctx.sourceViewPaths = new Set()
     if (btn.dataset.mode === "source") ctx.sourceViewPaths.add(filePath)
     else ctx.sourceViewPaths.delete(filePath)
@@ -1753,12 +1809,26 @@ function resolveImagePath(filePath, src) {
   return stack.join("/")
 }
 
+// The src comes from serialized HTML, so it is HTML-escaped (a&amp;b.png),
+// and markdown-it has already percent-encoded it (my%20image.png). Undo
+// both before each segment is encoded once for the raw route.
+function decodeImageSrc(src) {
+  const textarea = document.createElement("textarea")
+  textarea.innerHTML = src
+  return textarea.value
+}
+
+function encodePathSegment(segment) {
+  try { segment = decodeURIComponent(segment) } catch (_) { /* keep a stray % as is */ }
+  return encodeURIComponent(segment)
+}
+
 function rewriteImageSrcs(html, filePath, reviewToken) {
   return html.replace(/(<img\s[^>]*src=")([^"]+)(")/gi, function(match, pre, src, post) {
     if (/^https?:\/\/|^data:|^\//.test(src)) return match
-    const resolved = resolveImagePath(filePath || "", src)
+    const resolved = resolveImagePath(filePath || "", decodeImageSrc(src))
     const href = "/r/" + encodeURIComponent(reviewToken) + "/raw/" +
-      resolved.split("/").map(encodeURIComponent).join("/")
+      resolved.split("/").map(encodePathSegment).join("/")
     return pre + href + post
   })
 }
@@ -1805,13 +1875,80 @@ function toggleViewed(ctx, filePath) {
   if (section) {
     const cb = section.querySelector('.file-header-viewed input')
     if (cb) cb.checked = file.viewed
-    if (file.viewed && section.open) {
-      if (section.getBoundingClientRect().top < 0) {
-        section.scrollIntoView({ behavior: 'instant' })
-      }
-      section.open = false
-      file.collapsed = true
-    }
+    if (file.viewed && section.open) setFileSectionOpen(section, file, false)
+  }
+}
+
+// Open or close a file section. Closing a file scrolled past its top first
+// brings its header back into view, so the page doesn't jump to the next
+// file.
+function setFileSectionOpen(section, file, open) {
+  if (!open && section.open && section.getBoundingClientRect().top < 0) {
+    section.scrollIntoView({ behavior: 'instant' })
+  }
+  section.open = open
+  file.collapsed = !open
+}
+
+// Tooltip for a file header control, naming its shortcut when bound
+// (crit: shortcutTitle).
+function shortcutTitle(label, id) {
+  const keys = getBinding(id)
+  return keys ? label + ' (' + keys + ')' : label
+}
+
+// Polite screen reader note for actions with no other visible text
+// (crit writes these to #copyStatus).
+function announceStatus(message) {
+  const el = document.getElementById('critStatus')
+  if (!el) return
+  el.textContent = ''
+  // A new text node after clearing, so repeating a message is read again.
+  requestAnimationFrame(() => { el.textContent = message })
+}
+
+// File for the a / o shortcuts: whichever pointed at a file last wins, the
+// keyboard focus (while its file is on screen) or the file under the mouse.
+// The other is the fallback (crit: the toggle_viewed handler).
+function fileForFileShortcut(ctx) {
+  const target = getKeyboardFocusTarget(ctx)
+  let keyboardFile = null
+  if (target && target.filePath && ctx.files.some(f => f.path === target.filePath)) {
+    const section = document.getElementById('file-section-' + CSS.escape(target.filePath))
+    if (section && isOnScreen(section)) keyboardFile = target.filePath
+  }
+  const hovered = ctx._mouseInList ? ctx.el.querySelector('.file-section:hover') : null
+  const mouseFile = hovered ? hovered.dataset.filePath : null
+  return ctx._mouseMovedSinceFocus ? (mouseFile || keyboardFile) : (keyboardFile || mouseFile)
+}
+
+function isOnScreen(el) {
+  const box = el.getBoundingClientRect()
+  return box.bottom > 0 && box.top < window.innerHeight
+}
+
+function toggleFileFromShortcut(ctx, filePath, markViewed) {
+  const file = ctx.files.find(f => f.path === filePath)
+  const section = document.getElementById('file-section-' + CSS.escape(filePath))
+  if (!file || !section) return
+  // Collapsing the file would strand a visual range inside it.
+  if (ctx.visualMode && (ctx.visualMode.filePath || null) === filePath) exitVisualMode(ctx, true)
+  if (markViewed) {
+    toggleViewed(ctx, filePath)
+    announceStatus((file.viewed ? 'Marked ' : 'Unmarked ') + filePath + ' viewed')
+  } else {
+    setFileSectionOpen(section, file, file.collapsed)
+    announceStatus((file.collapsed ? 'Collapsed ' : 'Expanded ') + filePath)
+  }
+  // The focused row's file closed: drop the highlight (the focus target
+  // stays, so o opens the same file again). Any other change moves rows
+  // around (a file above closed or opened), so find the focused row again.
+  const target = getKeyboardFocusTarget(ctx)
+  if (file.collapsed && target && target.filePath === filePath) {
+    clearFocusMarks(ctx)
+    ctx.focusedBlockIndex = -1
+  } else {
+    restoreKeyboardFocus(ctx)
   }
 }
 
@@ -2766,6 +2903,7 @@ function renderFileSection(ctx, file) {
   const section = document.createElement('details')
   section.className = 'file-section'
   section.id = 'file-section-' + CSS.escape(file.path)
+  section.dataset.filePath = file.path
   if (!file.collapsed) section.open = true
 
   const header = document.createElement('summary')
@@ -2783,11 +2921,7 @@ function renderFileSection(ctx, file) {
     }
     if (section.open) {
       e.preventDefault()
-      if (section.getBoundingClientRect().top < 0) {
-        section.scrollIntoView({ behavior: 'instant' })
-      }
-      section.open = false
-      file.collapsed = true
+      setFileSectionOpen(section, file, false)
     }
   })
   section.addEventListener('toggle', function() {
@@ -2803,7 +2937,7 @@ function renderFileSection(ctx, file) {
     file.path.split('/').map(encodeURIComponent).join('/')
 
   header.innerHTML =
-    '<div class="file-header-chevron"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg></div>' +
+    '<div class="file-header-chevron" title="' + escapeHtml(shortcutTitle('Collapse or expand', 'toggle_collapse')) + '"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg></div>' +
     '<svg class="file-header-icon" viewBox="0 0 16 16" fill="var(--crit-editor-fg-muted)"><path fill-rule="evenodd" d="M3.75 1.5a.25.25 0 0 0-.25.25v11.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75zm5.75.56v2.19c0 .138.112.25.25.25h2.19L9.5 2.06zM2 1.75C2 .784 2.784 0 3.75 0h5.086c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25V1.75z"/></svg>' +
     '<span class="file-header-name"><span class="dir">' + escapeHtml(dirPath) + '</span><span class="filename">' + escapeHtml(fileName) + '</span>' +
       '<button type="button" class="file-header-copy-path" aria-label="Copy file path"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25v-7.5z"/><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25v-7.5zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25h-7.5z"/></svg></button>' +
@@ -2825,8 +2959,9 @@ function renderFileSection(ctx, file) {
     })
   })(file.path)
 
-  // Diagram / Source toggle for a file a renderer claims (*.mmd).
-  if (!file.orphaned && fileRendererFor(file.path)) header.appendChild(renderFileViewToggle(ctx, file.path))
+  // Diagram / Source toggle for a file a renderer claims (*.mmd), Document /
+  // Source for markdown.
+  if (!file.orphaned && hasFileViewToggle(ctx, file.path)) header.appendChild(renderFileViewToggle(ctx, file.path))
 
   // File comment button — not for orphaned files (no point adding comments to removed files).
   // Also gated on canComment: when policy disallows new comments, don't create the
@@ -2847,7 +2982,7 @@ function renderFileSection(ctx, file) {
   // Viewed checkbox
   const viewedLabel = document.createElement('label')
   viewedLabel.className = 'file-header-viewed'
-  viewedLabel.title = 'Viewed'
+  viewedLabel.title = shortcutTitle('Viewed', 'toggle_viewed')
   viewedLabel.innerHTML = '<input type="checkbox"' + (file.viewed ? ' checked' : '') + '><span>Viewed</span>'
   viewedLabel.addEventListener('click', function(e) {
     e.stopPropagation()
@@ -2864,7 +2999,7 @@ function renderFileSection(ctx, file) {
   const isOrphaned = file.orphaned
   const displayComments = isOrphaned ? file.comments : fileComments
   // Code-file comments on lines the file no longer has
-  const outdatedComments = (!isOrphaned && file.fileType === 'code')
+  const outdatedComments = (!isOrphaned && showsCodeView(ctx, file.path))
     ? file.comments.filter(c => isOutdatedLineComment(c, lineCount(file.content)) && !(c.resolved && isHideResolved(ctx)))
     : []
   if (displayComments.length > 0 || outdatedComments.length > 0 || (!isOrphaned && ctx.activeForms.some(f => f.scope === 'file' && f.filePath === file.path))) {
@@ -2891,7 +3026,8 @@ function renderFileSection(ctx, file) {
   // File body — render using renderBlock per block, or diff view if round diff is active
   const body = document.createElement('div')
   const renderedFile = !file.orphaned && showsRenderedFile(ctx, file.path)
-  body.className = 'file-body' + (file.fileType === 'code' && !renderedFile ? ' crit-code-body' : '')
+  const codeView = !file.orphaned && showsCodeView(ctx, file.path)
+  body.className = 'file-body' + (codeView ? ' crit-code-body' : '')
 
   if (file.orphaned) {
     // Orphaned files show a placeholder instead of content
@@ -2902,7 +3038,7 @@ function renderFileSection(ctx, file) {
   } else if (renderedFile) {
     appendDocumentBlocks(ctx, body, renderedFileBlocks(file.path, file.content),
       buildCommentsMap(file.comments), buildCommentedLineSet(file.comments, ctx), file.path)
-  } else if (file.fileType === 'code') {
+  } else if (codeView) {
     renderCodeBody(ctx, file.path, file.content, body)
   } else {
     const prevContent = ctx.prevRoundSnapshots[file.path]
@@ -3149,22 +3285,19 @@ function quoteMark(textNode, commentId) {
 
 // A diagram is drawn after the document's first highlight pass, which could
 // only see its hidden source: highlight quotes again in the drawn output.
-// Deferred so the renderer has cached its clean output first: it caches
-// right after the event (crit: installRenderedQuoteHighlights).
+// The renderer caches its clean output before it sends crit:rendered, so
+// the marks can go in right away (crit: installRenderedQuoteHighlights).
 function onRenderedQuotes(ctx, e) {
-  const target = e.target
-  requestAnimationFrame(() => {
-    const content = target.isConnected && target.closest('.line-content')
-    const block = content && content.closest('.line-block[data-file-path]')
-    if (!block) return
-    const file = ctx.multiFile
-      ? ctx.files.find(f => f.path === block.dataset.filePath)
-      : { path: ctx.singleFilePath, comments: ctx.comments }
-    if (!file) return
-    content.querySelectorAll('.quote-highlight').forEach(mark => mark.replaceWith(...mark.childNodes))
-    content.normalize()
-    highlightQuotesInSection(block.closest('.file-section') || ctx.el, file, ctx.activeForms, content)
-  })
+  const content = e.target.isConnected && e.target.closest('.line-content')
+  const block = content && content.closest('.line-block[data-file-path]')
+  if (!block) return
+  const file = ctx.multiFile
+    ? ctx.files.find(f => f.path === block.dataset.filePath)
+    : { path: ctx.singleFilePath, comments: ctx.comments }
+  if (!file) return
+  content.querySelectorAll('.quote-highlight').forEach(mark => mark.replaceWith(...mark.childNodes))
+  content.normalize()
+  highlightQuotesInSection(block.closest('.file-section') || ctx.el, file, ctx.activeForms, content)
 }
 
 // ---- Render document --------------------------------------------------------
@@ -4513,7 +4646,13 @@ function extractTocItems(md, rawContent) {
 function scrollToHashHeading() {
   const hash = window.location.hash
   if (!hash || hash === "#") return
-  const target = document.getElementById(decodeURIComponent(hash.slice(1)))
+  const id = decodeURIComponent(hash.slice(1))
+  // Author ids and names in raw HTML carry a user-content- prefix (see
+  // document-html.js), so #foo also finds id="user-content-foo" or
+  // name="user-content-foo", as on GitHub.
+  const target = document.getElementById(id) ||
+    document.getElementById("user-content-" + id) ||
+    document.getElementsByName("user-content-" + id)[0]
   if (!target) return
   const header = document.querySelector(".crit-header")
   const offset = (header ? header.offsetHeight : 49) + 8
@@ -5300,10 +5439,7 @@ function scrollToReviewComment(ctx, commentId) {
     return
   }
   card.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  card.classList.remove('comment-flash')
-  void card.offsetWidth
-  card.classList.add('comment-flash')
-  card.addEventListener('animationend', () => card.classList.remove('comment-flash'), { once: true })
+  restartFlash(card, 'comment-flash')
 }
 
 function updateTocPosition(ctx) {
@@ -5571,6 +5707,26 @@ export const DocumentRenderer = {
     // Diagrams (```mermaid fences, .mmd files) render as they are inserted;
     // a click on a diagram node comments on the line that defines it.
     ctx._stopWatchingRenders = watchRenderTargets(document.body)
+    // Mouse (or pen) state for the a / o shortcuts: whether it is over the
+    // review, and whether it moved since the keyboard focus last moved (then
+    // it, not the focus, picks the file). Moves the browser sends when
+    // content scrolls under a still pointer report no movement, and touch
+    // has no hover, so neither counts (crit: mouseMovedSinceFocus).
+    ctx._mouseInList = false
+    ctx._mouseMovedSinceFocus = false
+    let lastPointerPoint = null
+    ctx.el.addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch') return
+      const moved = e.movementX || e.movementY ||
+        (lastPointerPoint && (lastPointerPoint.x !== e.clientX || lastPointerPoint.y !== e.clientY))
+      lastPointerPoint = { x: e.clientX, y: e.clientY }
+      if (!moved) return
+      ctx._mouseInList = true
+      ctx._mouseMovedSinceFocus = true
+    })
+    ctx.el.addEventListener('pointerleave', e => {
+      if (e.pointerType !== 'touch') ctx._mouseInList = false
+    })
     ctx._renderAnchorHandler = e => onRenderAnchor(ctx, e)
     ctx.el.addEventListener('crit:render-anchor', ctx._renderAnchorHandler)
     ctx._renderedQuotesHandler = e => onRenderedQuotes(ctx, e)
@@ -6348,6 +6504,16 @@ export const DocumentRenderer = {
           e.preventDefault()
           const comment = ownCommentOnFocusedRow()
           if (comment) pushCommentMutation(ctx, 'delete_comment', { id: comment.id })
+          break
+        }
+        case 'toggle_viewed':
+        case 'toggle_collapse': {
+          // Holding the key would flip the file on every repeat.
+          if (e.repeat || !ctx.multiFile) break
+          const filePath = fileForFileShortcut(ctx)
+          if (!filePath) break
+          e.preventDefault()
+          toggleFileFromShortcut(ctx, filePath, shortcutAction === 'toggle_viewed')
           break
         }
         case 'toggle_toc': {
