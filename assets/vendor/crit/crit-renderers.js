@@ -295,6 +295,8 @@
     target.setAttribute('data-crit-state', 'rendered');
     if (renderer.anchorFor && ctx.endLine) target.setAttribute('data-crit-anchorable', '');
     addExpandButton(target, renderer, output);
+    // The page can now mark up the drawn output (quote highlights).
+    target.dispatchEvent(new CustomEvent('crit:rendered', { bubbles: true }));
   }
 
   // Render one target. Returns a Promise that settles when done; never rejects.
