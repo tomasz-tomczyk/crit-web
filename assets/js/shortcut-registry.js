@@ -25,6 +25,8 @@ export const shortcutGroups = [
   ] },
   { label: "Review", shortcuts: [
     { id: "toggle_comments", binding: "Shift+C", action: "Toggle comments panel", modes: FILES },
+    { id: "toggle_viewed", binding: "a", action: "Toggle viewed on focused file (or file under the mouse)", modes: FILES },
+    { id: "toggle_collapse", binding: "o", action: "Collapse or expand focused file (or file under the mouse)", modes: FILES },
   ] },
   { label: "Preview", shortcuts: [
     { id: "toggle_pin_mode", binding: "p", action: "Toggle pin mode", modes: PREVIEW },

@@ -690,6 +690,14 @@
         >
           <div class="crit-loading">Loading document...</div>
         </div>
+        <%!-- Screen reader notes from document-renderer.js (a / o shortcuts). --%>
+        <div
+          id="critStatus"
+          class="crit-sr-only"
+          role="status"
+          aria-live="polite"
+        >
+        </div>
       </div>
     </div>
   <% end %>
