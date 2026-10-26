@@ -95,9 +95,15 @@ function isReviewOwner(ctx) {
 function slugifyHeading(text) {
   return text
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .replace(/[\s-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/[^\p{Alphabetic}\p{M}\p{Nd}\p{Pc} -]/gu, "")
+    .replace(/ /g, "-")
+}
+
+function headingText(inline) {
+  return (inline.children || [])
+    .filter(child => child.type === "text" || child.type === "code_inline")
+    .map(child => child.content)
+    .join("")
 }
 
 // Scroll/expand/flash a comment card located anywhere in the document, given just its id.
@@ -5789,7 +5795,7 @@ export const DocumentRenderer = {
       const token = tokens[idx]
       const inline = tokens[idx + 1]
       if (inline && inline.type === "inline") {
-        const baseSlug = slugifyHeading(inline.content)
+        const baseSlug = slugifyHeading(headingText(inline))
         if (baseSlug) {
           // Dedup duplicate heading slugs per render pass (GitHub-style:
           // examples, examples-1, examples-2). The counter is reset at the
