@@ -491,6 +491,11 @@ defmodule CritWeb.PageController do
 
   @faq [
     %{
+      q: "What is Crit?",
+      a:
+        "An open-source review surface for AI coding agents. Your agent writes a plan or a diff, Crit renders it in the browser like a pull request, and you comment on the exact lines you want changed. The agent reads your comments and revises. It runs locally and nothing leaves your machine unless you click Share."
+    },
+    %{
       q: "Why this over just asking the agent to review?",
       a:
         "Because the agent reviewing its own output is the thing you're trying to escape. Crit puts you back in the loop. You see the lines, you point at them, the agent responds to specific feedback — not your fuzzy recollection of what you wanted."
