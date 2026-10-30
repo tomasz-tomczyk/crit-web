@@ -283,6 +283,7 @@ defmodule CritWeb.PageController do
     },
     "story" => %{
       label: "Story mode",
+      page_title: "Story Mode - Crit",
       screenshot: nil,
       # Served from Cloudflare R2 (assets.crit.md)
       video: "https://assets.crit.md/story-mode.mp4?v=20261015",
@@ -805,7 +806,7 @@ defmodule CritWeb.PageController do
         render(conn, :mode,
           mode: mode,
           canonical_url: canonical_url(conn),
-          page_title: "#{mode.label} Mode - Crit",
+          page_title: Map.get(mode, :page_title, "#{mode.label} Mode - Crit"),
           meta_description: mode.lead,
           og_image:
             if(mode.screenshot,
