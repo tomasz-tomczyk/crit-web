@@ -283,7 +283,7 @@ defmodule CritWeb.PageController do
       ]
     },
     "story" => %{
-      label: "Story mode",
+      label: "Story",
       screenshot: nil,
       # Served from Cloudflare R2 (assets.crit.md)
       video: "https://assets.crit.md/story-mode.mp4?v=20261015",
