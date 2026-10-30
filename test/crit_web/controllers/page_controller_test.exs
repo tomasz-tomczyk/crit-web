@@ -52,6 +52,11 @@ defmodule CritWeb.PageControllerTest do
     assert html =~ "Every agent reads files"
     assert html =~ "Guides & articles"
     assert html =~ "Frequently asked questions"
+    assert html =~ "crit install omo"
+    assert html =~ "crit install omp"
+    assert html =~ "/images/integrations/omo-dark.svg"
+    assert html =~ "/images/integrations/omp-dark.svg"
+    assert html =~ "OMO, omp"
   end
 
   describe "GET /articles" do
@@ -87,6 +92,15 @@ defmodule CritWeb.PageControllerTest do
       for tool <- Crit.Integrations.tools() do
         assert html =~ tool.name
       end
+    end
+
+    test "homepage logo helper uses the svg pair, or nothing when it is missing" do
+      assert CritWeb.PageHTML.integration_logo("pi") == %{
+               dark: "/images/integrations/pi-dark.svg",
+               light: "/images/integrations/pi-light.svg"
+             }
+
+      assert CritWeb.PageHTML.integration_logo("no-such-agent") == nil
     end
   end
 

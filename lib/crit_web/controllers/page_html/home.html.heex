@@ -213,18 +213,24 @@
           class="group grid grid-cols-[32px_130px_minmax(0,1fr)_16px] gap-4 items-center py-3.5 border-b border-(--crit-border) no-underline text-inherit max-md:grid-cols-[28px_minmax(0,1fr)_16px] max-md:gap-x-4 max-md:gap-y-1"
         >
           <span class="max-md:row-span-2 max-md:self-start">
-            <img
-              src={"/images/integrations/#{tool.id}-dark.svg"}
-              alt=""
-              class="logo-dark size-7 object-contain"
-              loading="lazy"
-            />
-            <img
-              src={"/images/integrations/#{tool.id}-light.svg"}
-              alt=""
-              class="logo-light size-7 object-contain"
-              loading="lazy"
-            />
+            <%= if logo = integration_logo(tool.id) do %>
+              <img
+                src={logo.dark}
+                alt=""
+                class="logo-dark size-7 object-contain"
+                loading="lazy"
+              />
+              <img
+                src={logo.light}
+                alt=""
+                class="logo-light size-7 object-contain"
+                loading="lazy"
+              />
+            <% else %>
+              <span class="size-7 inline-flex items-center justify-center rounded-md border border-(--crit-border) font-mono text-sm font-bold text-(--crit-fg-secondary)">
+                {String.first(tool.name)}
+              </span>
+            <% end %>
           </span>
           <span class="font-semibold group-hover:text-(--crit-brand) transition-colors">
             {tool.name}
