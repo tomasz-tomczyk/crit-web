@@ -35,7 +35,7 @@ defmodule CritWeb.PageHTML do
     },
     %{
       slug: "story",
-      label: "Story mode",
+      label: "Story",
       nav_label: "Review diffs as a story",
       cmd: "branch / pr / mr / range",
       screenshot: nil,
