@@ -315,6 +315,12 @@ defmodule CritWeb.PageHTML do
       </button>
       <button
         class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
+        data-target={"#{@id}-arch"}
+      >
+        Arch
+      </button>
+      <button
+        class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
         data-target={"#{@id}-windows"}
       >
         Windows
@@ -367,6 +373,26 @@ defmodule CritWeb.PageHTML do
           <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
         </div>
       </div>
+    </div>
+
+    <div
+      id={"#{@id}-arch"}
+      class="install-panel hidden border border-t-0 border-(--crit-border) rounded-b-md overflow-hidden"
+    >
+      <div
+        class="copy-btn flex items-center bg-(--crit-code-bg) cursor-pointer text-(--crit-fg-muted)"
+        data-copy="yay -S crit.md-bin"
+      >
+        <pre class="flex-1 font-mono text-sm text-(--crit-fg-primary) m-0 px-5 py-3.5 overflow-x-auto"><span class="text-(--crit-fg-muted) select-none">$ </span>yay -S crit.md-bin</pre>
+        <div class="shrink-0 p-3">
+          <.icon name="hero-clipboard" class="size-4 icon-default" />
+          <.icon name="hero-clipboard-document-check" class="size-4 icon-copied hidden" />
+        </div>
+      </div>
+      <p class="text-xs text-(--crit-fg-muted) px-5 py-2.5 border-t border-(--crit-border)">
+        <a href="https://aur.archlinux.org/packages/crit.md-bin" class="crit-link">AUR</a>
+        package, maintained outside this project. Any AUR helper works in place of <code class="font-mono">yay</code>.
+      </p>
     </div>
 
     <div
