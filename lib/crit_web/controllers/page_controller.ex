@@ -68,6 +68,7 @@ defmodule CritWeb.PageController do
         "Use j/k to move between lines and blocks, n/N to jump between changes. The same motions you already know from vim.",
         "Press c to open the comment form on the current line. Type your feedback, then Ctrl+Enter to submit. Press Escape to cancel.",
         "Use e to edit an existing comment, d to delete it. Press f to finish the review and copy the prompt. Press t to toggle the table of contents.",
+        "Press a to mark a file as viewed and o to collapse or expand it.",
         "Press Cmd+F (Ctrl+F off macOS) to find text across every file in the diff, including rows outside the viewport. Enter and Shift+Enter step through matches.",
         "Press ? at any time to see the full shortcut reference."
       ],
