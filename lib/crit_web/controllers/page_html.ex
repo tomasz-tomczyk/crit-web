@@ -317,7 +317,7 @@ defmodule CritWeb.PageHTML do
         class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
         data-target={"#{@id}-arch"}
       >
-        Arch <span class="ml-1.5 text-[10px] font-sans uppercase tracking-wide">Community</span>
+        Arch
       </button>
       <button
         class="install-tab font-mono text-sm px-4 py-2 -mb-px border-b-2 border-transparent text-(--crit-fg-muted) hover:text-(--crit-fg-secondary) transition-colors cursor-pointer bg-transparent"
@@ -390,10 +390,8 @@ defmodule CritWeb.PageHTML do
         </div>
       </div>
       <p class="text-xs text-(--crit-fg-muted) px-5 py-2.5 border-t border-(--crit-border)">
-        Community package on the <a
-          href="https://aur.archlinux.org/packages/crit.md-bin"
-          class="crit-link"
-        >AUR</a>, maintained outside this project. Any AUR helper works in place of <code class="font-mono">yay</code>.
+        <a href="https://aur.archlinux.org/packages/crit.md-bin" class="crit-link">AUR</a>
+        package, maintained outside this project. Any AUR helper works in place of <code class="font-mono">yay</code>.
       </p>
     </div>
 
