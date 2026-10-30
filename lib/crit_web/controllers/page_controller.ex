@@ -523,7 +523,7 @@ defmodule CritWeb.PageController do
     %{
       q: "Does it work with my agent?",
       a:
-        "If your agent can read a file and execute a shell command, yes. Crit ships first-class plugins for Claude Code, Cursor, Copilot, Codex, OpenCode, Gemini, Qwen, Hermes, Pi, Grok, Amp, Windsurf, Cline and Aider."
+        "If your agent can read a file and execute a shell command, yes. Crit ships first-class plugins for Claude Code, Cursor, Copilot, Codex, OpenCode, Gemini, Qwen, Hermes, Pi, OMO, omp, Grok, Amp, Windsurf, Cline and Aider."
     }
   ]
 

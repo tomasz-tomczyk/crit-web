@@ -169,7 +169,10 @@ defmodule Crit.Integrations do
       id: "omo",
       name: "OMO",
       tagline: "Crit as an OMO skill",
-      logo: nil,
+      logo: %{
+        light: "/images/integrations/omo-light.svg",
+        dark: "/images/integrations/omo-dark.svg"
+      },
       page_title: "Crit + OMO - review AI plans inline",
       meta:
         "Install crit's OMO integration. Drops skills into .omo/skills/ (project) or ~/.omo/agent/skills/ (global) so OMO can start a review loop with /skill:crit.",
@@ -182,7 +185,10 @@ defmodule Crit.Integrations do
       id: "omp",
       name: "omp (Oh My Pi)",
       tagline: "Crit as an omp skill",
-      logo: nil,
+      logo: %{
+        light: "/images/integrations/omp-light.svg",
+        dark: "/images/integrations/omp-dark.svg"
+      },
       page_title: "Crit + omp - review AI plans inline",
       meta:
         "Install crit's omp (Oh My Pi) integration. Drops skills into .omp/skills/ (project) or ~/.omp/agent/skills/ (global) so omp can start a review loop with /skill:crit.",

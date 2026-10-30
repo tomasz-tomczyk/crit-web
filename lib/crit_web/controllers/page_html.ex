@@ -520,6 +520,26 @@ defmodule CritWeb.PageHTML do
       ]
     },
     %{
+      id: "omo",
+      name: "OMO",
+      copy: "crit install omo",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install omo"},
+        %{type: :output, text: "Installed: .omo/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .omo/skills/crit-cli/SKILL.md"}
+      ]
+    },
+    %{
+      id: "omp",
+      name: "omp",
+      copy: "crit install omp",
+      lines: [
+        %{type: :cmd, prompt: "$ ", text: "crit install omp"},
+        %{type: :output, text: "Installed: .omp/skills/crit/SKILL.md"},
+        %{type: :output, text: "Installed: .omp/skills/crit-cli/SKILL.md"}
+      ]
+    },
+    %{
       id: "grok",
       name: "Grok",
       copy: "crit install grok",
@@ -754,5 +774,29 @@ defmodule CritWeb.PageHTML do
       nil -> nil
       agent -> agent.lines |> Enum.filter(&(&1.type == :cmd)) |> List.last() |> Map.get(:text)
     end
+  end
+
+  @doc """
+  Logo pair for a homepage integration chip.
+
+  Chips use the conventional `priv/static/images/integrations/<id>-{dark,light}.svg`
+  files. Tools with no logo yet return nil so the template can show a letter.
+  """
+  def integration_logo(tool_id) when is_binary(tool_id) do
+    priv = to_string(:code.priv_dir(:crit))
+
+    logos =
+      Map.new([:dark, :light], fn variant ->
+        {variant, "/images/integrations/#{tool_id}-#{variant}.svg"}
+      end)
+
+    files_present? =
+      Enum.all?(logos, fn {variant, _path} ->
+        File.exists?(
+          Path.join([priv, "static", "images", "integrations", "#{tool_id}-#{variant}.svg"])
+        )
+      end)
+
+    if files_present?, do: logos
   end
 end
