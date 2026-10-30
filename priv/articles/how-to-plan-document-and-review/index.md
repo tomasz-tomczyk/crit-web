@@ -1,7 +1,7 @@
 ---
 slug: how-to-plan-document-and-review
-title: How to Plan, Document and Review Code with Open Source Tools
-excerpt: Build a human-in-the-loop agentic coding workflow using Superpowers, Crit, and OpenCode — the ultimate open source stack for AI-assisted development.
+title: Review AI-generated plans and code with OpenCode and Superpowers
+excerpt: A step-by-step OpenCode workflow: plan with Superpowers, review plans and code with Crit, then test the running app with Live Mode.
 category: Tutorial
 published_at: 2026-07-03
 read_time: 18 min read
