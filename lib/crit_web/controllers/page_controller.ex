@@ -4,7 +4,7 @@ defmodule CritWeb.PageController do
   @features %{
     "inline-comments" => %{
       title: "Inline Comments",
-      tagline: "PR-style comments on plans and code diffs",
+      tagline: "Inline comments on plans and code diffs",
       description:
         "Click and drag line numbers to select a range, then leave a comment - just like a pull request review, but on any file your agent touched.",
       details: [
@@ -63,7 +63,7 @@ defmodule CritWeb.PageController do
       title: "Vim Keybindings",
       tagline: "Full keyboard-driven review workflow",
       description:
-        "Navigate lines, leave comments, and finish reviews without ever touching the mouse. Crit's keybindings are designed for developers who live in the terminal.",
+        "Vim keybindings for the full review workflow: navigate lines, leave comments, and finish reviews without ever touching the mouse. Built for developers who live in the terminal.",
       details: [
         "Use j/k to move between lines and blocks, n/N to jump between changes. The same motions you already know from vim.",
         "Press c to open the comment form on the current line. Type your feedback, then Ctrl+Enter to submit. Press Escape to cancel.",
