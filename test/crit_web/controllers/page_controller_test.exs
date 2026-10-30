@@ -59,7 +59,7 @@ defmodule CritWeb.PageControllerTest do
       conn = get(conn, ~p"/articles")
       html = html_response(conn, 200)
       assert html =~ "Articles"
-      assert html =~ "How to Plan, Document and Review Code with Open Source Tools"
+      assert html =~ "Review AI-generated plans and code with OpenCode and Superpowers"
     end
   end
 
@@ -67,7 +67,7 @@ defmodule CritWeb.PageControllerTest do
     test "renders an article", %{conn: conn} do
       conn = get(conn, ~p"/articles/how-to-plan-document-and-review")
       html = html_response(conn, 200)
-      assert html =~ "How to Plan, Document and Review Code with Open Source Tools"
+      assert html =~ "Review AI-generated plans and code with OpenCode and Superpowers"
       assert html =~ "All articles"
     end
 
