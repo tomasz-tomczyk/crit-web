@@ -17,7 +17,10 @@ Install (pick one):
 brew install tomasz-tomczyk/tap/crit
 go install github.com/tomasz-tomczyk/crit/cmd/crit@latest
 nix run github:tomasz-tomczyk/crit
+yay -S crit.md-bin
 ```
+
+`yay -S crit.md-bin` is a community AUR package (https://aur.archlinux.org/packages/crit.md-bin), maintained outside this project.
 
 Binary downloads on the GitHub releases page.
 
