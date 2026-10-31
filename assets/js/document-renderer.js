@@ -5552,55 +5552,136 @@ function restoreFileTreeCollapsed() {
 
 function getInlineCommentCards(ctx) {
   const panel = ctx._commentsPanel
-  // Search the whole main-content area so review-conversation cards (which
-  // live as siblings to ctx.el) are included in ] / [ navigation.
+  // .crit-main-content includes the review conversation, a sibling of ctx.el.
+  // Those cards are omitted from this list: collectNavigableComments adds
+  // review-scope threads from the model so they stay reachable while the
+  // section is collapsed and has not created them.
   const root = document.querySelector('.crit-main-content') || ctx.el
   return Array.from(root.querySelectorAll('.comment-card')).filter(card => {
     return !panel || !panel.contains(card)
   })
 }
 
+// Review-scope threads first, then inline cards in document order. Review
+// entries come from the comment model so [ / ] can reach them while
+// #reviewConversation is collapsed and has no .comment-card nodes.
+function collectNavigableComments(ctx) {
+  const list = []
+  const comments = Array.isArray(ctx.comments) ? ctx.comments : []
+  for (const comment of comments) {
+    if (comment.scope !== 'review') continue
+    list.push({
+      id: String(comment.id),
+      review: true,
+      resolved: !!comment.resolved,
+    })
+  }
+  const section = document.getElementById('reviewConversation')
+  for (const card of getInlineCommentCards(ctx)) {
+    if (section && section.contains(card)) continue
+    list.push({
+      id: card.dataset.commentId,
+      review: false,
+      resolved: card.classList.contains('resolved-card'),
+      card,
+    })
+  }
+  return list
+}
+
+function reviewNavCard(commentId) {
+  const section = document.getElementById('reviewConversation')
+  if (!section) return null
+  return section.querySelector(`.comment-card[data-comment-id="${CSS.escape(commentId)}"]`)
+}
+
+function isReviewConversationVisuallyCollapsed() {
+  const section = document.getElementById('reviewConversation')
+  return !!(section && section.classList.contains('collapsed'))
+}
+
+// The review conversation sits above the files. Its card is not in the DOM
+// while the section is collapsed, so expand and re-render before scrolling.
+function jumpToReviewNavComment(ctx, commentId) {
+  if (isReviewConversationVisuallyCollapsed()) {
+    setReviewConversationCollapsed(false)
+    renderReviewConversation(ctx)
+    applyHideResolved(ctx)
+  }
+  return reviewNavCard(commentId)
+}
+
+function mountedNavCard(entry) {
+  if (entry.review) {
+    if (isReviewConversationVisuallyCollapsed()) return null
+    return reviewNavCard(entry.id)
+  }
+  return entry.card && entry.card.isConnected ? entry.card : null
+}
+
+function highlightNavCard(ctx, card) {
+  const header = document.querySelector('.crit-header')
+  const headerHeight = header ? header.offsetHeight : 52
+  const rect = card.getBoundingClientRect()
+  const fileSection = card.closest('.file-section')
+  const fileHeader = fileSection ? fileSection.querySelector('.file-header') : null
+  const fileHeaderHeight = fileHeader ? fileHeader.offsetHeight : 0
+  window.scrollTo({ top: rect.top + window.scrollY - headerHeight - fileHeaderHeight - 16, behavior: 'smooth' })
+  document.querySelectorAll('.comment-nav-highlight').forEach(el => el.classList.remove('comment-nav-highlight'))
+  card.classList.add('comment-nav-highlight')
+  trackedSetTimeout(ctx, () => card.classList.remove('comment-nav-highlight'), 1000)
+}
+
 function navigateToComment(ctx, direction) {
-  const allCards = getInlineCommentCards(ctx)
-  const isEligible = card => !isHideResolved(ctx) || !card.classList.contains('resolved-card')
-  const cards = allCards.filter(isEligible)
-  if (cards.length === 0) return
+  const all = collectNavigableComments(ctx)
+  const isEligible = entry => !isHideResolved(ctx) || !entry.resolved
+  const eligible = all.filter(isEligible)
+  if (eligible.length === 0) return
 
   const header = document.querySelector('.crit-header')
   const headerHeight = header ? header.offsetHeight : 52
 
-  // Keep the current position in the full order even when that card becomes
-  // hidden, then scan in the requested direction for the next eligible card.
-  let idx = ctx._navCommentId
-    ? allCards.findIndex(c => c.dataset.commentId === ctx._navCommentId)
-    : -1
+  // Keep the current position in the full order even when that comment becomes
+  // hidden, then scan in the requested direction for the next eligible entry.
+  let idx = -1
+  if (ctx._navCommentId) {
+    idx = all.findIndex(entry => entry.id === ctx._navCommentId)
+  }
 
   let target
   if (idx >= 0) {
-    for (let step = 1; step <= allCards.length; step++) {
-      const candidateIdx = (idx + direction * step + allCards.length) % allCards.length
-      if (isEligible(allCards[candidateIdx])) {
-        target = allCards[candidateIdx]
+    for (let step = 1; step <= all.length; step++) {
+      const candidateIdx = (idx + direction * step + all.length) % all.length
+      if (isEligible(all[candidateIdx])) {
+        target = all[candidateIdx]
         break
       }
     }
   } else if (direction === 1) {
-    // First use: pick first card below the header area by viewport position
-    const firstBelow = cards.findIndex(c => c.getBoundingClientRect().top > headerHeight + 8)
-    target = cards[firstBelow >= 0 ? firstBelow : 0]
+    // First use: pick the first mounted card below the header when one is
+    // already on screen, otherwise the first eligible entry (a collapsed
+    // review thread may need the section opened).
+    let targetIdx = -1
+    for (let j = 0; j < eligible.length; j++) {
+      const card = mountedNavCard(eligible[j])
+      if (!card) continue
+      if (card.getBoundingClientRect().top > headerHeight + 8) {
+        targetIdx = j
+        break
+      }
+    }
+    if (targetIdx < 0) targetIdx = 0
+    target = eligible[targetIdx]
   } else {
-    target = cards[cards.length - 1]
+    target = eligible[eligible.length - 1]
   }
 
-  ctx._navCommentId = target.dataset.commentId
+  if (!target) return
+  ctx._navCommentId = target.id
 
-  const rect = target.getBoundingClientRect()
-  const fileSection = target.closest('.file-section')
-  const fileHeader = fileSection ? fileSection.querySelector('.file-header') : null
-  const fileHeaderHeight = fileHeader ? fileHeader.offsetHeight : 0
-  window.scrollTo({ top: rect.top + window.scrollY - headerHeight - fileHeaderHeight - 16, behavior: 'smooth' })
-  target.classList.add('comment-nav-highlight')
-  trackedSetTimeout(ctx, () => target.classList.remove('comment-nav-highlight'), 1000)
+  const card = target.review ? jumpToReviewNavComment(ctx, target.id) : target.card
+  if (!card) return
+  highlightNavCard(ctx, card)
 }
 
 // ---- Content Width ----------------------------------------------------------
