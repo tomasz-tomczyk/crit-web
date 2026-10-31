@@ -113,4 +113,82 @@ test.describe("Comment Navigation", () => {
     await page.keyboard.press("[");
     await expect(first).toHaveClass(/comment-nav-highlight/);
   });
+
+  test("review-scope comments come before inline cards", async ({
+    page,
+    request,
+  }) => {
+    await seedComment(request, token, {
+      body: "Review scope note",
+      scope: "review",
+    });
+    await seedComment(request, token, {
+      body: "Inline note",
+      startLine: 8,
+    });
+
+    await loadReview(page, token);
+    const reviewCard = page
+      .locator("#reviewConversation .comment-card")
+      .filter({ hasText: "Review scope note" });
+    const inline = page
+      .locator("#document-renderer .comment-card")
+      .filter({ hasText: "Inline note" });
+    await expect(reviewCard).toBeVisible();
+    await waitForCommentCard(page, "Inline note");
+
+    await page.keyboard.press("]");
+    await expect(reviewCard).toHaveClass(/comment-nav-highlight/);
+    await expect(reviewCard).not.toHaveClass(/comment-nav-highlight/);
+
+    await page.keyboard.press("]");
+    await expect(inline).toHaveClass(/comment-nav-highlight/);
+    await expect(reviewCard).not.toHaveClass(/comment-nav-highlight/);
+  });
+
+  test("] opens a collapsed review conversation to reach its comment", async ({
+    page,
+    request,
+  }) => {
+    await seedComment(request, token, {
+      body: "Review scope note",
+      scope: "review",
+    });
+    await seedComment(request, token, {
+      body: "Inline note",
+      startLine: 8,
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem("crit-review-conversation-collapsed", "1");
+    });
+    await loadReview(page, token);
+
+    const section = page.locator("#reviewConversation");
+    const reviewCard = section
+      .locator(".comment-card")
+      .filter({ hasText: "Review scope note" });
+    const inline = page
+      .locator("#document-renderer .comment-card")
+      .filter({ hasText: "Inline note" });
+    await expect(section).toBeVisible();
+    await expect(section).toHaveClass(/collapsed/);
+    await expect(reviewCard).toHaveCount(0);
+    await waitForCommentCard(page, "Inline note");
+
+    // First ] prefers the mounted inline card and leaves the section closed.
+    await page.locator("#comment-nav-next").click();
+    await expect(inline).toHaveClass(/comment-nav-highlight/);
+    await expect(section).toHaveClass(/collapsed/);
+    await expect(inline).not.toHaveClass(/comment-nav-highlight/);
+
+    // The next stop wraps to the review thread, which is not in the DOM
+    // until the section expands.
+    await page.keyboard.press("]");
+    await expect(section).not.toHaveClass(/collapsed/);
+    await expect(reviewCard).toHaveClass(/comment-nav-highlight/);
+
+    await page.keyboard.press("[");
+    await expect(inline).toHaveClass(/comment-nav-highlight/);
+  });
 });
