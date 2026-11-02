@@ -5620,10 +5620,18 @@ function mountedNavCard(entry) {
 }
 
 function highlightNavCard(ctx, card) {
+  // A closed file <details> has no box, so open it before measuring. The
+  // toggle listener and setFileSectionOpen both clear file.collapsed, matching
+  // comment-ref jumps and comments-panel clicks.
+  const fileSection = card.closest('.file-section')
+  if (fileSection && !fileSection.open) {
+    const file = ctx.files.find(f => f.path === fileSection.dataset.filePath)
+    if (file) setFileSectionOpen(fileSection, file, true)
+    else fileSection.open = true
+  }
   const header = document.querySelector('.crit-header')
   const headerHeight = header ? header.offsetHeight : 52
   const rect = card.getBoundingClientRect()
-  const fileSection = card.closest('.file-section')
   const fileHeader = fileSection ? fileSection.querySelector('.file-header') : null
   const fileHeaderHeight = fileHeader ? fileHeader.offsetHeight : 0
   window.scrollTo({ top: rect.top + window.scrollY - headerHeight - fileHeaderHeight - 16, behavior: 'smooth' })
