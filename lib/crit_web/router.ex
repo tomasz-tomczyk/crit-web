@@ -114,6 +114,10 @@ defmodule CritWeb.Router do
         NotificationEmailController,
         :unsubscribe
 
+    post "/settings/notification-emails/unsubscribe/:token",
+         NotificationEmailController,
+         :unsubscribe_address
+
     get "/auth/cli", DeviceController, :index
     get "/auth/cli/authorize", DeviceController, :authorize
     post "/auth/cli/authorize", DeviceController, :confirm_authorize

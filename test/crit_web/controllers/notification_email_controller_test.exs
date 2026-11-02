@@ -47,12 +47,20 @@ defmodule CritWeb.NotificationEmailControllerTest do
       |> List.last()
 
     page = get(conn, ~p"/settings/notification-emails/unsubscribe/#{token}")
+    assert html_response(page, 200) =~ "Unsubscribe"
+    refute html_response(page, 200) =~ "will no longer receive"
+    {:ok, updated} = Accounts.get_user(user.id)
+    assert updated.preferences.notification_emails == ["work@example.com"]
+
+    page = post(recycle(conn), ~p"/settings/notification-emails/unsubscribe/#{token}")
     assert html_response(page, 200) =~ "will no longer receive"
     {:ok, updated} = Accounts.get_user(user.id)
     assert updated.preferences.notification_emails == []
 
-    page = get(conn, ~p"/settings/notification-emails/unsubscribe/#{token}")
-    assert html_response(page, 200) =~ "will no longer receive"
+    page = get(recycle(conn), ~p"/settings/notification-emails/unsubscribe/#{token}")
+    assert html_response(page, 200) =~ "Already stopped"
+    {:ok, updated} = Accounts.get_user(user.id)
+    assert updated.preferences.notification_emails == []
   end
 
   test "an unknown token is rejected", %{conn: conn} do
