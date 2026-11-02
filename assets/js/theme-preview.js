@@ -115,6 +115,7 @@ export const ThemePreview = {
       if (btn && btn.dataset.previewMode !== hook.state.mode) hook.select(btn.dataset.previewMode, hook.saved[btn.dataset.previewMode])
     })
     document.getElementById('useTheme').addEventListener('click', () => {
+      if (typeof hook.state.id !== 'string') return
       setSetting(hook.state.mode + 'Palette', hook.state.id)
       hook.saved[hook.state.mode] = hook.state.id
       hook.refreshChrome()
@@ -185,8 +186,9 @@ export const ThemePreview = {
     const saved = this.saved[mode] === id
     document.getElementById('themeStatus').textContent = saved ? 'Your current ' + mode + ' theme' : ''
     const use = document.getElementById('useTheme')
-    use.textContent = saved ? 'In use' : 'Use as ' + mode + ' theme'
-    use.disabled = saved
+    const ready = typeof id === 'string'
+    use.textContent = ready ? (saved ? 'In use' : 'Use as ' + mode + ' theme') : 'Use theme'
+    use.disabled = !ready || saved
   },
 
   // Code tokens carry the theme's colours: the worker pool gets the previewed
