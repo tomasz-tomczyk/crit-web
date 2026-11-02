@@ -5,6 +5,33 @@
 >
   <Site.wrap class="max-w-[calc(36rem+7rem)] py-24 max-md:py-14">
     <%= case @state do %>
+      <% :active -> %>
+        <h1 class="text-[clamp(30px,3.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em] text-balance">
+          Stop these emails
+        </h1>
+        <p class="mt-4 text-lg text-(--crit-fg-secondary)">
+          Discussion notifications go to {@email}.
+        </p>
+        <.form
+          for={%{}}
+          id="notification-email-unsubscribe"
+          action={~p"/settings/notification-emails/unsubscribe/#{@token}"}
+          class="mt-6"
+        >
+          <button
+            type="submit"
+            class={[CritWeb.SiteComponents.btn_class("primary"), "cursor-pointer"]}
+          >
+            Unsubscribe
+          </button>
+        </.form>
+      <% :gone -> %>
+        <h1 class="text-[clamp(30px,3.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em] text-balance">
+          Already stopped
+        </h1>
+        <p class="mt-4 text-lg text-(--crit-fg-secondary)">
+          {@email} is not receiving discussion notifications.
+        </p>
       <% :done -> %>
         <h1 class="text-[clamp(30px,3.6vw,48px)] font-semibold leading-[1.08] tracking-[-0.02em] text-balance">
           Stopped

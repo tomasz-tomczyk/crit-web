@@ -237,15 +237,18 @@ defmodule Crit.Newsletters do
   end
 
   @assets_prefix "https://assets.crit.md/newsletter"
+  @slug_format ~r/\A[a-z0-9-]+\z/
 
   @doc "Lookup a newsletter by slug. Returns nil when missing."
   def get(slug) when is_binary(slug) do
-    path = Path.join([root(), slug, "index.html"])
+    case contained_path(slug, ["index.html"], []) do
+      path when is_binary(path) ->
+        if File.exists?(path) do
+          %{slug: slug, path: path, html: File.read!(path)}
+        end
 
-    if File.exists?(path) do
-      %{slug: slug, path: path, html: File.read!(path)}
-    else
-      nil
+      _ ->
+        nil
     end
   end
 
@@ -254,10 +257,10 @@ defmodule Crit.Newsletters do
   @doc "Absolute path to an image under a newsletter's images/ dir, or nil."
   def image_path(slug, name) when is_binary(slug) and is_binary(name) do
     if safe_image_name?(name) do
-      path = Path.join([root(), slug, "images", name])
-      if File.exists?(path), do: path, else: nil
-    else
-      nil
+      case contained_path(slug, ["images", name], ["images"]) do
+        path when is_binary(path) -> if File.exists?(path), do: path
+        _ -> nil
+      end
     end
   end
 
@@ -277,6 +280,26 @@ defmodule Crit.Newsletters do
   def asset_url(slug, name), do: "#{@assets_prefix}/#{slug}/#{name}"
 
   defp root, do: Path.join(:code.priv_dir(:crit), "newsletters")
+
+  # Phoenix decodes the path segment before we see it (`%2e%2e%2f` is `../`),
+  # and Path.join keeps `..`. Only a published slug is readable, and the
+  # expanded path has to stay inside that issue's directory.
+  defp contained_path(slug, segments, container_segments) do
+    if published_slug?(slug) do
+      path = [root(), slug | segments] |> Path.join() |> Path.expand()
+      directory = [root(), slug | container_segments] |> Path.join() |> Path.expand()
+      if inside_directory?(path, directory), do: path
+    end
+  end
+
+  defp published_slug?(slug) do
+    Regex.match?(@slug_format, slug) and Enum.any?(@issues, &(&1.slug == slug))
+  end
+
+  defp inside_directory?(path, directory) do
+    prefix = String.trim_trailing(directory, "/") <> "/"
+    String.starts_with?(path, prefix)
+  end
 
   defp safe_image_name?(name) do
     name != "" and not String.contains?(name, "..") and not String.contains?(name, "/") and

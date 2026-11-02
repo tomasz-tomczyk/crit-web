@@ -1,8 +1,9 @@
 defmodule CritWeb.NotificationEmailController do
   @moduledoc """
-  Public confirmation page for an extra discussion-notification address.
+  Public pages for an extra discussion-notification address.
 
-  GET only shows a button. Mail scanners that fetch the link must not confirm it.
+  GET only shows a button. Mail scanners that fetch the link must not confirm
+  or remove the address.
   """
 
   use CritWeb, :controller
@@ -32,9 +33,16 @@ defmodule CritWeb.NotificationEmailController do
   end
 
   def unsubscribe(conn, %{"token" => token}) do
+    case ExtraAddresses.unsubscribe_preview(token) do
+      {:ok, state, email} -> render_unsubscribe(conn, state, token, email)
+      :error -> render_unsubscribe(conn, :invalid, nil, nil, 422)
+    end
+  end
+
+  def unsubscribe_address(conn, %{"token" => token}) do
     case ExtraAddresses.unsubscribe(token) do
-      {:ok, email} -> render_unsubscribe(conn, :done, email)
-      :error -> render_unsubscribe(conn, :invalid, nil, 422)
+      {:ok, email} -> render_unsubscribe(conn, :done, token, email)
+      :error -> render_unsubscribe(conn, :invalid, nil, nil, 422)
     end
   end
 
@@ -51,11 +59,12 @@ defmodule CritWeb.NotificationEmailController do
     )
   end
 
-  defp render_unsubscribe(conn, state, email, status \\ 200) do
+  defp render_unsubscribe(conn, state, token, email, status \\ 200) do
     conn
     |> put_status(status)
     |> render(:unsubscribe,
       state: state,
+      token: token,
       email: email,
       page_title: "Unsubscribe · Crit",
       noindex: true,

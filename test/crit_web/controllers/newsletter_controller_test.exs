@@ -44,6 +44,53 @@ defmodule CritWeb.NewsletterControllerTest do
     assert response(conn, 404)
   end
 
+  test "encoded dot-dot slugs and image names 404 without leaving the archive", %{conn: conn} do
+    Application.put_env(:crit, :selfhosted, false)
+
+    secret = "CRIT-NEWSLETTER-OUTSIDE-#{System.unique_integer([:positive])}"
+    root = Path.join(:code.priv_dir(:crit), "newsletters")
+    outside = Path.join(System.tmp_dir!(), "crit-nl-#{System.unique_integer([:positive])}")
+    draft = Path.join(root, "draft-not-published")
+    File.mkdir_p!(Path.join(outside, "images"))
+    File.write!(Path.join(outside, "index.html"), secret)
+    File.write!(Path.join(outside, "images/leak.png"), secret)
+    File.mkdir_p!(draft)
+    File.write!(Path.join(draft, "index.html"), secret)
+
+    on_exit(fn ->
+      File.rm_rf!(outside)
+      File.rm_rf!(draft)
+    end)
+
+    slug = root |> relative_escape(outside) |> encode_slug()
+
+    page = get(conn, "/newsletter/#{slug}")
+    assert response(page, 404)
+    refute response(page, 404) =~ secret
+
+    # Extra path segments never match the newsletter route. Still must not
+    # serve a file from outside the archive.
+    escaped = get(recycle(conn), "/newsletter/..%2f..%2fetc/passwd")
+    assert response(escaped, 404)
+    refute response(escaped, 404) =~ "root:"
+
+    image = get(recycle(conn), "/newsletter/#{slug}/images/leak.png")
+    assert response(image, 404)
+    refute response(image, 404) =~ secret
+
+    named =
+      get(recycle(conn), "/newsletter/2026-09-first-update/images/%2e%2e%2f%2e%2e%2fpasswd")
+
+    assert response(named, 404)
+
+    draft_page = get(recycle(conn), ~p"/newsletter/draft-not-published")
+    assert response(draft_page, 404)
+    refute response(draft_page, 404) =~ secret
+
+    published = get(recycle(conn), ~p"/newsletter/2026-09-first-update")
+    assert response(published, 200) =~ "Story mode, a new renderer, and finish hooks"
+  end
+
   test "archive lists the first issue and exposes an email signup", %{conn: conn} do
     Application.put_env(:crit, :selfhosted, false)
     html = conn |> get(~p"/newsletter") |> html_response(200)
@@ -273,6 +320,26 @@ defmodule CritWeb.NewsletterControllerTest do
     Application.put_env(:crit, :selfhosted, true)
     sitemap = conn |> recycle() |> get(~p"/sitemap.xml") |> response(200)
     refute sitemap =~ "/newsletter"
+  end
+
+  defp relative_escape(from, to) do
+    {from_rest, to_rest} =
+      drop_common(Path.split(Path.expand(from)), Path.split(Path.expand(to)))
+
+    Path.join(List.duplicate("..", length(from_rest)) ++ to_rest)
+  end
+
+  defp drop_common([same | from], [same | to]), do: drop_common(from, to)
+  defp drop_common(from, to), do: {from, to}
+
+  defp encode_slug(relative) do
+    relative
+    |> String.graphemes()
+    |> Enum.map_join(fn
+      "." -> "%2e"
+      "/" -> "%2f"
+      char -> URI.encode(char)
+    end)
   end
 end
 
