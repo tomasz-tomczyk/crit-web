@@ -26,8 +26,9 @@ function toolbar(page: Page) {
 }
 
 // Drag across `text` inside `container` with the mouse (pointer events, as a
-// reader would). Works in light DOM and inside Pierre's shadow root.
-async function dragOverText(page: Page, container: ReturnType<Page["locator"]>, text: string) {
+// reader would), left to right or `backwards`. Works in light DOM and inside
+// Pierre's shadow root.
+async function dragOverText(page: Page, container: ReturnType<Page["locator"]>, text: string, backwards = false) {
   await expect(async () => {
     await container.scrollIntoViewIfNeeded({ timeout: 2_000 });
     const pts = await container.evaluate((el, needle) => {
@@ -48,9 +49,13 @@ async function dragOverText(page: Page, container: ReturnType<Page["locator"]>, 
       return null;
     }, text);
     expect(pts).toBeTruthy();
-    await page.mouse.move(pts!.start.x - 2, pts!.start.y);
+    const [from, to] = backwards
+      ? [{ x: pts!.end.x + 2, y: pts!.end.y }, { x: pts!.start.x - 2, y: pts!.start.y }]
+      : [{ x: pts!.start.x - 2, y: pts!.start.y }, { x: pts!.end.x + 2, y: pts!.end.y }];
+    await page.evaluate(() => window.getSelection()?.removeAllRanges());
+    await page.mouse.move(from.x, from.y);
     await page.mouse.down();
-    await page.mouse.move(pts!.end.x + 2, pts!.end.y, { steps: 5 });
+    await page.mouse.move(to.x, to.y, { steps: 5 });
     await page.mouse.up();
     await expect(toolbar(page)).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 15_000 });
@@ -149,5 +154,103 @@ test.describe("Selection toolbar", () => {
     // The toolbar would show on the frame after pointerup; wait past it.
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await expect(toolbar(page)).toBeHidden();
+  });
+});
+
+// Pinned comment templates (crit's crit-comment-templates.js, vendored) sit in
+// the toolbar before Comment; Settings > Selection toolbar places the bar or
+// turns it off, in the same crit-settings keys as crit.
+
+async function setReviewSetting(page: Page, key: string, value: unknown) {
+  await page.evaluate(([k, v]) => {
+    const match = document.cookie.match(/(?:^|;\s*)crit-settings=([^;]*)/);
+    const settings = match ? JSON.parse(decodeURIComponent(match[1])) : {};
+    settings[k as string] = v;
+    document.cookie = "crit-settings=" + encodeURIComponent(JSON.stringify(settings)) + "; path=/; SameSite=Lax";
+  }, [key, value] as const);
+}
+
+test.describe("Selection toolbar templates", () => {
+  let deleteToken: string;
+
+  test.beforeEach(async ({ page, request }) => {
+    const review = await createReview(request, { files: [{ path: "notes.md", content: MD }] });
+    deleteToken = review.deleteToken;
+    await page.goto("/");
+    await page.evaluate(() => {
+      localStorage.removeItem("crit-templates");
+      localStorage.removeItem("crit-template-meta");
+    });
+    await loadReview(page, review.token);
+  });
+
+  test.afterEach(async ({ request }) => {
+    if (deleteToken) await deleteReview(request, deleteToken);
+  });
+
+  const paragraph = (page: Page) => page.locator(".line-block", { hasText: "The toolbar appears" }).locator(".line-content");
+
+  test("pinned 👍 and 👎 come before Comment, and one click comments the selection", async ({ page }) => {
+    await dragOverText(page, paragraph(page), "above a selection");
+    const buttons = toolbar(page).locator("button");
+    await expect(buttons).toHaveCount(3);
+    await expect(buttons.nth(0)).toHaveAccessibleName('Comment "Accepted"');
+    await expect(buttons.nth(2)).toHaveAccessibleName("Comment on selection");
+    await buttons.nth(0).click();
+    await waitForCommentCard(page, "Accepted");
+    await expect(page.locator(".comment-form")).toHaveCount(0);
+    await expect(page.locator("mark.quote-highlight")).toHaveText("above a selection");
+  });
+
+  test("a template shortcut comments the selection", async ({ page }) => {
+    await page.evaluate(() => {
+      const meta = { seeded: true, items: { Accepted: { emoji: "👍", pinned: true, shortcut: "y" }, Rejected: { emoji: "👎", pinned: true } } };
+      localStorage.setItem("crit-templates", JSON.stringify(["Accepted", "Rejected"]));
+      localStorage.setItem("crit-template-meta", JSON.stringify(meta));
+    });
+    await dragOverText(page, paragraph(page), "above a selection");
+    await expect(toolbar(page).locator(".crit-selection-toolbar-pin").first().locator("kbd")).toHaveText("y");
+    await page.keyboard.press("y");
+    await waitForCommentCard(page, "Accepted");
+  });
+
+  test("placements: a corner, closest to the cursor, and off", async ({ page }) => {
+    await setReviewSetting(page, "selectionToolbar", "bottom-left");
+    await dragOverText(page, paragraph(page), "above a selection");
+    await expect(toolbar(page)).toHaveAttribute("data-placement", "below");
+    await page.keyboard.press("Escape");
+
+    await setReviewSetting(page, "selectionToolbar", "top-cursor");
+    await dragOverText(page, paragraph(page), "above a selection", true);
+    const edges = await page.evaluate(() => {
+      const rects = Array.from(window.getSelection()!.getRangeAt(0).getClientRects()).filter((r) => r.width > 0);
+      return { left: rects[0].left };
+    });
+    expect(Math.abs((await toolbar(page).boundingBox())!.x - edges.left)).toBeLessThan(2);
+    await page.keyboard.press("Escape");
+
+    await setReviewSetting(page, "selectionToolbar", "off");
+    await page.evaluate(() => window.getSelection()?.removeAllRanges());
+    const box = (await paragraph(page).boundingBox())!;
+    await page.mouse.move(box.x + 10, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 200, box.y + box.height / 2, { steps: 5 });
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+    await expect(toolbar(page)).toBeHidden();
+  });
+
+  test("Settings > Selection toolbar sets the position and the shortcut display", async ({ page }) => {
+    await page.locator("#settingsToggle").click();
+    const position = page.locator("#selectionToolbarSelect");
+    await expect(position).toHaveValue("top-center");
+    await position.selectOption("top-cursor");
+    await page.locator("label.comments-panel-switch:has(#toolbarShortcutsToggle)").click();
+    await page.locator("#settingsClose").click();
+    const settings = await page.evaluate(() => {
+      const match = document.cookie.match(/(?:^|;\s*)crit-settings=([^;]*)/);
+      return match ? JSON.parse(decodeURIComponent(match[1])) : {};
+    });
+    expect(settings).toMatchObject({ selectionToolbar: "top-cursor", selectionToolbarShortcuts: false });
   });
 });
