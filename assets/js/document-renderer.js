@@ -39,7 +39,7 @@ import renderers from "../vendor/crit/crit-renderers.js"
 import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
 import "../vendor/crit/crit-renderer-mermaid.js"
 import selectionToolbar from "../vendor/crit/crit-selection-toolbar.js"
-import { themeChoice } from "./review-settings"
+import { getSetting, themeChoice } from "./review-settings"
 
 const COMMENT_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>'
 
@@ -5740,6 +5740,8 @@ function filesSettingsAdapter(ctx) {
     shortcutMode: 'files',
     // The sidebar toggle's title names its binding ("Hide sidebar (b)").
     onShortcutsChanged: () => syncSidebarToggleAria(),
+    // Selection toolbar position.
+    selectionToolbar: selectionToolbar,
   }
 }
 
@@ -6467,7 +6469,10 @@ export const DocumentRenderer = {
     // ===== Selection toolbar =====
     // A Comment button above a mouse selection that `c` could comment on. It
     // opens nothing by itself, so selecting to copy or to read stays as it was.
-    // It lives in <body>, outside ctx.el, which every render empties.
+    // Settings > Selection toolbar places it or turns it off. It lives in
+    // <body>, outside ctx.el, which every render empties.
+    const toolbarPlacement = () => getSetting('selectionToolbar', 'top-center')
+
     ctx._selectionToolbar = selectionToolbar.create({
       label: 'Comment',
       ariaLabel: 'Comment on selection',
@@ -6475,7 +6480,8 @@ export const DocumentRenderer = {
       shortcut: () => getBinding('comment'),
       topBoundary: selectionToolbarTopBoundary,
       shadowRoots: () => Array.from(document.querySelectorAll('diffs-container')).map((host) => host.shadowRoot).filter(Boolean),
-      enabled: () => ctx.canComment !== false,
+      enabled: () => ctx.canComment !== false && toolbarPlacement() !== 'off',
+      placement: toolbarPlacement,
       resolve: (selection) => {
         const resolved = resolveSelectionComment(selection)
         return resolved && { range: resolved.range, data: resolved.form }
