@@ -42,7 +42,7 @@ import "../vendor/crit/crit-renderer-mermaid.js"
 import "../vendor/crit/crit-renderer-excalidraw.js"
 import remoteImages from "../vendor/crit/crit-remote-images.js"
 import selectionToolbar from "../vendor/crit/crit-selection-toolbar.js"
-import { themeChoice } from "./review-settings"
+import { getSetting, themeChoice } from "./review-settings"
 
 // Excalidraw loads rough/freehand/fonts from origin root. This file is
 // bundled, so document.currentScript is null; the renderer reads the override
@@ -5836,6 +5836,8 @@ function filesSettingsAdapter(ctx) {
     shortcutMode: 'files',
     // The sidebar toggle's title names its binding ("Hide sidebar (b)").
     onShortcutsChanged: () => syncSidebarToggleAria(),
+    // Selection toolbar position.
+    selectionToolbar: selectionToolbar,
   }
 }
 
@@ -6564,7 +6566,10 @@ export const DocumentRenderer = {
     // ===== Selection toolbar =====
     // A Comment button above a mouse selection that `c` could comment on. It
     // opens nothing by itself, so selecting to copy or to read stays as it was.
-    // It lives in <body>, outside ctx.el, which every render empties.
+    // Settings > Selection toolbar places it or turns it off. It lives in
+    // <body>, outside ctx.el, which every render empties.
+    const toolbarPlacement = () => getSetting('selectionToolbar', 'top-center')
+
     ctx._selectionToolbar = selectionToolbar.create({
       label: 'Comment',
       ariaLabel: 'Comment on selection',
@@ -6572,7 +6577,8 @@ export const DocumentRenderer = {
       shortcut: () => getBinding('comment'),
       topBoundary: selectionToolbarTopBoundary,
       shadowRoots: () => Array.from(document.querySelectorAll('diffs-container')).map((host) => host.shadowRoot).filter(Boolean),
-      enabled: () => ctx.canComment !== false,
+      enabled: () => ctx.canComment !== false && toolbarPlacement() !== 'off',
+      placement: toolbarPlacement,
       resolve: (selection) => {
         const resolved = resolveSelectionComment(selection)
         return resolved && { range: resolved.range, data: resolved.form }
