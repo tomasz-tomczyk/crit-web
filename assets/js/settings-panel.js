@@ -267,6 +267,12 @@ export function createSettingsPanel(adapter) {
       html += '</div>'
     }
 
+    // Comment templates: rows are built by the shared module after render.
+    if (adapter.commentTemplates) {
+      html += '<div class="settings-section-label">Comment templates</div>'
+      html += '<div class="settings-templates" id="settingsTemplates"></div>'
+    }
+
     pane.innerHTML = html
 
     // Theme pill — dispatch the same event the rest of the app uses.
@@ -349,6 +355,9 @@ export function createSettingsPanel(adapter) {
     pane.querySelector('#selectionToolbarSelect')?.addEventListener('change', function(e) {
       setSetting('selectionToolbar', e.target.value)
     })
+    if (adapter.commentTemplates) {
+      adapter.commentTemplates.renderSettingsList(pane.querySelector('#settingsTemplates'))
+    }
   }
 
   function renderShortcutsPane() {
@@ -490,6 +499,7 @@ export function createSettingsPanel(adapter) {
   function close() {
     panelOpen = false
     overlay.classList.remove('active')
+    adapter.onClose?.()
   }
 
   // Wiring (gear toggle, close button, click-outside, tab clicks).
