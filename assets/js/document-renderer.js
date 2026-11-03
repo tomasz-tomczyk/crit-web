@@ -17,7 +17,7 @@ import {
   restoreReplyFocus,
 } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
-import { actionForEvent, getBinding } from "./shortcut-registry"
+import { actionForEvent, eventToBinding, getBinding, groupsForMode, isReservedBinding } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 import {
   changeRendererSetting,
@@ -39,9 +39,36 @@ import renderers from "../vendor/crit/crit-renderers.js"
 import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
 import "../vendor/crit/crit-renderer-mermaid.js"
 import selectionToolbar from "../vendor/crit/crit-selection-toolbar.js"
+import commentTemplates from "../vendor/crit/crit-comment-templates.js"
 import { getSetting, themeChoice } from "./review-settings"
 
 const COMMENT_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>'
+
+// Comment templates come from crit's shared module (vendored), on this page's
+// localStorage and files-mode shortcut registry.
+commentTemplates.configure({
+  storage: {
+    get: (key) => { try { return localStorage.getItem(key) } catch (_) { return null } },
+    set: (key, value) => { try { localStorage.setItem(key, value) } catch (_) { /* storage blocked or full */ } },
+  },
+  shortcuts: {
+    eventToBinding: eventToBinding,
+    // Why a template may not take `binding`: Crit keeps it, or it already
+    // does something in files mode.
+    refusal: (binding) => {
+      if (isReservedBinding(binding)) return binding + ' is reserved by Crit.'
+      for (const group of groupsForMode('files')) {
+        for (const shortcut of group.shortcuts) {
+          if ((shortcut.id ? getBinding(shortcut.id) : shortcut.binding) === binding) {
+            return binding + ' already does: ' + shortcut.action + '.'
+          }
+        }
+      }
+      return ''
+    },
+  },
+  toast: (message) => showToast(message, 4000),
+})
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -582,119 +609,24 @@ function flushDrafts(ctx) {
   }
 }
 
-function getTemplates() {
-  try {
-    return JSON.parse(localStorage.getItem('crit-templates') || '[]')
-  } catch (_) { return [] }
-}
-
-function saveTemplates(templates) {
-  localStorage.setItem('crit-templates', JSON.stringify(templates))
-}
-
-function populateTemplateBar(bar, textarea) {
-  bar.innerHTML = ''
-  const templates = getTemplates()
-
-  if (templates.length === 0) {
-    bar.style.display = 'none'
-    return
-  }
-  bar.style.display = ''
-
-  for (let i = 0; i < templates.length; i++) {
-    const chip = document.createElement('button')
-    chip.className = 'template-chip'
-    chip.type = 'button'
-    chip.title = templates[i]
-
-    const label = document.createElement('span')
-    label.className = 'template-chip-label'
-    label.textContent = templates[i]
-    chip.appendChild(label)
-
-    const del = document.createElement('span')
-    del.className = 'template-chip-delete'
-    del.textContent = '\u00d7'
-    del.addEventListener('click', (e) => {
-      e.stopPropagation()
-      const t = getTemplates()
-      t.splice(i, 1)
-      saveTemplates(t)
-      populateTemplateBar(bar, textarea)
-    })
-    chip.appendChild(del)
-
-    chip.addEventListener('click', () => {
-      const start = textarea.selectionStart
-      textarea.value = textarea.value.substring(0, start) + templates[i] + textarea.value.substring(textarea.selectionEnd)
-      textarea.selectionStart = textarea.selectionEnd = start + templates[i].length
-      textarea.focus()
-    })
-
-    bar.appendChild(chip)
-  }
-}
-
-function showSaveTemplateDialog(textarea, templateBar) {
+// "+ Template" (create from the form's text) and a chip's edit button open
+// the shared template dialog; every template bar redraws once it saves.
+function showTemplateDialog(textarea, item) {
   const text = textarea.value.trim()
-  if (!text) { textarea.focus(); return }
+  if (!item && !text) { textarea.focus(); return }
+  commentTemplates.openTemplateDialog({ item, text, onClose: () => textarea.focus() })
+}
 
-  const overlay = document.createElement('div')
-  overlay.className = 'save-template-overlay active'
-
-  const dialog = document.createElement('div')
-  dialog.className = 'save-template-dialog'
-
-  const title = document.createElement('h3')
-  title.textContent = 'Save as template'
-  dialog.appendChild(title)
-
-  const desc = document.createElement('p')
-  desc.textContent = 'Edit the template text, then save.'
-  dialog.appendChild(desc)
-
-  const input = document.createElement('textarea')
-  input.className = 'save-template-input'
-  input.value = text
-  input.rows = 3
-  dialog.appendChild(input)
-
-  const btns = document.createElement('div')
-  btns.className = 'save-template-actions'
-
-  const cancelBtn = document.createElement('button')
-  cancelBtn.className = 'btn btn-sm'
-  cancelBtn.textContent = 'Cancel'
-  cancelBtn.addEventListener('click', () => { overlay.remove(); textarea.focus() })
-
-  const saveBtn = document.createElement('button')
-  saveBtn.className = 'btn btn-sm btn-primary'
-  saveBtn.textContent = 'Save'
-  saveBtn.addEventListener('click', () => {
-    const val = input.value.trim()
-    if (!val) return
-    const t = getTemplates()
-    t.push(val)
-    saveTemplates(t)
-    overlay.remove()
-    populateTemplateBar(templateBar, textarea)
-    textarea.focus()
-  })
-
-  btns.appendChild(cancelBtn)
-  btns.appendChild(saveBtn)
-  dialog.appendChild(btns)
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveBtn.click() }
-    else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click() }
-  })
-
-  overlay.appendChild(dialog)
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); textarea.focus() } })
-  document.body.appendChild(overlay)
-  requestAnimationFrame(() => { input.focus(); input.select() })
+// Settings may have reordered, edited or removed templates: redraw the
+// template bars of the forms already on the page, Pierre's shadow roots too.
+function refreshTemplateBars() {
+  const roots = [document, ...Array.from(document.querySelectorAll('diffs-container'))
+    .map((host) => host.shadowRoot).filter(Boolean)]
+  for (const root of roots) {
+    root.querySelectorAll('.comment-template-bar').forEach((bar) => {
+      if (typeof bar._populate === 'function') bar._populate()
+    })
+  }
 }
 
 function restoreDrafts(ctx) {
@@ -4133,12 +4065,20 @@ function createCommentForm(formObj, ctx) {
     : `Lines ${formObj.startLine}–${formObj.endLine}`
   header.textContent = `Comment on ${lineRef}`
 
-  const templateBar = document.createElement('div')
-  templateBar.className = 'comment-template-bar'
-
   const textarea = document.createElement("textarea")
   textarea.placeholder = "Leave a review comment… (Ctrl+Enter to submit, Escape to cancel)"
   textarea.dataset.formKey = formObj.formKey
+
+  const templateBar = commentTemplates.buildTemplateBar({
+    onInsert: (text) => {
+      const start = textarea.selectionStart
+      textarea.value = textarea.value.substring(0, start) + text + textarea.value.substring(textarea.selectionEnd)
+      textarea.selectionStart = textarea.selectionEnd = start + text.length
+      textarea.focus()
+      textarea.dispatchEvent(new Event('input'))
+    },
+    onEdit: (item) => showTemplateDialog(textarea, item),
+  })
 
   // Restore draft
   const savedDraft = loadDraft(ctx.reviewToken, formObj)
@@ -4184,7 +4124,7 @@ function createCommentForm(formObj, ctx) {
   saveTemplateBtn.textContent = '+ Template'
   saveTemplateBtn.addEventListener('click', (e) => {
     e.preventDefault()
-    showSaveTemplateDialog(textarea, templateBar)
+    showTemplateDialog(textarea, null)
   })
   leftGroup.appendChild(saveTemplateBtn)
 
@@ -4201,7 +4141,6 @@ function createCommentForm(formObj, ctx) {
   actions.appendChild(leftGroup)
   actions.appendChild(cancelBtn)
   actions.appendChild(submitBtn)
-  populateTemplateBar(templateBar, textarea)
   form.appendChild(header)
   form.appendChild(templateBar)
   form.appendChild(textarea)
@@ -5740,8 +5679,10 @@ function filesSettingsAdapter(ctx) {
     shortcutMode: 'files',
     // The sidebar toggle's title names its binding ("Hide sidebar (b)").
     onShortcutsChanged: () => syncSidebarToggleAria(),
-    // Selection toolbar position.
+    // Selection toolbar position and shortcuts, and the Comment templates list.
     selectionToolbar: selectionToolbar,
+    commentTemplates: commentTemplates,
+    onClose: refreshTemplateBars,
   }
 }
 

@@ -2971,19 +2971,6 @@ body.comments-panel-anim #commentsPanelResizer {
   white-space: nowrap;
 }
 
-.template-chip-delete {
-  display: inline;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--crit-editor-fg-secondary);
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.template-chip-delete:hover {
-  color: #e55;
-}
-
 /* File Reference in Comments */
 .file-ref {
   font-family: var(--crit-font-mono);
@@ -3089,6 +3076,205 @@ body.comments-panel-anim #commentsPanelResizer {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* ===== Comment templates and the selection toolbar's pinned templates =====
+   Parity with crit's web/style.css: the vendored crit-comment-templates.js and
+   crit-selection-toolbar.js build this markup. */
+.template-chip-emoji { flex-shrink: 0; }
+.template-chip-edit {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--crit-editor-fg-muted);
+}
+.template-chip-edit:hover { color: var(--crit-brand); }
+/* Pinned templates lead the bar and keep a brand border. */
+.template-chip--pinned { border-color: var(--crit-brand); }
+/* Template dialog, edit mode: "Delete template", confirmed in place. */
+.save-template-delete-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  font-size: 13px;
+  color: var(--crit-editor-fg);
+}
+.save-template-delete { color: var(--crit-red); }
+/* Template dialog: title (with its note) and text fields, then the options. */
+.save-template-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--crit-editor-fg);
+}
+.save-template-field-name { font-weight: 500; }
+.save-template-title {
+  padding: 6px 10px;
+  font: inherit;
+  color: var(--crit-editor-fg);
+  background: var(--crit-editor-bg);
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+}
+.save-template-title:focus {
+  outline: none;
+  border-color: var(--crit-brand);
+}
+.save-template-dialog .save-template-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--crit-editor-fg-muted);
+}
+/* Emoji, shortcut, toolbar button and pin of a template. */
+.save-template-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--crit-editor-fg);
+}
+.save-template-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.save-template-option--row { flex-basis: 100%; }
+/* Toolbar button choice, under the pin it depends on. */
+.save-template-option--sub { padding-left: 22px; }
+.save-template-option[hidden] { display: none; }
+.save-template-emoji {
+  width: 44px;
+  padding: 4px 6px;
+  font: inherit;
+  text-align: center;
+  color: var(--crit-editor-fg);
+  background: var(--crit-editor-bg);
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+}
+.save-template-emoji:focus {
+  outline: none;
+  border-color: var(--crit-brand);
+}
+/* Template shortcut buttons (form dialog and Settings), kbd like Settings > Shortcuts. */
+.template-shortcut kbd {
+  padding: 0 5px;
+  font-family: var(--crit-font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--crit-fg-secondary);
+  background: var(--crit-bg-elevated);
+  border: 1px solid var(--crit-border);
+  border-radius: var(--crit-r-sm);
+}
+/* Comment templates section: one summary row per template, edited in the template dialog. */
+.settings-templates {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.settings-template-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--crit-border);
+  border-radius: 6px;
+}
+.settings-template-handle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 28px;
+  padding: 0;
+  color: var(--crit-editor-fg-muted);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: grab;
+}
+.settings-template-handle:hover { color: var(--crit-editor-fg); }
+.settings-template-handle:focus-visible {
+  outline: 2px solid var(--crit-brand);
+  outline-offset: 1px;
+}
+.settings-template-row.is-dragging { opacity: 0.5; }
+.settings-template-row.is-drop-before { box-shadow: 0 -2px 0 var(--crit-brand); }
+.settings-template-row.is-drop-after { box-shadow: 0 2px 0 var(--crit-brand); }
+.settings-template-emoji {
+  flex: 0 0 22px;
+  font-size: 16px;
+  text-align: center;
+}
+.settings-template-label {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+.settings-template-name,
+.settings-template-body {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-template-name { font-size: 13px; color: var(--crit-editor-fg); }
+.settings-template-body { font-size: 12px; color: var(--crit-editor-fg-muted); }
+.settings-template-pinned {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  font-size: 11px;
+  color: var(--crit-brand);
+  border: 1px solid var(--crit-brand);
+  border-radius: 9999px;
+}
+.settings-template-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--crit-editor-fg-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.settings-template-action:hover {
+  color: var(--crit-brand);
+  border-color: var(--crit-border);
+}
+.settings-template-action:focus-visible {
+  outline: 2px solid var(--crit-brand);
+  outline-offset: 1px;
+}
+.settings-template-new { align-self: flex-start; margin-top: 4px; }
+.settings-template-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--crit-editor-fg-muted);
+}
+/* Template toolbar button pill (dialog and Settings): Emoji, Text, Emoji + Text */
+.template-display {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 1fr);
+  flex: 0 0 auto;
+}
+.template-display .settings-pill-indicator { width: 33.333%; }
+.template-display .settings-pill-btn { padding: 4px 10px; font-size: 12px; white-space: nowrap; }
+.template-display .settings-pill-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .comment-form-actions-left {
