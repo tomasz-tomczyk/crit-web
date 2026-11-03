@@ -251,10 +251,11 @@ export function createSettingsPanel(adapter) {
 
     html += '</div>' // close settings-display-group
 
-    // Selection toolbar: where the bar shows around a selection, or off. Same
-    // key as crit's crit-settings.
+    // Selection toolbar: where the bar shows around a selection (or off), and
+    // whether its buttons show their shortcut. Same keys as crit's crit-settings.
     if (adapter.selectionToolbar) {
       const placement = getSetting('selectionToolbar', 'top-center')
+      const shortcuts = getSetting('selectionToolbarShortcuts', true) !== false
       html += '<div class="settings-section-label">Selection toolbar</div>'
       html += '<div class="settings-display-group">'
       html += '<div class="settings-display-row">'
@@ -264,6 +265,13 @@ export function createSettingsPanel(adapter) {
         html += '<option value="' + o.id + '"' + (o.id === placement ? ' selected' : '') + '>' + o.name + '</option>'
       })
       html += '</select></div>'
+      html += '<div class="settings-display-row">'
+      html += '<span class="settings-display-label">Show shortcuts</span>'
+      html += '<label class="comments-panel-switch">'
+      html += '<input type="checkbox" id="toolbarShortcutsToggle" aria-label="Show shortcuts in the selection toolbar"' + (shortcuts ? ' checked' : '') + '>'
+      html += '<span class="comments-panel-switch-track"><span class="comments-panel-switch-thumb"></span></span>'
+      html += '</label>'
+      html += '</div>'
       html += '</div>'
     }
 
@@ -354,6 +362,9 @@ export function createSettingsPanel(adapter) {
     // Read by the selection toolbar each time it shows: no reload needed.
     pane.querySelector('#selectionToolbarSelect')?.addEventListener('change', function(e) {
       setSetting('selectionToolbar', e.target.value)
+    })
+    pane.querySelector('#toolbarShortcutsToggle')?.addEventListener('change', function(e) {
+      setSetting('selectionToolbarShortcuts', e.target.checked)
     })
     if (adapter.commentTemplates) {
       adapter.commentTemplates.renderSettingsList(pane.querySelector('#settingsTemplates'))
