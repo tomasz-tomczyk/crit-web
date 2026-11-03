@@ -4220,10 +4220,8 @@ function createInlineEditor(comment, formObj, ctx) {
   return wrapper
 }
 
-function submitNewComment(body, formObj, ctx) {
-  if (!body.trim() || formObj.submitting) return
-  rememberKeyboardFocusFromForm(ctx, formObj)
-  setFormSubmitting(ctx, formObj, true)
+// The add_comment payload for `body` on what `formObj` points at.
+function newCommentPayload(body, formObj) {
   const payload = {
     body: body.trim(),
     file_path: formObj.filePath || null,
@@ -4235,7 +4233,14 @@ function submitNewComment(body, formObj, ctx) {
   }
   if (formObj.quote) payload.quote = formObj.quote
   if (formObj.quoteOffset != null) payload.quote_offset = formObj.quoteOffset
-  pushCommentMutation(ctx, "add_comment", payload, {
+  return payload
+}
+
+function submitNewComment(body, formObj, ctx) {
+  if (!body.trim() || formObj.submitting) return
+  rememberKeyboardFocusFromForm(ctx, formObj)
+  setFormSubmitting(ctx, formObj, true)
+  pushCommentMutation(ctx, "add_comment", newCommentPayload(body, formObj), {
     onSuccess: () => {
       clearDraft(ctx.reviewToken, formObj)
       removeForm(ctx, formObj.formKey)
@@ -6408,11 +6413,21 @@ export const DocumentRenderer = {
     ctx._tryOpenFormFromSelection = tryOpenFormFromSelection
 
     // ===== Selection toolbar =====
-    // A Comment button above a mouse selection that `c` could comment on. It
-    // opens nothing by itself, so selecting to copy or to read stays as it was.
-    // Settings > Selection toolbar places it or turns it off. It lives in
-    // <body>, outside ctx.el, which every render empties.
+    // A Comment button above a mouse selection that `c` could comment on, then
+    // one button per pinned comment template. It opens nothing by itself, so
+    // selecting to copy or to read stays as it was. Settings > Selection
+    // toolbar places it or turns it off. It lives in <body>, outside ctx.el,
+    // which every render empties.
     const toolbarPlacement = () => getSetting('selectionToolbar', 'top-center')
+
+    // A pinned template, or its shortcut, comments the resolved selection in
+    // one step, as `c` then typing the template would. No form opens, and the
+    // drafts of open forms on the same lines stay untouched.
+    const submitTemplate = (form, text) => {
+      pushCommentMutation(ctx, "add_comment", newCommentPayload(text, form), {
+        onSuccess: () => render(ctx),
+      })
+    }
 
     ctx._selectionToolbar = selectionToolbar.create({
       label: 'Comment',
@@ -6423,6 +6438,8 @@ export const DocumentRenderer = {
       shadowRoots: () => Array.from(document.querySelectorAll('diffs-container')).map((host) => host.shadowRoot).filter(Boolean),
       enabled: () => ctx.canComment !== false && toolbarPlacement() !== 'off',
       placement: toolbarPlacement,
+      showShortcuts: () => getSetting('selectionToolbarShortcuts', true) !== false,
+      pinned: () => commentTemplates.getPinnedTemplates(),
       resolve: (selection) => {
         const resolved = resolveSelectionComment(selection)
         return resolved && { range: resolved.range, data: resolved.form }
@@ -6433,7 +6450,27 @@ export const DocumentRenderer = {
         window.getSelection()?.removeAllRanges()
         openForm(ctx, form)
       },
+      onPinned: (form, item) => {
+        window.getSelection()?.removeAllRanges()
+        submitTemplate(form, item.text)
+      },
     })
+
+    // A template's own shortcut comments the current selection with it, mouse
+    // or keyboard selection alike, as `c` opens the form there. Without a
+    // commentable selection the key goes on to the page's keymap.
+    const handleTemplateShortcut = (e) => {
+      if (ctx.canComment === false) return false
+      const item = commentTemplates.findByShortcut(eventToBinding(e))
+      if (!item) return false
+      const selection = window.getSelection()
+      const resolved = selection ? resolveSelectionComment(selection) : null
+      if (!resolved) return false
+      e.preventDefault()
+      selection.removeAllRanges()
+      submitTemplate(resolved.form, item.text)
+      return true
+    }
 
     ctx._keydownHandler = (e) => {
       const tag = e.target.tagName
@@ -6462,6 +6499,7 @@ export const DocumentRenderer = {
       // letter shortcuts after a toolbar button was clicked and retained focus.
       if (interactive && [' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return
 
+      if (handleTemplateShortcut(e)) return
       const shortcutAction = actionForEvent(e, 'files')
       if (!shortcutAction && (e.metaKey || e.ctrlKey || e.altKey)) return
 

@@ -3081,6 +3081,29 @@ body.comments-panel-anim #commentsPanelResizer {
 /* ===== Comment templates and the selection toolbar's pinned templates =====
    Parity with crit's web/style.css: the vendored crit-comment-templates.js and
    crit-selection-toolbar.js build this markup. */
+/* Pinned comment templates, before Comment: emoji, text and shortcut as set. */
+.crit-selection-toolbar-pinned {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 3px;
+  padding-right: 3px;
+  border-right: 1px solid var(--crit-border);
+}
+.crit-selection-toolbar-pinned[hidden] { display: none; }
+.crit-selection-toolbar-pin {
+  justify-content: center;
+  min-width: 28px;
+  padding: 0 6px;
+}
+.crit-selection-toolbar-pin-emoji { font-size: 15px; line-height: 1; }
+/* A template text is cut short to keep the bar narrow. */
+.crit-selection-toolbar-pin-text {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .template-chip-emoji { flex-shrink: 0; }
 .template-chip-edit {
   display: inline-flex;
