@@ -491,6 +491,37 @@ function openForm(ctx, newForm) {
   ctx.selectionEnd = newForm.endLine
   render(ctx)
   focusCommentTextarea(ctx, newForm.formKey)
+  // A new form can open below an existing thread; flash once it is on screen
+  // (crit: flash after pierreRevealForm settles).
+  if (!newForm.editingId) revealAndFlashNewForm(ctx, newForm.formKey)
+}
+
+// Same animation a comment-ref jump gives a card (crit: flashNewCommentForm).
+function flashNewCommentForm(formEl) {
+  if (formEl) restartFlash(formEl, 'comment-ref-flash')
+}
+
+// Wait until the form is mounted, open collapsed <details>, scroll into view
+// if needed, then flash. crit ties this to pierreRevealForm's onRevealed;
+// crit-web has no Pierre reveal helper.
+function revealAndFlashNewForm(ctx, formKey) {
+  let frames = 0
+  ;(function poll() {
+    const form = ctx.el.querySelector('.comment-form[data-form-key="' + CSS.escape(formKey) + '"]')
+    const r = form && form.getBoundingClientRect()
+    if (r && r.height > 0) {
+      for (let node = form.parentElement; node; node = node.parentElement) {
+        if (node.tagName === 'DETAILS' && !node.open) node.open = true
+      }
+      const box = form.getBoundingClientRect()
+      if (box.bottom <= 0 || box.top >= window.innerHeight) {
+        form.scrollIntoView({ block: 'nearest' })
+      }
+      flashNewCommentForm(form)
+      return
+    }
+    if (++frames < 60) requestAnimationFrame(poll)
+  })()
 }
 
 function focusCommentTextarea(ctx, targetFormKey) {
@@ -4745,9 +4776,10 @@ function openFileCommentForm(ctx, filePath) {
   ctx.activeForms.push(form)
   render(ctx)
   requestAnimationFrame(() => {
-    const ta = ctx.el.querySelector('.file-comment-form textarea')
+    const ta = ctx.el.querySelector('.comment-form[data-form-key="' + CSS.escape(fk) + '"] textarea')
     if (ta) ta.focus()
   })
+  revealAndFlashNewForm(ctx, fk)
 }
 
 function openReviewCommentForm(ctx) {
