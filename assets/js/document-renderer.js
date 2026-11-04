@@ -40,9 +40,10 @@ import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
 import "../vendor/crit/crit-renderer-mermaid.js"
 import selectionToolbar from "../vendor/crit/crit-selection-toolbar.js"
 import commentTemplates from "../vendor/crit/crit-comment-templates.js"
-import { getSetting, themeChoice } from "./review-settings"
+import { getSetting, setSetting, themeChoice } from "./review-settings"
 
-const COMMENT_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.75C1 1.784 1.784 1 2.75 1h10.5c.966 0 1.75.784 1.75 1.75v7.5A1.75 1.75 0 0 1 13.25 12H9.06l-2.573 2.573A1.458 1.458 0 0 1 4 13.543V12H2.75A1.75 1.75 0 0 1 1 10.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h4.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>'
+// The selection toolbar's Comment icon: the blue "+" of the line gutter, as in crit.
+const ADD_ICON = '<span class="crit-selection-toolbar-add">+</span>'
 
 // Comment templates come from crit's shared module (vendored), on this page's
 // localStorage and files-mode shortcut registry.
@@ -68,6 +69,16 @@ commentTemplates.configure({
     },
   },
   toast: (message) => showToast(message, 4000),
+  // Why a template cannot show in the selection toolbar right now, or ''.
+  toolbarBlocked: () => {
+    if (getSetting('selectionToolbarEnabled', true) === false) {
+      return 'Turn on "Enable selection toolbar" in Settings > Selection toolbar first.'
+    }
+    if (getSetting('selectionToolbarTemplates', true) === false) {
+      return 'Turn off "Hide comment templates" in Settings > Selection toolbar > Advanced first.'
+    }
+    return ''
+  },
 })
 
 // ---- Helpers ----------------------------------------------------------------
@@ -607,14 +618,6 @@ function flushDrafts(ctx) {
       saveDraft(ctx.reviewToken, el.value, formObj)
     }
   }
-}
-
-// "+ Template" (create from the form's text) and a chip's edit button open
-// the shared template dialog; every template bar redraws once it saves.
-function showTemplateDialog(textarea, item) {
-  const text = textarea.value.trim()
-  if (!item && !text) { textarea.focus(); return }
-  commentTemplates.openTemplateDialog({ item, text, onClose: () => textarea.focus() })
 }
 
 // Settings may have reordered, edited or removed templates: redraw the
@@ -4077,7 +4080,8 @@ function createCommentForm(formObj, ctx) {
       textarea.focus()
       textarea.dispatchEvent(new Event('input'))
     },
-    onEdit: (item) => showTemplateDialog(textarea, item),
+    // A chip's pencil and "+ Template" open Settings > Comment templates.
+    onEdit: (item) => ctx._settings.open('templates', { expand: item.index }),
   })
 
   // Restore draft
@@ -4124,7 +4128,7 @@ function createCommentForm(formObj, ctx) {
   saveTemplateBtn.textContent = '+ Template'
   saveTemplateBtn.addEventListener('click', (e) => {
     e.preventDefault()
-    showTemplateDialog(textarea, null)
+    ctx._settings.open('templates', { expand: 'new', text: textarea.value.trim() })
   })
   leftGroup.appendChild(saveTemplateBtn)
 
@@ -5684,7 +5688,7 @@ function filesSettingsAdapter(ctx) {
     shortcutMode: 'files',
     // The sidebar toggle's title names its binding ("Hide sidebar (b)").
     onShortcutsChanged: () => syncSidebarToggleAria(),
-    // Selection toolbar position and shortcuts, and the Comment templates list.
+    // Selection toolbar settings, and the Comment templates tab.
     selectionToolbar: selectionToolbar,
     commentTemplates: commentTemplates,
     onClose: refreshTemplateBars,
@@ -6418,7 +6422,12 @@ export const DocumentRenderer = {
     // selecting to copy or to read stays as it was. Settings > Selection
     // toolbar places it or turns it off. It lives in <body>, outside ctx.el,
     // which every render empties.
-    const toolbarPlacement = () => getSetting('selectionToolbar', 'top-center')
+    const toolbarPlacement = () => getSetting('selectionToolbar', selectionToolbar.DEFAULT_PLACEMENT)
+    // Off was a position before it became the "Enable selection toolbar" switch.
+    if (toolbarPlacement() === 'off') {
+      setSetting('selectionToolbarEnabled', false)
+      setSetting('selectionToolbar', selectionToolbar.DEFAULT_PLACEMENT)
+    }
 
     // A pinned template, or its shortcut, comments the resolved selection in
     // one step, as `c` then typing the template would. No form opens, and the
@@ -6432,14 +6441,15 @@ export const DocumentRenderer = {
     ctx._selectionToolbar = selectionToolbar.create({
       label: 'Comment',
       ariaLabel: 'Comment on selection',
-      icon: COMMENT_ICON,
+      icon: ADD_ICON,
       shortcut: () => getBinding('comment'),
       topBoundary: selectionToolbarTopBoundary,
       shadowRoots: () => Array.from(document.querySelectorAll('diffs-container')).map((host) => host.shadowRoot).filter(Boolean),
-      enabled: () => ctx.canComment !== false && toolbarPlacement() !== 'off',
+      enabled: () => ctx.canComment !== false && getSetting('selectionToolbarEnabled', true) !== false,
       placement: toolbarPlacement,
+      buttonStyle: () => getSetting('selectionToolbarButtonStyle', 'both'),
       showShortcuts: () => getSetting('selectionToolbarShortcuts', true) !== false,
-      pinned: () => commentTemplates.getPinnedTemplates(),
+      pinned: () => getSetting('selectionToolbarTemplates', true) !== false ? commentTemplates.getPinnedTemplates() : [],
       resolve: (selection) => {
         const resolved = resolveSelectionComment(selection)
         return resolved && { range: resolved.range, data: resolved.form }
