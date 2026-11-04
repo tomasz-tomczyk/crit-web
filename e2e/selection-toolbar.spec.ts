@@ -79,7 +79,7 @@ test.describe("Selection toolbar", () => {
     // Selecting opens nothing and keeps the selection.
     await expect(page.locator(".comment-form")).toHaveCount(0);
     expect(await page.evaluate(() => window.getSelection()?.toString())).toContain("above a selection");
-    await expect(toolbar(page).locator("kbd")).toHaveText("c");
+    await expect(toolbar(page).getByRole("button", { name: "Comment on selection" }).locator("kbd")).toHaveText("c");
 
     await toolbar(page).getByRole("button", { name: "Comment on selection" }).click();
     const textarea = page.locator(".comment-form textarea");
@@ -158,8 +158,9 @@ test.describe("Selection toolbar", () => {
 });
 
 // Pinned comment templates (crit's crit-comment-templates.js, vendored) sit in
-// the toolbar before Comment; Settings > Selection toolbar places the bar or
-// turns it off, in the same crit-settings keys as crit.
+// the toolbar before Comment; Settings > Selection toolbar turns the bar on or
+// off and, under Advanced, places it, styles Comment and hides its shortcuts or
+// templates, in the same crit-settings keys as crit.
 
 async function setReviewSetting(page: Page, key: string, value: unknown) {
   await page.evaluate(([k, v]) => {
@@ -202,6 +203,13 @@ test.describe("Selection toolbar templates", () => {
     await expect(page.locator("mark.quote-highlight")).toHaveText("above a selection");
   });
 
+  test("Alt+P comments the selection with 👍 Accepted out of the box", async ({ page }) => {
+    await dragOverText(page, paragraph(page), "above a selection");
+    await expect(toolbar(page).locator(".crit-selection-toolbar-pin").first().locator("kbd")).toHaveText(["Alt", "p"]);
+    await page.keyboard.press("Alt+p");
+    await waitForCommentCard(page, "Accepted");
+  });
+
   test("a template shortcut comments the selection", async ({ page }) => {
     await page.evaluate(() => {
       const meta = { seeded: true, items: { Accepted: { emoji: "👍", pinned: true, shortcut: "y" }, Rejected: { emoji: "👎", pinned: true } } };
@@ -214,10 +222,22 @@ test.describe("Selection toolbar templates", () => {
     await waitForCommentCard(page, "Accepted");
   });
 
-  test("placements: a corner, closest to the cursor, and off", async ({ page }) => {
+  test("placements: a corner, bottom center, closest to the cursor, and off", async ({ page }) => {
     await setReviewSetting(page, "selectionToolbar", "bottom-left");
     await dragOverText(page, paragraph(page), "above a selection");
     await expect(toolbar(page)).toHaveAttribute("data-placement", "below");
+    await page.keyboard.press("Escape");
+
+    await setReviewSetting(page, "selectionToolbar", "bottom-center");
+    await dragOverText(page, paragraph(page), "above a selection");
+    await expect(toolbar(page)).toHaveAttribute("data-placement", "below");
+    const last = await page.evaluate(() => {
+      const rects = Array.from(window.getSelection()!.getRangeAt(0).getClientRects()).filter((r) => r.width > 0);
+      const r = rects[rects.length - 1];
+      return (r.left + r.right) / 2;
+    });
+    const bar = (await toolbar(page).boundingBox())!;
+    expect(Math.abs(bar.x + bar.width / 2 - last)).toBeLessThan(2);
     await page.keyboard.press("Escape");
 
     await setReviewSetting(page, "selectionToolbar", "top-cursor");
@@ -229,7 +249,7 @@ test.describe("Selection toolbar templates", () => {
     expect(Math.abs((await toolbar(page).boundingBox())!.x - edges.left)).toBeLessThan(2);
     await page.keyboard.press("Escape");
 
-    await setReviewSetting(page, "selectionToolbar", "off");
+    await setReviewSetting(page, "selectionToolbarEnabled", false);
     await page.evaluate(() => window.getSelection()?.removeAllRanges());
     const box = (await paragraph(page).boundingBox())!;
     await page.mouse.move(box.x + 10, box.y + box.height / 2);
@@ -240,17 +260,36 @@ test.describe("Selection toolbar templates", () => {
     await expect(toolbar(page)).toBeHidden();
   });
 
-  test("Settings > Selection toolbar sets the position and the shortcut display", async ({ page }) => {
+  test("Settings > Selection toolbar: the switch, then Advanced with position, style and Hide switches", async ({ page }) => {
     await page.locator("#settingsToggle").click();
+    await expect(page.locator("#toolbarEnabledToggle")).toBeChecked();
+    await page.locator("#toolbarAdvanced summary").click();
     const position = page.locator("#selectionToolbarSelect");
-    await expect(position).toHaveValue("top-center");
-    await position.selectOption("top-cursor");
+    await expect(position).toHaveValue("top-cursor");
+    await expect(position.locator('option[value="off"]')).toHaveCount(0);
+    await position.selectOption("bottom-center");
+    await page.locator('[data-toolbar-style="icon"]').click();
+    await expect(page.locator("#toolbarShortcutsToggle")).not.toBeChecked();
+    await expect(page.locator("#toolbarTemplatesToggle")).not.toBeChecked();
+    await expect(page.locator("#toolbarTemplatesCount")).toHaveText("One-click comments beside Comment · 2 in the toolbar");
     await page.locator("label.comments-panel-switch:has(#toolbarShortcutsToggle)").click();
+    await page.locator("label.comments-panel-switch:has(#toolbarTemplatesToggle)").click();
+    await page.locator("#manageTemplatesBtn").click();
+    await expect(page.locator("#templatesPane")).toBeVisible();
     await page.locator("#settingsClose").click();
     const settings = await page.evaluate(() => {
       const match = document.cookie.match(/(?:^|;\s*)crit-settings=([^;]*)/);
       return match ? JSON.parse(decodeURIComponent(match[1])) : {};
     });
-    expect(settings).toMatchObject({ selectionToolbar: "top-cursor", selectionToolbarShortcuts: false });
+    expect(settings).toMatchObject({
+      selectionToolbar: "bottom-center", selectionToolbarButtonStyle: "icon",
+      selectionToolbarShortcuts: false, selectionToolbarTemplates: false,
+    });
+
+    await dragOverText(page, paragraph(page), "above a selection");
+    const buttons = toolbar(page).locator("button:visible");
+    await expect(buttons).toHaveCount(1);
+    await expect(buttons.first().locator(".crit-selection-toolbar-add")).toBeVisible();
+    await expect(toolbar(page).locator("kbd:visible")).toHaveCount(0);
   });
 });

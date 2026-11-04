@@ -3,8 +3,9 @@ import { createReview, deleteReview, loadReview } from "./helpers";
 
 // Templates come from crit's shared module (vendored crit-comment-templates.js),
 // on localStorage: texts in `crit-templates`, title, emoji, shortcut, display
-// and pin in `crit-template-meta`. The first use seeds 👍 Accepted and
-// 👎 Rejected, pinned.
+// and pin in `crit-template-meta`. The first use seeds 👍 Accepted (Alt+P) and
+// 👎 Rejected (Alt+C), shown in the selection toolbar. They are edited in
+// Settings > Comment templates, unfolded in place: there is no template dialog.
 
 async function openCommentForm(page: Page) {
   const gutter = page.locator(".line-gutter").first();
@@ -14,8 +15,19 @@ async function openCommentForm(page: Page) {
 
 const saveBtn = (page: Page) => page.locator(".comment-form-actions button", { hasText: "+ Template" });
 const chips = (page: Page) => page.locator(".comment-form .comment-template-bar .template-chip");
-const dialog = (page: Page) => page.locator(".save-template-dialog");
-const displayButtons = (page: Page) => dialog(page).locator(".template-display .settings-pill-btn");
+const pane = (page: Page) => page.locator("#templatesPane");
+const rows = (page: Page) => pane(page).locator(".settings-template-row");
+const editor = (page: Page) => pane(page).locator(".settings-template-editor");
+const displayButtons = (page: Page) => editor(page).locator(".template-display .settings-pill-btn");
+// "Hide from selection toolbar", off by default like "Hide resolved comments".
+const hideSwitch = (page: Page) => editor(page).getByLabel("Hide from the selection toolbar");
+const hideLine = (page: Page) => editor(page).locator(".settings-template-line", { hasText: "Hide from selection toolbar" });
+
+async function openTemplatesTab(page: Page) {
+  await page.locator("#settingsToggle").click();
+  await page.locator('.settings-tab[data-tab="templates"]').click();
+  await expect(rows(page).first()).toBeVisible();
+}
 
 test.describe("Comment Templates", () => {
   let token: string;
@@ -47,104 +59,134 @@ test.describe("Comment Templates", () => {
     await expect(chips(page).locator(".template-chip-delete")).toHaveCount(0);
   });
 
-  test("save a template with a title, emoji, display and pin; its chip inserts the text", async ({ page }) => {
+  test("+ Template opens the tab on a new template filled from the form, and the form keeps its draft", async ({ page }) => {
     await loadReview(page, token);
     await openCommentForm(page);
     const textarea = page.locator(".comment-form textarea");
     await textarea.fill("Please add a unit test for this branch.");
     await saveBtn(page).click();
 
-    await expect(dialog(page).locator("h3")).toHaveText("Save as template");
-    await expect(dialog(page).locator(".save-template-input")).toHaveValue("Please add a unit test for this branch.");
-    await expect(dialog(page).locator(".template-display")).toBeHidden();
-    await dialog(page).getByLabel("Pin to the selection toolbar").check();
+    await expect(editor(page).locator(".settings-template-editor-head")).toHaveText("New template");
+    await expect(editor(page).locator(".settings-template-text-input")).toHaveValue("Please add a unit test for this branch.");
+    await expect(hideSwitch(page)).not.toBeChecked();
+    await expect(displayButtons(page)).toHaveText(["Icon", "Text", "Both"]);
     await expect(displayButtons(page).nth(0)).toBeDisabled();
     await expect(displayButtons(page).nth(1)).toHaveClass(/active/);
 
-    await dialog(page).locator(".save-template-title").fill("Ask for tests");
-    await dialog(page).locator(".save-template-emoji").fill("🧪");
-    await dialog(page).locator('[data-display="both"]').click();
-    await dialog(page).locator("button", { hasText: "Save" }).click();
-    await expect(dialog(page)).toHaveCount(0);
+    await editor(page).locator(".settings-template-name-input").fill("Ask for tests");
+    await editor(page).locator(".settings-template-emoji-input").fill("🧪");
+    await editor(page).locator('[data-display="both"]').click();
+    await editor(page).locator("button", { hasText: "Save" }).click();
+    await expect(editor(page)).toHaveCount(0);
+    await expect(rows(page)).toHaveCount(3);
 
+    await page.locator("#settingsClose").click();
+    await expect(textarea).toHaveValue("Please add a unit test for this branch.");
     await expect(chips(page)).toHaveCount(3);
     await expect(chips(page).nth(2)).toHaveText("🧪Ask for tests");
-    await textarea.fill("");
-    await chips(page).nth(2).click();
-    await expect(textarea).toHaveValue("Please add a unit test for this branch.");
 
     const meta = await page.evaluate(() => JSON.parse(localStorage.getItem("crit-template-meta") || "{}"));
     expect(meta.items["Please add a unit test for this branch."]).toMatchObject({ title: "Ask for tests", emoji: "🧪", display: "both", pinned: true });
   });
 
-  test("the edit button reopens the dialog filled in; delete needs a confirmation", async ({ page }) => {
+  test("a chip's edit button opens its template unfolded; delete needs a confirmation", async ({ page }) => {
     await loadReview(page, token);
     await openCommentForm(page);
     await chips(page).nth(1).locator(".template-chip-edit").click();
-    await expect(dialog(page).locator("h3")).toHaveText("Edit template");
-    await expect(dialog(page).locator(".save-template-input")).toHaveValue("Rejected");
-    await expect(dialog(page).getByLabel("Pin to the selection toolbar")).toBeChecked();
+    await expect(editor(page).locator(".settings-template-text-input")).toHaveValue("Rejected");
+    await expect(editor(page).locator(".template-shortcut")).toHaveText("Alt+c");
+    await expect(hideSwitch(page)).not.toBeChecked();
 
-    await dialog(page).locator(".save-template-delete").click();
-    await expect(dialog(page).locator("button", { hasText: "Keep" })).toBeFocused();
+    await editor(page).locator(".settings-template-delete").click();
+    await expect(editor(page).locator("button", { hasText: "Keep" })).toBeFocused();
     await page.keyboard.press("Enter");
-    await expect(chips(page)).toHaveCount(2);
-    await dialog(page).locator(".save-template-delete").click();
-    await dialog(page).locator(".btn-danger", { hasText: "Delete" }).click();
-    await expect(dialog(page)).toHaveCount(0);
+    await expect(rows(page)).toHaveCount(1);
+    await editor(page).locator(".settings-template-delete").click();
+    await editor(page).locator(".btn-danger", { hasText: "Delete" }).click();
+    await expect(editor(page)).toHaveCount(0);
+    await expect(rows(page)).toHaveCount(1);
+    await page.locator("#settingsClose").click();
     await expect(chips(page)).toHaveCount(1);
     await expect(chips(page).first()).toHaveText("👍Accepted");
   });
 
   test("a shortcut already taken is refused, a free one is kept", async ({ page }) => {
     await loadReview(page, token);
-    await openCommentForm(page);
-    await chips(page).nth(0).locator(".template-chip-edit").click();
-    const shortcut = dialog(page).locator(".template-shortcut");
+    await openTemplatesTab(page);
+    await rows(page).nth(0).locator(".settings-template-action").click();
+    const shortcut = editor(page).locator(".template-shortcut");
+    await expect(shortcut).toHaveText("Alt+p");
     await shortcut.click();
     await page.keyboard.press("c");
     await expect(page.locator(".mini-toast", { hasText: "c already does" })).toBeVisible();
     await shortcut.click();
     await page.keyboard.press("y");
     await expect(shortcut).toHaveText("y");
-    await dialog(page).locator("button", { hasText: "Save" }).click();
+    await editor(page).locator("button", { hasText: "Save" }).click();
     const meta = await page.evaluate(() => JSON.parse(localStorage.getItem("crit-template-meta") || "{}"));
     expect(meta.items.Accepted.shortcut).toBe("y");
   });
 
-  test("the save dialog does nothing for an empty form, and can be cancelled", async ({ page }) => {
+  test("Esc and Cancel fold the editor without closing Settings or saving", async ({ page }) => {
     await loadReview(page, token);
-    await openCommentForm(page);
-    await saveBtn(page).click();
-    await expect(dialog(page)).toHaveCount(0);
+    await openTemplatesTab(page);
+    await rows(page).nth(0).locator(".settings-template-action").click();
+    await editor(page).locator(".settings-template-name-input").fill("Changed?");
+    await page.keyboard.press("Escape");
+    await expect(editor(page)).toHaveCount(0);
+    await expect(pane(page)).toBeVisible();
+    await expect(rows(page).nth(0).locator(".settings-template-name")).toHaveText("Accepted");
 
-    await page.locator(".comment-form textarea").fill("Cancel me");
-    await saveBtn(page).click();
-    await expect(dialog(page)).toBeVisible();
-    await dialog(page).locator("button", { hasText: "Cancel" }).click();
-    await expect(dialog(page)).toHaveCount(0);
-    await expect(chips(page)).toHaveCount(2);
+    await pane(page).locator(".settings-template-new").click();
+    await editor(page).locator(".settings-template-text-input").fill("Cancel me");
+    await editor(page).locator("button", { hasText: "Cancel" }).click();
+    await expect(rows(page)).toHaveCount(2);
   });
 
-  test("Settings list templates, create them in the dialog and reorder by drag; open forms follow", async ({ page }) => {
+  test("the tab lists templates without switch, adds one and reorders by drag; open forms follow", async ({ page }) => {
     await loadReview(page, token);
     await openCommentForm(page);
     await page.locator(".comment-form textarea").evaluate((el: HTMLTextAreaElement) => el.blur());
-    await page.locator("#settingsToggle").click();
-    const rows = page.locator("#settingsTemplates .settings-template-row");
-    await expect(rows).toHaveCount(2);
-    await expect(rows.locator("button")).toHaveCount(2);
+    await openTemplatesTab(page);
+    await expect(rows(page)).toHaveCount(2);
+    await expect(rows(page).locator("button")).toHaveCount(2);
+    await expect(rows(page).locator(".comments-panel-switch")).toHaveCount(0);
 
-    await page.locator(".settings-template-new").click();
-    await dialog(page).locator(".save-template-input").fill("Out of scope for this change.");
-    await dialog(page).locator(".save-template-title").fill("Out of scope");
+    await pane(page).locator(".settings-template-new").click();
+    await editor(page).locator(".settings-template-text-input").fill("Out of scope for this change.");
+    await editor(page).locator(".settings-template-name-input").fill("Out of scope");
     await page.keyboard.press("Control+Enter");
-    await expect(rows).toHaveCount(3);
+    await expect(rows(page)).toHaveCount(3);
 
-    await rows.nth(1).locator(".settings-template-handle").dragTo(rows.nth(0), { targetPosition: { x: 40, y: 3 } });
-    await expect(rows.locator(".settings-template-name")).toHaveText(["Rejected", "Accepted", "Out of scope"]);
+    await rows(page).nth(1).locator(".settings-template-handle").dragTo(rows(page).nth(0), { targetPosition: { x: 40, y: 3 } });
+    await expect(rows(page).locator(".settings-template-name")).toHaveText(["Rejected", "Accepted", "Out of scope"]);
 
     await page.locator("#settingsClose").click();
     await expect(chips(page).locator(".template-chip-label")).toHaveText(["Rejected", "Accepted", "Out of scope"]);
+  });
+
+  test("Hide from selection toolbar is locked while the toolbar hides comment templates", async ({ page }) => {
+    await loadReview(page, token);
+    await page.evaluate(() => {
+      document.cookie = "crit-settings=" + encodeURIComponent(JSON.stringify({ selectionToolbarTemplates: false })) + "; path=/; SameSite=Lax";
+    });
+    await openTemplatesTab(page);
+    await rows(page).nth(0).locator(".settings-template-action").click();
+    await expect(hideSwitch(page)).toBeDisabled();
+    await expect(hideLine(page)).toHaveAttribute("title", /Hide comment templates/);
+  });
+
+  test("template shortcuts close the Shortcuts tab and change there", async ({ page }) => {
+    await loadReview(page, token);
+    await page.locator("#settingsToggle").click();
+    await page.locator('.settings-tab[data-tab="shortcuts"]').click();
+    const templateKeys = page.locator("#shortcutsPane [data-template-index]");
+    await expect(templateKeys).toHaveCount(2);
+    await expect(templateKeys.nth(0)).toHaveText("Alt+p");
+    await templateKeys.nth(1).click();
+    await page.keyboard.press("Alt+n");
+    await expect(templateKeys.nth(1)).toHaveText("Alt+n");
+    const meta = await page.evaluate(() => JSON.parse(localStorage.getItem("crit-template-meta") || "{}"));
+    expect(meta.items.Rejected.shortcut).toBe("Alt+n");
   });
 });
