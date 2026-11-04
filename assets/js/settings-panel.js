@@ -311,9 +311,9 @@ export function createSettingsPanel(adapter) {
       // Hide switches, off by default like "Hide resolved comments": the
       // stored settings keep saying what shows.
       html += '<div class="settings-display-row">'
-      html += '<span class="settings-display-label">Hide shortcuts'
-        + '<span class="settings-display-hint">No shortcut badges on toolbar buttons, like <kbd>c</kbd> on Comment.</span></span>'
-      html += switchHtml('toolbarShortcutsToggle', 'Hide shortcuts in the selection toolbar', !shortcuts)
+      html += '<span class="settings-display-label">Hide Comment shortcut'
+        + '<span class="settings-display-hint">No <kbd>c</kbd> badge on the Comment button. Each comment template sets its own.</span></span>'
+      html += switchHtml('toolbarShortcutsToggle', 'Hide the Comment shortcut in the selection toolbar', !shortcuts)
       html += '</div>'
       if (adapter.commentTemplates) {
         html += '<div class="settings-display-row">'
