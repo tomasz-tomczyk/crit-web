@@ -203,6 +203,20 @@ test.describe("Selection toolbar templates", () => {
     await expect(page.locator("mark.quote-highlight")).toHaveText("above a selection");
   });
 
+  test("Hide Comment shortcut hides c only; a template hides its own key", async ({ page }) => {
+    await setReviewSetting(page, "selectionToolbarShortcuts", false);
+    await page.evaluate(() => {
+      const meta = { seeded: true, items: { Accepted: { emoji: "👍", pinned: true, shortcut: "Alt+p" }, Rejected: { emoji: "👎", pinned: true, shortcut: "Alt+c", hideShortcut: true } } };
+      localStorage.setItem("crit-templates", JSON.stringify(["Accepted", "Rejected"]));
+      localStorage.setItem("crit-template-meta", JSON.stringify(meta));
+    });
+    await dragOverText(page, paragraph(page), "above a selection");
+    await expect(toolbar(page).getByRole("button", { name: "Comment on selection" }).locator("kbd:visible")).toHaveCount(0);
+    const pins = toolbar(page).locator(".crit-selection-toolbar-pin");
+    await expect(pins.nth(0).locator("kbd")).toHaveText(["Alt", "p"]);
+    await expect(pins.nth(1).locator("kbd")).toHaveCount(0);
+  });
+
   test("Alt+P comments the selection with 👍 Accepted out of the box", async ({ page }) => {
     await dragOverText(page, paragraph(page), "above a selection");
     await expect(toolbar(page).locator(".crit-selection-toolbar-pin").first().locator("kbd")).toHaveText(["Alt", "p"]);

@@ -165,6 +165,21 @@ test.describe("Comment Templates", () => {
     await expect(chips(page).locator(".template-chip-label")).toHaveText(["Rejected", "Accepted", "Out of scope"]);
   });
 
+  test("Hide shortcut in selection toolbar shows for a template with a key in the toolbar", async ({ page }) => {
+    await loadReview(page, token);
+    await openTemplatesTab(page);
+    await rows(page).nth(0).locator(".settings-template-action").click();
+    const keyLine = editor(page).locator(".settings-template-line", { hasText: "Hide shortcut in selection toolbar" });
+    await expect(keyLine).toBeVisible();
+    await hideLine(page).locator("label.comments-panel-switch").click();
+    await expect(keyLine).toBeHidden();
+    await hideLine(page).locator("label.comments-panel-switch").click();
+    await keyLine.locator("label.comments-panel-switch").click();
+    await editor(page).locator("button", { hasText: "Save" }).click();
+    const meta = await page.evaluate(() => JSON.parse(localStorage.getItem("crit-template-meta") || "{}"));
+    expect(meta.items.Accepted).toMatchObject({ shortcut: "Alt+p", hideShortcut: true });
+  });
+
   test("Hide from selection toolbar is locked while the toolbar hides comment templates", async ({ page }) => {
     await loadReview(page, token);
     await page.evaluate(() => {
