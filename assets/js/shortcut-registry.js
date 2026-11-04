@@ -136,6 +136,11 @@ export function eventToBinding(event) {
     }
     if (codeKeys[event.code]) key = codeKeys[event.code]
   }
+  // macOS Option turns a letter into another glyph (Option+P types π): read
+  // the physical key, so Alt+P is Alt+P on every system (parity with crit).
+  if (event.altKey && !/^[a-zA-Z]$/.test(key) && /^Key[A-Z]$/.test(event.code || "")) {
+    key = event.code.slice(3)
+  }
   if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
     key = shifted ? key.toUpperCase() : key.toLowerCase()
   }
