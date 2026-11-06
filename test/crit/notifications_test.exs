@@ -57,6 +57,21 @@ defmodule Crit.NotificationsTest do
     refute_enqueued(worker: DeliverBatchWorker)
   end
 
+  test "owner activity notifies the owner when notify_own_activity is on" do
+    owner = user_fixture(%{name: "Owner"})
+    review = review_fixture(%{user_id: owner.id})
+
+    {:ok, owner} = Crit.Accounts.update_preferences(owner, %{notify_own_activity: true})
+
+    assert {:ok, comment} =
+             Reviews.create_comment(Scope.for_user(owner), review, valid_comment_attrs())
+
+    assert [%NotificationBatch{recipient_user_id: recipient_id}] = Repo.all(NotificationBatch)
+    assert recipient_id == owner.id
+    assert [%NotificationItem{comment_id: comment_id}] = Repo.all(NotificationItem)
+    assert comment_id == comment.id
+  end
+
   test "a reply deduplicates owner and authenticated thread participants and excludes actor" do
     owner = user_fixture(%{name: "Owner"})
     root_author = user_fixture(%{name: "Root"})
