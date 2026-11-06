@@ -17,7 +17,7 @@ import {
   restoreReplyFocus,
 } from "./comments-panel"
 import { createSettingsPanel } from "./settings-panel"
-import { actionForEvent, getBinding } from "./shortcut-registry"
+import { actionForEvent, eventToBinding, getBinding, groupsForMode, isReservedBinding } from "./shortcut-registry"
 import { pushMutation, mutationErrorMessage } from "./liveview-mutation"
 import {
   changeRendererSetting,
@@ -38,7 +38,48 @@ import "../vendor/crit/crit-glob-match.js"
 import renderers from "../vendor/crit/crit-renderers.js"
 import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
 import "../vendor/crit/crit-renderer-mermaid.js"
-import { themeChoice } from "./review-settings"
+import selectionToolbar from "../vendor/crit/crit-selection-toolbar.js"
+import commentTemplates from "../vendor/crit/crit-comment-templates.js"
+import { getSetting, setSetting, themeChoice } from "./review-settings"
+
+// The selection toolbar's Comment icon: the blue "+" of the line gutter, as in crit.
+const ADD_ICON = '<span class="crit-selection-toolbar-add">+</span>'
+
+// Comment templates come from crit's shared module (vendored), on this page's
+// localStorage and files-mode shortcut registry.
+commentTemplates.configure({
+  storage: {
+    get: (key) => { try { return localStorage.getItem(key) } catch (_) { return null } },
+    set: (key, value) => { try { localStorage.setItem(key, value) } catch (_) { /* storage blocked or full */ } },
+  },
+  shortcuts: {
+    eventToBinding: eventToBinding,
+    // Why a template may not take `binding`: Crit keeps it, or it already
+    // does something in files mode.
+    refusal: (binding) => {
+      if (isReservedBinding(binding)) return binding + ' is reserved by Crit.'
+      for (const group of groupsForMode('files')) {
+        for (const shortcut of group.shortcuts) {
+          if ((shortcut.id ? getBinding(shortcut.id) : shortcut.binding) === binding) {
+            return binding + ' already does: ' + shortcut.action + '.'
+          }
+        }
+      }
+      return ''
+    },
+  },
+  toast: (message) => showToast(message, 4000),
+  // Why a template cannot show in the selection toolbar right now, or ''.
+  toolbarBlocked: () => {
+    if (getSetting('selectionToolbarEnabled', true) === false) {
+      return 'Turn on "Enable selection toolbar" in Settings > Selection toolbar first.'
+    }
+    if (getSetting('selectionToolbarTemplates', true) === false) {
+      return 'Turn off "Hide comment templates" in Settings > Selection toolbar > Advanced first.'
+    }
+    return ''
+  },
+})
 
 // ---- Helpers ----------------------------------------------------------------
 
@@ -419,6 +460,18 @@ function findFormForEdit(ctx, commentId) {
 
 // ===== Text Selection → Line Range Mapping =====
 
+// Bottom of the chrome stuck to the top of the viewport (page header and a
+// stuck file header), which the selection toolbar must not cover.
+function selectionToolbarTopBoundary() {
+  const header = document.querySelector('.crit-header')
+  let bottom = header ? header.getBoundingClientRect().bottom : 0
+  document.querySelectorAll('.file-header').forEach((el) => {
+    const rect = el.getBoundingClientRect()
+    if (rect.height > 0 && rect.top <= bottom + 1 && rect.bottom > bottom) bottom = rect.bottom
+  })
+  return bottom
+}
+
 function getLineRangeFromSelection(selection) {
   if (!selection || selection.isCollapsed || !selection.toString().trim()) return null
   if (selection.rangeCount === 0) return null
@@ -598,119 +651,16 @@ function flushDrafts(ctx) {
   }
 }
 
-function getTemplates() {
-  try {
-    return JSON.parse(localStorage.getItem('crit-templates') || '[]')
-  } catch (_) { return [] }
-}
-
-function saveTemplates(templates) {
-  localStorage.setItem('crit-templates', JSON.stringify(templates))
-}
-
-function populateTemplateBar(bar, textarea) {
-  bar.innerHTML = ''
-  const templates = getTemplates()
-
-  if (templates.length === 0) {
-    bar.style.display = 'none'
-    return
-  }
-  bar.style.display = ''
-
-  for (let i = 0; i < templates.length; i++) {
-    const chip = document.createElement('button')
-    chip.className = 'template-chip'
-    chip.type = 'button'
-    chip.title = templates[i]
-
-    const label = document.createElement('span')
-    label.className = 'template-chip-label'
-    label.textContent = templates[i]
-    chip.appendChild(label)
-
-    const del = document.createElement('span')
-    del.className = 'template-chip-delete'
-    del.textContent = '\u00d7'
-    del.addEventListener('click', (e) => {
-      e.stopPropagation()
-      const t = getTemplates()
-      t.splice(i, 1)
-      saveTemplates(t)
-      populateTemplateBar(bar, textarea)
+// Settings may have reordered, edited or removed templates: redraw the
+// template bars of the forms already on the page, Pierre's shadow roots too.
+function refreshTemplateBars() {
+  const roots = [document, ...Array.from(document.querySelectorAll('diffs-container'))
+    .map((host) => host.shadowRoot).filter(Boolean)]
+  for (const root of roots) {
+    root.querySelectorAll('.comment-template-bar').forEach((bar) => {
+      if (typeof bar._populate === 'function') bar._populate()
     })
-    chip.appendChild(del)
-
-    chip.addEventListener('click', () => {
-      const start = textarea.selectionStart
-      textarea.value = textarea.value.substring(0, start) + templates[i] + textarea.value.substring(textarea.selectionEnd)
-      textarea.selectionStart = textarea.selectionEnd = start + templates[i].length
-      textarea.focus()
-    })
-
-    bar.appendChild(chip)
   }
-}
-
-function showSaveTemplateDialog(textarea, templateBar) {
-  const text = textarea.value.trim()
-  if (!text) { textarea.focus(); return }
-
-  const overlay = document.createElement('div')
-  overlay.className = 'save-template-overlay active'
-
-  const dialog = document.createElement('div')
-  dialog.className = 'save-template-dialog'
-
-  const title = document.createElement('h3')
-  title.textContent = 'Save as template'
-  dialog.appendChild(title)
-
-  const desc = document.createElement('p')
-  desc.textContent = 'Edit the template text, then save.'
-  dialog.appendChild(desc)
-
-  const input = document.createElement('textarea')
-  input.className = 'save-template-input'
-  input.value = text
-  input.rows = 3
-  dialog.appendChild(input)
-
-  const btns = document.createElement('div')
-  btns.className = 'save-template-actions'
-
-  const cancelBtn = document.createElement('button')
-  cancelBtn.className = 'btn btn-sm'
-  cancelBtn.textContent = 'Cancel'
-  cancelBtn.addEventListener('click', () => { overlay.remove(); textarea.focus() })
-
-  const saveBtn = document.createElement('button')
-  saveBtn.className = 'btn btn-sm btn-primary'
-  saveBtn.textContent = 'Save'
-  saveBtn.addEventListener('click', () => {
-    const val = input.value.trim()
-    if (!val) return
-    const t = getTemplates()
-    t.push(val)
-    saveTemplates(t)
-    overlay.remove()
-    populateTemplateBar(templateBar, textarea)
-    textarea.focus()
-  })
-
-  btns.appendChild(cancelBtn)
-  btns.appendChild(saveBtn)
-  dialog.appendChild(btns)
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveBtn.click() }
-    else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click() }
-  })
-
-  overlay.appendChild(dialog)
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); textarea.focus() } })
-  document.body.appendChild(overlay)
-  requestAnimationFrame(() => { input.focus(); input.select() })
 }
 
 function restoreDrafts(ctx) {
@@ -4149,12 +4099,21 @@ function createCommentForm(formObj, ctx) {
     : `Lines ${formObj.startLine}–${formObj.endLine}`
   header.textContent = `Comment on ${lineRef}`
 
-  const templateBar = document.createElement('div')
-  templateBar.className = 'comment-template-bar'
-
   const textarea = document.createElement("textarea")
   textarea.placeholder = "Leave a review comment… (Ctrl+Enter to submit, Escape to cancel)"
   textarea.dataset.formKey = formObj.formKey
+
+  const templateBar = commentTemplates.buildTemplateBar({
+    onInsert: (text) => {
+      const start = textarea.selectionStart
+      textarea.value = textarea.value.substring(0, start) + text + textarea.value.substring(textarea.selectionEnd)
+      textarea.selectionStart = textarea.selectionEnd = start + text.length
+      textarea.focus()
+      textarea.dispatchEvent(new Event('input'))
+    },
+    // A chip's pencil and "+ Template" open Settings > Comment templates.
+    onEdit: (item) => ctx._settings.open('templates', { expand: item.index }),
+  })
 
   // Restore draft
   const savedDraft = loadDraft(ctx.reviewToken, formObj)
@@ -4200,7 +4159,7 @@ function createCommentForm(formObj, ctx) {
   saveTemplateBtn.textContent = '+ Template'
   saveTemplateBtn.addEventListener('click', (e) => {
     e.preventDefault()
-    showSaveTemplateDialog(textarea, templateBar)
+    ctx._settings.open('templates', { expand: 'new', text: textarea.value.trim() })
   })
   leftGroup.appendChild(saveTemplateBtn)
 
@@ -4217,7 +4176,6 @@ function createCommentForm(formObj, ctx) {
   actions.appendChild(leftGroup)
   actions.appendChild(cancelBtn)
   actions.appendChild(submitBtn)
-  populateTemplateBar(templateBar, textarea)
   form.appendChild(header)
   form.appendChild(templateBar)
   form.appendChild(textarea)
@@ -4297,10 +4255,8 @@ function createInlineEditor(comment, formObj, ctx) {
   return wrapper
 }
 
-function submitNewComment(body, formObj, ctx) {
-  if (!body.trim() || formObj.submitting) return
-  rememberKeyboardFocusFromForm(ctx, formObj)
-  setFormSubmitting(ctx, formObj, true)
+// The add_comment payload for `body` on what `formObj` points at.
+function newCommentPayload(body, formObj) {
   const payload = {
     body: body.trim(),
     file_path: formObj.filePath || null,
@@ -4312,7 +4268,14 @@ function submitNewComment(body, formObj, ctx) {
   }
   if (formObj.quote) payload.quote = formObj.quote
   if (formObj.quoteOffset != null) payload.quote_offset = formObj.quoteOffset
-  pushCommentMutation(ctx, "add_comment", payload, {
+  return payload
+}
+
+function submitNewComment(body, formObj, ctx) {
+  if (!body.trim() || formObj.submitting) return
+  rememberKeyboardFocusFromForm(ctx, formObj)
+  setFormSubmitting(ctx, formObj, true)
+  pushCommentMutation(ctx, "add_comment", newCommentPayload(body, formObj), {
     onSuccess: () => {
       clearDraft(ctx.reviewToken, formObj)
       removeForm(ctx, formObj.formKey)
@@ -5757,6 +5720,10 @@ function filesSettingsAdapter(ctx) {
     shortcutMode: 'files',
     // The sidebar toggle's title names its binding ("Hide sidebar (b)").
     onShortcutsChanged: () => syncSidebarToggleAria(),
+    // Selection toolbar settings, and the Comment templates tab.
+    selectionToolbar: selectionToolbar,
+    commentTemplates: commentTemplates,
+    onClose: refreshTemplateBars,
   }
 }
 
@@ -6124,6 +6091,7 @@ export const DocumentRenderer = {
       const next = can_comment !== false
       const changed = ctx.canComment !== next
       ctx.canComment = next
+      if (!next && ctx._selectionToolbar) ctx._selectionToolbar.hide()
       if (changed && ctx.md) {
         ctx.activeForms = ctx.activeForms.filter((f) => f.editingId)
         // Code views keep their Pierre options across renders: the gutter "+"
@@ -6362,50 +6330,60 @@ export const DocumentRenderer = {
 
     // ===== Select-to-Comment helper =====
     // Selection alone never opens the form — copying text stays unhindered.
-    // The user presses `c` after selecting to comment on the selection.
-    // Returns true if a form was opened from an active selection.
-    const tryOpenFormFromSelection = () => {
-      const selection = window.getSelection()
+    // The user presses `c` after selecting, or clicks Comment on the selection
+    // toolbar, to comment on the selection.
+
+    // Resolves a selection into the form `c` would open, without touching the
+    // selection: { form, range } with openForm's arguments and a live Range
+    // over the selected text, or null when the selection is not commentable.
+    const resolveSelectionComment = (selection) => {
       // A selection inside a code file lives in Pierre's shadow root; only its
       // composed range knows the lines (crit-pierre-dom.js).
       const code = pierreDOM.pierreSelectionForComment(selection)
       if (code) {
-        selection.removeAllRanges()
-        openForm(ctx, {
-          filePath: code.filePath,
-          afterBlockIndex: null,
-          startLine: code.startLine,
-          endLine: code.endLine,
-          editingId: null,
-          quote: code.quote,
-          quoteOffset: code.quoteOffset,
-        })
-        return true
+        return {
+          range: code.range,
+          form: {
+            filePath: code.filePath,
+            afterBlockIndex: null,
+            startLine: code.startLine,
+            endLine: code.endLine,
+            editingId: null,
+            quote: code.quote,
+            quoteOffset: code.quoteOffset,
+          },
+        }
       }
       const range = getLineRangeFromSelection(selection)
-      if (!range) return false
+      if (!range) return null
 
       let quote = null
       let quoteOffset = null
       try {
         let selectedText = selection.toString().trim()
         if (selectedText) {
+          // Blocks overlapping the line range, ordered by the first selected
+          // line they hold, then document order. One pass over the blocks:
+          // this runs on every mouse selection (selection toolbar).
+          const blocks = []
+          ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el, index) {
+            if (el.dataset.filePath !== range.filePath) return
+            const s = parseInt(el.dataset.startLine), endLn = parseInt(el.dataset.endLine)
+            if (s <= range.endLine && endLn >= range.startLine) {
+              blocks.push({ el: el, first: Math.max(s, range.startLine), index: index })
+            }
+          })
+          blocks.sort((a, b) => a.first - b.first || a.index - b.index)
           let fullText = ''
           const contentEls = []
-          for (let ln = range.startLine; ln <= range.endLine; ln++) {
-            ctx.el.querySelectorAll('.line-block[data-file-path]').forEach(function(el) {
-              if (el.dataset.filePath !== range.filePath) return
-              const s = parseInt(el.dataset.startLine), endLn = parseInt(el.dataset.endLine)
-              if (s <= ln && endLn >= ln) {
-                el.querySelectorAll('.line-content').forEach(function(content) {
-                  if (contentEls.indexOf(content) === -1) {
-                    fullText += (fullText ? '\n' : '') + content.textContent.trim()
-                    contentEls.push(content)
-                  }
-                })
+          blocks.forEach(function(block) {
+            block.el.querySelectorAll('.line-content').forEach(function(content) {
+              if (contentEls.indexOf(content) === -1) {
+                fullText += (fullText ? '\n' : '') + content.textContent.trim()
+                contentEls.push(content)
               }
             })
-          }
+          })
           const normalizedSelected = selectedText.replace(/\s+/g, ' ')
           const normalizedFull = fullText.trim().replace(/\s+/g, ' ')
           if (normalizedSelected !== normalizedFull && selectedText.length <= 300) {
@@ -6445,19 +6423,96 @@ export const DocumentRenderer = {
         }
       } catch (_) { /* quote is a nice-to-have, don't break form opening */ }
 
+      return {
+        range: selection.getRangeAt(0),
+        form: {
+          filePath: range.filePath,
+          afterBlockIndex: range.afterBlockIndex,
+          startLine: range.startLine,
+          endLine: range.endLine,
+          editingId: null,
+          quote: quote,
+          quoteOffset: quoteOffset,
+        },
+      }
+    }
+
+    // Returns true if a form was opened from an active selection.
+    const tryOpenFormFromSelection = () => {
+      const selection = window.getSelection()
+      const resolved = resolveSelectionComment(selection)
+      if (!resolved) return false
       selection.removeAllRanges()
-      openForm(ctx, {
-        filePath: range.filePath,
-        afterBlockIndex: range.afterBlockIndex,
-        startLine: range.startLine,
-        endLine: range.endLine,
-        editingId: null,
-        quote: quote,
-        quoteOffset: quoteOffset,
-      })
+      openForm(ctx, resolved.form)
       return true
     }
     ctx._tryOpenFormFromSelection = tryOpenFormFromSelection
+
+    // ===== Selection toolbar =====
+    // A Comment button above a mouse selection that `c` could comment on, then
+    // one button per pinned comment template. It opens nothing by itself, so
+    // selecting to copy or to read stays as it was. Settings > Selection
+    // toolbar places it or turns it off. It lives in <body>, outside ctx.el,
+    // which every render empties.
+    const toolbarPlacement = () => getSetting('selectionToolbar', selectionToolbar.DEFAULT_PLACEMENT)
+    // Off was a position before it became the "Enable selection toolbar" switch.
+    if (toolbarPlacement() === 'off') {
+      setSetting('selectionToolbarEnabled', false)
+      setSetting('selectionToolbar', selectionToolbar.DEFAULT_PLACEMENT)
+    }
+
+    // A pinned template, or its shortcut, comments the resolved selection in
+    // one step, as `c` then typing the template would. No form opens, and the
+    // drafts of open forms on the same lines stay untouched.
+    const submitTemplate = (form, text) => {
+      pushCommentMutation(ctx, "add_comment", newCommentPayload(text, form), {
+        onSuccess: () => render(ctx),
+      })
+    }
+
+    ctx._selectionToolbar = selectionToolbar.create({
+      label: 'Comment',
+      ariaLabel: 'Comment on selection',
+      icon: ADD_ICON,
+      shortcut: () => getBinding('comment'),
+      topBoundary: selectionToolbarTopBoundary,
+      shadowRoots: () => Array.from(document.querySelectorAll('diffs-container')).map((host) => host.shadowRoot).filter(Boolean),
+      enabled: () => ctx.canComment !== false && getSetting('selectionToolbarEnabled', true) !== false,
+      placement: toolbarPlacement,
+      buttonStyle: () => getSetting('selectionToolbarButtonStyle', 'both'),
+      showShortcuts: () => getSetting('selectionToolbarShortcuts', true) !== false,
+      pinned: () => getSetting('selectionToolbarTemplates', true) !== false ? commentTemplates.getPinnedTemplates() : [],
+      resolve: (selection) => {
+        const resolved = resolveSelectionComment(selection)
+        return resolved && { range: resolved.range, data: resolved.form }
+      },
+      onComment: (form) => {
+        // The form resolved when the bar appeared: Pierre may have replaced
+        // the selected nodes since, but the lines and the quote still hold.
+        window.getSelection()?.removeAllRanges()
+        openForm(ctx, form)
+      },
+      onPinned: (form, item) => {
+        window.getSelection()?.removeAllRanges()
+        submitTemplate(form, item.text)
+      },
+    })
+
+    // A template's own shortcut comments the current selection with it, mouse
+    // or keyboard selection alike, as `c` opens the form there. Without a
+    // commentable selection the key goes on to the page's keymap.
+    const handleTemplateShortcut = (e) => {
+      if (ctx.canComment === false) return false
+      const item = commentTemplates.findByShortcut(eventToBinding(e))
+      if (!item) return false
+      const selection = window.getSelection()
+      const resolved = selection ? resolveSelectionComment(selection) : null
+      if (!resolved) return false
+      e.preventDefault()
+      selection.removeAllRanges()
+      submitTemplate(resolved.form, item.text)
+      return true
+    }
 
     ctx._keydownHandler = (e) => {
       const tag = e.target.tagName
@@ -6486,6 +6541,7 @@ export const DocumentRenderer = {
       // letter shortcuts after a toolbar button was clicked and retained focus.
       if (interactive && [' ', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return
 
+      if (handleTemplateShortcut(e)) return
       const shortcutAction = actionForEvent(e, 'files')
       if (!shortcutAction && (e.metaKey || e.ctrlKey || e.altKey)) return
 
@@ -6706,6 +6762,7 @@ export const DocumentRenderer = {
     if (this._keydownHandler) {
       document.removeEventListener("keydown", this._keydownHandler)
     }
+    if (this._selectionToolbar) this._selectionToolbar.destroy()
     if (this._resizeHandler) {
       window.removeEventListener("resize", this._resizeHandler)
     }

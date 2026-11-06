@@ -29,9 +29,11 @@ SRC="${1:-$ROOT/../crit/web}"
 # server (CritWeb.ThemePalette) from the same palettes.js.
 BUNDLED=(
   crit-code-highlight.js
+  crit-comment-templates.js
   crit-pierre-adapter.js
   crit-pierre-dom.js
   crit-pierre-runtime.js
+  crit-selection-toolbar.js
   crit-theme-boost.js
   crit-palette.css
   crit-glob-match.js

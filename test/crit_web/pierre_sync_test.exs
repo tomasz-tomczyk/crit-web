@@ -18,9 +18,11 @@ defmodule CritWeb.PierreSyncTest do
   # Keep in sync with BUNDLED in scripts/sync-pierre.sh.
   @bundled_modules [
     "crit-code-highlight.js",
+    "crit-comment-templates.js",
     "crit-pierre-adapter.js",
     "crit-pierre-dom.js",
     "crit-pierre-runtime.js",
+    "crit-selection-toolbar.js",
     "crit-theme-boost.js",
     "crit-palette.css",
     "crit-glob-match.js",
