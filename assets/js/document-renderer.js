@@ -3515,8 +3515,10 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
       if (renderedRow) {
         while (renderedRow.firstChild) {
           const cell = renderedRow.firstChild
-          cell.className = contentClasses + (cell.className ? " " + cell.className : "")
-          applyAutoTextDirection(cell)
+          if (cell.nodeType === 1) {
+            cell.className = contentClasses + (cell.className ? " " + cell.className : "")
+            applyAutoTextDirection(cell)
+          }
           lineBlockEl.appendChild(cell)
         }
       }
