@@ -2,6 +2,7 @@ import markdownit from "markdown-it"
 import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from "@sanity/diff-match-patch"
 import { sanitizeCommentHtml } from "./comment-html"
 import { installDocumentSanitizer, sanitizeRenderedHtml } from "./document-html"
+import { applyAutoTextDirection } from "./text-direction"
 import {
   commentMd,
   escapeHtml,
@@ -2555,6 +2556,7 @@ function renderRoundDiffBlock(ctx, block, diffClass, file, commentable, blockInd
   html = processTaskLists(html)
   html = rewriteImageSrcs(html, file.path, ctx.reviewToken)
   contentEl.innerHTML = html
+  applyAutoTextDirection(contentEl)
   lineBlockEl.appendChild(contentEl)
 
   frag.appendChild(lineBlockEl)
@@ -3514,6 +3516,7 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
         while (renderedRow.firstChild) {
           const cell = renderedRow.firstChild
           cell.className = contentClasses + (cell.className ? " " + cell.className : "")
+          applyAutoTextDirection(cell)
           lineBlockEl.appendChild(cell)
         }
       }
@@ -3524,6 +3527,7 @@ function renderBlock(ctx, block, index, commentsMap, commentedLineSet, filePath)
     let html = processTaskLists(block.html)
     html = rewriteImageSrcs(html, filePath, ctx.reviewToken)
     content.innerHTML = html
+    applyAutoTextDirection(content)
     lineBlockEl.appendChild(gutter)
     lineBlockEl.appendChild(content)
   }
@@ -4154,6 +4158,7 @@ function createCommentForm(formObj, ctx) {
 
   const textarea = document.createElement("textarea")
   textarea.placeholder = "Leave a review comment… (Ctrl+Enter to submit, Escape to cancel)"
+  textarea.dir = 'auto'
   textarea.dataset.formKey = formObj.formKey
 
   // Restore draft
@@ -4243,6 +4248,7 @@ function createInlineEditor(comment, formObj, ctx) {
 
   const textarea = document.createElement("textarea")
   textarea.placeholder = "Leave a review comment… (Ctrl+Enter to submit, Escape to cancel)"
+  textarea.dir = 'auto'
   textarea.value = formObj.draftBody ?? comment.body
   textarea.dataset.formKey = formObj.formKey
   textarea.addEventListener('input', () => { formObj.draftBody = textarea.value })
@@ -4498,6 +4504,7 @@ function editReply(commentId, reply, ctx) {
 
   const textarea = document.createElement('textarea')
   textarea.className = 'comment-textarea'
+  textarea.dir = 'auto'
   textarea.value = currentText
   textarea.rows = 3
   bodyEl.replaceWith(textarea)
@@ -4847,6 +4854,7 @@ function renderCommentFormUI(ctx, formObj) {
 
   const textarea = document.createElement('textarea')
   textarea.dataset.formKey = formObj.formKey
+  textarea.dir = 'auto'
   textarea.placeholder = formObj.scope === 'review'
     ? 'Leave a comment\u2026 (Ctrl+Enter to submit, Escape to cancel)'
     : 'Add a file comment\u2026 (Ctrl+Enter to submit, Escape to cancel)'

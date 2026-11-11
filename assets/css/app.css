@@ -1121,6 +1121,22 @@ body.dragging { user-select: none; cursor: grabbing; }
   padding: 0 24px 0 12px;
   overflow-wrap: break-word;
 }
+.line-content,
+.comment-body,
+.reply-body,
+.comment-textarea,
+.comment-form textarea,
+.reply-input,
+.reply-textarea {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+.line-content pre,
+.line-content code {
+  unicode-bidi: normal;
+  text-align: left;
+  direction: ltr;
+}
 /* Heading top spacing lives on the .line-block row (see the .line-block:has(...)
    rule below), NOT as margin-top on the heading. A margin-top would push the
    rendered text down inside the flex row while the gutter line-number stays
@@ -1174,7 +1190,7 @@ body.dragging { user-select: none; cursor: grabbing; }
 .line-content pre code { background: none; border: none; padding: 0; font-size: 0.875rem; }
 .line-content strong { font-weight: 600; }
 .line-content em { font-style: italic; color: var(--crit-editor-fg-secondary); }
-.line-content ul,.line-content ol { padding-left: 24px; margin: 0; }
+.line-content ul,.line-content ol { padding-inline-start: 24px; margin: 0; }
 .line-content li { margin: 0; }
 .line-content li::marker { color: var(--crit-editor-fg-muted); }
 .line-content ul li { list-style-type: '  \2022  '; }
@@ -1182,18 +1198,18 @@ body.dragging { user-select: none; cursor: grabbing; }
    They preserve semantic nesting (so CSS indentation works) without rendering
    their own bullet/marker. */
 .line-content ul.crit-list-wrapper,
-.line-content ol.crit-list-wrapper { padding-left: 24px; margin: 0; }
+.line-content ol.crit-list-wrapper { padding-inline-start: 24px; margin: 0; }
 .line-content li.crit-list-wrapper { list-style: none; }
 .line-content ul.crit-list-wrapper > li.crit-list-wrapper { list-style-type: none; }
 .line-content hr { border: none; height: 1px; background: var(--crit-border); margin: 24px 0; }
 .line-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 4px 0; }
-.line-content blockquote { margin: 6px 0; padding: 8px 16px; border-left: 3px solid var(--crit-blockquote-border); background: var(--crit-blockquote-bg); border-radius: 0 6px 6px 0; color: var(--crit-editor-fg-secondary); }
+.line-content blockquote { margin: 6px 0; padding: 8px 16px; border-inline-start: 3px solid var(--crit-blockquote-border); background: var(--crit-blockquote-bg); border-radius: 0 6px 6px 0; color: var(--crit-editor-fg-secondary); }
 .line-content blockquote p { margin: 2px 0; }
 .line-content table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.925rem; }
-.line-content th { text-align: left; font-weight: 600; padding: 10px 14px; border-bottom: 2px solid var(--crit-border); color: var(--crit-editor-fg-secondary); }
+.line-content th { text-align: start; font-weight: 600; padding: 10px 14px; border-bottom: 2px solid var(--crit-border); color: var(--crit-editor-fg-secondary); }
 .line-content td { padding: 8px 14px; border-bottom: 1px solid var(--crit-border); }
 .line-content tr:nth-child(even) td { background: var(--crit-table-stripe); }
-.line-content .task-list-item { list-style: none; margin-left: -24px; padding-left: 4px; }
+.line-content .task-list-item { list-style: none; margin-inline-start: -24px; padding-inline-start: 4px; }
 .line-content .task-list-item input[type="checkbox"] { margin-right: 8px; accent-color: var(--crit-brand); transform: scale(1.1); pointer-events: none; }
 .line-content.empty-line { min-height: 1.7em; }
 
@@ -1401,7 +1417,7 @@ body.dragging { user-select: none; cursor: grabbing; }
    a display utility (it scans assets/js); keep them cells. */
 .native-table th.line-content,
 .native-table td.line-content { display: table-cell; }
-.native-table th.line-content { text-align: left; font-weight: 600; padding: 10px 14px; color: var(--crit-editor-fg-secondary); border-bottom: 2px solid var(--crit-border); }
+.native-table th.line-content { text-align: start; font-weight: 600; padding: 10px 14px; color: var(--crit-editor-fg-secondary); border-bottom: 2px solid var(--crit-border); }
 .native-table td.line-content { padding: 8px 14px; border-bottom: 1px solid var(--crit-border); }
 .native-table .line-content code { white-space: pre-wrap; overflow-wrap: break-word; }
 .native-table tbody tr.table-even td.line-content { background: var(--crit-table-stripe); }
@@ -1910,7 +1926,7 @@ html[data-theme="light"] .crit-toggle-btn--active {
 .comment-body blockquote {
   margin: 6px 0;
   padding: 8px 16px;
-  border-left: 3px solid var(--crit-blockquote-border);
+  border-inline-start: 3px solid var(--crit-blockquote-border);
   background: var(--crit-blockquote-bg);
   border-radius: 0 6px 6px 0;
   color: var(--crit-editor-fg-secondary);
@@ -1943,7 +1959,7 @@ html[data-theme="light"] .crit-toggle-btn--active {
 .reply-body td {
   border: 1px solid var(--crit-border);
   padding: 4px 10px;
-  text-align: left;
+  text-align: start;
 }
 .comment-body th,
 .reply-body th {
@@ -2400,14 +2416,14 @@ html[data-theme="light"] .crit-toggle-btn--active {
 }
 
 .reply-body ul, .reply-body ol {
-  padding-left: 1.5em;
+  padding-inline-start: 1.5em;
   margin: 0.3em 0;
 }
 
 .reply-body blockquote {
   margin: 6px 0;
   padding: 8px 16px;
-  border-left: 3px solid var(--crit-blockquote-border);
+  border-inline-start: 3px solid var(--crit-blockquote-border);
   background: var(--crit-blockquote-bg);
   border-radius: 0 6px 6px 0;
   color: var(--crit-editor-fg-secondary);

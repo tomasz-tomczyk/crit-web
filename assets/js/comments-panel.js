@@ -17,6 +17,7 @@
 
 import markdownit from "markdown-it"
 import { sanitizeCommentHtml, normalizeCommentMarkdown } from "./comment-html"
+import { applyAutoTextDirection } from "./text-direction"
 
 // ---- Shared helpers ---------------------------------------------------------
 
@@ -145,6 +146,7 @@ export function linkifyCommentRefsInDom(el) {
 export function renderMarkdown(el, body, env) {
   const normalized = normalizeCommentMarkdown(body || "")
   el.innerHTML = sanitizeCommentHtml(commentMd.render(normalized, env || {}))
+  applyAutoTextDirection(el)
   linkifyCommentRefsInDom(el)
 }
 
@@ -186,6 +188,7 @@ export function startInlineBodyEdit(bodyEl, rawText, onSave) {
   const restoreNode = bodyEl
   const textarea = document.createElement('textarea')
   textarea.className = 'comment-textarea'
+  textarea.dir = 'auto'
   textarea.value = rawText || ''
   textarea.rows = 3
 
@@ -305,11 +308,13 @@ export function createReplyInput(commentId, adapter) {
   const input = document.createElement('input')
   input.type = 'text'
   input.className = 'reply-input'
+  input.dir = 'auto'
   input.placeholder = 'Write a reply…'
   form.appendChild(input)
 
   const textarea = document.createElement('textarea')
   textarea.className = 'reply-textarea'
+  textarea.dir = 'auto'
   textarea.placeholder = 'Write a reply…'
   textarea.rows = 3
 
