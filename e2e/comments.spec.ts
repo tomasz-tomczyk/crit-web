@@ -112,6 +112,34 @@ test.describe("Comments — Add via UI", () => {
     await waitForCommentCard(page, "Ctrl+Enter comment");
   });
 
+  test("a newly opened comment form gets the soft form flash, not the ref-jump flash", async ({ page }) => {
+    await loadReview(page, token);
+
+    // Record every flash class put on a comment form; the class is removed
+    // on animationend, so a MutationObserver catches it whatever the timing.
+    await page.evaluate(() => {
+      const seen: string[] = [];
+      (window as unknown as { __formFlashes: string[] }).__formFlashes = seen;
+      new MutationObserver(records => {
+        for (const r of records) {
+          const el = r.target as Element;
+          if (!el.classList || !el.classList.contains("comment-form")) continue;
+          for (const cls of ["comment-form-flash", "comment-ref-flash"]) {
+            if (el.classList.contains(cls) && !seen.includes(cls)) seen.push(cls);
+          }
+        }
+      }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+    });
+
+    await page.locator(".line-gutter").first().click();
+    await expect(page.locator(".comment-form")).toBeVisible({ timeout: 5_000 });
+
+    const flashes = () =>
+      page.evaluate(() => (window as unknown as { __formFlashes: string[] }).__formFlashes);
+    await expect.poll(flashes).toContain("comment-form-flash");
+    expect(await flashes()).not.toContain("comment-ref-flash");
+  });
+
   test("opening a new comment form closes existing empty form", async ({ page }) => {
     await loadReview(page, token);
 
