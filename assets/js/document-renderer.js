@@ -497,9 +497,10 @@ function openForm(ctx, newForm) {
   if (!newForm.editingId) revealAndFlashNewForm(ctx, newForm.formKey)
 }
 
-// Same animation a comment-ref jump gives a card (crit: flashNewCommentForm).
+// A softer accent pulse than a comment-ref jump, so the new form is easy to
+// spot without looking like a reference target (crit: flashNewCommentForm).
 function flashNewCommentForm(formEl) {
-  if (formEl) restartFlash(formEl, 'comment-ref-flash')
+  if (formEl) restartFlash(formEl, 'comment-form-flash')
 }
 
 // Wait until the form is mounted, open collapsed <details>, scroll into view
