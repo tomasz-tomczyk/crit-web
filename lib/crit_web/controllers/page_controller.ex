@@ -268,7 +268,7 @@ defmodule CritWeb.PageController do
         %{
           h: "PR sync",
           p:
-            "crit push sends local comments to a GitHub PR. crit pull fetches PR comments back. Review locally, sync when ready."
+            "crit push sends local comments to a GitHub PR. crit pull fetches PR comments back. Add --viewed either way to sync the files you have ticked as reviewed. Review locally, sync when ready."
         },
         %{
           h: "File tree with status",
