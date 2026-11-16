@@ -1455,6 +1455,24 @@ function buildLineBlocks(md, rawContent) {
     if (upTo > coveredUpTo) coveredUpTo = upTo
   }
 
+  // Same as addGapLines, but for lines inside a blockquote's source range. A
+  // line there that belongs to no child token carries no rendered content: a
+  // bare ">" separating paragraphs, or a link reference definition. Render it
+  // as an empty quote so the quote reads as one block instead of leaking the
+  // escaped source (a literal ">"). The line keeps its own commentable block.
+  function addBlockquoteGapLines(upTo) {
+    for (let ln = coveredUpTo; ln < upTo; ln++) {
+      const blank = sourceLines[ln].trim() === ""
+      blocks.push({
+        startLine: ln + 1,
+        endLine: ln + 1,
+        html: blank ? "" : "<blockquote></blockquote>",
+        isEmpty: blank,
+      })
+    }
+    if (upTo > coveredUpTo) coveredUpTo = upTo
+  }
+
   function findClose(startIdx) {
     let depth = 1
     for (let j = startIdx + 1; j < tokens.length; j++) {
@@ -1793,7 +1811,7 @@ function buildLineBlocks(md, rawContent) {
         const childMap = tokens[j].map
         let childCloseIdx = j
         if (tokens[j].nesting === 1) childCloseIdx = findClose(j)
-        addGapLines(childMap[0])
+        addBlockquoteGapLines(childMap[0])
         const childTokens = tokens.slice(j, childCloseIdx + 1)
         const childHtml = "<blockquote>" + md.renderer.render(childTokens, md.options, {}) + "</blockquote>"
         blocks.push({ startLine: childMap[0] + 1, endLine: childMap[1], html: childHtml, isEmpty: false })
@@ -1806,7 +1824,7 @@ function buildLineBlocks(md, rawContent) {
         coveredUpTo = blockEnd
       }
       i = bqCloseIdx + 1
-      addGapLines(blockEnd)
+      addBlockquoteGapLines(blockEnd)
       continue
     }
 
