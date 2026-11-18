@@ -7,7 +7,7 @@
 import { adapter, codeHighlight, configureCodeHighlight, loadPierre } from "./pierre-runtime.js"
 
 function languageFor(P, path) {
-  return adapter.languageOverride(path) || P.getFiletypeFromFileName(path)
+  return adapter.languageOverride(path, P) || P.getFiletypeFromFileName(path)
 }
 
 export const SnippetHighlight = {
