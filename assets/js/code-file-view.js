@@ -58,18 +58,38 @@ export function isOutdatedLineComment(comment, lineTotal) {
   return comment.scope !== 'file' && comment.scope !== 'review' && !!comment.end_line && comment.end_line > lineTotal
 }
 
-export function createCodeFileView({ P, pool, path, content, options, handlers }) {
+// Round diff for a code file: Pierre FileDiff of the previous round's content
+// against this round's, so a re-shared review shows code changes the way
+// crit's git mode does. Comments and forms live on the new (additions) side;
+// crit-web comments carry no side, so old-side lines are not commentable.
+function buildRoundDiff(P, path, prevContent, content, key) {
+  const fileDiff = P.parseDiffFromFile(
+    { name: path, contents: prevContent || '', cacheKey: key + ':old' },
+    { name: path, contents: content || '', cacheKey: key + ':new' },
+  )
+  const lang = adapter.languageOverride(path)
+  return lang ? P.setLanguageOverride(fileDiff, lang) : fileDiff
+}
+
+// prevContent: null/undefined renders the file; a string (possibly empty, for
+// a file new in this round) renders a diff against it in `diffMode`.
+export function createCodeFileView({ P, pool, path, content, prevContent, diffMode, options, handlers }) {
   const element = document.createElement('div')
   element.className = 'crit-code-file'
   element.dataset.filePath = path
 
-  const contents = adapter.buildFileContents(P, { path, content }, 'crit-web-file:' + (++nextCacheKey))
+  const isDiff = typeof prevContent === 'string'
+  const mode = diffMode === 'split' ? 'split' : 'unified'
+  const cacheKey = 'crit-web-file:' + (++nextCacheKey)
+  const contents = isDiff
+    ? buildRoundDiff(P, path, prevContent, content, cacheKey)
+    : adapter.buildFileContents(P, { path, content }, cacheKey)
   const total = lineCount(content)
   let annotations = []
 
   // options: { display (pierre-runtime displayOptions()), themeType, commentable }
   function fileOptions({ display, themeType, commentable }) {
-    return Object.assign(adapter.baseOptions(themeType, 'unified'), display, {
+    return Object.assign(adapter.baseOptions(themeType, isDiff ? mode : 'unified'), display, {
       disableFileHeader: true,
       enableGutterUtility: commentable,
       unsafeCSS: pierreDOM.unsafeCSS,
@@ -78,6 +98,10 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
       },
       onGutterUtilityClick(range) {
         const r = adapter.formRangeFromSelection(range)
+        if (r && isDiff && r.side === 'old') {
+          requestAnimationFrame(() => { if (instance) instance.setSelectedLines(null) })
+          return
+        }
         if (r) handlers.onGutterRange({ startLine: r.startLine, endLine: r.endLine })
         // Pierre keeps the clicked range selected and would extend it on the
         // next gutter press; the form marks the range from here on.
@@ -86,6 +110,7 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
       onLineNumberClick(props) {
         // Touch has no hover "+": a tap on a line number comments on it.
         if (!commentable || !props.event || props.event.pointerType !== 'touch') return
+        if (isDiff && props.annotationSide === 'deletions') return
         props.event.preventDefault()
         handlers.onTouchLine(props.lineNumber)
       },
@@ -104,7 +129,7 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
     })
   }
 
-  let instance = new P.File(fileOptions(options), pool)
+  let instance = isDiff ? new P.FileDiff(fileOptions(options), pool) : new P.File(fileOptions(options), pool)
 
   const metadata = new Map() // "kind:id" → metadata object handed to Pierre
   function stableAnnotations(list) {
@@ -117,7 +142,9 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
         m = { ...a.metadata }
         metadata.set(key, m)
       }
-      return { lineNumber: a.lineNumber, metadata: m }
+      return isDiff
+        ? { side: 'additions', lineNumber: a.lineNumber, metadata: m }
+        : { lineNumber: a.lineNumber, metadata: m }
     })
     for (const key of metadata.keys()) {
       if (!keep.has(key)) metadata.delete(key)
@@ -129,13 +156,16 @@ export function createCodeFileView({ P, pool, path, content, options, handlers }
   // (or a queued callback) must not reach the cleaned-up Pierre instance.
   function render() {
     if (!instance) return
-    instance.render({ file: contents, lineAnnotations: annotations, containerWrapper: element })
+    if (isDiff) instance.render({ fileDiff: contents, lineAnnotations: annotations, containerWrapper: element })
+    else instance.render({ file: contents, lineAnnotations: annotations, containerWrapper: element })
   }
 
   return {
     element,
     path,
     content,
+    prevContent: isDiff ? prevContent : null,
+    diffMode: isDiff ? mode : null,
     lineTotal: total,
     // Re-publish annotations (comments/forms changed).
     update(next) {

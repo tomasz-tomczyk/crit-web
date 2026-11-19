@@ -2799,12 +2799,24 @@ function destroyCodeView(ctx, view) {
   view.destroy()
 }
 
+// With "Toggle diff" on, a code file diffs against its previous-round content
+// ('' when the file is new this round, so it shows as all additions); null
+// renders the plain file.
+function codeRoundDiffBase(ctx, filePath) {
+  if (!ctx.showRoundDiff) return null
+  const snapshots = ctx.prevRoundSnapshots || {}
+  const prev = snapshots[filePath]
+  return typeof prev === 'string' ? prev : ''
+}
+
 function codeViewFor(ctx, filePath, content) {
   const P = window.PierreDiffs
   if (!P) return null
   if (!ctx._codeViews) ctx._codeViews = new Map()
+  const prevContent = codeRoundDiffBase(ctx, filePath)
+  const diffMode = prevContent === null ? null : (ctx.diffMode === 'split' ? 'split' : 'unified')
   let view = ctx._codeViews.get(filePath)
-  if (view && view.content !== content) {
+  if (view && (view.content !== content || view.prevContent !== prevContent || view.diffMode !== diffMode)) {
     destroyCodeView(ctx, view)
     view = null
   }
@@ -2814,6 +2826,8 @@ function codeViewFor(ctx, filePath, content) {
     pool: workerPool(),
     path: filePath,
     content,
+    prevContent,
+    diffMode,
     options: codeViewOptions(ctx),
     handlers: {
       buildAnnotation: metadata => buildCodeAnnotation(ctx, filePath, metadata),
