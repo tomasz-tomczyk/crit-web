@@ -1,7 +1,6 @@
 defmodule CritWeb.E2E.SecurityPayloads do
   @moduledoc """
-  Adversarial payload library for the security/isolation E2E suite (port of
-  e2e/security/payloads.ts).
+  Adversarial payload library for the security/isolation E2E suite.
 
   Every payload posts a `CRIT_SEC_PROBE` message to `parent`. The spec uses
   `Page.add_init_script!/2` to capture these probes before the iframe navigates.
@@ -72,10 +71,9 @@ end
 
 defmodule CritWeb.E2E.SecurityTest do
   @moduledoc """
-  Security/isolation E2E suite (port of e2e/security.spec.ts).
+  Security/isolation E2E suite.
 
-  Runs against a VM whose endpoint boots with origin isolation, as
-  playwright.config.ts's second webServer: `E2E=true PHX_SERVER=true PORT=4004
+  Runs against a VM whose endpoint boots with origin isolation: `E2E=true PHX_SERVER=true PORT=4004
   PHX_HOST=127.0.0.1.nip.io PREVIEW_HOST=preview.127.0.0.1.nip.io mix test
   test/e2e/security_test.exs`. nip.io resolves both names to 127.0.0.1, so they
   share the loopback but the browser treats them as separate origins.

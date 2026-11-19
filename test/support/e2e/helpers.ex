@@ -1,5 +1,5 @@
 defmodule CritWeb.E2E.Helpers do
-  @moduledoc "Port of e2e/helpers.ts."
+  @moduledoc "Helpers of the browser suite (test/e2e)."
 
   import ExUnit.Assertions
 

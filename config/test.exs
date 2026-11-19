@@ -38,7 +38,7 @@ config :crit, CritWeb.Endpoint,
   # lets the socket accept both 127.0.0.1 and localhost.
   #
   # PHX_HOST opts the host in for the dedicated security/isolation E2E project
-  # (playwright.config.ts webServer #2 on port 4004) so the app builds
+  # (the security e2e run on port 4004) so the app builds
   # canonical-host-aware URLs and HostGate can compare against conn.host. When
   # unset (default for dev + the regular E2E suite),.Endpoint.url() host stays
   # "localhost" — identical to the previous behavior.
