@@ -137,7 +137,7 @@ defmodule CritWeb.E2E.AccessibilityTest do
 
   # AxeBuilder.withTags(["wcag2a", "wcag2aa"]).disableRules(["nested-interactive"]).analyze()
   defp audit(page, boost) do
-    Page.evaluate!(page, axe_source())
+    inject_axe(page)
 
     results =
       Page.evaluate!(

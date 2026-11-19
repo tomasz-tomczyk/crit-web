@@ -11,18 +11,12 @@ defmodule CritWeb.E2E.Helpers do
   def base_url, do: "http://127.0.0.1:#{System.get_env("PORT", "4003")}"
 
   @doc """
-  The source of axe-core, for `Page.evaluate!/2` (the part of @axe-core/playwright's
-  AxeBuilder the suite needs). Resolved through node, since npm may not hoist
-  `axe-core` to where a fixed path would look.
+  Injects axe-core into the page (the part of @axe-core/playwright's AxeBuilder
+  the suite needs). `axe-core` is a devDependency of `assets/`; tests run from
+  the project root.
   """
-  def axe_source do
-    {path, 0} =
-      System.cmd("node", ["-p", "require.resolve('axe-core/axe.min.js')"],
-        cd: Path.expand("../../../assets", __DIR__)
-      )
-
-    path |> String.trim() |> File.read!()
-  end
+  def inject_axe(page),
+    do: Page.add_script_tag!(page, path: "assets/node_modules/axe-core/axe.min.js")
 
   @doc "Create a review via the API and return %{token, url, delete_token}."
   def create_review(request, opts \\ []) do

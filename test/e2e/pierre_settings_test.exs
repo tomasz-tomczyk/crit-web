@@ -27,7 +27,7 @@ defmodule CritWeb.E2E.PierreSettingsTest do
   # @axe-core/playwright: inject axe-core's source and run it on the page.
   defp axe_violations(page, include, rules) do
     unless Page.evaluate!(page, "() => typeof window.axe === 'object'") do
-      Page.evaluate!(page, axe_source())
+      inject_axe(page)
     end
 
     result =

@@ -103,9 +103,10 @@ jobs:
       # The `||` reruns failures twice (Pierre worker races, slow runners).
       - name: Run Playwright tests
         run: |
+          set -o pipefail
           mix test test/e2e --partitions 2 \
-            || { [ $? -eq 2 ] && mix test --failed; } \
-            || { [ $? -eq 2 ] && mix test --failed; }
+            || { [ $? -eq 2 ] && mix test --failed | tee retry.log && ! grep -q "There are no tests to run" retry.log; } \
+            || { [ $? -eq 2 ] && mix test --failed | tee retry.log && ! grep -q "There are no tests to run" retry.log; }
         env:
           E2E: "true"
           PHX_SERVER: "true"
@@ -115,9 +116,10 @@ jobs:
       - name: Run Playwright security tests
         if: matrix.partition == 2
         run: |
+          set -o pipefail
           mix test test/e2e/security_test.exs \
-            || { [ $? -eq 2 ] && mix test --failed; } \
-            || { [ $? -eq 2 ] && mix test --failed; }
+            || { [ $? -eq 2 ] && mix test --failed | tee retry.log && ! grep -q "There are no tests to run" retry.log; } \
+            || { [ $? -eq 2 ] && mix test --failed | tee retry.log && ! grep -q "There are no tests to run" retry.log; }
         env:
           E2E: "true"
           PHX_SERVER: "true"

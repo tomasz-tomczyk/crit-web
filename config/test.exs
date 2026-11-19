@@ -91,7 +91,9 @@ config :crit, Oban, testing: :manual, queues: false, plugins: false
 # Browser suite (test/e2e, playwright_ex). Runs against the endpoint served by
 # this VM (E2E=true PHX_SERVER=true PORT=...; see test/test_helper.exs). With
 # PHX_HOST set (the security/isolation run), the base URL is the canonical host.
+# One worker, as the JS config had.
 config :playwright, :test,
+  workers: 1,
   base_url:
     "http://#{System.get_env("PHX_HOST") || "127.0.0.1"}:#{System.get_env("PORT", "4003")}",
   trace: :retain_on_failure,
