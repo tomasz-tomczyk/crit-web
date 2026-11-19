@@ -10,13 +10,15 @@ defmodule CritWeb.E2E.Helpers do
   # ECONNREFUSED. 127.0.0.1 works on macOS and CI (Linux) alike.
   def base_url, do: "http://127.0.0.1:#{System.get_env("PORT", "4003")}"
 
+  @axe_path Path.expand("../../../assets/node_modules/axe-core/axe.min.js", __DIR__)
+
   @doc """
-  Injects axe-core into the page (the part of @axe-core/playwright's AxeBuilder
-  the suite needs). `axe-core` is a devDependency of `assets/`; tests run from
-  the project root.
+  Evaluates axe-core in the page (the part of @axe-core/playwright's AxeBuilder
+  the suite needs). `axe-core` is a devDependency of `assets/`. The review
+  page's CSP forbids `Page.add_script_tag!/2`'s inline script, so the source is
+  evaluated instead.
   """
-  def inject_axe(page),
-    do: Page.add_script_tag!(page, path: "assets/node_modules/axe-core/axe.min.js")
+  def inject_axe(page), do: Page.evaluate!(page, File.read!(@axe_path))
 
   @doc "Create a review via the API and return %{token, url, delete_token}."
   def create_review(request, opts \\ []) do
