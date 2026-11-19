@@ -79,7 +79,8 @@ defmodule Crit.MixProject do
       {:flop, "~> 0.29"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.18", only: :test}
+      {:excoveralls, "~> 0.18", only: :test},
+      {:playwright, "~> 1.65.0-rc.2", hex: :playwright_ex, only: [:dev, :test]}
     ]
   end
 
