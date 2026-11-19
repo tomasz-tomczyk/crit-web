@@ -216,3 +216,12 @@ test('round diff: old-side gutter ranges do not open a comment form', () => {
   diffs[0].options.onGutterUtilityClick({ start: 2, end: 2, side: 'additions', endSide: 'additions' })
   assert.deepEqual(calls.ranges, [{ startLine: 2, endLine: 2 }])
 })
+
+test('round diff: the absent-file marker diffs as an empty file on either side', () => {
+  assert.equal(view.roundDiffText(view.ABSENT_MARKER + '\n'), '')
+  assert.equal(view.roundDiffText(view.ABSENT_MARKER), '')
+  assert.equal(view.roundDiffText('real\n'), 'real\n')
+  const { v, diffs } = makeDiffView(view.ABSENT_MARKER + '\n', 'unified')
+  v.update([])
+  assert.equal(diffs[0].renders.at(-1).fileDiff.oldFile.contents, '')
+})

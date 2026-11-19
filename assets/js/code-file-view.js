@@ -62,10 +62,19 @@ export function isOutdatedLineComment(comment, lineTotal) {
 // against this round's, so a re-shared review shows code changes the way
 // crit's git mode does. Comments and forms live on the new (additions) side;
 // crit-web comments carry no side, so old-side lines are not commentable.
+// A share keeps the same file list every round (crit only updates a review
+// whose file list matches), so a file missing at one revision is uploaded as
+// this one-line marker. The round diff treats it as an empty file: a new file
+// shows as all additions, a deleted one as all deletions.
+export const ABSENT_MARKER = '(file not present at this revision)'
+export function roundDiffText(content) {
+  return (content || '').replace(/\r?\n$/, '') === ABSENT_MARKER ? '' : (content || '')
+}
+
 function buildRoundDiff(P, path, prevContent, content, key) {
   const fileDiff = P.parseDiffFromFile(
-    { name: path, contents: prevContent || '', cacheKey: key + ':old' },
-    { name: path, contents: content || '', cacheKey: key + ':new' },
+    { name: path, contents: roundDiffText(prevContent), cacheKey: key + ':old' },
+    { name: path, contents: roundDiffText(content), cacheKey: key + ':new' },
   )
   const lang = adapter.languageOverride(path)
   return lang ? P.setLanguageOverride(fileDiff, lang) : fileDiff
