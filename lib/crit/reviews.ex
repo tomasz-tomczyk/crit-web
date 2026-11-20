@@ -598,7 +598,11 @@ defmodule Crit.Reviews do
             {:error, reason}
         end
       else
-        multi = Ecto.Multi.new()
+        multi =
+          Ecto.Multi.new()
+          |> Ecto.Multi.run(:view_hints, fn _repo, _changes ->
+            {:ok, refresh_view_hints(review, files)}
+          end)
 
         multi =
           Ecto.Multi.run(multi, :comments, fn _repo, _changes ->
@@ -649,6 +653,53 @@ defmodule Crit.Reviews do
       %{delete_token: ^delete_token} = review -> {:ok, review}
       _ -> {:error, :unauthorized}
     end
+  end
+
+  # `lang` and `file_type` are display hints: a value this server does not
+  # understand (a newer CLI's file_type, an oversized lang) drops to nil so the
+  # file falls back to extension detection instead of failing the share.
+  defp normalize_lang(lang) when is_binary(lang) do
+    lang = String.trim(lang)
+
+    # Grammar names are short ASCII identifiers (`nginx`, `c++`, `objective-c`).
+    # A strict pattern keeps junk out of the column and bounds the byte length,
+    # which `String.length/1` (graphemes) would not.
+    if Regex.match?(~r/\A[A-Za-z0-9_+#.\-]+\z/, lang) and
+         byte_size(lang) <= ReviewRoundSnapshot.lang_max_length(),
+       do: lang,
+       else: nil
+  end
+
+  defp normalize_lang(_), do: nil
+
+  defp normalize_file_type(file_type) do
+    if file_type in ReviewRoundSnapshot.file_types(), do: file_type, else: nil
+  end
+
+  defp view_hints(file_attrs) do
+    {normalize_lang(file_attrs["lang"]), normalize_file_type(file_attrs["file_type"])}
+  end
+
+  # Hints changed without content (the user edited their `languages` config,
+  # or a newer CLI re-shares a review an older one created): update the current
+  # round's rows in place rather than opening a round with no content change.
+  defp refresh_view_hints(review, new_files) do
+    hints = Map.new(new_files, fn f -> {f["path"], view_hints(f)} end)
+
+    review
+    |> get_current_files()
+    |> Enum.each(fn snapshot ->
+      case Map.fetch(hints, snapshot.file_path) do
+        {:ok, {lang, file_type}}
+        when lang != snapshot.lang or file_type != snapshot.file_type ->
+          Repo.update_all(from(s in ReviewRoundSnapshot, where: s.id == ^snapshot.id),
+            set: [lang: lang, file_type: file_type]
+          )
+
+        _ ->
+          :ok
+      end
+    end)
   end
 
   defp content_changed?(review, new_files) do
@@ -996,7 +1047,9 @@ defmodule Crit.Reviews do
           "position" => idx,
           "status" => status,
           "generated" => file_attrs["generated"] == true,
-          "encoding" => file_attrs["encoding"]
+          "encoding" => file_attrs["encoding"],
+          "lang" => normalize_lang(file_attrs["lang"]),
+          "file_type" => normalize_file_type(file_attrs["file_type"])
         })
         |> Ecto.Changeset.put_change(:review_id, review.id)
         |> Repo.insert()

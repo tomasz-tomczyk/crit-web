@@ -1179,10 +1179,29 @@ function refreshVisualSelectionVisuals(ctx) {
 
 // ---- Code file detection ----------------------------------------------------
 
-// crit's detectFileType: .md/.markdown/.mdown files are rendered markdown;
-// everything else is a code file (Pierre picks the grammar from the name).
+// View hints a crit `languages` config rule set on the shared file: `lang`
+// (highlight grammar) and `fileType` ("markdown" | "code"). Keyed by path and
+// held at module scope because isCodeFile is asked by path from many places
+// that have no ctx; a page hosts one review, and init replaces the map.
+let fileHints = new Map()
+
+function setFileHints(files) {
+  fileHints = new Map((files || []).map(f => [f.path, { lang: f.lang || null, fileType: f.file_type || null }]))
+}
+
+function fileLang(filePath) {
+  const hints = fileHints.get(filePath)
+  return (hints && hints.lang) || null
+}
+
+// A stored file_type wins. Otherwise crit's detectFileType: .md/.markdown/
+// .mdown files are rendered markdown; everything else is a code file (Pierre
+// picks the grammar from the name).
 function isCodeFile(filePath) {
   if (!filePath) return false
+  const hints = fileHints.get(filePath)
+  if (hints && hints.fileType === 'markdown') return false
+  if (hints && hints.fileType === 'code') return true
   return !/\.(?:md|markdown|mdown)$/i.test(filePath)
 }
 
@@ -2821,6 +2840,7 @@ function codeViewFor(ctx, filePath, content) {
     pool: workerPool(),
     path: filePath,
     content,
+    lang: fileLang(filePath),
     options: codeViewOptions(ctx),
     handlers: {
       buildAnnotation: metadata => buildCodeAnnotation(ctx, filePath, metadata),
@@ -6180,6 +6200,7 @@ export const DocumentRenderer = {
       ctx.comments = comments
       ctx.canComment = can_comment !== false
       ctx.isAdmin = is_admin === true
+      setFileHints(files)
       await loadPierre()
       await primeFences(ctx, (files || []).filter(f => !isCodeFile(f.path)).map(f => f.content))
       if (initSeq !== ctx._initSeq || ctx._destroyed) return

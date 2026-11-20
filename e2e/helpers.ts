@@ -11,7 +11,7 @@ const BASE_URL = `http://127.0.0.1:${process.env.CRIT_WEB_TEST_PORT || "4003"}`;
 export async function createReview(
   request: APIRequestContext,
   opts: {
-    files?: Array<{ path: string; content: string; status?: string }>;
+    files?: Array<{ path: string; content: string; status?: string; lang?: string; file_type?: string }>;
     comments?: Array<{
       start_line: number;
       end_line: number;

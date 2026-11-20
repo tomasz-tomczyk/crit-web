@@ -337,6 +337,25 @@ test.describe("Code files — edge cases", () => {
     }
   });
 
+  test("a stored file_type overrides the extension for document vs code view", async ({ page, request }) => {
+    // crit's `languages` config: notes.txt renders as a document, plan.md as code.
+    const review = await createReview(request, {
+      files: [
+        { path: "notes.txt", content: "# Notes\n\nSome prose.\n", file_type: "markdown" },
+        { path: "plan.md", content: "# Plan\n\nStep one.\n", file_type: "code" },
+      ],
+    });
+    try {
+      await loadReview(page, review.token);
+      const notes = page.locator('details.file-section[data-file-path="notes.txt"]');
+      await expect(notes.locator(".line-content h1")).toHaveText("Notes");
+      await expect(codeFile(page, "notes.txt")).toHaveCount(0);
+      await expect(codeLine(page, "plan.md", 1)).toContainText("# Plan");
+    } finally {
+      await deleteReview(request, review.deleteToken);
+    }
+  });
+
   test("a single-file code review renders through Pierre", async ({ page, request }) => {
     const review = await createReview(request, {
       files: [{ path: "app.ex", content: "defmodule App do\n  def hi, do: :ok\nend\n" }],
