@@ -101,11 +101,11 @@ defmodule CritWeb.PageController do
     },
     "syntax-highlighting" => %{
       title: "Syntax Highlighting",
-      tagline: "146 languages, the same highlighter as the Crit CLI",
+      tagline: "224 languages, the same highlighter as the Crit CLI",
       description:
         "Code files and fenced code blocks are highlighted with Shiki, the same grammars and themes the Crit CLI uses. Every line is commentable - in code files and inside the code blocks of a plan.",
       details: [
-        "146 languages via Shiki — Go, Python, JavaScript, TypeScript, Rust, Ruby, Elixir, Java, C, C++, Shell, SQL, YAML, and many more.",
+        "224 languages via Shiki — Go, Python, JavaScript, TypeScript, Rust, Ruby, Elixir, Java, C, C++, Shell, SQL, YAML, and many more.",
         "Each line of a code file, and each line inside a fenced code block, is a separate commentable element. Select line 3 and leave a review note right there.",
         "Pick any bundled theme for light and dark mode in Settings. The whole review page, not just the code, follows the theme you pick.",
         "Code preserves whitespace and formatting exactly as written. Long lines scroll or wrap, whichever you prefer."
@@ -137,6 +137,26 @@ defmodule CritWeb.PageController do
       ],
       how_crit_compares:
         "Most markdown editors that support Mermaid (GitHub markdown preview, Notion, HackMD) render diagrams in preview mode, but they don't support inline comments on the source. Dedicated diagramming tools like Miro and draw.io don't accept Mermaid input and aren't designed for the write-review-revise loop with an AI agent."
+    },
+    "excalidraw" => %{
+      title: "Excalidraw",
+      tagline: "Hand-drawn diagrams and an infinite canvas, straight from the scene file",
+      description:
+        "Fenced excalidraw blocks and standalone .excalidraw files render as real Excalidraw drawings, in Excalidraw's own fonts and hand-drawn style. Open a scene with crit and you get an infinite canvas where every shape, arrow and label is commentable.",
+      details: [
+        "Fenced blocks tagged with ```excalidraw render as drawings in the browser. Standalone .excalidraw and .excalidraw.json files open with a Diagram/Source toggle.",
+        "Click a shape, arrow or label in a rendered scene to comment on the exact JSON lines that define it.",
+        "crit arch.excalidraw opens the scene as an infinite canvas - pan, zoom and grid included - with comments pinned to individual elements.",
+        "Share the review and the person you send it to gets the same canvas in their browser. No Excalidraw account or export step needed.",
+        "The raw JSON stays commentable too. Select the block's line range and leave feedback about the scene's structure or content."
+      ],
+      why_this_matters: [
+        "Agents are increasingly asked to produce or edit architecture sketches and whiteboard-style diagrams, and Excalidraw is the common format for those. A raw .excalidraw file is JSON: impossible to review as a picture, painful to review as text.",
+        "When Crit renders the scene, you review the drawing itself. If an arrow points at the wrong component, you click that arrow and say so. The comment lands on the JSON lines for that element, so the agent knows exactly what to change.",
+        "On the canvas, comments pin to elements rather than lines, so a reviewer can walk the diagram spatially, the way you would point at a whiteboard, and the feedback stays attached to the right shape when the scene is shared."
+      ],
+      how_crit_compares:
+        "Excalidraw's own editor renders scenes, but its comments live in a separate collaboration layer that an agent can't act on. Exported PNGs dropped into a doc lose the source entirely. Crit treats the .excalidraw file as reviewable source: the drawing, its JSON and the comments stay in one review."
     }
   }
 
@@ -231,7 +251,7 @@ defmodule CritWeb.PageController do
         %{
           h: "Agent makes changes",
           p:
-            "Your agent edits files across a branch. Run <code class=\"font-bold text-(--crit-brand)\">/crit</code> or <code class=\"font-bold text-(--crit-brand)\">/crit --pr &lt;number&gt;</code> to review."
+            "Your agent edits files across a branch. Run <code class=\"font-bold text-(--crit-brand)\">/crit</code> to review, or <code class=\"font-bold text-(--crit-brand)\">/crit --pr</code> to pick up the PR for the current branch (a number or URL works too)."
         },
         %{
           h: "Crit shows the diff",
@@ -487,7 +507,7 @@ defmodule CritWeb.PageController do
     }
   }
 
-  @feature_order ~w(inline-comments split-unified-diff ai-review-loop vim-keybindings share-reviews syntax-highlighting mermaid-diagrams)
+  @feature_order ~w(inline-comments split-unified-diff ai-review-loop vim-keybindings share-reviews syntax-highlighting mermaid-diagrams excalidraw)
 
   @faq [
     %{
@@ -930,6 +950,7 @@ defmodule CritWeb.PageController do
     {"/features/share-reviews", "monthly", "0.8"},
     {"/features/syntax-highlighting", "monthly", "0.8"},
     {"/features/mermaid-diagrams", "monthly", "0.8"},
+    {"/features/excalidraw", "monthly", "0.8"},
     {"/integrations", "monthly", "0.8"},
     {"/integrations/claude-code", "monthly", "0.8"},
     {"/integrations/cursor", "monthly", "0.8"},
