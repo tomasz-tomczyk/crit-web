@@ -152,3 +152,76 @@ test('setOptions re-renders with the new display settings; destroy cleans up', (
   assert.equal(file.cleaned, true)
   assert.equal(v.element.isConnected, false)
 })
+
+// ---- Round diff (tyeth/crit-web code-round-diff) ----------------------------
+
+function fakePierreWithDiff() {
+  const base = fakePierre()
+  const diffs = []
+  class FileDiff {
+    constructor(options, pool) { this.options = options; this.pool = pool; this.renders = []; this.selected = []; diffs.push(this) }
+    render(props) { this.renders.push(props) }
+    setOptions(options) { this.options = options }
+    rerender() { this.rerendered = true }
+    setSelectedLines(range) { this.selected.push(range) }
+    cleanUp() { this.cleaned = true }
+  }
+  base.P.FileDiff = FileDiff
+  base.P.parseDiffFromFile = (oldFile, newFile) => ({ oldFile, newFile })
+  return { ...base, diffs }
+}
+
+function makeDiffView(prevContent, diffMode, handlers = {}) {
+  const { P, files, diffs } = fakePierreWithDiff()
+  const calls = { ranges: [] }
+  const v = view.createCodeFileView({
+    P, pool: 'pool', path: 'lib/app.ex', content: 'a\nB\nc\n', prevContent, diffMode, options,
+    handlers: Object.assign({
+      buildAnnotation: m => ({ built: m }),
+      onGutterRange: r => calls.ranges.push(r),
+      onTouchLine() {},
+      onPostRender() {},
+    }, handlers),
+  })
+  return { v, files, diffs, calls }
+}
+
+test('round diff: a previous-round string renders a Pierre FileDiff in the requested mode', () => {
+  const { v, files, diffs } = makeDiffView('a\nb\nc\n', 'split')
+  assert.equal(files.length, 0)
+  assert.equal(diffs.length, 1)
+  assert.equal(v.prevContent, 'a\nb\nc\n')
+  assert.equal(v.diffMode, 'split')
+  v.update([{ lineNumber: 2, metadata: { kind: 'thread', id: 'c1' } }])
+  const props = diffs[0].renders.at(-1)
+  assert.equal(props.fileDiff.oldFile.contents, 'a\nb\nc\n')
+  assert.equal(props.fileDiff.newFile.contents, 'a\nB\nc\n')
+  assert.deepEqual(props.lineAnnotations.map(a => [a.side, a.lineNumber]), [['additions', 2]])
+})
+
+test('round diff: an empty previous round (new file) still diffs; null renders the plain file', () => {
+  const added = makeDiffView('', 'unified')
+  assert.equal(added.diffs.length, 1)
+  assert.equal(added.v.diffMode, 'unified')
+  const plain = makeDiffView(null, null)
+  assert.equal(plain.diffs.length, 0)
+  assert.equal(plain.files.length, 1)
+  assert.equal(plain.v.prevContent, null)
+})
+
+test('round diff: old-side gutter ranges do not open a comment form', () => {
+  const { diffs, calls } = makeDiffView('a\nb\nc\n', 'split')
+  diffs[0].options.onGutterUtilityClick({ start: 2, end: 2, side: 'deletions', endSide: 'deletions' })
+  assert.equal(calls.ranges.length, 0)
+  diffs[0].options.onGutterUtilityClick({ start: 2, end: 2, side: 'additions', endSide: 'additions' })
+  assert.deepEqual(calls.ranges, [{ startLine: 2, endLine: 2 }])
+})
+
+test('round diff: the absent-file marker diffs as an empty file on either side', () => {
+  assert.equal(view.roundDiffText(view.ABSENT_MARKER + '\n'), '')
+  assert.equal(view.roundDiffText(view.ABSENT_MARKER), '')
+  assert.equal(view.roundDiffText('real\n'), 'real\n')
+  const { v, diffs } = makeDiffView(view.ABSENT_MARKER + '\n', 'unified')
+  v.update([])
+  assert.equal(diffs[0].renders.at(-1).fileDiff.oldFile.contents, '')
+})
