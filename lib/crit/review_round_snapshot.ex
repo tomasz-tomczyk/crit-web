@@ -14,9 +14,21 @@ defmodule Crit.ReviewRoundSnapshot do
     field :generated, :boolean, default: false
     field :encoding, :string
 
+    # View hints from crit's `languages` config. `lang` is the highlight
+    # grammar; `file_type` overrides the extension-based document/code choice.
+    # Both are nil for shares from CLIs that predate the config.
+    field :lang, :string
+    field :file_type, :string
+
     belongs_to :review, Crit.Review
     timestamps(updated_at: false)
   end
+
+  @file_types ~w(markdown code)
+  @lang_max_length 64
+
+  def file_types, do: @file_types
+  def lang_max_length, do: @lang_max_length
 
   def changeset(snapshot, attrs) do
     snapshot
@@ -27,10 +39,14 @@ defmodule Crit.ReviewRoundSnapshot do
       :position,
       :status,
       :generated,
-      :encoding
+      :encoding,
+      :lang,
+      :file_type
     ])
     |> validate_required([:round_number, :file_path])
     |> validate_inclusion(:encoding, ["base64"])
+    |> validate_inclusion(:file_type, file_types())
+    |> validate_length(:lang, max: @lang_max_length)
     |> then(fn cs ->
       if Ecto.Changeset.get_field(cs, :status) == :removed do
         # Removed (orphaned) files may have empty content; default to "" if nil
