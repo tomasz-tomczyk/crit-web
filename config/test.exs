@@ -38,7 +38,7 @@ config :crit, CritWeb.Endpoint,
   # lets the socket accept both 127.0.0.1 and localhost.
   #
   # PHX_HOST opts the host in for the dedicated security/isolation E2E project
-  # (playwright.config.ts webServer #2 on port 4004) so the app builds
+  # (the security e2e run on port 4004) so the app builds
   # canonical-host-aware URLs and HostGate can compare against conn.host. When
   # unset (default for dev + the regular E2E suite),.Endpoint.url() host stays
   # "localhost" — identical to the previous behavior.
@@ -87,3 +87,16 @@ config :bcrypt_elixir, :log_rounds, 4
 config :crit, Crit.Mailer, adapter: Swoosh.Adapters.Test
 
 config :crit, Oban, testing: :manual, queues: false, plugins: false
+
+# Browser suite (test/e2e, playwright_ex). Runs against the endpoint served by
+# this VM (E2E=true PHX_SERVER=true PORT=...; see test/test_helper.exs). With
+# PHX_HOST set (the security/isolation run), the base URL is the canonical host.
+# One worker, as the JS config had.
+config :playwright, :test,
+  workers: 1,
+  base_url:
+    "http://#{System.get_env("PHX_HOST") || "127.0.0.1"}:#{System.get_env("PORT", "4003")}",
+  trace: :retain_on_failure,
+  screenshot: :only_on_failure
+
+config :playwright, :expect, timeout: 10_000

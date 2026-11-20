@@ -77,16 +77,13 @@ description = "Run the review page JS unit tests (node --test)"
 run = "node --test 'assets/test/*.test.mjs'"
 
 [tasks.e2e]
-description = "Run the Playwright e2e suite (installs everything it needs first)"
+description = "Run the browser e2e suite (ExUnit with playwright_ex; installs everything it needs first)"
 depends = ["deps", "db:start"]
 # Mirrors .github/workflows/e2e.yml so a fresh worktree runs the suite with one
 # command. Every step is idempotent — a no-op once installed, so reruns are
-# fast. The root `node_modules` (Playwright deps) is NOT copied into new
-# worktrees (the source checkout never installs it, so `wt step copy-ignored`
-# has nothing to copy), hence `npm ci` here. `playwright.config.ts`'s webServer
-# starts Phoenix and runs ecto.create/migrate itself, so we only prep deps,
-# browser, assets, and the DB container. DB_PORT defaults to 5433 (host →
-# container 5432) via mise.toml; the managed webServer forwards it.
+# fast. test/test_helper.exs serves the endpoint from the test VM itself, so we
+# only prep the browser, assets, and the DB container. DB_PORT defaults to 5433
+# (host → container 5432) via mise.toml.
 #
 # `mix deps.compile` runs before `mix compile` because a fresh worktree's
 # `_build/test` is copied from the source checkout by `wt step copy-ignored`
@@ -94,13 +91,17 @@ depends = ["deps", "db:start"]
 # alone never recompiles deps, so it would inherit the gap; `deps.compile` is
 # idempotent and only rebuilds stale deps. CI doesn't need this — it builds
 # `_build/test` fresh from cache, never copying a partial one.
-usage = 'arg "[args]" help="Extra args forwarded to npx playwright test (e.g. a spec path)" var=#true'
+usage = 'arg "[args]" help="Extra args forwarded to mix test (e.g. a test file path)" var=#true'
 run = """
-npm ci
-npx playwright install chromium
+MIX_ENV=test mix playwright.install chromium
 npm install --prefix assets
 MIX_ENV=test E2E=true mix deps.compile
 MIX_ENV=test E2E=true mix compile
 mix assets.build
-npx playwright test ${usage_args:-}
+E2E=true PHX_SERVER=true PORT=4003 mix test ${usage_args:-test/e2e}
 """
+
+[tasks."e2e:security"]
+description = "Run the security/origin-isolation e2e tests (needs `mise run e2e` set up first)"
+depends = ["db:start"]
+run = "E2E=true PHX_SERVER=true PORT=4004 PHX_HOST=127.0.0.1.nip.io PREVIEW_HOST=preview.127.0.0.1.nip.io mix test test/e2e/security_test.exs"

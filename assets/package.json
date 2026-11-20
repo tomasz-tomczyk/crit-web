@@ -17,5 +17,8 @@
     "dompurify": "3.4.17",
     "markdown-it": "15.0.3",
     "mermaid": "12.2.0"
+  },
+  "devDependencies": {
+    "axe-core": "4.11.3"
   }
 }
