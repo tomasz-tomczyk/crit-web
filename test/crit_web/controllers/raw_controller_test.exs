@@ -169,6 +169,25 @@ defmodule CritWeb.RawControllerTest do
       assert response(conn, 200) == @png_signature
     end
 
+    test "serves a shared Excalidraw canvas entry as text/html with agent scripts", %{conn: conn} do
+      # Crawl keeps the scene path; the body is the canvas HTML page.
+      html =
+        ~s(<html><body><script id="crit-excalidraw-scene" type="application/json">"{}"</script></body></html>)
+
+      review =
+        review_fixture(%{
+          review_type: :preview,
+          files: [file("arch.excalidraw", html)]
+        })
+
+      conn = get(conn, ~p"/r/#{review.token}/raw/arch.excalidraw")
+
+      body = response(conn, 200)
+      assert response_content_type(conn, :html) =~ "text/html"
+      assert body =~ "crit-excalidraw-scene"
+      assert body =~ ~s(<script src="/preview-agent/crit-agent.js"></script>)
+    end
+
     test "injects agent scripts before </body> and sets a restrictive CSP on HTML", %{conn: conn} do
       html = "<html><head></head><body><h1>Hi</h1></body></html>"
       review = review_fixture(%{review_type: :preview, files: [file("index.html", html)]})

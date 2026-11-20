@@ -5,13 +5,16 @@
 # review UI from the selected Shiki theme. crit-web uses the same build and the
 # same modules so both review pages highlight and theme code identically. The
 # build is never re-run here: grammar set, themes and palettes come from crit.
-# The pluggable renderers (registry, built-in mermaid, fullscreen diagram
-# overlay) are vendored the same way (crit docs/renderers.md).
+# The pluggable renderers (registry, built-in mermaid/excalidraw, fullscreen
+# diagram overlay) are vendored the same way (crit docs/renderers.md).
 #
 # Copies:
 #   crit/web/pierre/*.js.gz      -> priv/static/pierre/   (served gzip, see
 #                                   CritWeb.Plugs.Precompressed)
 #   crit/web/<modules> + crit-palette.css -> assets/vendor/crit/ (bundled)
+#   crit/web/rough.min.js, freehand.min.js -> priv/static/ (script-tag loads;
+#                                   ASSET_BASE '/' from document-renderer.js)
+#   crit/web/fonts/excalidraw/   -> priv/static/fonts/excalidraw/
 #
 # When crit changes any of these, re-run this script and commit the result.
 # test/crit_web/pierre_sync_test.exs fails on drift.
@@ -37,7 +40,16 @@ BUNDLED=(
   crit-glob-match.js
   crit-renderers.js
   crit-renderer-mermaid.js
+  crit-renderer-excalidraw.js
   crit-diagram-overlay.js
+)
+
+# Lazy script-tag assets the Excalidraw renderer loads from origin root
+# (window.crit.excalidrawAssetBase). Keep in sync with @static_assets in
+# pierre_sync_test.exs.
+STATIC_JS=(
+  rough.min.js
+  freehand.min.js
 )
 
 if [[ ! -d "$SRC/pierre" ]]; then
@@ -55,5 +67,21 @@ for f in "${BUNDLED[@]}"; do
   cp "$SRC/$f" "$ROOT/assets/vendor/crit/$f"
 done
 
+STATIC_DST="$ROOT/priv/static"
+for f in "${STATIC_JS[@]}"; do
+  cp "$SRC/$f" "$STATIC_DST/$f"
+done
+
+FONT_SRC="$SRC/fonts/excalidraw"
+FONT_DST="$STATIC_DST/fonts/excalidraw"
+if [[ ! -d "$FONT_SRC" ]]; then
+  echo "error: source dir not found: $FONT_SRC" >&2
+  exit 1
+fi
+rm -rf "$FONT_DST"
+mkdir -p "$(dirname "$FONT_DST")"
+cp -R "$FONT_SRC" "$FONT_DST"
+
 count=$(find "$PIERRE_DST" -name '*.js.gz' | wc -l | tr -d ' ')
-echo "synced $count pierre files and ${#BUNDLED[@]} modules from $SRC"
+font_count=$(find "$FONT_DST" -type f | wc -l | tr -d ' ')
+echo "synced $count pierre files, ${#BUNDLED[@]} modules, ${#STATIC_JS[@]} static js, $font_count excalidraw font files from $SRC"

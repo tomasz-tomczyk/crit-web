@@ -39,7 +39,14 @@ import "../vendor/crit/crit-glob-match.js"
 import renderers from "../vendor/crit/crit-renderers.js"
 import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
 import "../vendor/crit/crit-renderer-mermaid.js"
+import "../vendor/crit/crit-renderer-excalidraw.js"
 import { themeChoice } from "./review-settings"
+
+// Excalidraw loads rough/freehand/fonts from origin root. This file is
+// bundled, so document.currentScript is null; the renderer reads the override
+// lazily on first render (after this module body runs).
+window.crit = window.crit || {}
+window.crit.excalidrawAssetBase = "/"
 
 // ---- Helpers ----------------------------------------------------------------
 
