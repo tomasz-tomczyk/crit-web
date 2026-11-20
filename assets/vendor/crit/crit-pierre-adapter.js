@@ -98,6 +98,7 @@
     leex: 'html',
     svg: 'xml',
     gradle: 'groovy',
+    excalidraw: 'json',
   };
 
   // Template and sample suffixes that wrap another file type: `main.py.tmpl`,
@@ -136,12 +137,10 @@
     return detected && detected !== 'text' ? detected : null;
   }
 
-  // Pierre FileContents for a whole file (files-mode code view). file.lang,
-  // when set, is the language a `languages` config rule chose; it wins over
-  // detection.
+  // Pierre FileContents for a whole file (files-mode code view).
   function buildFileContents(P, file, cacheKey) {
     var contents = { name: file.path, contents: file.content || '', cacheKey: cacheKey };
-    var lang = file.lang || languageOverride(file.path, P);
+    var lang = languageOverride(file.path, P);
     return lang ? P.setLanguageOverride(contents, lang) : contents;
   }
 
@@ -183,7 +182,7 @@
         oldFile: { name: model.old_path || file.path, contents: oldContent },
         newFile: { name: file.path, contents: newContent },
       });
-    var lang = file.lang || languageOverride(file.path, P);
+    var lang = languageOverride(file.path, P);
     return lang ? P.setLanguageOverride(diff, lang) : diff;
   }
 
