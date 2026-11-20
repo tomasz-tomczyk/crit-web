@@ -29,7 +29,8 @@ defmodule CritWeb.PierreSyncTest do
     "crit-renderers.js",
     "crit-renderer-mermaid.js",
     "crit-renderer-excalidraw.js",
-    "crit-diagram-overlay.js"
+    "crit-diagram-overlay.js",
+    "crit-remote-images.js"
   ]
   # Keep in sync with STATIC_JS in scripts/sync-pierre.sh.
   @static_js ["rough.min.js", "freehand.min.js"]

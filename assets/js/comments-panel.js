@@ -18,6 +18,7 @@
 import markdownit from "markdown-it"
 import { sanitizeCommentHtml, normalizeCommentMarkdown } from "./comment-html"
 import { applyAutoTextDirection } from "./text-direction"
+import remoteImages from "../vendor/crit/crit-remote-images.js"
 
 // ---- Shared helpers ---------------------------------------------------------
 
@@ -145,7 +146,9 @@ export function linkifyCommentRefsInDom(el) {
 // originalLines for the ```suggestion fence rule (files mode); {} for preview.
 export function renderMarkdown(el, body, env) {
   const normalized = normalizeCommentMarkdown(body || "")
-  el.innerHTML = sanitizeCommentHtml(commentMd.render(normalized, env || {}))
+  // Remote images become click-to-load placeholders (crit-remote-images.js);
+  // the page CSP blocks them otherwise.
+  el.innerHTML = remoteImages.rewriteHtml(sanitizeCommentHtml(commentMd.render(normalized, env || {})))
   applyAutoTextDirection(el)
   linkifyCommentRefsInDom(el)
 }

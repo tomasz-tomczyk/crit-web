@@ -136,6 +136,7 @@ CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, El
 **Browser controllers (noindex):**
 
 - `GET /r/:token/raw/*file_path` — raw file content (text/plain, noindex)
+- `GET /remote-image?src=&alt=` — click-to-load frame for one remote image (`crit-remote-images.js`), with its own sandboxed CSP
 
 **API (`/api`, all noindex):**
 

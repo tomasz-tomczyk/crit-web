@@ -19,6 +19,40 @@ defmodule CritWeb.Plugs.SecurityHeadersTest do
       assert get_resp_header(conn, "x-frame-options") == ["SAMEORIGIN"]
     end
 
+    test "turns off DNS prefetching", %{conn: conn} do
+      conn = get(conn, ~p"/")
+
+      assert get_resp_header(conn, "x-dns-prefetch-control") == ["off"]
+    end
+
+    test "img-src allows the remote image hosts and nothing else remote", %{conn: conn} do
+      conn = get(conn, ~p"/")
+      [csp] = get_resp_header(conn, "content-security-policy")
+      [img_src] = Regex.run(~r/img-src ([^;]*)/, csp, capture: :all_but_first)
+
+      assert String.split(img_src) ==
+               ["'self'", "data:", "blob:"] ++
+                 Enum.map(CritWeb.Plugs.SecurityHeaders.remote_image_hosts(), &("https://" <> &1))
+    end
+
+    test "the root layout publishes the remote image hosts for crit-remote-images.js", %{
+      conn: conn
+    } do
+      html = conn |> get(~p"/") |> html_response(200)
+
+      assert html =~
+               ~s(<meta name="crit-remote-images" content="[&quot;i.ytimg.com&quot;,&quot;avatars.githubusercontent.com&quot;,&quot;assets.crit.md&quot;]" data-hint="">)
+    end
+
+    test "frame-src allows same-origin frames (the /remote-image click-to-load frame)", %{
+      conn: conn
+    } do
+      conn = get(conn, ~p"/")
+      [csp] = get_resp_header(conn, "content-security-policy")
+
+      assert csp =~ ~r/frame-src 'self'/
+    end
+
     test "omits x-frame-options on preview host", %{conn: conn} do
       Application.put_env(:crit, :canonical_host, "app.example.test")
       Application.put_env(:crit, :preview_host, "preview.example.test")

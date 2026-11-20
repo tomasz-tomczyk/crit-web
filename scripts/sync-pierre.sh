@@ -42,6 +42,7 @@ BUNDLED=(
   crit-renderer-mermaid.js
   crit-renderer-excalidraw.js
   crit-diagram-overlay.js
+  crit-remote-images.js
 )
 
 # Lazy script-tag assets the Excalidraw renderer loads from origin root

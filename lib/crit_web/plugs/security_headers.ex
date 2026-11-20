@@ -13,12 +13,26 @@ defmodule CritWeb.Plugs.SecurityHeaders do
     "browsing-topics=()"
   ]
 
+  # Hosts the review page loads images from directly. Shared documents and
+  # comments may be written by an AI agent, and a remote image would make the
+  # reader's browser send a request (with whatever the URL encodes) to a host
+  # the agent chose. img-src allows only these; every other remote image is
+  # rewritten into a click-to-load placeholder by crit-remote-images.js, which
+  # reads this list from <meta name="crit-remote-images"> in the root layout.
+  @remote_image_hosts ["i.ytimg.com", "avatars.githubusercontent.com", "assets.crit.md"]
+
+  @doc "Hosts allowed in img-src, as bare hostnames (the remote-images meta format)."
+  def remote_image_hosts, do: @remote_image_hosts
+
   def init(opts), do: opts
 
   def call(conn, _opts) do
     conn
     |> put_resp_header("content-security-policy", csp())
     |> put_resp_header("x-content-type-options", "nosniff")
+    # CSP doesn't cover DNS: without this, browsers may resolve the host of
+    # every link on the page, and an agent could put data in a hostname.
+    |> put_resp_header("x-dns-prefetch-control", "off")
     |> maybe_put_x_frame_options()
     |> put_resp_header("permissions-policy", Enum.join(@permissions_policy, ", "))
     |> maybe_put_hsts()
@@ -80,12 +94,16 @@ defmodule CritWeb.Plugs.SecurityHeaders do
       "'sha256-wm8xHXfA9tIFK/7McvhnPMGVuF/ErxqxEM1Clij75ec=' " <>
       "'sha256-5M5rMNBzgt7ZyJO3HUsytrd8A0xED8wq015qtyeaFrw='; " <>
       "style-src 'self' 'unsafe-inline'; " <>
-      "img-src 'self' data: blob: https://i.ytimg.com https://avatars.githubusercontent.com https://assets.crit.md; " <>
+      "img-src 'self' data: blob: #{remote_image_sources()}; " <>
       "font-src 'self'; " <>
       "media-src 'self' https://assets.crit.md; " <>
       "connect-src 'self'#{sentry_origin}#{umami_connect}; " <>
       "frame-src #{frame_src()}#{turnstile}; " <>
       "object-src 'none'"
+  end
+
+  defp remote_image_sources do
+    Enum.map_join(@remote_image_hosts, " ", &("https://" <> &1))
   end
 
   defp frame_src do
