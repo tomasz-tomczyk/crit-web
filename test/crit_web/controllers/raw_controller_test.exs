@@ -171,7 +171,8 @@ defmodule CritWeb.RawControllerTest do
 
     test "serves a shared Excalidraw canvas entry as text/html with agent scripts", %{conn: conn} do
       # Crawl keeps the scene path; the body is the canvas HTML page.
-      html = ~s(<html><body><script id="crit-excalidraw-scene" type="application/json">"{}"</script></body></html>)
+      html =
+        ~s(<html><body><script id="crit-excalidraw-scene" type="application/json">"{}"</script></body></html>)
 
       review =
         review_fixture(%{
