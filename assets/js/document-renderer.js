@@ -40,6 +40,7 @@ import renderers from "../vendor/crit/crit-renderers.js"
 import diagramOverlay from "../vendor/crit/crit-diagram-overlay.js"
 import "../vendor/crit/crit-renderer-mermaid.js"
 import "../vendor/crit/crit-renderer-excalidraw.js"
+import remoteImages from "../vendor/crit/crit-remote-images.js"
 import { themeChoice } from "./review-settings"
 
 // Excalidraw loads rough/freehand/fonts from origin root. This file is
@@ -1887,14 +1888,19 @@ function encodePathSegment(segment) {
   return encodeURIComponent(segment)
 }
 
+// Relative images load from the raw route next to the reviewed file. Remote
+// ones become click-to-load placeholders (crit-remote-images.js) unless their
+// host is in the <meta name="crit-remote-images"> allowlist; the page CSP
+// blocks them otherwise.
 function rewriteImageSrcs(html, filePath, reviewToken) {
-  return html.replace(/(<img\s[^>]*src=")([^"]+)(")/gi, function(match, pre, src, post) {
+  html = html.replace(/(<img\s[^>]*src=")([^"]+)(")/gi, function(match, pre, src, post) {
     if (/^https?:\/\/|^data:|^\//.test(src)) return match
     const resolved = resolveImagePath(filePath || "", decodeImageSrc(src))
     const href = "/r/" + encodeURIComponent(reviewToken) + "/raw/" +
       resolved.split("/").map(encodePathSegment).join("/")
     return pre + href + post
   })
+  return remoteImages.rewriteHtml(html)
 }
 
 // ---- Viewed state (localStorage) --------------------------------------------
@@ -2368,10 +2374,12 @@ function renderMultiFile(ctx) {
 
 // ---- Round diff helpers (ported from crit local) ----------------------------
 
+// <template> content is inert: parsing a remote <img> here fetches nothing,
+// where a detached <div> would start loading it.
 function htmlToText(html) {
-  const tmp = document.createElement('div')
+  const tmp = document.createElement('template')
   tmp.innerHTML = html
-  return tmp.textContent || ''
+  return tmp.content.textContent || ''
 }
 
 function lineSimilarity(a, b) {

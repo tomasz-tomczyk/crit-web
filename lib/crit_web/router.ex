@@ -125,6 +125,8 @@ defmodule CritWeb.Router do
     get "/auth/cli/success", DeviceController, :success
 
     get "/r/:token/raw/*file_path", RawController, :show
+    # Click-to-load frame for a remote image in a review (crit-remote-images.js).
+    get "/remote-image", RemoteImageController, :show
     get "/agent-marker.css", RawController, :marker_css
     get "/share-receiver", ShareReceiverController, :index
   end
