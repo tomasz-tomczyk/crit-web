@@ -16,6 +16,6 @@
     "@tailwindcss/typography": "^0.5.19",
     "dompurify": "3.4.17",
     "markdown-it": "15.0.3",
-    "mermaid": "12.2.0"
+    "mermaid": "12.3.0"
   }
 }
