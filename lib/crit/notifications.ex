@@ -93,7 +93,13 @@ defmodule Crit.Notifications do
 
     query =
       if actor_id do
-        from u in query, where: u.id != ^actor_id
+        from u in query,
+          where:
+            u.id != ^actor_id or
+              fragment(
+                "COALESCE((?->>'notify_own_activity')::boolean, false)",
+                u.preferences
+              )
       else
         query
       end

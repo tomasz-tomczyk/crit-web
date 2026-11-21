@@ -28,6 +28,7 @@ defmodule CritWeb.SettingsLive do
         :discussion_notifications_enabled,
         user.preferences.discussion_notifications_enabled
       )
+      |> assign(:notify_own_activity, user.preferences.notify_own_activity)
       |> assign(:notification_emails, user.preferences.notification_emails)
       |> assign(:pending_notification_emails, user.preferences.pending_notification_emails)
       |> assign(:notification_email_error, nil)
@@ -164,6 +165,23 @@ defmodule CritWeb.SettingsLive do
         {:noreply,
          socket
          |> assign(:discussion_notifications_enabled, enabled)
+         |> assign(:current_scope, Scope.put_user(scope, updated_user))}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to update preference.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_notify_own_activity", _params, socket) do
+    %{current_scope: scope} = socket.assigns
+    enabled = !socket.assigns.notify_own_activity
+
+    case Accounts.update_preferences(scope.user, %{notify_own_activity: enabled}) do
+      {:ok, updated_user} ->
+        {:noreply,
+         socket
+         |> assign(:notify_own_activity, enabled)
          |> assign(:current_scope, Scope.put_user(scope, updated_user))}
 
       {:error, _changeset} ->
