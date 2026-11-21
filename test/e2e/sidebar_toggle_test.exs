@@ -1,6 +1,6 @@
 defmodule CritWeb.E2E.SidebarToggleTest.Shared do
   @moduledoc false
-  import ExUnit.Assertions
+  import Playwright.Test.Assertions
   import CritWeb.E2E.Helpers
   alias Playwright.{APIRequestContext, APIResponse, Page}
 

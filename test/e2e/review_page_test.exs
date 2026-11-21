@@ -1,6 +1,8 @@
 defmodule CritWeb.E2E.ReviewPageTest do
   use CritWeb.E2ECase, async: true
 
+  alias Playwright.Promise
+
   @table_markdown "| Link | Status |\n" <>
                     "| --- | --- |\n" <>
                     "| [x](https://example.com/a/very/very/very/long/hidden/path) | available |\n" <>
@@ -447,16 +449,23 @@ defmodule CritWeb.E2E.ReviewPageTest do
 
       background = "cell => getComputedStyle(cell).backgroundColor"
 
-      before = [
-        even_row
-        |> Locator.locator("td.line-content")
-        |> Locator.first()
-        |> Locator.evaluate!(background),
-        odd_row
-        |> Locator.locator("td.line-content")
-        |> Locator.first()
-        |> Locator.evaluate!(background)
-      ]
+      before =
+        Promise.await!(
+          Promise.all([
+            Promise.async(fn ->
+              even_row
+              |> Locator.locator("td.line-content")
+              |> Locator.first()
+              |> Locator.evaluate!(background)
+            end),
+            Promise.async(fn ->
+              odd_row
+              |> Locator.locator("td.line-content")
+              |> Locator.first()
+              |> Locator.evaluate!(background)
+            end)
+          ])
+        )
 
       refute Enum.at(before, 0) == Enum.at(before, 1)
 
@@ -466,14 +475,21 @@ defmodule CritWeb.E2E.ReviewPageTest do
       |> Locator.locator(".line-gutter")
       |> Locator.click!()
 
-      after_ = [
-        page
-        |> Page.get_by_role(:cell, name: "beta", exact: true)
-        |> Locator.evaluate!(background),
-        page
-        |> Page.get_by_role(:cell, name: "gamma", exact: true)
-        |> Locator.evaluate!(background)
-      ]
+      after_ =
+        Promise.await!(
+          Promise.all([
+            Promise.async(fn ->
+              page
+              |> Page.get_by_role(:cell, name: "beta", exact: true)
+              |> Locator.evaluate!(background)
+            end),
+            Promise.async(fn ->
+              page
+              |> Page.get_by_role(:cell, name: "gamma", exact: true)
+              |> Locator.evaluate!(background)
+            end)
+          ])
+        )
 
       assert after_ == before
     end

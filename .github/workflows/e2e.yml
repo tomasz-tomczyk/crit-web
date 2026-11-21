@@ -126,7 +126,7 @@ jobs:
           PREVIEW_HOST: preview.127.0.0.1.nip.io
 
       - name: Upload test artifacts
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.partition }}

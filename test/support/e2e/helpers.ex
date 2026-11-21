@@ -1,7 +1,7 @@
 defmodule CritWeb.E2E.Helpers do
   @moduledoc "Helpers of the browser suite (test/e2e)."
 
-  import ExUnit.Assertions
+  import Playwright.Test.Assertions
 
   alias Playwright.{APIRequestContext, APIResponse, Expect, Locator, Mouse, Page}
 
