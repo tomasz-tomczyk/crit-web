@@ -80,7 +80,7 @@ defmodule Crit.MixProject do
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
-      {:playwright, "~> 1.65.0-rc.3", hex: :playwright_ex, only: [:dev, :test]}
+      {:playwright, "~> 1.65.0-rc.4", hex: :playwright_ex, only: [:dev, :test]}
     ]
   end
 

@@ -97,6 +97,5 @@ config :playwright, :test,
   base_url:
     "http://#{System.get_env("PHX_HOST") || "127.0.0.1"}:#{System.get_env("PORT", "4003")}",
   trace: :retain_on_failure,
-  screenshot: :only_on_failure
-
-config :playwright, :expect, timeout: 10_000
+  screenshot: :only_on_failure,
+  expect: [timeout: 10_000]
