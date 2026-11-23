@@ -9,7 +9,12 @@ defmodule CritWeb.E2E.ViewedTest do
       APIRequest.new_context!(Playwright.request(Playwright.Test.BrowserPool.playwright(browser)))
 
     review = create_multi_file_review(request)
-    on_exit(fn -> delete_review(request, review.delete_token) end)
+
+    on_exit(fn ->
+      delete_review(request, review.delete_token)
+      APIRequestContext.dispose!(request)
+    end)
+
     %{token: review.token, delete_token: review.delete_token}
   end
 

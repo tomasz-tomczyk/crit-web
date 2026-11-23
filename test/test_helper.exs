@@ -9,8 +9,7 @@ if System.get_env("E2E") == "true" do
 
   project = if System.get_env("PREVIEW_HOST"), do: :security, else: :e2e
 
-  # max_cases: 1, as `workers: 1`: one test at a time (queued tests would spend their timeout waiting).
-  ExUnit.start(exclude: [:test], include: [project], timeout: 45_000, max_cases: 1)
+  ExUnit.start(exclude: [:test], include: [project], timeout: 45_000)
 else
   ExUnit.start(exclude: [:e2e, :security])
   Ecto.Adapters.SQL.Sandbox.mode(Crit.Repo, :manual)

@@ -1,8 +1,6 @@
 defmodule CritWeb.E2E.CodeFilesTest do
   use CritWeb.E2ECase, async: true
 
-  alias Playwright.Promise
-
   # Code files render through Pierre's File (Shiki highlighting, line numbers,
   # hover "+", gutter range selection), as crit renders files-mode code files.
   # Comments and open forms are Pierre line annotations; tints and quote
@@ -251,12 +249,10 @@ defmodule CritWeb.E2E.CodeFilesTest do
       # The thread is below line 7 and above line 8.
       Expect.to_pass!(fn ->
         [line7, card_box, line8] =
-          Promise.all([
-            Promise.async(fn -> Locator.bounding_box!(code_line(page, "server.go", 7)) end),
-            Promise.async(fn -> Locator.bounding_box!(card) end),
-            Promise.async(fn -> Locator.bounding_box!(code_line(page, "server.go", 8)) end)
-          ])
-          |> Promise.await!()
+          Enum.map(
+            [code_line(page, "server.go", 7), card, code_line(page, "server.go", 8)],
+            &Locator.bounding_box!/1
+          )
 
         refute is_nil(line7)
         refute is_nil(card_box)
@@ -269,17 +265,15 @@ defmodule CritWeb.E2E.CodeFilesTest do
       # which is async after the Shiki worker resolves. Poll so the assertion
       # waits for the tint instead of racing it (flaked in CI with "" vs tint).
       tint = fn n ->
-        Promise.async(fn ->
-          Locator.evaluate!(
-            code_line(page, "server.go", n),
-            "(el) => getComputedStyle(el).backgroundColor"
-          )
-        end)
+        Locator.evaluate!(
+          code_line(page, "server.go", n),
+          "(el) => getComputedStyle(el).backgroundColor"
+        )
       end
 
       Expect.to_pass!(
         fn ->
-          [tinted6, plain3, tinted7] = Promise.await!(Promise.all([tint.(6), tint.(3), tint.(7)]))
+          [tinted6, plain3, tinted7] = Enum.map([6, 3, 7], tint)
           refute tinted6 == plain3
           assert tinted7 == tinted6
         end,
@@ -458,6 +452,30 @@ defmodule CritWeb.E2E.CodeFilesTest do
         outdated = Page.locator(page, ".file-section .file-comments .outdated-comment")
         Expect.to_contain_text!(outdated, "Line gone")
         Expect.to_have_text!(Locator.locator(outdated, ".outdated-badge"), "Outdated")
+      after
+        delete_review(request, review.delete_token)
+      end
+    end
+
+    test "a stored file_type overrides the extension for document vs code view", %{
+      page: page,
+      request: request
+    } do
+      # crit's `languages` config: notes.txt renders as a document, plan.md as code.
+      review =
+        create_review(request,
+          files: [
+            %{path: "notes.txt", content: "# Notes\n\nSome prose.\n", file_type: "markdown"},
+            %{path: "plan.md", content: "# Plan\n\nStep one.\n", file_type: "code"}
+          ]
+        )
+
+      try do
+        load_review(page, review.token)
+        notes = Page.locator(page, ~s(details.file-section[data-file-path="notes.txt"]))
+        Expect.to_have_text!(Locator.locator(notes, ".line-content h1"), "Notes")
+        Expect.to_have_count!(code_file(page, "notes.txt"), 0)
+        Expect.to_contain_text!(code_line(page, "plan.md", 1), "# Plan")
       after
         delete_review(request, review.delete_token)
       end
