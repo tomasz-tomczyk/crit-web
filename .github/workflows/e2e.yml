@@ -13,7 +13,7 @@ env:
 
 jobs:
   e2e:
-    name: Playwright E2E (shard ${{ matrix.shard }})
+    name: Playwright E2E (shard ${{ matrix.partition }}/2)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -21,10 +21,10 @@ jobs:
       fail-fast: false
       matrix:
         # Two shards halve the ~6m wall time and give the CI retry backstop
-        # (playwright.config.ts: retries 2 on CI) headroom under the timeout.
+        # (the CI retries below) headroom under the timeout.
         # Each shard gets its own Postgres service (isolated VMs), and reviews
         # are per-test tokens so shards never share DB state.
-        shard: ["1/2", "2/2"]
+        partition: [1, 2]
 
     services:
       postgres:
@@ -55,6 +55,7 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+          cache-dependency-path: assets/package-lock.json
 
       - name: Restore Elixir dependencies cache
         uses: actions/cache@v6
@@ -77,23 +78,17 @@ jobs:
         env:
           E2E: "true"
 
-      - name: Install Playwright dependencies
-        run: npm ci
-
-      - name: Cache Playwright browsers
-        id: playwright-cache
+      - name: Cache Playwright driver and browsers
         uses: actions/cache@v6
         with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          path: |
+            ~/.cache/playwright
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-ex-${{ hashFiles('mix.lock') }}
 
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright browser OS deps
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+      # On a cache hit this only installs the OS packages.
+      - name: Install Playwright driver, browsers and OS deps
+        run: mix playwright.install chromium --with-deps
 
       - name: Install asset dependencies
         run: npm install --prefix assets
@@ -104,18 +99,36 @@ jobs:
       - name: Build assets
         run: mix assets.build
 
+      # The endpoint is served by the test VM itself (test/test_helper.exs).
+      # The `||` reruns failures twice (Pierre worker races, slow runners).
       - name: Run Playwright tests
-        run: npx playwright test --shard=${{ matrix.shard }}
+        run: |
+          mix test test/e2e --partitions 2 \
+            || { [ $? -eq 2 ] && mix test --failed; } \
+            || { [ $? -eq 2 ] && mix test --failed; }
         env:
           E2E: "true"
-          CI: "true"
+          PHX_SERVER: "true"
+          PORT: "4003"
+          MIX_TEST_PARTITION: ${{ matrix.partition }}
+
+      - name: Run Playwright security tests
+        if: matrix.partition == 2
+        run: |
+          mix test test/e2e/security_test.exs \
+            || { [ $? -eq 2 ] && mix test --failed; } \
+            || { [ $? -eq 2 ] && mix test --failed; }
+        env:
+          E2E: "true"
+          PHX_SERVER: "true"
+          PORT: "4004"
+          PHX_HOST: 127.0.0.1.nip.io
+          PREVIEW_HOST: preview.127.0.0.1.nip.io
 
       - name: Upload test artifacts
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report-${{ matrix.shard }}
-          path: |
-            test-results/
-            playwright-report/
+          name: test-results-${{ matrix.partition }}
+          path: test-results/
           retention-days: 7

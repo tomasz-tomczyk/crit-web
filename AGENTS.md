@@ -88,14 +88,15 @@ mise run up               # Install deps, setup DB, start server on :4000
 mix test                  # Run all tests
 mix test path/to/test.exs:42  # One test by line
 mix precommit             # compile --warnings-as-errors, deps.unlock --unused, format, sobelow --skip, deps.audit, test
-mise run e2e              # Run the full Playwright e2e suite (installs everything it needs first)
-mise run e2e e2e/accessibility.spec.ts  # Run a single e2e spec (args pass through to `npx playwright test`)
+mise run e2e              # Run the browser e2e suite (test/e2e; installs everything it needs first)
+mise run e2e test/e2e/accessibility_test.exs  # Run a single e2e test file (args pass through to `mix test`)
+mise run e2e:security     # Run the origin-isolation tests (test/e2e/security_test.exs) on their own server
 mise run test:js          # Review page JS unit tests (assets/test/*.test.mjs, node --test)
 ```
 
-Tests use `DataCase` (database) or `ConnCase` (HTTP). Test database: `crit_test`; the Playwright e2e server (`E2E=true`) uses `crit_e2e`, so e2e rows never leak into ExUnit runs. Local Postgres listens on **5433** (host) → 5432 (container); `DB_PORT` defaults to 5433 via `mise.toml` and `.envrc`, so `mise exec -- mix test` / `mise run test` just work (an explicit `DB_PORT` still overrides). Start the DB first with `mise run db:start` (idempotent). Always run `mix precommit` when done with a change.
+Tests use `DataCase` (database) or `ConnCase` (HTTP). Test database: `crit_test`; the browser e2e run (`E2E=true`) uses `crit_e2e`, so e2e rows never leak into ExUnit runs. Local Postgres listens on **5433** (host) → 5432 (container); `DB_PORT` defaults to 5433 via `mise.toml` and `.envrc`, so `mise exec -- mix test` / `mise run test` just work (an explicit `DB_PORT` still overrides). Start the DB first with `mise run db:start` (idempotent). Always run `mix precommit` when done with a change.
 
-**E2E** (Playwright): `mise run e2e` is the one command — idempotent and self-bootstrapping, so a fresh worktree runs the suite without any manual `npm install`. It runs `npm ci` (root Playwright deps, which `wt step copy-ignored` can't copy because the source checkout never installs them), `npx playwright install chromium`, `npm install --prefix assets`, `mix assets.build`, ensures the DB is up, then `npx playwright test`. `playwright.config.ts`'s managed `webServer` starts Phoenix and runs ecto.create/migrate itself. Mirrors `.github/workflows/e2e.yml`.
+**E2E** (ExUnit with playwright_ex, `test/e2e`): `mise run e2e` is the one command — idempotent and self-bootstrapping, so a fresh worktree runs the suite without any manual setup. It runs `mix playwright.install chromium`, `npm install --prefix assets`, `mix assets.build`, ensures the DB is up, then `E2E=true PHX_SERVER=true PORT=4003 mix test test/e2e`. `test/test_helper.exs` runs the e2e VM with a real pool instead of the sandbox and serves the endpoint itself; `mise run e2e:security` runs the security tests against a second instance with `PHX_HOST`/`PREVIEW_HOST` set. Mirrors `.github/workflows/e2e.yml`.
 
 CI runs the same sequence in `.github/workflows/ci.yml` (Postgres 17 service, Elixir 1.19 / OTP 28), with `mix coveralls.json` instead of plain `mix test` for Codecov upload. `.github/workflows/coverage.yml` uploads the same coverage on push to `main`.
 </important>
