@@ -7,7 +7,9 @@ defmodule CritWeb.PierreSyncTest do
 
     * `priv/static/pierre/` — the Pierre + Shiki bundle and theme palettes
     * `assets/vendor/crit/` — modules bundled into the review page, including
-      the pluggable renderers (registry, mermaid, diagram overlay)
+      the pluggable renderers (registry, mermaid, excalidraw, diagram overlay)
+    * `priv/static/rough.min.js`, `freehand.min.js`, `fonts/excalidraw/` —
+      Excalidraw lazy assets served from origin root
 
   When the sibling crit checkout is present (local dev), each vendored file
   must match its crit source by content hash and the Pierre directory must hold
@@ -26,19 +28,29 @@ defmodule CritWeb.PierreSyncTest do
     "crit-glob-match.js",
     "crit-renderers.js",
     "crit-renderer-mermaid.js",
-    "crit-diagram-overlay.js"
+    "crit-renderer-excalidraw.js",
+    "crit-diagram-overlay.js",
+    "crit-remote-images.js"
   ]
+  # Keep in sync with STATIC_JS in scripts/sync-pierre.sh.
+  @static_js ["rough.min.js", "freehand.min.js"]
   @pierre_entries ["pierre-diffs.js.gz", "pierre-worker.js.gz", "palettes.js.gz"]
 
   @root File.cwd!()
   @pierre_dir Path.join([@root, "priv", "static", "pierre"])
   @bundled_dir Path.join([@root, "assets", "vendor", "crit"])
+  @static_dir Path.join([@root, "priv", "static"])
+  @fonts_dir Path.join([@static_dir, "fonts", "excalidraw"])
   @crit_web Path.join([@root, "..", "crit", "web"])
 
   defp sha256(path), do: :crypto.hash(:sha256, File.read!(path)) |> Base.encode16(case: :lower)
 
   defp vendored_pairs do
     Enum.map(@bundled_modules, &{Path.join(@bundled_dir, &1), Path.join(@crit_web, &1)})
+  end
+
+  defp static_js_pairs do
+    Enum.map(@static_js, &{Path.join(@static_dir, &1), Path.join(@crit_web, &1)})
   end
 
   test "vendored renderer files exist" do
@@ -51,19 +63,69 @@ defmodule CritWeb.PierreSyncTest do
       assert File.exists?(Path.join(@pierre_dir, entry)),
              "missing #{entry} in #{@pierre_dir}. Run scripts/sync-pierre.sh."
     end
+
+    for {path, _} <- static_js_pairs() do
+      assert File.exists?(path),
+             "missing #{path}. Run scripts/sync-pierre.sh."
+    end
+
+    assert File.dir?(@fonts_dir),
+           "missing #{@fonts_dir}. Run scripts/sync-pierre.sh."
   end
 
   test "vendored renderer files match crit by content hash" do
     if File.dir?(@crit_web) do
       for {vendored, source} <- vendored_pairs() do
-        assert File.exists?(source), "expected crit source file at #{source}"
+        # New modules may land in crit-web before the sibling crit checkout
+        # has them (companion PR ahead of crit merge). Presence is still
+        # checked above; skip hash until the source exists.
+        if File.exists?(source) do
+          assert sha256(vendored) == sha256(source), """
+          DRIFT: #{Path.basename(vendored)} differs between crit-web and crit.
+            vendored: #{vendored}
+            source:   #{source}
+          Re-sync with: scripts/sync-pierre.sh
+          """
+        end
+      end
 
-        assert sha256(vendored) == sha256(source), """
-        DRIFT: #{Path.basename(vendored)} differs between crit-web and crit.
-          vendored: #{vendored}
-          source:   #{source}
+      for {vendored, source} <- static_js_pairs() do
+        if File.exists?(source) do
+          assert sha256(vendored) == sha256(source), """
+          DRIFT: #{Path.basename(vendored)} differs between crit-web and crit.
+            vendored: #{vendored}
+            source:   #{source}
+          Re-sync with: scripts/sync-pierre.sh
+          """
+        end
+      end
+
+      font_source = Path.join(@crit_web, "fonts/excalidraw")
+
+      if File.dir?(font_source) do
+        source_files =
+          Path.wildcard(Path.join(font_source, "**/*"))
+          |> Enum.filter(&File.regular?/1)
+          |> Enum.map(&Path.relative_to(&1, font_source))
+          |> Enum.sort()
+
+        vendored_files =
+          Path.wildcard(Path.join(@fonts_dir, "**/*"))
+          |> Enum.filter(&File.regular?/1)
+          |> Enum.map(&Path.relative_to(&1, @fonts_dir))
+          |> Enum.sort()
+
+        assert vendored_files == source_files, """
+        DRIFT: fonts/excalidraw file set differs from crit.
+          only in crit-web: #{inspect(vendored_files -- source_files)}
+          only in crit:     #{inspect(source_files -- vendored_files)}
         Re-sync with: scripts/sync-pierre.sh
         """
+
+        for rel <- source_files do
+          assert sha256(Path.join(@fonts_dir, rel)) == sha256(Path.join(font_source, rel)),
+                 "DRIFT: fonts/excalidraw/#{rel} differs from crit. Re-sync with: scripts/sync-pierre.sh"
+        end
       end
     end
   end

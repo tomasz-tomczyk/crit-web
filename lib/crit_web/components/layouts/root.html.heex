@@ -11,6 +11,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <%!-- Image hosts the CSP's img-src allows. crit-remote-images.js turns every
+         other remote image into a click-to-load placeholder. An empty data-hint
+         drops the local-config advice ("add the host to remote_images in
+         ~/.crit.config.json") from the placeholder tooltip: readers here can't
+         change the allowlist. --%>
+    <meta
+      name="crit-remote-images"
+      content={JSON.encode!(CritWeb.Plugs.SecurityHeaders.remote_image_hosts())}
+      data-hint=""
+    />
     <meta
       name="liveview-transport"
       content={

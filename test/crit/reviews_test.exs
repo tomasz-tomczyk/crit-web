@@ -1162,6 +1162,99 @@ defmodule Crit.ReviewsTest do
     end
   end
 
+  describe "lang and file_type view hints on round snapshots" do
+    test "persists lang and file_type through create_review" do
+      {:ok, review} =
+        Reviews.create_review(
+          anon_scope(),
+          [
+            %{
+              "path" => "site.conf",
+              "content" => "server {}",
+              "lang" => "nginx",
+              "file_type" => "code"
+            },
+            %{"path" => "notes.txt", "content" => "# Notes", "file_type" => "markdown"}
+          ],
+          1,
+          [],
+          []
+        )
+
+      by_path = Map.new(Reviews.get_by_token(review.token).files, &{&1.file_path, &1})
+      assert %{lang: "nginx", file_type: "code"} = by_path["site.conf"]
+      assert %{lang: nil, file_type: "markdown"} = by_path["notes.txt"]
+    end
+
+    test "a share without the keys (older CLI) stores nil" do
+      {:ok, review} =
+        Reviews.create_review(anon_scope(), [%{"path" => "f.md", "content" => "v1"}], 1, [], [])
+
+      assert %{lang: nil, file_type: nil} = hd(Reviews.get_by_token(review.token).files)
+    end
+
+    test "invalid values drop to nil without failing the share" do
+      {:ok, review} =
+        Reviews.create_review(
+          anon_scope(),
+          [
+            %{
+              "path" => "a.txt",
+              "content" => "x",
+              "lang" => String.duplicate("a", 65),
+              "file_type" => "html"
+            },
+            %{"path" => "b.txt", "content" => "y", "lang" => 42, "file_type" => true},
+            %{"path" => "c.txt", "content" => "z", "lang" => "  ", "file_type" => ""}
+          ],
+          1,
+          [],
+          []
+        )
+
+      files = Reviews.get_by_token(review.token).files
+      assert length(files) == 3
+      assert Enum.all?(files, &(is_nil(&1.lang) and is_nil(&1.file_type)))
+    end
+
+    test "upsert_review with only changed hints updates them in place without a new round" do
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "site.conf", "content" => "same"}], 1, [], [])
+
+      {:ok, :no_changes, updated} =
+        Reviews.upsert_review(scope, review.token, review.delete_token, %{
+          "files" => [
+            %{
+              "path" => "site.conf",
+              "content" => "same",
+              "lang" => "nginx",
+              "file_type" => "code"
+            }
+          ]
+        })
+
+      assert updated.review_round == review.review_round
+      assert %{lang: "nginx", file_type: "code"} = hd(Reviews.get_by_token(review.token).files)
+    end
+
+    test "upsert_review carries hints onto the new round when content changes" do
+      scope = anon_scope()
+
+      {:ok, review} =
+        Reviews.create_review(scope, [%{"path" => "site.conf", "content" => "v1"}], 1, [], [])
+
+      {:ok, :updated, updated} =
+        Reviews.upsert_review(scope, review.token, review.delete_token, %{
+          "files" => [%{"path" => "site.conf", "content" => "v2", "lang" => "nginx"}]
+        })
+
+      assert updated.review_round == review.review_round + 1
+      assert %{lang: "nginx", file_type: nil} = hd(Reviews.get_by_token(review.token).files)
+    end
+  end
+
   describe "review_round_snapshot" do
     test "create_round_snapshot/4 stores file content for a round" do
       scope = anon_scope()

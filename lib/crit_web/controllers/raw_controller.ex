@@ -173,7 +173,19 @@ defmodule CritWeb.RawController do
   # reviews serve source files for in-browser reading and keep the historical
   # `text/plain` behaviour (so e.g. `.ex` isn't offered as an octet download).
   # `put_resp_content_type/2` appends `; charset=utf-8` to the bare type.
-  defp mime_for(file_path, true), do: MIME.from_path(file_path)
+  # Shared Excalidraw canvas previews keep the scene's path (*.excalidraw /
+  # *.excalidraw.json) but the crawled body is HTML. Force text/html so the
+  # iframe renders the canvas and agent scripts inject.
+  defp mime_for(file_path, true) do
+    lower = String.downcase(file_path)
+
+    cond do
+      String.ends_with?(lower, ".excalidraw") -> "text/html"
+      String.ends_with?(lower, ".excalidraw.json") -> "text/html"
+      true -> MIME.from_path(file_path)
+    end
+  end
+
   defp mime_for(_file_path, false), do: "text/plain"
 
   # Inject the agent scripts only into preview HTML, mirroring crit's

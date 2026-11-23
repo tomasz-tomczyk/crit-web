@@ -1203,6 +1203,67 @@ body.dragging { user-select: none; cursor: grabbing; }
 .line-content ul.crit-list-wrapper > li.crit-list-wrapper { list-style-type: none; }
 .line-content hr { border: none; height: 1px; background: var(--crit-border); margin: 24px 0; }
 .line-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 4px 0; }
+
+/* Remote images: click-to-load placeholder (crit-remote-images.js), then a
+   sandboxed frame sized to the image once it reports its dimensions. */
+.crit-remote-image {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.crit-remote-image-load {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 8px;
+  border: 1px dashed var(--crit-border-strong);
+  border-radius: 6px;
+  background: var(--crit-bg-elevated);
+  color: var(--crit-fg-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.crit-remote-image-load:hover {
+  border-color: var(--crit-brand);
+  color: var(--crit-fg-primary);
+}
+.crit-remote-image:focus-visible,
+.crit-remote-image-load:focus-visible {
+  outline: 2px solid var(--crit-brand);
+  outline-offset: 1px;
+}
+.crit-remote-image-load svg { flex: none; }
+.crit-remote-image-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.crit-remote-image-host {
+  flex: none;
+  color: var(--crit-fg-muted);
+}
+.crit-remote-image-frame {
+  display: block;
+  max-width: 100%;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+}
+.crit-remote-image.is-loading .crit-remote-image-frame {
+  border-radius: 6px;
+  background: var(--crit-bg-elevated);
+}
+.crit-remote-image-error {
+  color: var(--crit-fg-muted);
+  font-size: 12px;
+}
+@media (pointer: coarse) {
+  .crit-remote-image-load { min-height: 44px; }
+}
 .line-content blockquote { margin: 6px 0; padding: 8px 16px; border-inline-start: 3px solid var(--crit-blockquote-border); background: var(--crit-blockquote-bg); border-start-end-radius: 6px; border-end-end-radius: 6px; color: var(--crit-editor-fg-secondary); }
 .line-content blockquote p { margin: 2px 0; }
 /* One quote is split into a line block per paragraph or bare ">" line, so
@@ -1311,7 +1372,7 @@ body.dragging { user-select: none; cursor: grabbing; }
   margin-bottom: 8px;
 }
 /* Diagram parts the renderer maps to source lines take a click to comment. */
-.crit-render[data-crit-anchorable] .crit-render-output :is(g.node, g.cluster, .edgeLabel, .actor, .messageText, .statediagram-state, .classGroup) {
+.crit-render[data-crit-anchorable] .crit-render-output :is(g.node, g.cluster, .edgeLabel, .actor, .messageText, .statediagram-state, .classGroup, [data-excalidraw-index]) {
   cursor: pointer;
 }
 

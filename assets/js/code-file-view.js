@@ -58,12 +58,14 @@ export function isOutdatedLineComment(comment, lineTotal) {
   return comment.scope !== 'file' && comment.scope !== 'review' && !!comment.end_line && comment.end_line > lineTotal
 }
 
-export function createCodeFileView({ P, pool, path, content, options, handlers }) {
+// lang: the grammar a crit `languages` rule chose for the file, or null to
+// let the adapter detect it from the path.
+export function createCodeFileView({ P, pool, path, content, lang, options, handlers }) {
   const element = document.createElement('div')
   element.className = 'crit-code-file'
   element.dataset.filePath = path
 
-  const contents = adapter.buildFileContents(P, { path, content }, 'crit-web-file:' + (++nextCacheKey))
+  const contents = adapter.buildFileContents(P, { path, content, lang }, 'crit-web-file:' + (++nextCacheKey))
   const total = lineCount(content)
   let annotations = []
 

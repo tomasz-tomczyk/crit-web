@@ -59,7 +59,9 @@ defmodule CritWeb.ReviewLive do
               position: f.position,
               status: f.status,
               generated: f.generated,
-              encoding: f.encoding
+              encoding: f.encoding,
+              lang: f.lang,
+              file_type: f.file_type
             }
           end)
 
