@@ -26,7 +26,7 @@ import {
   setBinding,
 } from "./shortcut-registry"
 import { loadPalettes, palettePair } from "./pierre-runtime"
-import { getSetting } from "./review-settings"
+import { getSetting, setSetting } from "./review-settings"
 
 const THEME_ICONS = {
   system: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 0 1 4.25 2h7.5A2.25 2.25 0 0 1 14 4.25v5.5A2.25 2.25 0 0 1 11.75 12h-1.312c.1.128.21.248.328.36a.75.75 0 0 1 .234.545v.345a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-.345a.75.75 0 0 1 .234-.545c.118-.111.228-.232.328-.36H4.25A2.25 2.25 0 0 1 2 9.75v-5.5Zm2.25-.75a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-7.5Z" clip-rule="evenodd"/></svg>',
@@ -157,6 +157,27 @@ export function createSettingsPanel(adapter) {
 
   if (adapter.shortcutMode === 'files') applyCodeFont(readCodeFont())
 
+  function switchHtml(id, ariaLabel, checked) {
+    return '<label class="comments-panel-switch"><input type="checkbox" id="' + id + '" aria-label="' + escapeHtml(ariaLabel) + '"' +
+      (checked ? ' checked' : '') + '><span class="comments-panel-switch-track"><span class="comments-panel-switch-thumb"></span></span></label>'
+  }
+
+  // "One-click comments beside Comment · 2 in the toolbar" for Hide comment templates.
+  function toolbarTemplatesHint() {
+    return 'One-click comments beside Comment · ' + adapter.commentTemplates.getPinnedTemplates().length + ' in the toolbar'
+  }
+
+  // While the Comment templates tab changes templates, keep the count of
+  // Settings and the Shortcuts list current.
+  if (adapter.commentTemplates) {
+    adapter.commentTemplates.onChange(function() {
+      const count = document.getElementById('toolbarTemplatesCount')
+      if (count) count.textContent = toolbarTemplatesHint()
+      const shortcuts = document.getElementById('shortcutsPane')
+      if (panelOpen && shortcuts && !shortcuts.querySelector('.is-capturing')) renderShortcutsPane()
+    })
+  }
+
   // Theme lists come from the vendored palettes.js, loaded once per page.
   let palettes = null
   if (adapter.rendererSettings) {
@@ -251,6 +272,62 @@ export function createSettingsPanel(adapter) {
 
     html += '</div>' // close settings-display-group
 
+    // Selection toolbar: on or off; where it shows, what Comment shows, the
+    // keys and the comment templates it carries fold under Advanced. Same keys
+    // as crit's crit-settings.
+    if (adapter.selectionToolbar) {
+      const toolbar = adapter.selectionToolbar
+      const toolbarOn = getSetting('selectionToolbarEnabled', true) !== false
+      const placement = getSetting('selectionToolbar', toolbar.DEFAULT_PLACEMENT)
+      const style = getSetting('selectionToolbarButtonStyle', 'both')
+      const shortcuts = getSetting('selectionToolbarShortcuts', true) !== false
+      const templates = getSetting('selectionToolbarTemplates', true) !== false
+      html += '<div class="settings-section-label">Selection toolbar</div>'
+      html += '<div class="settings-display-group">'
+      html += '<div class="settings-display-row">'
+      html += '<span class="settings-display-label">Enable selection toolbar'
+        + '<span class="settings-display-hint">A Comment button beside selected text. <kbd>c</kbd> works either way.</span></span>'
+      html += switchHtml('toolbarEnabledToggle', 'Enable the selection toolbar', toolbarOn)
+      html += '</div>'
+      html += '<details class="settings-advanced" id="toolbarAdvanced"' + (toolbarOn ? '' : ' hidden') + '>'
+      html += '<summary class="settings-advanced-summary">Advanced</summary>'
+      html += '<div class="settings-advanced-body">'
+      html += '<div class="settings-display-row">'
+      html += '<label class="settings-display-label" for="selectionToolbarSelect">Toolbar position</label>'
+      html += '<select class="settings-select" id="selectionToolbarSelect">'
+      toolbar.PLACEMENT_OPTIONS.forEach(function(o) {
+        html += '<option value="' + o.id + '"' + (o.id === placement ? ' selected' : '') + '>' + o.name + '</option>'
+      })
+      html += '</select></div>'
+      html += '<div class="settings-display-row">'
+      html += '<span class="settings-display-label">Button style</span>'
+      html += '<div class="settings-pill settings-pill--toolbar-style" id="toolbarStylePill" role="group" aria-label="Comment button style">'
+      html += '<div class="settings-pill-indicator" id="toolbarStyleIndicator"></div>'
+      toolbar.BUTTON_STYLES.forEach(function(o) {
+        html += '<button type="button" class="settings-pill-btn' + (o.id === style ? ' active' : '') +
+          '" data-toolbar-style="' + o.id + '">' + escapeHtml(o.name) + '</button>'
+      })
+      html += '</div></div>'
+      // Hide switches, off by default like "Hide resolved comments": the
+      // stored settings keep saying what shows.
+      html += '<div class="settings-display-row">'
+      html += '<span class="settings-display-label">Hide Comment shortcut'
+        + '<span class="settings-display-hint">No <kbd>c</kbd> badge on the Comment button. Each comment template sets its own.</span></span>'
+      html += switchHtml('toolbarShortcutsToggle', 'Hide the Comment shortcut in the selection toolbar', !shortcuts)
+      html += '</div>'
+      if (adapter.commentTemplates) {
+        html += '<div class="settings-display-row">'
+        html += '<span class="settings-display-label">Hide comment templates'
+          + '<span class="settings-display-hint" id="toolbarTemplatesCount">' + escapeHtml(toolbarTemplatesHint()) + '</span></span>'
+        html += '<span class="settings-display-controls">'
+        html += '<button type="button" class="btn btn-sm" id="manageTemplatesBtn">Manage comment templates</button>'
+        html += switchHtml('toolbarTemplatesToggle', 'Hide comment templates in the selection toolbar', !templates)
+        html += '</span></div>'
+      }
+      html += '</div></details>'
+      html += '</div>'
+    }
+
     pane.innerHTML = html
 
     // Theme pill — dispatch the same event the rest of the app uses.
@@ -328,6 +405,55 @@ export function createSettingsPanel(adapter) {
         })
       }
     }
+
+    // Read by the selection toolbar each time it shows: no reload needed.
+    pane.querySelector('#toolbarEnabledToggle')?.addEventListener('change', function(e) {
+      setSetting('selectionToolbarEnabled', e.target.checked)
+      const advanced = pane.querySelector('#toolbarAdvanced')
+      if (advanced) advanced.hidden = !e.target.checked
+    })
+    pane.querySelector('#selectionToolbarSelect')?.addEventListener('change', function(e) {
+      setSetting('selectionToolbar', e.target.value)
+    })
+    if (adapter.selectionToolbar) {
+      const styleIds = adapter.selectionToolbar.BUTTON_STYLES.map(function(o) { return o.id })
+      pane.querySelectorAll('[data-toolbar-style]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const style = btn.dataset.toolbarStyle
+          setSetting('selectionToolbarButtonStyle', style)
+          pane.querySelectorAll('[data-toolbar-style]').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.toolbarStyle === style)
+          })
+          updatePillIndicator('toolbarStyleIndicator', styleIds, style)
+        })
+      })
+      updatePillIndicator('toolbarStyleIndicator', styleIds, getSetting('selectionToolbarButtonStyle', 'both'))
+    }
+    pane.querySelector('#toolbarShortcutsToggle')?.addEventListener('change', function(e) {
+      setSetting('selectionToolbarShortcuts', !e.target.checked)
+    })
+    pane.querySelector('#toolbarTemplatesToggle')?.addEventListener('change', function(e) {
+      setSetting('selectionToolbarTemplates', !e.target.checked)
+    })
+    pane.querySelector('#manageTemplatesBtn')?.addEventListener('click', function() { switchTab('templates') })
+  }
+
+  // The Comment templates tab: what templates do, then their list, unfolded
+  // per `options` ({ expand: index | 'new', text }).
+  function renderTemplatesPane(options) {
+    const pane = document.getElementById('templatesPane')
+    if (!pane || !adapter.commentTemplates) return
+    pane.textContent = ''
+    const intro = document.createElement('p')
+    intro.className = 'settings-templates-intro'
+    intro.textContent = 'Insert a template from the comment form, or show it in the selection toolbar to comment a selection in one click. ' +
+      'Drag to reorder: the toolbar and the form follow this order. Their shortcuts also show in the Shortcuts tab.'
+    pane.appendChild(intro)
+    const list = document.createElement('div')
+    list.className = 'settings-templates'
+    list.id = 'settingsTemplates'
+    pane.appendChild(list)
+    adapter.commentTemplates.renderSettingsList(list, options)
   }
 
   function renderShortcutsPane() {
@@ -359,6 +485,23 @@ export function createSettingsPanel(adapter) {
       })
       html += '</table>'
     })
+
+    // Comment templates with a key, last: their keys change here too, under
+    // the same refusals as in the template's editor.
+    const templates = adapter.commentTemplates
+    const keyed = templates ? templates.getTemplateItems().filter(function(t) { return t.shortcut }) : []
+    if (keyed.length) {
+      html += '<div class="shortcuts-group-label">Comment templates</div>'
+      html += '<table class="shortcuts-table">'
+      keyed.forEach(function(t) {
+        const label = templates.templateLabel(t)
+        html += '<tr><td><button type="button" class="shortcut-binding" data-template-index="' + t.index +
+          '" aria-label="Change the shortcut of the template ' + escapeHtml(label) + '">' + bindingHtml(t.shortcut) + '</button></td>' +
+          '<td>' + (t.emoji ? '<span class="shortcut-template-emoji" aria-hidden="true">' + escapeHtml(t.emoji) + '</span>' : '') +
+          'Comment the selection: ' + escapeHtml(label) + '</td></tr>'
+      })
+      html += '</table>'
+    }
     pane.innerHTML = html
 
     const rerender = () => renderShortcutsPane()
@@ -369,6 +512,12 @@ export function createSettingsPanel(adapter) {
     })
 
     pane.querySelectorAll('.shortcut-binding').forEach(button => {
+      const templateIndex = button.dataset.templateIndex === undefined ? -1 : Number(button.dataset.templateIndex)
+      const currentBinding = () => {
+        if (templateIndex < 0) return getBinding(button.dataset.shortcutId)
+        const item = templates.getTemplateItems()[templateIndex]
+        return item ? item.shortcut : ''
+      }
       button.addEventListener('click', () => {
         button.classList.add('is-capturing')
         button.innerHTML = '<kbd>Press keys…</kbd>'
@@ -378,7 +527,7 @@ export function createSettingsPanel(adapter) {
         const next = event.relatedTarget
         if (next?.closest?.('.shortcut-binding, .shortcut-reset-all')) {
           button.classList.remove('is-capturing')
-          button.innerHTML = bindingHtml(getBinding(button.dataset.shortcutId))
+          button.innerHTML = bindingHtml(currentBinding())
           return
         }
         rerender()
@@ -395,11 +544,23 @@ export function createSettingsPanel(adapter) {
 
         const reject = message => {
           button.classList.remove('is-capturing')
-          button.innerHTML = bindingHtml(getBinding(id))
+          button.innerHTML = bindingHtml(currentBinding())
           showError(message)
+        }
+        if (templateIndex >= 0) {
+          const refusal = templates.shortcutConflict(binding, templateIndex)
+          if (refusal) { reject(refusal); return }
+          templates.updateTemplate(templateIndex, { shortcut: binding })
+          rerender()
+          return
         }
         if (isReservedBinding(binding)) {
           reject(binding + ' is reserved by Crit Web.')
+          return
+        }
+        const owner = templates && binding ? templates.findByShortcut(binding) : null
+        if (owner) {
+          reject(binding + ' already comments “' + templates.templateLabel(owner) + '”.')
           return
         }
         const conflict = findConflict(id, binding)
@@ -450,10 +611,14 @@ export function createSettingsPanel(adapter) {
       underline.style.width = btnRect.width + 'px'
     }
     if (tab === 'settings') renderSettingsPane()
+    else if (tab === 'templates') { renderTemplatesPane(templatesOptions); templatesOptions = undefined }
     else if (tab === 'about') renderAboutPane()
   }
 
-  function open(tab) {
+  // templates options reach the Comment templates tab: { expand: index | 'new', text }.
+  let templatesOptions
+  function open(tab, options) {
+    templatesOptions = tab === 'templates' ? options : undefined
     panelTab = tab || 'settings'
     panelOpen = true
     overlay.classList.add('active')
@@ -469,6 +634,7 @@ export function createSettingsPanel(adapter) {
   function close() {
     panelOpen = false
     overlay.classList.remove('active')
+    adapter.onClose?.()
   }
 
   // Wiring (gear toggle, close button, click-outside, tab clicks).
