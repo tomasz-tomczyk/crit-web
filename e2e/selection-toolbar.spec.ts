@@ -205,10 +205,11 @@ test.describe("Selection toolbar templates", () => {
 
   test("Hide Comment shortcut hides c only; a template hides its own key", async ({ page }) => {
     await setReviewSetting(page, "selectionToolbarShortcuts", false);
+    // The seeded 👍 (Alt+P) and 👎 (Alt+C), with 👎 hiding its key.
     await page.evaluate(() => {
-      const meta = { seeded: true, items: { Accepted: { emoji: "👍", pinned: true, shortcut: "Alt+p" }, Rejected: { emoji: "👎", pinned: true, shortcut: "Alt+c", hideShortcut: true } } };
-      localStorage.setItem("crit-templates", JSON.stringify(["Accepted", "Rejected"]));
-      localStorage.setItem("crit-template-meta", JSON.stringify(meta));
+      const templates = (window as any).crit.commentTemplates;
+      templates.getTemplateItems();
+      templates.updateTemplate(1, { hideShortcut: true });
     });
     await dragOverText(page, paragraph(page), "above a selection");
     await expect(toolbar(page).getByRole("button", { name: "Comment on selection" }).locator("kbd:visible")).toHaveCount(0);
@@ -226,9 +227,10 @@ test.describe("Selection toolbar templates", () => {
 
   test("a template shortcut comments the selection", async ({ page }) => {
     await page.evaluate(() => {
-      const meta = { seeded: true, items: { Accepted: { emoji: "👍", pinned: true, shortcut: "y" }, Rejected: { emoji: "👎", pinned: true } } };
-      localStorage.setItem("crit-templates", JSON.stringify(["Accepted", "Rejected"]));
-      localStorage.setItem("crit-template-meta", JSON.stringify(meta));
+      const templates = (window as any).crit.commentTemplates;
+      templates.getTemplateItems();
+      templates.updateTemplate(0, { shortcut: "y" });
+      templates.updateTemplate(1, { shortcut: "" });
     });
     await dragOverText(page, paragraph(page), "above a selection");
     await expect(toolbar(page).locator(".crit-selection-toolbar-pin").first().locator("kbd")).toHaveText("y");
