@@ -2070,6 +2070,8 @@ html[data-theme="light"] .crit-toggle-btn--active {
 .btn-primary { background: var(--crit-brand-cta); color: var(--crit-fg-on-brand); border-color: var(--crit-brand-cta); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 .btn-primary:hover { background: var(--crit-brand-cta-hover); box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 .btn-sm { font-size: 12px; padding: 3px 10px; }
+.btn-danger { color: var(--crit-red); border-color: var(--crit-red); background: transparent; }
+.btn-danger:hover { background: var(--crit-btn-danger-hover-bg); }
 
 /* Delete button used in review meta header (red outlined, fills on hover) */
 .crit-delete-btn {
@@ -3173,7 +3175,7 @@ body.comments-panel-anim #commentsPanelResizer {
 }
 .template-chip-edit:hover { color: var(--crit-brand); }
 /* Pinned templates lead the bar and keep a brand border. */
-.template-chip--pinned { border-color: var(--crit-brand); }
+.template-chip--pinned { border-color: color-mix(in srgb, var(--crit-brand) 35%, var(--crit-border)); }
 /* Template shortcut buttons (template editor and rows), kbd like Settings > Shortcuts. */
 .template-shortcut kbd {
   padding: 0 5px;
@@ -3215,6 +3217,9 @@ body.comments-panel-anim #commentsPanelResizer {
   cursor: grab;
 }
 .settings-template-handle:hover { color: var(--crit-editor-fg); }
+/* While a template editor is open: reordering would drop its edits. */
+.settings-template-handle.is-disabled { cursor: not-allowed; opacity: 0.4; }
+.settings-template-handle.is-disabled:hover { color: var(--crit-editor-fg-muted); }
 .settings-template-handle:focus-visible {
   outline: 2px solid var(--crit-brand);
   outline-offset: 1px;
@@ -3350,6 +3355,55 @@ body.comments-panel-anim #commentsPanelResizer {
 }
 .settings-template-line[hidden] { display: none; }
 .settings-template-line.is-disabled { color: var(--crit-editor-fg-muted); cursor: help; }
+/* Toggle switch (settings panel: hide resolved, selection toolbar, templates). */
+.comments-panel-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.comments-panel-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.comments-panel-switch-track {
+  position: absolute;
+  inset: 0;
+  background: var(--crit-bg-card);
+  border: 1px solid var(--crit-border);
+  border-radius: 9999px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.comments-panel-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--crit-editor-fg-muted);
+  border-radius: 9999px;
+  transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s;
+}
+.comments-panel-switch input:checked ~ .comments-panel-switch-track {
+  background: var(--crit-brand);
+  border-color: var(--crit-brand);
+}
+.comments-panel-switch input:checked ~ .comments-panel-switch-track .comments-panel-switch-thumb {
+  left: 18px;
+  background: var(--crit-fg-on-brand);
+}
+.comments-panel-switch input:focus-visible ~ .comments-panel-switch-track {
+  outline: 2px solid var(--crit-brand);
+  outline-offset: 2px;
+}
 .settings-template-line.is-disabled .comments-panel-switch { cursor: not-allowed; opacity: 0.5; }
 .settings-template-line-name { font-weight: 500; }
 .settings-template-actions {
