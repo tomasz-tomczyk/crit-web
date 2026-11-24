@@ -161,7 +161,16 @@ function headingText(inline) {
 // the card in the document (or review conversation) comes first. When that
 // copy is hidden (hide resolved), fall back to the panel copy if the panel is
 // open; otherwise there is nothing visible to scroll to.
-function scrollToCommentRef(id) {
+const COMMENT_LINK_CANCEL_EVENTS = ['wheel', 'touchstart', 'pointerdown', 'keydown']
+
+// Bumped by every comment jump, so a link's settle loop (goToLinkedComment)
+// stops when a newer jump starts. (crit: pierreJumpSeq)
+let commentJumpSeq = 0
+
+function scrollToCommentRef(id, behavior = 'smooth') {
+  commentJumpSeq++
+  // A ref may name crit's id (c_…), kept here as external_id.
+  id = cardIdForCommentRef(id) || id
   const cards = Array.from(document.querySelectorAll(`.comment-card[data-comment-id="${CSS.escape(id)}"]`))
   const inline = cards.find(c => !c.closest('#commentsPanel'))
   let card = inline && !isHiddenByStyle(inline) ? inline : null
@@ -176,9 +185,144 @@ function scrollToCommentRef(id) {
     card.classList.remove('collapsed')
     commentCollapseOverrides[id] = false
   }
-  card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  card.scrollIntoView({ behavior, block: 'center' })
   restartFlash(card, 'comment-ref-flash')
 }
+
+// ---- Comment links (crit #1218) ---------------------------------------------
+// A comment's link is the page URL with its id as the fragment. The id is
+// crit's (c_1a2b3c, external_id here) when the comment came from crit, so a
+// link written locally or by an agent works on the share too. Cards carry
+// this server's id, so a link's id is looked up before use.
+// (crit: commentLinkURL / goToLinkedComment / createCommentLinkButton)
+
+function cardIdForCommentRef(ref) {
+  const comments = (__activeCtx && __activeCtx.comments) || []
+  const c = comments.find(x => x.id === ref || (x.external_id && x.external_id === ref))
+  return c ? c.id : null
+}
+
+function commentLinkId(comment) {
+  return comment.external_id || comment.id
+}
+
+function commentLinkURL(linkId) {
+  return location.href.split('#')[0] + '#' + encodeURIComponent(linkId)
+}
+
+// Go to the comment a link names. Returns false when no comment has that id,
+// so the caller can treat the fragment as a heading instead. On page load,
+// code files mount their cards a little later and grow as they highlight,
+// which would cut a smooth scroll short. So wait for the card, jump
+// instantly, and re-centre it until its position holds still.
+function goToLinkedComment(ref) {
+  const id = cardIdForCommentRef(ref)
+  if (!id) return false
+  const inlineCard = () => Array.from(document.querySelectorAll(`.comment-card[data-comment-id="${CSS.escape(id)}"]`))
+    .find(c => !c.closest('#commentsPanel'))
+  let frames = 0
+  let seq = null
+  let lastTop = null
+  let still = 0
+  let cancelled = false
+  // The reader scrolling or clicking takes over, as in crit.
+  const cancel = () => { cancelled = true }
+  const stop = () => COMMENT_LINK_CANCEL_EVENTS.forEach(t => window.removeEventListener(t, cancel, true))
+  COMMENT_LINK_CANCEL_EVENTS.forEach(t => window.addEventListener(t, cancel, { capture: true, passive: true }))
+  const waitSeq = ++commentJumpSeq
+  const step = () => {
+    if (cancelled) { stop(); return }
+    const card = inlineCard()
+    if (seq === null) {
+      if (waitSeq !== commentJumpSeq) { stop(); return }
+      if (!card && frames++ < 120) { requestAnimationFrame(step); return }
+      scrollToCommentRef(id, 'instant')
+      seq = commentJumpSeq
+      if (!card || isHiddenByStyle(card)) { stop(); return }
+    } else if (seq !== commentJumpSeq) {
+      stop()
+      return
+    } else if (card) {
+      const top = card.getBoundingClientRect().top
+      still = lastTop !== null && Math.abs(top - lastTop) < 1 ? still + 1 : 0
+      lastTop = top
+      if (still === 0) card.scrollIntoView({ behavior: 'instant', block: 'center' })
+    }
+    if (card && still < 10 && frames++ < 180) requestAnimationFrame(step)
+    else stop()
+  }
+  step()
+  return true
+}
+
+function copyWithTextarea(text) {
+  const previous = document.activeElement
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.setAttribute('readonly', '')
+  ta.style.position = 'fixed'
+  ta.style.opacity = '0'
+  document.body.appendChild(ta)
+  try {
+    ta.select()
+    if (!document.execCommand('copy')) throw new Error('copy failed')
+  } finally {
+    ta.remove()
+    if (previous && previous.focus) previous.focus({ preventScroll: true })
+  }
+}
+
+// navigator.clipboard needs a secure context; fall back to execCommand
+// outside one (a self-hosted instance on plain http) and when it refuses.
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).catch(() => copyWithTextarea(text))
+  }
+  return new Promise(resolve => { copyWithTextarea(text); resolve() })
+}
+
+const ICON_COMMENT_LINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+const ICON_COMMENT_LINK_COPIED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+
+function setCommentLinkButtonState(btn, copied) {
+  const label = copied ? 'Link copied' : 'Copy link to comment'
+  btn.classList.toggle('comment-link-copied', copied)
+  btn.innerHTML = copied ? ICON_COMMENT_LINK_COPIED : ICON_COMMENT_LINK
+  btn.title = label
+  btn.setAttribute('aria-label', label)
+}
+
+function createCommentLinkButton(comment) {
+  const linkId = commentLinkId(comment)
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.className = 'comment-link-btn'
+  setCommentLinkButtonState(btn, false)
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation()
+    // The address bar shows the link too, for copying by hand.
+    history.replaceState(history.state, '', '#' + encodeURIComponent(linkId))
+    copyText(commentLinkURL(linkId)).then(() => {
+      setCommentLinkButtonState(btn, true)
+      setTimeout(() => setCommentLinkButtonState(btn, false), 1500)
+    }).catch(() => {})
+  })
+  return btn
+}
+
+// A markdown link to a comment inside a comment body ([see](#c_1a2b3c))
+// jumps in-page, also when clicked twice. A comment-ref chip inside the link
+// has already handled the click.
+document.addEventListener('click', (e) => {
+  if (e.defaultPrevented) return
+  const a = e.target.closest && e.target.closest('.comment-body a[href^="#"]')
+  if (!a) return
+  let ref
+  try { ref = decodeURIComponent(a.getAttribute('href').slice(1)) } catch { return }
+  if (!goToLinkedComment(ref)) return
+  e.preventDefault()
+  history.replaceState(history.state, '', '#' + encodeURIComponent(ref))
+})
 
 // Play a one-shot highlight animation on `el`. Removing the class and
 // forcing a reflow restarts the animation when it is already running
@@ -4125,6 +4269,7 @@ function createCommentElement(comment, ctx) {
 
   const actions = document.createElement("div")
   actions.className = "comment-actions"
+  actions.appendChild(createCommentLinkButton(comment))
 
   if (canResolve) {
     const resolveBtn = document.createElement('button')
@@ -4517,6 +4662,7 @@ function commentCardAdapter(ctx, filePath) {
     // Files-mode panel cards: resolve/delete live only on review-scope comments
     // (file/line comments resolve at their inline location); replies read-only.
     showActions: (c) => c.scope === 'review' && (isOwnComment(c, ctx) || isReviewOwner(ctx)),
+    linkButton: (c) => createCommentLinkButton(c),
     showReplyComposer: () => false,
     headerBadges: (c) => {
       const badges = []
@@ -4679,6 +4825,7 @@ function createResolvedElement(comment, ctx) {
 
   const actions = document.createElement('div')
   actions.className = 'comment-actions'
+  actions.appendChild(createCommentLinkButton(comment))
 
   const isOwn = isOwnComment(comment, ctx)
   const canResolve = isOwn || isReviewOwner(ctx)
@@ -4759,6 +4906,7 @@ function scrollToHashHeading() {
   const hash = window.location.hash
   if (!hash || hash === "#") return
   const id = decodeURIComponent(hash.slice(1))
+  if (goToLinkedComment(id)) return
   // Author ids and names in raw HTML carry a user-content- prefix (see
   // document-html.js), so #foo also finds id="user-content-foo" or
   // name="user-content-foo", as on GitHub.
@@ -6269,7 +6417,12 @@ export const DocumentRenderer = {
       if (ctx._commentsPanel?.classList.contains('comments-panel-open')) {
         renderCommentsPanel(ctx)
       }
-      scrollToHashHeading()
+      // A LiveView reconnect sends init again. Only the first one follows the
+      // URL hash, so a reconnect doesn't jump back to a copied comment link.
+      if (!ctx._hashHandled) {
+        ctx._hashHandled = true
+        scrollToHashHeading()
+      }
     })
 
     ctx.handleEvent("display_name_updated", (data) => preservingReplyFocus(() => {
