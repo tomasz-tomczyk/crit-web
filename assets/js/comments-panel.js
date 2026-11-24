@@ -509,6 +509,7 @@ export function restoreReplyFocus(saved) {
 //   markdownEnv(comment)                           {originalLines?} for fences
 //   headerBadges(comment) -> [el]                  round/line-ref (files) | pin (preview)
 //   showActions(comment) -> bool                   resolve/delete row on the card itself
+//   linkButton(comment) -> Element | undefined     optional copy-link button, first in the row
 //   showReplyComposer(comment) -> bool             inline reply box under the card
 //   onResolve(c) / onDelete(c)                     LiveView mutations
 //   onAddReply / onDeleteReply / onEditReply       reply mutations (forwarded to composer/list)
@@ -571,10 +572,12 @@ export function renderCommentCard(comment, adapter) {
   // actions row above the body) can close over it.
   let bodyEl
 
-  if (adapter.showActions(comment)) {
-    const actions = document.createElement('div')
-    actions.className = 'comment-actions'
+  const actions = document.createElement('div')
+  actions.className = 'comment-actions'
+  const linkBtn = adapter.linkButton ? adapter.linkButton(comment) : null
+  if (linkBtn) actions.appendChild(linkBtn)
 
+  if (adapter.showActions(comment)) {
     if (adapter.canResolve(comment)) {
       const resolveBtn = document.createElement('button')
       resolveBtn.className = isResolved ? 'resolve-btn resolve-btn--active' : 'resolve-btn'
@@ -619,9 +622,8 @@ export function renderCommentCard(comment, adapter) {
       })
       actions.appendChild(deleteBtn)
     }
-
-    if (actions.childElementCount > 0) header.appendChild(actions)
   }
+  if (actions.childElementCount > 0) header.appendChild(actions)
 
   card.appendChild(header)
 
