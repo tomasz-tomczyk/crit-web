@@ -203,20 +203,68 @@ function isHiddenByStyle(el) {
   return false
 }
 
+// Links between comments and text: a comment reference chip goes to its
+// comment, a quoted comment's line label goes to its quote (goToQuote).
+// (crit: COMMENT_LINK / followCommentLink)
+const COMMENT_LINK = '.comment-ref, .comment-line-ref[role="link"]'
+function followCommentLink(link) {
+  if (link.dataset.refId) scrollToCommentRef(link.dataset.refId)
+  else goToQuote(link.closest('.comment-card').dataset.commentId)
+}
+
 document.addEventListener('click', (e) => {
-  const ref = e.target.closest && e.target.closest('.comment-ref')
-  if (!ref) return
-  e.preventDefault()
-  scrollToCommentRef(ref.dataset.refId)
+  const link = e.target.closest && e.target.closest(COMMENT_LINK)
+  if (link) {
+    e.preventDefault()
+    followCommentLink(link)
+    return
+  }
+  // A quote highlight goes to its comment. Deferred so a double or triple
+  // click that selects text inside the highlight doesn't jump. A link in
+  // the highlight keeps its own click, and the innermost highlight wins, so
+  // a draft's highlight inside a saved one doesn't jump away from the form.
+  if (e.defaultPrevented || e.detail !== 1 || !e.target.closest) return
+  if (e.target.closest('a[href]')) return
+  const mark = e.target.closest('mark.quote-highlight')
+  if (mark && !mark.dataset.commentId.startsWith('draft-')) {
+    setTimeout(() => {
+      if (window.getSelection().isCollapsed) scrollToCommentRef(mark.dataset.commentId)
+    }, 300)
+  }
 })
 
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return
-  const ref = e.target.closest && e.target.closest('.comment-ref')
-  if (!ref) return
+  const link = e.target.closest && e.target.closest(COMMENT_LINK)
+  if (!link) return
   e.preventDefault()
-  scrollToCommentRef(ref.dataset.refId)
+  followCommentLink(link)
 })
+
+// Scroll to and flash a comment's quote highlight in the rendered document.
+// A diagram label's highlight is an SVG <tspan>, so match any element.
+function goToQuote(commentId) {
+  const marks = Array.from(document.querySelectorAll(`.quote-highlight[data-comment-id="${CSS.escape(commentId)}"]`))
+    .filter(m => !m.closest('#commentsPanel'))
+  if (marks.length === 0) return
+  for (let node = marks[0].parentElement; node; node = node.parentElement) {
+    if (node.tagName === 'DETAILS' && !node.open) node.open = true
+  }
+  marks.forEach(m => restartFlash(m, 'comment-ref-flash'))
+  marks[0].scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+// In a rendered document, a quoted comment's line label links to its quote.
+// Code files have no highlight to go to, and neither does a resolved comment
+// (no highlight is drawn for it) or a drifted one (its quote is gone).
+function linkLineRefToQuote(label, comment, ctx) {
+  if (!comment.quote || comment.resolved || comment.drifted) return
+  if (comment.scope === 'file' || comment.scope === 'review') return
+  if (isCodeFile(comment.file_path || ctx.singleFilePath)) return
+  label.tabIndex = 0
+  label.setAttribute('role', 'link')
+  label.title = 'Go to the quoted text'
+}
 
 // ===== Word-Level Diff =====
 
@@ -4026,6 +4074,7 @@ function createCommentElement(comment, ctx) {
   lineRef.textContent = comment.start_line === comment.end_line
     ? `Line ${comment.start_line}`
     : `Lines ${comment.start_line}–${comment.end_line}`
+  linkLineRefToQuote(lineRef, comment, ctx)
 
   const time = document.createElement("span")
   time.className = "comment-time"
