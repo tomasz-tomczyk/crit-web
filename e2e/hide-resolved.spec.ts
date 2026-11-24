@@ -87,14 +87,15 @@ test.describe("Hide Resolved", () => {
     // Enable "Hide resolved" via the settings checkbox
     await openSettingsPane(page);
     const toggle = page.locator("#hideResolvedToggle");
-    await toggle.click();
+    // The switch input is visually hidden: click its label.
+    await page.locator("label.comments-panel-switch:has(#hideResolvedToggle)").click();
     await expect(toggle).toBeChecked();
 
     // The resolved comment block should now be hidden
     await expect(resolvedBlock).not.toBeVisible();
 
     // Uncheck to verify it toggles back
-    await toggle.click();
+    await page.locator("label.comments-panel-switch:has(#hideResolvedToggle)").click();
     await expect(toggle).not.toBeChecked();
     await expect(resolvedBlock).toBeVisible();
   });

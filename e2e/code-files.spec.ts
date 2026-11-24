@@ -311,7 +311,9 @@ test.describe("Code files", () => {
     await card.locator(".resolve-btn").click();
     await expect(codeFile(page, "server.go").locator(".resolved-card")).toBeVisible();
     await page.locator("#settingsToggle").click();
-    await page.locator("#hideResolvedToggle").check();
+    // The switch input is visually hidden: click its label.
+    await page.locator("label.comments-panel-switch:has(#hideResolvedToggle)").click();
+    await expect(page.locator("#hideResolvedToggle")).toBeChecked();
     await page.keyboard.press("Escape");
     await expect(codeFile(page, "server.go").locator(".comment-card").filter({ hasText: "Mine to resolve" })).toHaveCount(0);
     await expect(codeFile(page, "server.go").locator(".comment-card").filter({ hasText: "Existing thread" })).toBeVisible();
