@@ -370,12 +370,50 @@ document.addEventListener('click', (e) => {
   if (e.defaultPrevented || e.detail !== 1 || !e.target.closest) return
   if (e.target.closest('a[href]')) return
   const mark = e.target.closest('mark.quote-highlight')
-  if (mark && !mark.dataset.commentId.startsWith('draft-')) {
+  const quoteId = mark ? (!mark.dataset.commentId.startsWith('draft-') && mark.dataset.commentId) : pierreQuoteAt(e)
+  if (quoteId) {
     setTimeout(() => {
-      if (window.getSelection().isCollapsed) scrollToCommentRef(mark.dataset.commentId)
+      if (window.getSelection().isCollapsed) scrollToCommentRef(quoteId)
     }, 300)
   }
 })
+
+// Code files paint quotes inside Pierre's shadow roots as ranges, not
+// elements: find the saved comment whose quote is under the pointer from the
+// ranges' boxes. An open form's quote has no comment. (crit: pierreQuoteAt)
+function pierreQuoteAt(e) {
+  const host = pierreHostOf(e)
+  return host ? pierreDecorations.quoteAt(host, e.clientX, e.clientY) : null
+}
+// The Pierre host an event happened in, or null. Call it while the event is
+// dispatching: composedPath() is empty afterwards.
+function pierreHostOf(e) {
+  const inner = e.composedPath ? e.composedPath()[0] : null
+  if (!inner || inner.nodeType !== 1 || inner.closest('a[href], button')) return null
+  const root = inner.getRootNode()
+  return (root && root.host) || null
+}
+
+// A highlight pseudo can't set a cursor, so the host under the pointer gets
+// data-crit-quote-hover while a saved quote is under it (crit-pierre-dom.js
+// unsafeCSS). The ranges are checked at most once a frame, for the latest move.
+let quoteHoverHost = null
+let quoteHoverMove = null
+document.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch') return
+  if (!quoteHoverMove) {
+    requestAnimationFrame(() => {
+      const move = quoteHoverMove
+      quoteHoverMove = null
+      const host = move.host && pierreDecorations.quoteAt(move.host, move.x, move.y) ? move.host : null
+      if (host === quoteHoverHost) return
+      if (quoteHoverHost) quoteHoverHost.removeAttribute('data-crit-quote-hover')
+      if (host) host.setAttribute('data-crit-quote-hover', '')
+      quoteHoverHost = host
+    })
+  }
+  quoteHoverMove = { host: pierreHostOf(e), x: e.clientX, y: e.clientY }
+}, { passive: true })
 
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return
@@ -385,12 +423,17 @@ document.addEventListener('keydown', (e) => {
   followCommentLink(link)
 })
 
-// Scroll to and flash a comment's quote highlight in the rendered document.
-// A diagram label's highlight is an SVG <tspan>, so match any element.
+// Scroll to and flash a comment's quote. In a rendered document the quote is
+// a highlight element (a diagram label's is an SVG <tspan>, so match any
+// element). In a code file (or markdown source) it is a range in Pierre's
+// shadow DOM (goToPierreQuote).
 function goToQuote(commentId) {
   const marks = Array.from(document.querySelectorAll(`.quote-highlight[data-comment-id="${CSS.escape(commentId)}"]`))
     .filter(m => !m.closest('#commentsPanel'))
-  if (marks.length === 0) return
+  if (marks.length === 0) {
+    goToPierreQuote(commentId)
+    return
+  }
   for (let node = marks[0].parentElement; node; node = node.parentElement) {
     if (node.tagName === 'DETAILS' && !node.open) node.open = true
   }
@@ -398,13 +441,23 @@ function goToQuote(commentId) {
   marks[0].scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
-// In a rendered document, a quoted comment's line label links to its quote.
-// Code files have no highlight to go to, and neither does a resolved comment
-// (no highlight is drawn for it) or a drifted one (its quote is gone).
-function linkLineRefToQuote(label, comment, ctx) {
+// Code files render every line (no virtualization), so a comment's quote is
+// drawn whenever its file section is. (crit: goToPierreQuote)
+function goToPierreQuote(commentId) {
+  const range = pierreDecorations.quoteRange(commentId)
+  if (!range) return
+  const node = range.startContainer
+  const el = node.nodeType === 1 ? node : node.parentElement
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  pierreDecorations.flashQuote(commentId)
+}
+
+// A quoted comment's line label links to its quote, in a rendered document
+// and in a code file. A resolved comment has no quote drawn, and a drifted
+// one's quote is gone.
+function linkLineRefToQuote(label, comment) {
   if (!comment.quote || comment.resolved || comment.drifted) return
   if (comment.scope === 'file' || comment.scope === 'review') return
-  if (isCodeFile(comment.file_path || ctx.singleFilePath)) return
   label.tabIndex = 0
   label.setAttribute('role', 'link')
   label.title = 'Go to the quoted text'
@@ -2961,11 +3014,21 @@ function buildCodeAnnotation(ctx, filePath, metadata) {
 function codeQuotes(ctx, filePath) {
   const quoted = commentsForPath(ctx, filePath)
     .filter(c => c.quote && !c.resolved && c.scope !== 'file' && c.scope !== 'review')
-    .map(c => ({ start: c.start_line, end: c.end_line, side: '', quote: c.quote, offset: c.quote_offset }))
+    .map(c => ({ id: c.id, start: c.start_line, end: c.end_line, side: '', quote: c.quote, offset: c.quote_offset }))
   for (const f of formsForPath(ctx, filePath)) {
     if (f.quote && !f.editingId) quoted.push({ start: f.startLine, end: f.endLine, side: '', quote: f.quote, offset: f.quoteOffset })
   }
   return quoted
+}
+
+// An outdated comment's line is past the end of the file, so its quote is not
+// drawn either.
+function unlinkLineRef(card) {
+  const label = card.querySelector('.comment-line-ref[role="link"]')
+  if (!label) return
+  label.removeAttribute('tabindex')
+  label.removeAttribute('role')
+  label.removeAttribute('title')
 }
 
 // Destroy a code view and drop it as the keyboard-selection target, so a
@@ -3122,6 +3185,7 @@ function buildOutdatedComments(ctx, comments) {
   for (const c of comments) {
     const el = createCommentElement(c, ctx)
     el.classList.add('outdated-comment')
+    unlinkLineRef(el)
     const headerLeft = el.querySelector('.comment-header-left')
     if (headerLeft) {
       const badge = document.createElement('span')
@@ -4218,7 +4282,7 @@ function createCommentElement(comment, ctx) {
   lineRef.textContent = comment.start_line === comment.end_line
     ? `Line ${comment.start_line}`
     : `Lines ${comment.start_line}–${comment.end_line}`
-  linkLineRefToQuote(lineRef, comment, ctx)
+  linkLineRefToQuote(lineRef, comment)
 
   const time = document.createElement("span")
   time.className = "comment-time"
