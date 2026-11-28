@@ -71,7 +71,7 @@ defmodule Crit.MixProject do
       {:assent, "~> 0.2"},
       {:mdex, "~> 0.13"},
       {:sentry, "~> 14.0"},
-      {:bcrypt_elixir, "~> 3.0"},
+      {:bcrypt_elixir, "~> 4.0"},
       {:swoosh, "~> 1.25"},
       {:phoenix_swoosh, "~> 1.2"},
       {:gen_smtp, "~> 1.3"},
